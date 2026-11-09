@@ -10,7 +10,7 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 |---|---|---|
 | [01-ai-dashboard.webp](reference/01-ai-dashboard.webp) | **App shell, Library (dashboard)** | pill top nav (active pill labelled + glowing, others round icons), 3 columns: overview tiles + ranked bars left, big hero with carousel arrows/dots centre, "latest match" panel with team discs and a big blue **Watch now** button + list right; floodlit stadium mood |
 | [02-smart-tagging-player.png](reference/02-smart-tagging-player.png) | **Match page / clip player** | left rail: back + title, match card, uppercase tag rows with counts and a solid blue active row; centred match header pill; big video; clip bar (start / tag / end); removable filter chips + blue "n selected" pill; full-match timeline with yellow pins |
-| [03-player-card-profile.webp](reference/03-player-card-profile.webp) | **Player Hub (phase 4, next)** | player card with photo and key numbers, teams/numbers/roles chips, teammates row, skills radar and per-match bar chart (from tag counts only, labelled as tag counts, not ratings), vertical clip feed |
+| [03-player-card-profile.webp](reference/03-player-card-profile.webp) | **Player Hub** | player card with photo and key numbers, teams/numbers/roles chips, teammates row, skills radar and per-match bar chart (from tag counts only, labelled as tag counts, not ratings), vertical clip feed |
 
 ## Screen to reference status
 
@@ -20,7 +20,9 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 | Library | 01 | done (desktop 3 columns; tablet hero first, side columns paired; phone single column) |
 | Match page | 02 | done (video first below 1280px) |
 | Import, Connections | 01 styling | done |
-| Player Hub, Memories Timeline | 03 | todo (phase 4) |
+| Player Hub (+ chooser) | 03 | done: shield card, teams/numbers/position with Edit, tagged-with carousel, dates column, tag radar, moments-per-match bars, phone moments feed |
+| Memories Timeline | 03 styling | done (season > month > match > moment; all / favourites / unwatched / by type) |
+| Library "Your player" card | 01 (MVP card slot) | done |
 
 ## Tokens (`frontend/src/index.css`)
 

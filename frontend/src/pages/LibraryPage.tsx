@@ -6,6 +6,7 @@ import { api } from "../api/client";
 import { FeaturedHero } from "../components/library/FeaturedHero";
 import { LatestMatchPanel } from "../components/library/LatestMatchPanel";
 import { StatTile } from "../components/library/StatTile";
+import { YourPlayerCard } from "../components/library/YourPlayerCard";
 import { MatchCard } from "../components/MatchCard";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -79,6 +80,7 @@ export function LibraryPage() {
           <h1 className="text-3xl font-semibold tracking-tight">Match Library</h1>
           <p className="mt-1 text-sm text-fg-muted">Every game you have saved, ready to relive.</p>
         </div>
+        <YourPlayerCard />
         <div className="flex items-baseline justify-between">
           <h2 className="text-xl font-semibold">Overview</h2>
           <span className="text-sm text-fg-subtle">All time</span>

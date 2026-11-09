@@ -55,9 +55,10 @@ Design direction and references: [docs/design/DESIGN.md](docs/design/DESIGN.md).
 | `tag_definitions` | source tag names, kept verbatim | unique (source, name) |
 | `events` | a tagged moment = a time in a match | unique (match, source, source_event_id); index (match, time), tag |
 | `event_players` | event ↔ player | PK (event, player); index player |
+| `event_marks` | favourite + first-viewed time per moment | PK event (cascade); index favourite |
+| `preferences` | key/value app preferences (`primary_player_id`) | PK key |
 
-Planned (brief section 14): playlists, playlist_items, preferences (primary
-player), playback_history, download/sync jobs, notifications, settings,
+Planned (brief section 14): playlists, playlist_items, playback_history, download/sync jobs, notifications, settings,
 source media records. Each arrives with its migration and tests.
 
 ## Storage layout
@@ -88,3 +89,9 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | GET | `/api/media/{id}/thumbnail` | JPEG thumbnail |
 | GET | `/api/teams`, `/api/seasons` | filter options |
 | GET | `/api/stats` | overview counts, top tags, recent moments (Library tiles) |
+| GET / PUT | `/api/preferences`, `/api/preferences/primary-player` | the primary player (stored in the DB, survives restarts) |
+| GET | `/api/players` | players with moment and match counts |
+| GET / PATCH | `/api/players/{id}` | profile: totals, tag counts, team/season history, per-match series, co-tagged players; edit name/shirt/position |
+| GET | `/api/players/{id}/moments` | cross-match moments, newest match first; filters `category`, `favourites`, `unwatched` |
+| PUT | `/api/events/{id}/favourite` | favourite on/off (idempotent) |
+| POST | `/api/events/{id}/viewed` | mark a moment watched |

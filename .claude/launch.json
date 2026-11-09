@@ -4,7 +4,7 @@
     {
       "name": "backend",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd backend && FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories FM_ARCHIVE_ROOT=../data/archive FM_IMPORT_ROOT=../data/inbox uv run uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000"],
+      "runtimeArgs": ["-c", "cd backend && FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories FM_ARCHIVE_ROOT=../data/archive FM_IMPORT_ROOT=../data/inbox uv run uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --reload"],
       "port": 8000
     },
     {

@@ -1,4 +1,4 @@
-import { Clapperboard, FolderInput, Library, PlugZap, Search } from "lucide-react";
+import { Clapperboard, FolderInput, Library, PlugZap, Search, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
@@ -6,6 +6,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
 const NAV = [
   { to: "/", label: "Library", icon: Library, end: true },
+  { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },
   { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false },
 ];

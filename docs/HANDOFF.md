@@ -22,8 +22,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Hudl: **not automated, by design** (Terms of Service 3.2). See
   [HUDL_INTEGRATION.md](../HUDL_INTEGRATION.md). Waiting on owner decision 002.
 - UI follows the owner's reference images: Library = reference 01, Match page =
-  reference 02 (docs/design/DESIGN.md). Player Hub will follow reference 03.
-- Tests: backend 55 (SQLite + Postgres), frontend 32. All green.
+  reference 02, Player Hub = reference 03 (docs/design/DESIGN.md).
+- Phase 4 Player Hub built on branch `phase4-player-hub`: primary player (kept
+  across restarts), profile, favourites, watched state, Memories Timeline.
+- Tests: backend 73 (SQLite + Postgres), frontend 44. All green.
 
 ## How to run
 
@@ -32,10 +34,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
-1. **Phase 4, Player Hub** (follow reference 03, see docs/design/DESIGN.md) (the owner's headline screen 3): `preferences` table
-   with the primary player; `GET /api/players/{id}/moments` cross-match query
-   (indexed on event_players.player_id); Player Hub page; Memories Timeline
-   (season → month → match → event); viewed/unviewed + favourites tables.
+1. **Phase 4 leftovers:** profile photo upload (needs `python-multipart`, a new
+   runtime dependency: ask the owner first); calendar view of the timeline;
+   "season highlights" shortcut once playlists exist.
 2. Settings page: pre/post buffers (now fixed 8s/5s), archive/inbox health
    (exists, writable, free space).
 3. Clip Explorer (brief section 10) across matches, reusing EventPanel filters.
@@ -59,6 +60,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 - `.gitignore` rules for footage are anchored to the root (`/library/`): an
   unanchored `library/` once hid `frontend/src/components/library/` from both git
   and Tailwind's class scanner (classes silently missing). Anchor new ignore rules.
+- After adding a new folder of components, restart the Vite dev server if
+  Tailwind classes look missing (it once served stale CSS). `npm run build` is
+  the source of truth.
 - Starlette 1.10 warns that its TestClient's httpx use is deprecated; harmless.
 - shadcn/ui is in the brief but not installed yet; primitives live in
   `frontend/src/components/ui/`. Decide before building forms-heavy screens.

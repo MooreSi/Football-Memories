@@ -1,6 +1,6 @@
 # 040: Player Hub, primary player, favourites, viewed, Memories Timeline
 
-**Status:** Building
+**Status:** Shipped 2026-11-09 (branch phase4-player-hub)
 **Brief:** sections 11, 12, 20 (primary player), phase 4. **Design:** reference 03.
 **Sensitive:** privacy only: a child's profile. Store the minimum (display name,
 optional shirt number and position). No photo upload yet (needs a new runtime

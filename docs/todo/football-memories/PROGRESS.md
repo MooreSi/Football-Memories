@@ -43,12 +43,33 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Vidstack evaluation | todo | D-006 |
 | Playwright e2e for the slice | todo | checked by hand, see log |
 
-## Phases 3-7
+## Phase 4: Player Hub
+
+| Task | Status | Notes |
+|---|---|---|
+| Primary player, persistent across restarts | done | `preferences` table; test restarts the app on the same DB |
+| Player Hub (reference 03) | done | spec 040-player-hub.md |
+| Cross-match player moments query + filters | done | `/api/players/{id}/moments` |
+| Favourites and viewed tracking | done | `event_marks`; match page hearts + unwatched dots; feed marks watched on play |
+| Memories Timeline | partial | timeline + favourites/unwatched/by-type views; calendar and card-gallery views todo |
+| Profile photo | todo | needs a new runtime dependency (owner decision) |
+| Primary player on the dashboard | done | "Your player" card on the Library |
+
+## Phases 3, 5-7
 
 Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Player Hub (branch phase4-player-hub)
+- backend: 73 passed on SQLite and on Postgres 17; ruff, mypy clean; migration f7153841c25d, alembic check no drift
+- frontend: 44 passed; typecheck and build OK
+- browser (1600px): chose Sam Example as primary; hub matches reference 03 layout; feed played the
+  0:08 save from 0:00, unwatched 10 -> 9; heart -> favourites 1 and Favourites view shows only it;
+  Edit set shirt 1 + Goalkeeper (shown on card and feed label); timeline grouped Nov/Oct 2026;
+  Library shows the Your player card; phone 375px no horizontal scroll
+- Not checked: Safari/iPad, keyboard-only walkthrough of the hub, large libraries
 
 ### 2026-11-09 UI rebuilt from the owner's reference images (branch ui-reference-layouts)
 - Library now follows reference 01 (pill nav, tiles, hero carousel, Watch now panel); Match page

@@ -25,6 +25,7 @@ describe("LibraryPage", () => {
     stubFetch({
       "/api/matches": { total: 1, page: 1, page_size: 24, items: [match] },
       "/api/stats": stats,
+      "/api/preferences": { primary_player_id: null },
       "/api/teams": [{ id: 1, name: "Riverside U12" }],
       "/api/seasons": [{ id: 1, name: "2026/27" }],
     });
@@ -41,6 +42,7 @@ describe("LibraryPage", () => {
     stubFetch({
       "/api/matches": { total: 1, page: 1, page_size: 24, items: [match] },
       "/api/stats": { ...stats, matches: 12, moments: 340, footage_seconds: 5400 },
+      "/api/preferences": { primary_player_id: null },
       "/api/teams": [],
       "/api/seasons": [],
     });
@@ -54,6 +56,7 @@ describe("LibraryPage", () => {
     stubFetch({
       "/api/matches": { total: 1, page: 1, page_size: 24, items: [match] },
       "/api/stats": stats,
+      "/api/preferences": { primary_player_id: null },
       "/api/teams": [],
       "/api/seasons": [],
     });

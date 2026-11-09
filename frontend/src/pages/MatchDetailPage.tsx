@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ListVideo, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -42,6 +42,23 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
   const [momentsOnly, setMomentsOnly] = useState(params.get("moments") === "1");
   const [clock, setClock] = useState({ time: 0, duration: m.media?.duration_s ?? 0 });
   const media = m.media;
+  const qc = useQueryClient();
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["match", m.id] });
+  const favourite = useMutation({
+    mutationFn: ({ e, fav }: { e: MatchEvent; fav: boolean }) => api.setFavourite(e.id, fav),
+    onSuccess: () => {
+      refresh();
+      void qc.invalidateQueries({ queryKey: ["player"] });
+    },
+  });
+  const onActiveEvent = useCallback(
+    (eventId: number | null) => {
+      setActiveEventId(eventId);
+      const e = m.events.find((x) => x.id === eventId);
+      if (e && !e.viewed) api.markViewed(e.id).then(refresh, () => undefined);
+    },
+    [m.events, m.id], // refresh only depends on the match id
+  );
 
   const play = useCallback((event: MatchEvent) => setRequest({ event, nonce: Date.now() }), []);
   const onTime = useCallback((time: number, duration: number) => setClock({ time, duration: duration || (m.media?.duration_s ?? 0) }), [m.media]);
@@ -111,7 +128,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
             onMomentsOnlyChange={setMomentsOnly}
             request={request}
             seekRequest={seekRequest}
-            onActiveEvent={setActiveEventId}
+            onActiveEvent={onActiveEvent}
             onTime={onTime}
           />
         ) : (
@@ -167,7 +184,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
             No tagged moments for this match. Add a <code className="text-fg">.tags.csv</code> file next to the video when importing.
           </p>
         ) : (
-          <MomentList events={filter.filtered} activeEventId={activeEventId} onSelect={play} />
+          <MomentList events={filter.filtered} activeEventId={activeEventId} onSelect={play} onFavourite={(e, fav) => favourite.mutate({ e, fav })} />
         )}
 
         {media && (
