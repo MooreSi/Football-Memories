@@ -10,7 +10,7 @@ export function MatchCard({ match }: { match: MatchSummary }) {
     <Link
       to={`/matches/${match.id}`}
       aria-label={title}
-      className="group panel overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)] focus-visible:shadow-[var(--shadow-glow)]"
+      className="group tile overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)] focus-visible:shadow-[var(--shadow-glow)]"
     >
       <div className="relative aspect-video overflow-hidden bg-ink-800">
         {match.thumbnail_url ? (

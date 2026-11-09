@@ -5,12 +5,12 @@
 cookies*.json
 storage_state*.json
 *.storage.json
-secrets/
+/secrets/
 config.local.*
 
 # Downloaded footage and local library/index (golden rule 4, personal data)
-library/
-downloads/
+/library/
+/downloads/
 *.part
 *.mp4
 *.mov

@@ -14,6 +14,11 @@ export interface PlayRequest {
   nonce: number;
 }
 
+export interface SeekRequest {
+  time: number;
+  nonce: number;
+}
+
 interface Props {
   mediaId: number;
   src: string;
@@ -24,7 +29,9 @@ interface Props {
   momentsOnly: boolean;
   onMomentsOnlyChange: (on: boolean) => void;
   request: PlayRequest | null;
+  seekRequest?: SeekRequest | null;
   onActiveEvent: (id: number | null) => void;
+  onTime?: (time: number, duration: number) => void;
 }
 
 const RESUME_KEY = (id: number) => `fm.resume.${id}`;
@@ -59,7 +66,8 @@ function IconButton(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { lab
 }
 
 export function VideoPlayer({
-  mediaId, src, poster, fps, events, buffers, momentsOnly, onMomentsOnlyChange, request, onActiveEvent,
+  mediaId, src, poster, fps, events, buffers, momentsOnly, onMomentsOnlyChange, request, seekRequest,
+  onActiveEvent, onTime,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -104,6 +112,13 @@ export function VideoPlayer({
     if (index >= 0) playWindow(index);
   }, [request]);
 
+  // Parent asked to jump to a time (e.g. a click on the moment timeline).
+  useEffect(() => {
+    if (!seekRequest) return;
+    windowRef.current = null;
+    seek(seekRequest.time);
+  }, [seekRequest, seek]);
+
   // Entering "moments only" starts from the first filtered moment.
   useEffect(() => {
     if (momentsOnly && events.length > 0) playWindow(0);
@@ -114,6 +129,7 @@ export function VideoPlayer({
     const el = v();
     if (!el) return;
     setTime(el.currentTime);
+    onTime?.(el.currentTime, el.duration || 0);
     const w = windowRef.current;
     if (w && el.currentTime >= w.end) {
       if (loop) {
@@ -135,6 +151,7 @@ export function VideoPlayer({
     const el = v();
     if (!el) return;
     setDuration(el.duration);
+    onTime?.(el.currentTime, el.duration);
     const resume = readResume(mediaId);
     if (!request && resume > 5 && resume < el.duration - 5) seek(resume);
   };
@@ -240,20 +257,7 @@ export function VideoPlayer({
       />
 
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pt-10 pb-2">
-        {/* Timeline with event markers */}
-        <div className="relative mb-1 h-5">
-          {total > 0 &&
-            events.map((e) => (
-              <button
-                key={e.id}
-                type="button"
-                aria-label={`${e.category} at ${formatClock(e.time_s)}`}
-                title={`${e.category} ${formatClock(e.time_s)}${e.players.length ? ` - ${e.players.join(", ")}` : ""}`}
-                onClick={() => playWindow(events.indexOf(e))}
-                className="absolute top-0 h-3 w-1.5 -translate-x-1/2 rounded-sm bg-accent shadow-[0_0_8px_rgb(34_211_238/0.8)] transition hover:h-4 hover:bg-white"
-                style={{ left: `${(e.time_s / total) * 100}%` }}
-              />
-            ))}
+        <div className="relative mb-1 h-4">
           <input
             type="range"
             aria-label="Seek"

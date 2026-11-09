@@ -8,7 +8,7 @@ from pathlib import Path
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Event, Match, MediaAsset, Season, Team
+from app.models import Event, Match, MediaAsset, Player, Season, TagDefinition, Team
 
 
 @dataclass(frozen=True)
@@ -94,3 +94,52 @@ def list_teams(db: Session) -> list[Team]:
 
 def list_seasons(db: Session) -> list[Season]:
     return list(db.scalars(select(Season).order_by(Season.label.desc())).all())
+
+
+@dataclass(frozen=True)
+class RecentMoment:
+    event: Event
+    match: Match
+
+
+@dataclass(frozen=True)
+class Stats:
+    matches: int
+    moments: int
+    footage_seconds: float
+    teams: int
+    players: int
+    top_tags: list[tuple[str, int]]
+    recent: list[RecentMoment]
+
+
+def stats(db: Session, *, top: int = 6, recent: int = 8) -> Stats:
+    tag_rows = db.execute(
+        select(TagDefinition.name, func.count(Event.id))
+        .join(Event, Event.tag_id == TagDefinition.id)
+        .group_by(TagDefinition.name)
+        .order_by(func.count(Event.id).desc(), TagDefinition.name)
+        .limit(top)
+    ).all()
+    recent_events = db.scalars(
+        select(Event)
+        .join(Match, Match.id == Event.match_id)
+        .options(
+            selectinload(Event.tag),
+            selectinload(Event.players),
+            selectinload(Event.match).selectinload(Match.team),
+        )
+        .order_by(Match.match_date.desc(), Match.id.desc(), Event.time_s)
+        .limit(recent)
+    ).all()
+    return Stats(
+        matches=db.scalar(select(func.count(Match.id))) or 0,
+        moments=db.scalar(select(func.count(Event.id))) or 0,
+        footage_seconds=float(
+            db.scalar(select(func.coalesce(func.sum(MediaAsset.duration_s), 0.0))) or 0.0
+        ),
+        teams=db.scalar(select(func.count(Team.id))) or 0,
+        players=db.scalar(select(func.count(Player.id))) or 0,
+        top_tags=[(name, int(n)) for name, n in tag_rows],
+        recent=[RecentMoment(e, e.match) for e in recent_events],
+    )

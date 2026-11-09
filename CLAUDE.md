@@ -110,6 +110,8 @@ Plain Markdown on purpose, so any tool or human reads the same rules.
 
 - end a session with unpushed work or a stale docs/HANDOFF.md
 - add a nav item, button or control that does not do something real
+- build or restyle a screen without following its reference image in
+  [docs/design/DESIGN.md](docs/design/DESIGN.md) and checking it side by side in the browser
 - show mock/demo data as if it were real footage
 
 - commit credentials, cookies, session/storage-state files, tokens or `.env`

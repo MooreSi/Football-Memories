@@ -1,12 +1,14 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Film, Search } from "lucide-react";
+import { Clock3, Film, Search, Sparkles, Tags, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
+import { FeaturedHero } from "../components/library/FeaturedHero";
+import { LatestMatchPanel } from "../components/library/LatestMatchPanel";
+import { StatTile } from "../components/library/StatTile";
 import { MatchCard } from "../components/MatchCard";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
-import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
 
 const PAGE_SIZE = 24;
@@ -20,14 +22,25 @@ function useDebounced<T>(value: T, ms: number): T {
   return v;
 }
 
+function hours(seconds: number): string {
+  const h = seconds / 3600;
+  return h >= 10 ? h.toFixed(0) : h.toFixed(1);
+}
+
+/** Layout follows reference 1: overview tiles left, featured hero + library centre, latest match right. */
 export function LibraryPage() {
-  const [search, setSearch] = useState("");
+  const [params, setParams] = useSearchParams();
+  const [search, setSearch] = useState(params.get("q") ?? "");
   const [teamId, setTeamId] = useState<number | undefined>();
   const [seasonId, setSeasonId] = useState<number | undefined>();
   const q = useDebounced(search.trim(), 250);
 
+  useEffect(() => setSearch(params.get("q") ?? ""), [params]);
+
+  const stats = useQuery({ queryKey: ["stats"], queryFn: api.stats });
   const teams = useQuery({ queryKey: ["teams"], queryFn: api.teams });
   const seasons = useQuery({ queryKey: ["seasons"], queryFn: api.seasons });
+  const latest = useQuery({ queryKey: ["matches", "latest"], queryFn: () => api.matches({ page: 1, pageSize: 5 }) });
   const matches = useInfiniteQuery({
     queryKey: ["matches", q, teamId, seasonId],
     queryFn: ({ pageParam }) => api.matches({ q, teamId, seasonId, page: pageParam, pageSize: PAGE_SIZE }),
@@ -38,90 +51,135 @@ export function LibraryPage() {
   const items = matches.data?.pages.flatMap((p) => p.items) ?? [];
   const total = matches.data?.pages[0]?.total ?? 0;
   const filtering = Boolean(q || teamId || seasonId);
+  const s = stats.data;
+  const featured = latest.data?.items ?? [];
+  const archiveEmpty = latest.data?.total === 0;
+  const maxTag = Math.max(1, ...(s?.top_tags.map((t) => t.count) ?? [1]));
+
+  if (archiveEmpty) {
+    return (
+      <EmptyState icon={Film} title="No matches yet">
+        <p className="mb-4">Put a match video in the import folder, then import it to start your archive.</p>
+        <Link to="/import" className="font-medium text-accent hover:underline">
+          Import a match
+        </Link>
+      </EmptyState>
+    );
+  }
 
   return (
-    <>
-      <PageHeader eyebrow="Archive" title="Match Library">
-        <Link to="/import">
-          <Button variant="primary">Import match</Button>
-        </Link>
-      </PageHeader>
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-[300px_minmax(0,1fr)_340px]">
+      <div className="md:col-span-2 xl:hidden">
+        <h1 className="text-3xl font-semibold tracking-tight">Match Library</h1>
+        <p className="mt-1 text-sm text-fg-muted">Every game you have saved, ready to relive.</p>
+      </div>
+      {/* Left: title + overview tiles + top tags (reference 1 left column) */}
+      <aside className="order-2 space-y-5 xl:order-1">
+        <div className="hidden xl:block">
+          <h1 className="text-3xl font-semibold tracking-tight">Match Library</h1>
+          <p className="mt-1 text-sm text-fg-muted">Every game you have saved, ready to relive.</p>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-xl font-semibold">Overview</h2>
+          <span className="text-sm text-fg-subtle">All time</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <StatTile label="Matches" icon={Film} value={String(s?.matches ?? "-")} unit="saved" hint={s ? `${s.teams} ${s.teams === 1 ? "team" : "teams"}` : undefined} />
+          <StatTile label="Moments" icon={Sparkles} value={String(s?.moments ?? "-")} unit="tagged" />
+          <StatTile label="Footage" icon={Clock3} value={s ? hours(s.footage_seconds) : "-"} unit="hours" />
+          <StatTile label="Players" icon={Users} value={String(s?.players ?? "-")} unit="tagged" />
+        </div>
+        <section aria-label="Top tags" className="panel p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold">Most tagged</h2>
+            <Tags size={16} className="text-fg-subtle" aria-hidden />
+          </div>
+          {s && s.top_tags.length > 0 ? (
+            <ul className="space-y-3">
+              {s.top_tags.map((t) => (
+                <li key={t.name} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1">
+                  <span className="truncate text-sm">{t.name}</span>
+                  <span className="text-sm text-fg-muted tabular-nums">{t.count}</span>
+                  <span className="col-span-2 h-1.5 overflow-hidden rounded-full bg-ink-700">
+                    <span className="block h-full rounded-full bg-gradient-to-r from-ok to-accent" style={{ width: `${(t.count / maxTag) * 100}%` }} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-fg-muted">No tags yet.</p>
+          )}
+        </section>
+      </aside>
 
-      <div className="panel mb-6 flex flex-wrap items-center gap-3 p-3">
-        <label className="relative min-w-[220px] flex-1">
-          <span className="sr-only">Search matches</span>
-          <Search size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-subtle" aria-hidden />
-          <input
-            className="field pl-9"
-            placeholder="Search opponent, team or competition"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <label>
-          <span className="sr-only">Team</span>
-          <select className="field w-auto" value={teamId ?? ""} onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : undefined)}>
-            <option value="">All teams</option>
-            {teams.data?.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span className="sr-only">Season</span>
-          <select className="field w-auto" value={seasonId ?? ""} onChange={(e) => setSeasonId(e.target.value ? Number(e.target.value) : undefined)}>
-            <option value="">All seasons</option>
-            {seasons.data?.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {!matches.isPending && (
-          <span className="ml-auto text-xs text-fg-muted">
-            {total} {total === 1 ? "match" : "matches"}
-          </span>
-        )}
+      {/* Right: latest match + recent moments (reference 1 right column) */}
+      <div className="order-3">
+        <LatestMatchPanel match={featured[0]} moments={s?.recent_moments ?? []} />
       </div>
 
-      {matches.isPending ? (
-        <Spinner label="Loading matches" />
-      ) : matches.isError ? (
-        <EmptyState icon={Film} title="Could not load the library">
-          {(matches.error as Error).message}. Check that the backend is running.
-        </EmptyState>
-      ) : items.length === 0 ? (
-        filtering ? (
-          <EmptyState icon={Search} title="No matches found">
-            Nothing matches these filters.
-          </EmptyState>
-        ) : (
-          <EmptyState icon={Film} title="No matches yet">
-            <p className="mb-4">Put a match video in the import folder, then import it to start your archive.</p>
-            <Link to="/import" className="font-medium text-accent hover:underline">
-              Import a match
-            </Link>
-          </EmptyState>
-        )
-      ) : (
-        <>
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {items.map((m) => (
-              <MatchCard key={m.id} match={m} />
-            ))}
+      {/* Centre: featured hero + all matches */}
+      <div className="order-1 min-w-0 space-y-6 md:col-span-2 xl:order-2 xl:col-span-1">
+        {featured.length > 0 && <FeaturedHero matches={featured} />}
+
+        <section aria-label="All matches" className="panel p-5">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <h2 className="mr-auto text-xl font-semibold">All matches</h2>
+            <label className="relative min-w-[200px] flex-1 sm:flex-none">
+              <span className="sr-only">Search matches</span>
+              <Search size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-subtle" aria-hidden />
+              <input
+                className="field rounded-full pl-9"
+                placeholder="Opponent, team, competition"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  if (params.get("q")) setParams({}, { replace: true });
+                }}
+              />
+            </label>
+            <label>
+              <span className="sr-only">Team</span>
+              <select className="field w-auto rounded-full" value={teamId ?? ""} onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : undefined)}>
+                <option value="">All teams</option>
+                {teams.data?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Season</span>
+              <select className="field w-auto rounded-full" value={seasonId ?? ""} onChange={(e) => setSeasonId(e.target.value ? Number(e.target.value) : undefined)}>
+                <option value="">All seasons</option>
+                {seasons.data?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+              </select>
+            </label>
+            {!matches.isPending && (
+              <span className="text-xs text-fg-muted">
+                {total} {total === 1 ? "match" : "matches"}
+              </span>
+            )}
           </div>
-          {matches.hasNextPage && (
-            <div className="mt-8 flex justify-center">
-              <Button onClick={() => void matches.fetchNextPage()} disabled={matches.isFetchingNextPage}>
-                {matches.isFetchingNextPage ? "Loading" : "Load more"}
-              </Button>
-            </div>
+
+          {matches.isPending ? (
+            <Spinner label="Loading matches" />
+          ) : matches.isError ? (
+            <p className="text-sm text-danger">Could not load the library: {(matches.error as Error).message}</p>
+          ) : items.length === 0 ? (
+            <p className="py-10 text-center text-sm text-fg-muted">{filtering ? "No matches found for these filters." : "No matches yet."}</p>
+          ) : (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+                {items.map((m) => <MatchCard key={m.id} match={m} />)}
+              </div>
+              {matches.hasNextPage && (
+                <div className="mt-6 flex justify-center">
+                  <Button onClick={() => void matches.fetchNextPage()} disabled={matches.isFetchingNextPage}>
+                    {matches.isFetchingNextPage ? "Loading" : "Load more"}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
-    </>
+        </section>
+      </div>
+    </div>
   );
 }

@@ -21,7 +21,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Runs in Docker Compose at http://127.0.0.1:8765 (localhost only, D-008).
 - Hudl: **not automated, by design** (Terms of Service 3.2). See
   [HUDL_INTEGRATION.md](../HUDL_INTEGRATION.md). Waiting on owner decision 002.
-- Tests: backend 52 (SQLite + Postgres), frontend 22. All green.
+- UI follows the owner's reference images: Library = reference 01, Match page =
+  reference 02 (docs/design/DESIGN.md). Player Hub will follow reference 03.
+- Tests: backend 55 (SQLite + Postgres), frontend 32. All green.
 
 ## How to run
 
@@ -30,7 +32,7 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
-1. **Phase 4, Player Hub** (the owner's headline screen 3): `preferences` table
+1. **Phase 4, Player Hub** (follow reference 03, see docs/design/DESIGN.md) (the owner's headline screen 3): `preferences` table
    with the primary player; `GET /api/players/{id}/moments` cross-match query
    (indexed on event_players.player_id); Player Hub page; Memories Timeline
    (season → month → match → event); viewed/unviewed + favourites tables.
@@ -54,6 +56,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
   and a `memories_test` database (TESTING.md).
 - Port 8080 is used by the owner's HomeBoard app; Football Memories uses 8765.
 - The inbox is mounted read-only in Docker on purpose (originals are never touched).
+- `.gitignore` rules for footage are anchored to the root (`/library/`): an
+  unanchored `library/` once hid `frontend/src/components/library/` from both git
+  and Tailwind's class scanner (classes silently missing). Anchor new ignore rules.
 - Starlette 1.10 warns that its TestClient's httpx use is deprecated; harmless.
 - shadcn/ui is in the brief but not installed yet; primitives live in
   `frontend/src/components/ui/`. Decide before building forms-heavy screens.

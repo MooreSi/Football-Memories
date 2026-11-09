@@ -87,3 +87,29 @@ class ConnectorOut(BaseModel):
     docs: str
     limitations: list[str]
     capabilities: dict[str, bool]
+
+
+class TagCount(BaseModel):
+    name: str
+    count: int
+
+
+class RecentMomentOut(BaseModel):
+    event_id: int
+    match_id: int
+    time_s: float
+    category: str
+    players: list[str]
+    team_name: str
+    opponent: str
+    match_date: date
+
+
+class StatsOut(BaseModel):
+    matches: int
+    moments: int
+    footage_seconds: float
+    teams: int
+    players: int
+    top_tags: list[TagCount]
+    recent_moments: list[RecentMomentOut]

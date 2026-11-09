@@ -50,6 +50,16 @@ connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
 
+### 2026-11-09 UI rebuilt from the owner's reference images (branch ui-reference-layouts)
+- Library now follows reference 01 (pill nav, tiles, hero carousel, Watch now panel); Match page
+  follows reference 02 (tag rail, clip bar, chips, pinned timeline). New `/api/stats`.
+- backend: 55 passed on SQLite and Postgres; ruff, mypy clean
+- frontend: 32 passed (EventPanel tests replaced by MomentsRail/MomentTimeline tests covering the
+  same behaviours plus counts, All moments and pin placement); typecheck and build OK
+- found and fixed: unanchored `library/` in .gitignore hid the new components from git and Tailwind
+- browser: desktop 1600px, tablet 768px, phone 375px (no horizontal scroll); pin click at 1:04
+  started playback at 0:56; `?moment=` deep link plays that moment
+
 ### 2026-11-09 vertical slice complete (branch phase1-foundation)
 - backend `uv run pytest`: 52 passed (SQLite) and 52 passed (Postgres 17)
 - `ruff check`, `ruff format --check`, `mypy app` (strict): clean; `alembic check`: no drift

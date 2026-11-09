@@ -87,3 +87,4 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | GET | `/api/media/{id}/stream` | the video, with HTTP Range (seeking) |
 | GET | `/api/media/{id}/thumbnail` | JPEG thumbnail |
 | GET | `/api/teams`, `/api/seasons` | filter options |
+| GET | `/api/stats` | overview counts, top tags, recent moments (Library tiles) |

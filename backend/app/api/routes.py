@@ -22,6 +22,9 @@ from app.schemas import (
     MatchSummary,
     MediaOut,
     NamedItem,
+    RecentMomentOut,
+    StatsOut,
+    TagCount,
 )
 from app.services import library
 from app.services.importer import (
@@ -213,3 +216,29 @@ def teams(db: Db) -> list[NamedItem]:
 @router.get("/seasons", response_model=list[NamedItem])
 def seasons(db: Db) -> list[NamedItem]:
     return [NamedItem(id=s.id, name=s.label) for s in library.list_seasons(db)]
+
+
+@router.get("/stats", response_model=StatsOut)
+def stats(db: Db) -> StatsOut:
+    st = library.stats(db)
+    return StatsOut(
+        matches=st.matches,
+        moments=st.moments,
+        footage_seconds=st.footage_seconds,
+        teams=st.teams,
+        players=st.players,
+        top_tags=[TagCount(name=n, count=c) for n, c in st.top_tags],
+        recent_moments=[
+            RecentMomentOut(
+                event_id=r.event.id,
+                match_id=r.match.id,
+                time_s=r.event.time_s,
+                category=r.event.tag.name,
+                players=sorted(p.display_name for p in r.event.players),
+                team_name=r.match.team.name,
+                opponent=r.match.opponent,
+                match_date=r.match.match_date,
+            )
+            for r in st.recent
+        ],
+    )
