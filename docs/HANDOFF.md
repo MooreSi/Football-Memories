@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-09)
 
-- **`main` is current** (phase 1-2 slice and the reference-image UI merged 2026-11-09). Start new work on a fresh
+- **`main` is current** (phase 1-2 slice, reference-image UI and phase 4 Player Hub merged 2026-11-09). Start new work on a fresh
   branch from `main`, e.g. `phase4-player-hub`.
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
   inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
@@ -23,7 +23,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   [HUDL_INTEGRATION.md](../HUDL_INTEGRATION.md). Waiting on owner decision 002.
 - UI follows the owner's reference images: Library = reference 01, Match page =
   reference 02, Player Hub = reference 03 (docs/design/DESIGN.md).
-- Phase 4 Player Hub built on branch `phase4-player-hub`: primary player (kept
+- Phase 4 Player Hub merged to `main`: primary player (kept
   across restarts), profile, favourites, watched state, Memories Timeline.
 - Tests: backend 73 (SQLite + Postgres), frontend 44. All green.
 
