@@ -26,7 +26,7 @@ from app.schemas import (
     StatsOut,
     TagCount,
 )
-from app.services import library
+from app.services import library, players
 from app.services.importer import (
     VIDEO_EXTENSIONS,
     DuplicateMedia,
@@ -146,6 +146,7 @@ def match_detail(match_id: int, db: Db, settings: Cfg) -> MatchDetail:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="match not found")
     media = library.primary_media(m)
     summary = _summary(m, media, len(m.events), settings)
+    marks = players.marks_for(db, [e.id for e in m.events])
     media_out = None
     if media is not None:
         media_out = MediaOut(
@@ -173,6 +174,8 @@ def match_detail(match_id: int, db: Db, settings: Cfg) -> MatchDetail:
                 category=e.tag.name,
                 players=sorted(p.display_name for p in e.players),
                 note=e.note,
+                favourite=bool(marks.get(e.id) and marks[e.id].favourite),
+                viewed=bool(marks.get(e.id) and marks[e.id].viewed_at),
             )
             for e in m.events
         ],

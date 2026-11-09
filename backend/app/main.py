@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.api.player_routes import router as player_router
 from app.api.routes import router
 from app.config import Settings
 from app.db import make_session_factory
@@ -31,4 +32,5 @@ def create_app(
         allow_headers=["Content-Type", "Range"],
     )
     app.include_router(router)
+    app.include_router(player_router)
     return app

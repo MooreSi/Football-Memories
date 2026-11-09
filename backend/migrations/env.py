@@ -1,4 +1,5 @@
 """Alembic environment. The database URL comes from FM_DATABASE_URL (app.config)."""
+
 from logging.config import fileConfig
 
 from alembic import context

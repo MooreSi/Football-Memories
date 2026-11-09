@@ -67,6 +67,8 @@ class EventOut(BaseModel):
     category: str
     players: list[str]
     note: str
+    favourite: bool = False
+    viewed: bool = False
 
 
 class MatchDetail(MatchSummary):
@@ -113,3 +115,98 @@ class StatsOut(BaseModel):
     players: int
     top_tags: list[TagCount]
     recent_moments: list[RecentMomentOut]
+
+
+class PlayerListItem(BaseModel):
+    id: int
+    display_name: str
+    shirt_number: str | None
+    position: str | None
+    moments: int
+    matches: int
+
+
+class PlayerPatch(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    shirt_number: str | None = Field(default=None, max_length=10)
+    position: str | None = Field(default=None, max_length=40)
+
+
+class PlayerTotals(BaseModel):
+    matches: int
+    moments: int
+    unwatched: int
+    favourites: int
+
+
+class TeamSeasonOut(BaseModel):
+    team_name: str
+    season_label: str
+    age_group: str | None
+    matches: int
+
+
+class MatchCountOut(BaseModel):
+    match_id: int
+    match_date: date
+    opponent: str
+    moments: int
+
+
+class TeammateOut(BaseModel):
+    id: int
+    display_name: str
+    shared_moments: int
+
+
+class PlayerProfileOut(BaseModel):
+    id: int
+    display_name: str
+    shirt_number: str | None
+    position: str | None
+    is_primary: bool
+    totals: PlayerTotals
+    categories: list[TagCount]
+    teams: list[TeamSeasonOut]
+    per_match: list[MatchCountOut]
+    teammates: list[TeammateOut]
+    first_match_date: date | None
+    latest_match_date: date | None
+
+
+class PlayerMomentOut(BaseModel):
+    event_id: int
+    match_id: int
+    time_s: float
+    duration_s: float
+    category: str
+    players: list[str]
+    note: str
+    favourite: bool
+    viewed: bool
+    team_name: str
+    opponent: str
+    match_date: date
+    season_label: str
+    age_group: str | None
+    media_id: int | None
+    stream_url: str | None
+    thumbnail_url: str | None
+    match_duration_s: float | None
+
+
+class PlayerMomentPage(BaseModel):
+    total: int
+    items: list[PlayerMomentOut]
+
+
+class Preferences(BaseModel):
+    primary_player_id: int | None
+
+
+class PrimaryPlayerIn(BaseModel):
+    player_id: int | None
+
+
+class FavouriteIn(BaseModel):
+    favourite: bool

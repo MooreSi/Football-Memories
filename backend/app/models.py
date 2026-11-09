@@ -9,6 +9,7 @@ from datetime import UTC, date, datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -65,6 +66,7 @@ class Player(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     display_name: Mapped[str] = mapped_column(String(200))
     shirt_number: Mapped[str | None] = mapped_column(String(10))
+    position: Mapped[str | None] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
@@ -161,3 +163,25 @@ class Event(Base):
     match: Mapped[Match] = relationship(back_populates="events")
     tag: Mapped[TagDefinition] = relationship()
     players: Mapped[list[Player]] = relationship(secondary=event_players)
+
+
+class EventMark(Base):
+    """Per-moment personal state: favourite and when it was first watched."""
+
+    __tablename__ = "event_marks"
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), primary_key=True
+    )
+    favourite: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class Preference(Base):
+    """Application preferences that must survive restarts (e.g. the primary player)."""
+
+    __tablename__ = "preferences"
+
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    value: Mapped[str | None] = mapped_column(Text)
