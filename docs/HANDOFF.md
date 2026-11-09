@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-09)
 
-- **`main` is current** (phase 1-2 slice, reference-image UI, phase 4 Player Hub and player photos merged 2026-11-09). Start new work on a fresh
+- **`main` is current** (phase 1-2 slice, reference-image UI, phase 4 Player Hub, player photos and Clip Explorer merged 2026-11-09). Start new work on a fresh
   branch from `main`, e.g. `phase4-player-hub`.
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
   inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
