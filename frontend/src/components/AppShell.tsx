@@ -1,4 +1,4 @@
-import { Clapperboard, FolderInput, Library, PlugZap, Search, UserRound } from "lucide-react";
+import { Clapperboard, Film, FolderInput, Library, PlugZap, Search, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
@@ -6,6 +6,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
 const NAV = [
   { to: "/", label: "Library", icon: Library, end: true },
+  { to: "/clips", label: "Clips", icon: Film, end: false },
   { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },
   { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false },
@@ -24,7 +25,7 @@ function Brand() {
 
 function PillNav() {
   return (
-    <nav aria-label="Main" className="flex items-center gap-2">
+    <nav aria-label="Main" className="flex items-center gap-1.5 sm:gap-2">
       {NAV.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -33,14 +34,14 @@ function PillNav() {
           title={label}
           className={({ isActive }) =>
             isActive
-              ? "flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8]/70 to-accent/40 px-5 text-sm font-medium text-fg ring-1 ring-accent/50 shadow-[0_0_28px_-6px_rgb(34_211_238/0.75)]"
-              : "grid size-11 place-items-center rounded-full bg-ink-800/80 text-fg-muted ring-1 ring-line transition hover:text-fg hover:ring-accent/40"
+              ? "flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8]/70 to-accent/40 px-3 text-sm sm:h-11 sm:px-5 font-medium text-fg ring-1 ring-accent/50 shadow-[0_0_28px_-6px_rgb(34_211_238/0.75)]"
+              : "grid size-10 place-items-center rounded-full bg-ink-800/80 sm:size-11 text-fg-muted ring-1 ring-line transition hover:text-fg hover:ring-accent/40"
           }
         >
           {({ isActive }) => (
             <>
               <Icon size={18} aria-hidden />
-              {isActive ? <span>{label}</span> : <span className="sr-only">{label}</span>}
+              {isActive ? <span className="whitespace-nowrap">{label}</span> : <span className="sr-only">{label}</span>}
             </>
           )}
         </NavLink>

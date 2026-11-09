@@ -55,12 +55,31 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Profile photo | done | python-multipart approved (D-009); re-encoded 512x512 JPEG, metadata stripped |
 | Primary player on the dashboard | done | "Your player" card on the Library |
 
+## Clip Explorer (brief section 10)
+
+| Task | Status | Notes |
+|---|---|---|
+| Cross-match search with all brief filters | done | `/api/moments` |
+| Results with thumbnail, player, type, match, date, start/end, duration, watched, offline | done | per-moment frame thumbnails |
+| Play one / play all / shuffle, autoplay across matches, loop, speeds | done | QueuePlayer |
+| Reorder (drag + buttons), save playlist, open/rename/reorder/delete playlists | done | rename is API-only for now |
+| Favourite from results | done | |
+| Notes, custom local tags, export, compilation | todo | phases 5-6 (clip editor, jobs) |
+
 ## Phases 3, 5-7
 
 Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Clip Explorer (branch clip-explorer)
+- backend: 109 passed on SQLite and Postgres; ruff, mypy clean; migration e801158e8984, no drift
+- frontend: 60 passed; typecheck and build OK
+- browser 1600px: rail matches reference 02; Save filter -> 6; Play all; autoplay crossed from the City
+  video (2:20 save, started 2:12) to the Rovers video (0:12 save, started 0:04); saved "Best saves 2026"
+  (API shows 6 items in queue order, 78s); 375px: fixed a 4px top-nav overflow (5 pills), no overflow now
+- Not checked: playlist delete confirm dialog in the browser (API-tested), Safari/iPad
 
 ### 2026-11-09 Player photos (branch player-photos)
 - backend: 85 passed on SQLite and Postgres; ruff, mypy clean; migration 3ea11db09197, alembic check no drift

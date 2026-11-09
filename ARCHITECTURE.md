@@ -57,8 +57,10 @@ Design direction and references: [docs/design/DESIGN.md](docs/design/DESIGN.md).
 | `event_players` | event ↔ player | PK (event, player); index player |
 | `event_marks` | favourite + first-viewed time per moment | PK event (cascade); index favourite |
 | `preferences` | key/value app preferences (`primary_player_id`) | PK key |
+| `playlists` | a saved, named list | |
+| `playlist_items` | moment + position in a playlist | unique (playlist, event); index (playlist, position); cascades from both |
 
-Planned (brief section 14): playlists, playlist_items, playback_history, download/sync jobs, notifications, settings,
+Planned (brief section 14): playback_history, download/sync jobs, notifications, settings,
 source media records. Each arrives with its migration and tests.
 
 ## Storage layout
@@ -67,6 +69,7 @@ source media records. Each arrives with its migration and tests.
 <ARCHIVE_ROOT>/FootballMemories/
   Matches/<season>/<team>/<date> vs <opponent>/<original file name>
   Thumbnails/<sha256[:2]>/<sha256>.jpg
+  Thumbnails/moments/<media sha[:16]>-<event id>.jpg   (per-moment frames, made on first view)
   Players/<player id>/photo-<hash>.jpg   (profile photo, 512x512, metadata stripped)
   Clips/  Compilations/                  (created when those features land)
 ```
@@ -95,5 +98,10 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | GET / PATCH | `/api/players/{id}` | profile: totals, tag counts, team/season history, per-match series, co-tagged players; edit name/shirt/position |
 | GET | `/api/players/{id}/moments` | cross-match moments, newest match first; filters `category`, `favourites`, `unwatched` |
 | PUT / DELETE / GET | `/api/players/{id}/photo` | upload (multipart, re-encoded), remove, serve the profile photo |
+| GET | `/api/moments` | Clip Explorer search across all matches: multi-value team/season/match/player (any/all)/type filters, date range, favourites, unwatched, text; newest/oldest; paginated |
+| GET | `/api/moments/facets` | filter options with counts |
+| GET | `/api/events/{id}/thumbnail` | a frame at the moment itself, cached under `Thumbnails/moments/` |
+| GET / POST | `/api/playlists` | saved playlists (ordered moments) |
+| GET / PUT / DELETE | `/api/playlists/{id}` | open, rename/reorder, delete (never deletes moments or files) |
 | PUT | `/api/events/{id}/favourite` | favourite on/off (idempotent) |
 | POST | `/api/events/{id}/viewed` | mark a moment watched |

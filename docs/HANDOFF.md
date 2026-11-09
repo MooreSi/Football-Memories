@@ -27,7 +27,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   across restarts), profile, favourites, watched state, Memories Timeline.
 - Profile photos: upload/replace/remove in the hub's Edit panel; re-encoded and
   metadata-stripped (D-009).
-- Tests: backend 85 (SQLite + Postgres), frontend 49. All green.
+- Clip Explorer (`/clips`, reference 02): search moments across all matches,
+  queue player that crosses matches, saved playlists.
+- Tests: backend 109 (SQLite + Postgres), frontend 60. All green.
 
 ## How to run
 
@@ -40,8 +42,8 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
    "season highlights" shortcut once playlists exist.
 2. Settings page: pre/post buffers (now fixed 8s/5s), archive/inbox health
    (exists, writable, free space).
-3. Clip Explorer (brief section 10) across matches, reusing EventPanel filters.
-4. Playwright e2e for import → play → filter.
+3. Clip Explorer leftovers: notes and custom local tags on moments, export.
+4. Playwright e2e for import → play → filter → playlist.
 5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
    backup/restore, storage health.
 

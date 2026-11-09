@@ -1,6 +1,6 @@
 # 050: Clip Explorer and saved playlists
 
-**Status:** Building
+**Status:** Shipped 2026-11-09 (branch clip-explorer)
 **Brief:** section 10. **Design:** reference 02 (filter rail with counts, PLAYLISTS
 panel bottom-left with "+", big player, clip bar) and 01 styling for cards.
 **Sensitive:** no (read-only over the archive; playlists are local rows).

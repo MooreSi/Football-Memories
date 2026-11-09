@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { EmptyState } from "./components/ui/EmptyState";
+import { ClipExplorerPage } from "./pages/ClipExplorerPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { ImportPage } from "./pages/ImportPage";
 import { LibraryPage } from "./pages/LibraryPage";
@@ -15,6 +16,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route index element={<LibraryPage />} />
         <Route path="matches/:id" element={<MatchDetailPage />} />
+        <Route path="clips" element={<ClipExplorerPage />} />
         <Route path="player" element={<PlayerPage />} />
         <Route path="player/choose" element={<PlayerPage choose />} />
         <Route path="player/:id" element={<PlayerHubPage />} />
