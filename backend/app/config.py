@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     archive_root: Path = Path("./data/archive")
     import_root: Path = Path("./data/inbox")
     log_level: str = "INFO"
+    render_worker: bool = True  # background highlight-reel renderer (spec 080)
     auto_backup: bool = True  # one automatic backup per day while running (spec 070)
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
 

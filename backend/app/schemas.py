@@ -344,3 +344,54 @@ class RelinkOut(BaseModel):
 class RebuildOut(BaseModel):
     rebuilt: int
     failed: int
+
+
+class ReelItemIn(BaseModel):
+    event_id: int
+    pre_s: float | None = Field(default=None, ge=0, le=120)
+    post_s: float | None = Field(default=None, ge=0, le=120)
+
+
+class ReelIn(BaseModel):
+    name: str = Field(max_length=200)
+    items: list[ReelItemIn] = Field(default_factory=list, max_length=500)
+
+
+class ReelPatch(BaseModel):
+    name: str | None = Field(default=None, max_length=200)
+    items: list[ReelItemIn] | None = Field(default=None, max_length=500)
+
+
+class ReelItemOut(BaseModel):
+    id: int
+    position: int
+    pre_s: float | None
+    post_s: float | None
+    start_s: float
+    end_s: float
+    moment: MomentOut
+
+
+class ReelSummary(BaseModel):
+    id: int
+    name: str
+    status: str
+    progress: float
+    error: str | None
+    item_count: int
+    planned_seconds: float
+    output_relpath: str | None
+    output_bytes: int | None
+    output_duration_s: float | None
+    output_width: int | None
+    output_height: int | None
+    video_url: str | None
+    thumbnail_url: str | None
+    updated_at: datetime
+    rendered_at: datetime | None
+
+
+class ReelDetail(ReelSummary):
+    has_opening_card: bool
+    has_closing_card: bool
+    items: list[ReelItemOut]

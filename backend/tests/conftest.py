@@ -61,6 +61,7 @@ def settings(tmp_path: Path) -> Settings:
         import_root=inbox,
         database_url=os.environ.get("TEST_DATABASE_URL", "sqlite://"),
         auto_backup=False,
+        render_worker=False,
     )
 
 
