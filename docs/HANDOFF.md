@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-09)
 
+- **Current research branch: `codex/hudl-access-research`**, based on `origin/main`.
+  Normal Hudl sign-in starts at `https://www.hudl.com/login`; updated research
+  documents role-dependent match downloads, tag filters and possible exports.
+  No application code changed; Hudl remains disabled. Owner's permission for
+  normal website login is recorded in decision 002; role/export capabilities
+  and automation permission remain unresolved. Highlight-reel work remains on
+  the separate `highlight-reels` branch (not included in this research branch).
 - **`main` is current** (phase 1-2 slice, reference-image UI, phase 4 Player Hub, player photos, Clip Explorer, Settings and backup/restore merged 2026-11-09). Start new work on a fresh
   branch from `main`, e.g. `phase4-player-hub`.
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
@@ -55,7 +62,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 ## Blocked on / waiting for the owner
 
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
-  Hudl role, tag export availability, whether to ask Hudl for permission.
+  Hudl role/product, visible download/export controls, and whether Hudl permits
+  app automation in addition to normal website login. Before implementing tag
+  conversion, obtain a scrubbed export and verify video-relative timing.
 
 ## Gotchas
 

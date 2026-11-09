@@ -10,8 +10,49 @@ and products change.
 | Official API for core video? | **None public.** Hudl's public developer surfaces are its data products (Wyscout Data API, StatsBomb, raw X/Y tracking via Hudl Insight). Core Hudl video integrations are partner/sales-mediated. | [apis.io Hudl listing](https://apis.io/providers/hudl/), [Hudl raw XY data API blog](https://hudl.com/blog/hudl-raw-xy-data-release-api) |
 | Is automating the website (browser login + session reuse + scraping) permitted? | **No.** User Terms 3.2(8) prohibit using "any automated means, including bots, scrapers, crawlers" to access or extract data; 3.2(9) prohibits use "in any way not expressly permitted". Breach can mean account suspension. | [Hudl Terms of Service](https://www.hudl.com/terms) |
 | What can a parent account do? | View game replays, filterable clips and their athlete's highlights; share highlights. Cannot see playlists, scout film or comments; cannot record or manage video. No download is mentioned. | [Hudl for Parents](https://www.hudl.com/support/club-volleyball/guides/hudl-for-parents) |
-| Who can download video? | Hudl support content indicates administrators and coaches. The primary article could not be fetched (it redirected), so **confirm in the account itself**. | search summary of hudl.com support pages; unverified |
-| Tag timestamps / player associations via supported means? | Not found. Whether a coach-level tag or breakdown export (CSV/XML) exists could not be verified; Hudl's support site did not render to automated fetches. | unverified |
+| Who can download video? | Hudl's current team-library guidance says coaches and administrators can download; athletes cannot. Actual account/product options still need checking. | [Download Video from Your Library](https://support.hudl.com/s/article/download-video-new-hudl?language=en_US) |
+| Tag timestamps / player associations via supported means? | Tag filters and athlete-linked reports exist. Classic American Football supports breakdown downloads; Hudl has documented Assist XML exports for soccer/basketball. Neither proves that this owner's account has an export, or that exported data includes video-relative timestamps and player identity. | See the product-specific research below. |
+
+## Normal sign-in and reusable URL (2026-11-09)
+
+Use **[https://www.hudl.com/login](https://www.hudl.com/login)** as the public
+entry point for each user's own credentials. A read-only public request
+confirmed that it redirects to Hudl's identity authorization flow. The research
+fetcher could not render the final identity page; successful sign-in was not tested.
+
+The owner supplied an `identity.hudl.com/u/login/identifier` URL with a `state`
+query parameter. That is a transaction-specific identity URL, not a reusable
+app configuration. Do not copy the full URL into source, settings, logs or
+fixtures, and do not simply strip its query string: start at Hudl's public
+login entry point so Hudl creates a fresh authorization transaction. The value
+provided in chat has deliberately not been retained here.
+
+Opening that page signs the user into Hudl in their browser. It does not give
+Football Memories an authenticated session or a supported integration. The
+owner has confirmed permission for normal username/password website access;
+permission from Hudl for app automation has not been established. The existing
+disabled-connector policy therefore remains in force pending clarification.
+
+## Match and tagged-moment research (2026-11-09)
+
+These are distinct Hudl products and account capabilities, not interchangeable
+endpoints or a verified procedure for the owner's account:
+
+| Surface | Documented read-only route | Limit / missing evidence |
+|---|---|---|
+| Team video library | Library → select video → three-dot menu → Download. | Coach/admin access; a match page URL alone is not evidence of a downloadable file. [Source](https://support.hudl.com/s/article/download-video-new-hudl?language=en_US) |
+| College/pro soccer tags | Video → open match → filter tags; navigate among filtered moments. | Guide is specifically for college/pro soccer, lacrosse and basketball. No public extraction endpoint or export schema is documented here. [Source](https://support.hudl.com/s/article/filter-tags-in-video?language=en_US) |
+| Stats reports | Reports → Stats → choose games and athletes → underlined statistic opens associated video. | Documents player-linked clips and a CSV export, but does not establish that CSV contains individual event timestamps. Aggregated stats must not be imported as moments. [Source](https://support.hudl.com/s/article/stats-reports-hudl-v3?language=en_US) |
+| Classic breakdown download | Select video in Manage Library; include breakdown data in the download. | Guidance is for American Football; do not assume it describes this soccer account. [Source](https://support.hudl.com/s/article/download-multiple-videos-hudl-classic?language=en_US&topic=Watch_and_Manage_Video_Classic) |
+| Assist / Sportscode | Hudl documented soccer/basketball Assist breakdowns as downloadable Sportscode XML, with timelines under Manage Data. | This is an older product announcement, not proof of current account entitlement or an exact export schema. [Source](https://www.hudl.com/blog/hudl-and-sportscode-integration-improvements) |
+
+Next evidence needed: account role/product, whether the match has Download and
+Manage Data/export controls, and a scrubbed sample export. A converter needs
+to establish video-relative start/end times (including half offsets), event
+categories, player associations and stable event identity. Keep clips as ranges
+over the full imported match (D-004); do not duplicate whole matches per player.
+Actual download and tag extraction remain unimplemented and unverified against
+the real account. No login, cookie capture or authenticated match request was made.
 
 ## Consequence for the app
 

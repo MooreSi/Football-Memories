@@ -86,6 +86,15 @@ connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
 
+### 2026-11-09 Hudl normal-login and export research (branch codex/hudl-access-research)
+- Docs-only checkpoint: reusable public login entry point redirects to Hudl
+  identity authorization; final identity page and successful sign-in not tested.
+- Public Hudl sources checked for role-dependent downloads, athlete-linked
+  reports, tag filters and product-specific breakdown/XML exports. Exact owner
+  account capabilities and export schema remain unknown; connector unchanged.
+- Local Markdown links checked; no code/test changes, so runtime suites not run
+  (docs-only procedure in `/commit`). No authenticated Hudl access or downloads.
+
 ### 2026-11-09 Backup, restore, integrity (branch backup-restore)
 - backend: 149 passed on SQLite and Postgres (round trip identical, atomic failure, confirm, pre-restore undo,
   schema mismatch, fresh ids after restore, retention, auto-backup on startup); ruff, mypy clean; no schema change

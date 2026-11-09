@@ -37,3 +37,15 @@ same regardless of how footage arrives.
   `HudlConnector` against it and switch its capabilities on.
 
 ANSWER:
+
+2026-11-09: Owner confirmed permission to access Hudl through the normal
+username/password login, and requested reusable login, match downloads and
+player/tag cataloguing. Use the public entry point `https://www.hudl.com/login`;
+do not retain the transaction-specific identity URL supplied in chat.
+
+Still awaiting: role/product, visible match download/data-export options, and
+whether permission covers this app automating access. Normal website access
+does not by itself settle the existing automation restriction. Research and
+product-specific export limitations are recorded in
+[HUDL_INTEGRATION.md](../../HUDL_INTEGRATION.md). No real-account login or
+download has been attempted; the connector remains disabled.
