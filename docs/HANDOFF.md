@@ -13,7 +13,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-09)
 
-- Branch: **`phase1-foundation`**, pushed. Not merged to `main` yet (owner decides).
+- **`main` is current** (phase 1-2 slice merged 2026-11-09). Start new work on a fresh
+  branch from `main`, e.g. `phase4-player-hub`.
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
   inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
   Match page with player, event markers, filters (AND/OR), "play moments only".
@@ -44,7 +45,6 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
   Hudl role, tag export availability, whether to ask Hudl for permission.
-- Merge `phase1-foundation` into `main`.
 
 ## Gotchas
 
