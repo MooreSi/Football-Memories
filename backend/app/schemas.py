@@ -300,3 +300,47 @@ class ArchiveSummaryOut(BaseModel):
 class StorageHealthOut(BaseModel):
     folders: list[FolderHealthOut]
     archive: ArchiveSummaryOut
+
+
+class BackupOut(BaseModel):
+    name: str
+    kind: str
+    created_at: datetime
+    size_bytes: int
+    matches: int
+    moments: int
+
+
+class RestoreIn(BaseModel):
+    confirm: str
+
+
+class RestoreOut(BaseModel):
+    restored: str
+    safety_backup: str
+
+
+class VerifyResultOut(BaseModel):
+    media_id: int
+    match_id: int
+    opponent: str
+    result: str
+
+
+class VerifyStateOut(BaseModel):
+    state: str
+    checked: int
+    total: int
+    started_at: datetime | None
+    finished_at: datetime | None
+    results: list[VerifyResultOut]
+
+
+class RelinkOut(BaseModel):
+    relinked: int
+    still_missing: int
+
+
+class RebuildOut(BaseModel):
+    rebuilt: int
+    failed: int
