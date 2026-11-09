@@ -1,6 +1,7 @@
 import { Heart, ListPlus, Play } from "lucide-react";
 import type { MomentItem } from "../../api/types";
 import { formatClock, formatDate } from "../../lib/format";
+import { useClipBuffers } from "../../lib/useClipBuffers";
 import { windowFor } from "./QueuePlayer";
 
 export function ClipCard({ m, onPlay, onQueue, onFavourite, queued }: {
@@ -10,7 +11,7 @@ export function ClipCard({ m, onPlay, onQueue, onFavourite, queued }: {
   onFavourite: (fav: boolean) => void;
   queued: boolean;
 }) {
-  const w = windowFor(m);
+  const w = windowFor(m, useClipBuffers());
   return (
     <article aria-label={`${m.category} vs ${m.opponent} at ${formatClock(m.time_s)}`} className="tile group overflow-hidden">
       <button type="button" onClick={onPlay} className="relative block aspect-video w-full overflow-hidden bg-ink-800" aria-label={`Play ${m.category} at ${formatClock(m.time_s)}`}>

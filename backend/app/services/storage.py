@@ -58,7 +58,7 @@ def folder_health(path: Path, role: str, *, needs_write: bool) -> FolderHealth:
     label = "archive folder" if role == "archive" else "import folder"
     h = FolderHealth(
         role=role,
-        path=str(path),
+        path=str(path.resolve()),
         exists=path.is_dir(),
         readable=False,
         writable=False,

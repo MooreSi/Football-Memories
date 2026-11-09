@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import type { PlayerMoment } from "../../api/types";
-import { clipWindow, DEFAULT_BUFFERS } from "../../lib/events";
+import { clipWindow } from "../../lib/events";
+import { useClipBuffers } from "../../lib/useClipBuffers";
 import { formatClock, formatDate } from "../../lib/format";
 
 /** Reference 03's phone feed: the player's moments, one at a time, played from the local match file. */
@@ -13,8 +14,9 @@ export function MomentsFeed({ moments, shirt }: { moments: PlayerMoment[]; shirt
   const video = useRef<HTMLVideoElement>(null);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const buffers = useClipBuffers();
   const m = moments[Math.min(i, moments.length - 1)];
-  const win = m ? clipWindow({ id: m.event_id, ...m }, DEFAULT_BUFFERS, m.match_duration_s ?? Number.MAX_SAFE_INTEGER) : null;
+  const win = m ? clipWindow({ id: m.event_id, ...m }, buffers, m.match_duration_s ?? Number.MAX_SAFE_INTEGER) : null;
 
   const favourite = useMutation({
     mutationFn: (fav: boolean) => api.setFavourite(m.event_id, fav),

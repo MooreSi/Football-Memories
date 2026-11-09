@@ -16,12 +16,12 @@ const LABELS: Record<string, string> = {
   import_files: "Import files",
 };
 
-export function ConnectionsPage() {
+export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
   const q = useQuery({ queryKey: ["connectors"], queryFn: api.connectors });
 
   return (
     <>
-      <PageHeader eyebrow="Settings" title="Connections" />
+      {!embedded && <PageHeader eyebrow="Settings" title="Connections" />}
       {q.isPending ? (
         <Spinner />
       ) : q.isError ? (

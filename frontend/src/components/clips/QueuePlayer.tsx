@@ -3,12 +3,13 @@ import { Maximize, Pause, Play, Repeat, Repeat1, SkipBack, SkipForward } from "l
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import type { MomentItem } from "../../api/types";
-import { clipWindow, DEFAULT_BUFFERS } from "../../lib/events";
+import { type Buffers, clipWindow } from "../../lib/events";
+import { useClipBuffers } from "../../lib/useClipBuffers";
 import { formatClock, formatDate } from "../../lib/format";
 import { SPEEDS } from "../VideoPlayer";
 
-export function windowFor(m: MomentItem) {
-  return clipWindow({ id: m.event_id, ...m }, DEFAULT_BUFFERS, m.match_duration_s ?? Number.MAX_SAFE_INTEGER);
+export function windowFor(m: MomentItem, buffers: Buffers) {
+  return clipWindow({ id: m.event_id, ...m }, buffers, m.match_duration_s ?? Number.MAX_SAFE_INTEGER);
 }
 
 interface Props {
@@ -29,8 +30,9 @@ export function QueuePlayer({ queue, index, onIndex, playToken }: Props) {
   const [loop, setLoop] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [t, setT] = useState(0);
+  const buffers = useClipBuffers();
   const m = queue[index];
-  const win = m ? windowFor(m) : null;
+  const win = m ? windowFor(m, buffers) : null;
 
   // Load the current moment: switch source if needed, seek to the window start, play if asked.
   useEffect(() => {

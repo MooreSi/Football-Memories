@@ -2,7 +2,10 @@ import { Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { EmptyState } from "./components/ui/EmptyState";
 import { ClipExplorerPage } from "./pages/ClipExplorerPage";
+import { PlaybackSettings } from "./components/settings/PlaybackSettings";
+import { StorageSettings } from "./components/settings/StorageSettings";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
+import { SettingsLayout } from "./pages/SettingsPage";
 import { ImportPage } from "./pages/ImportPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { MatchDetailPage } from "./pages/MatchDetailPage";
@@ -21,7 +24,11 @@ export function App() {
         <Route path="player/choose" element={<PlayerPage choose />} />
         <Route path="player/:id" element={<PlayerHubPage />} />
         <Route path="import" element={<ImportPage />} />
-        <Route path="settings/connections" element={<ConnectionsPage />} />
+        <Route path="settings" element={<SettingsLayout />}>
+          <Route index element={<PlaybackSettings />} />
+          <Route path="storage" element={<StorageSettings />} />
+          <Route path="connections" element={<ConnectionsPage embedded />} />
+        </Route>
         <Route path="*" element={<EmptyState icon={Compass} title="Page not found" />} />
       </Route>
     </Routes>

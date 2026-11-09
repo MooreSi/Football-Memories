@@ -29,7 +29,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   metadata-stripped (D-009).
 - Clip Explorer (`/clips`, reference 02): search moments across all matches,
   queue player that crosses matches, saved playlists.
-- Tests: backend 109 (SQLite + Postgres), frontend 60. All green.
+- Settings (`/settings`): clip timing used everywhere moments play; storage
+  health with free space and missing-file detection.
+- Tests: backend 122 (SQLite + Postgres), frontend 66. All green.
+- **Owner's Mac disk is 98% full (23 GB free of 926 GB on 2026-11-09).** Full
+  matches are several GB each; the Storage tab warns about this.
 
 ## How to run
 
@@ -40,8 +44,7 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
-2. Settings page: pre/post buffers (now fixed 8s/5s), archive/inbox health
-   (exists, writable, free space).
+2. Per-clip timing override (brief section 9) and playback history on the server.
 3. Clip Explorer leftovers: notes and custom local tags on moments, export.
 4. Playwright e2e for import → play → filter → playlist.
 5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,

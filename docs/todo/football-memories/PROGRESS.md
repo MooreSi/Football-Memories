@@ -38,7 +38,7 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 |---|---|---|
 | Grid/list toggle, sort options, multi-select, bulk ops | todo | brief section 7 |
 | Watched/unwatched, favourite-player counts on cards | todo | needs phase 4 tables |
-| Configurable pre/post buffers in Settings | todo | fixed 8s/5s today (src/lib/events.ts) |
+| Configurable pre/post buffers in Settings | done | Settings > Playback; per-clip override still todo |
 | Resume position stored server-side | todo | browser localStorage today |
 | Vidstack evaluation | todo | D-006 |
 | Playwright e2e for the slice | todo | checked by hand, see log |
@@ -72,6 +72,12 @@ Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Settings and storage health (branch settings-storage)
+- backend: 122 passed on SQLite and Postgres (disk usage pinned in tests; a separate test covers low space); ruff, mypy clean; no schema change
+- frontend: 66 passed; typecheck and build OK
+- browser: Storage tab on real folders warned "Only 23.2 GB free (3% of the disk)"; set 10s before the tag ->
+  match page started the 1:04 save at 0:54 and its hint said 10s; dev setting restored to 8s afterwards
 
 ### 2026-11-09 Clip Explorer (branch clip-explorer)
 - backend: 109 passed on SQLite and Postgres; ruff, mypy clean; migration e801158e8984, no drift

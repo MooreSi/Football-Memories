@@ -1,6 +1,6 @@
 # 060: Settings: clip timing and storage health
 
-**Status:** Building
+**Status:** Shipped 2026-11-09 (branch settings-storage)
 **Brief:** section 9 (configurable pre/post buffer), 13 (download location checks:
 existence, write permission, free space, accessibility), 22 (missing-file
 detection, storage health). **Design:** reference 01 tiles and panels.

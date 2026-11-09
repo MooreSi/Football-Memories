@@ -103,5 +103,7 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | GET | `/api/events/{id}/thumbnail` | a frame at the moment itself, cached under `Thumbnails/moments/` |
 | GET / POST | `/api/playlists` | saved playlists (ordered moments) |
 | GET / PUT / DELETE | `/api/playlists/{id}` | open, rename/reorder, delete (never deletes moments or files) |
+| GET / PUT | `/api/settings` | clip timing: seconds before/after a tag (defaults 8 / 5, range 0-60) |
+| GET | `/api/storage/health` | archive + import folder checks (exists, readable, writable, free space) and missing indexed files |
 | PUT | `/api/events/{id}/favourite` | favourite on/off (idempotent) |
 | POST | `/api/events/{id}/viewed` | mark a moment watched |

@@ -12,7 +12,8 @@ import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { type PlayRequest, type SeekRequest, VideoPlayer } from "../components/VideoPlayer";
-import { clipWindow, DEFAULT_BUFFERS } from "../lib/events";
+import { clipWindow } from "../lib/events";
+import { useClipBuffers } from "../lib/useClipBuffers";
 import { formatBytes, formatClock, formatDate } from "../lib/format";
 import { useMomentFilter } from "../lib/useMomentFilter";
 
@@ -42,6 +43,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
   const [momentsOnly, setMomentsOnly] = useState(params.get("moments") === "1");
   const [clock, setClock] = useState({ time: 0, duration: m.media?.duration_s ?? 0 });
   const media = m.media;
+  const buffers = useClipBuffers();
   const qc = useQueryClient();
   const refresh = () => void qc.invalidateQueries({ queryKey: ["match", m.id] });
   const favourite = useMutation({
@@ -71,7 +73,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
   }, [params, m.events, play]);
 
   const active = useMemo(() => m.events.find((e) => e.id === activeEventId) ?? null, [m.events, activeEventId]);
-  const clipWin = active ? clipWindow(active, DEFAULT_BUFFERS, clock.duration || Number.MAX_SAFE_INTEGER) : null;
+  const clipWin = active ? clipWindow(active, buffers, clock.duration || Number.MAX_SAFE_INTEGER) : null;
   const chips = [
     ...filter.categories.map((c) => ({ key: `c:${c}`, label: c, remove: () => filter.toggleCategory(c) })),
     ...filter.players.map((p) => ({ key: `p:${p}`, label: p, remove: () => filter.togglePlayer(p) })),
@@ -123,7 +125,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
             poster={media.thumbnail_url}
             fps={media.fps}
             events={filter.filtered}
-            buffers={DEFAULT_BUFFERS}
+            buffers={buffers}
             momentsOnly={momentsOnly}
             onMomentsOnlyChange={setMomentsOnly}
             request={request}
@@ -206,7 +208,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
         )}
         <p className="text-xs text-fg-subtle">
           Keys: space play, arrows 5s, j/l 10s, comma/period frame step, n/p next/previous moment, f full screen, m mute.
-          Moments play from {DEFAULT_BUFFERS.pre}s before to {DEFAULT_BUFFERS.post}s after each tag.
+          Moments play from {buffers.pre}s before to {buffers.post}s after each tag (change this in Settings).
         </p>
       </div>
     </div>

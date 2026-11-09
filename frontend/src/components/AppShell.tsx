@@ -1,4 +1,4 @@
-import { Clapperboard, Film, FolderInput, Library, PlugZap, Search, UserRound } from "lucide-react";
+import { Clapperboard, Film, FolderInput, Library, Search, Settings, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
@@ -9,7 +9,7 @@ const NAV = [
   { to: "/clips", label: "Clips", icon: Film, end: false },
   { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },
-  { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false },
+  { to: "/settings", label: "Settings", icon: Settings, end: false },
 ];
 
 function Brand() {
