@@ -259,3 +259,44 @@ class PlaylistDetail(BaseModel):
     id: int
     name: str
     items: list[MomentOut]
+
+
+class AppSettingsOut(BaseModel):
+    clip_pre_s: float
+    clip_post_s: float
+
+
+class AppSettingsPatch(BaseModel):
+    clip_pre_s: float | None = Field(default=None, ge=0, le=60)
+    clip_post_s: float | None = Field(default=None, ge=0, le=60)
+
+
+class FolderHealthOut(BaseModel):
+    role: str
+    path: str
+    exists: bool
+    readable: bool
+    writable: bool
+    free_bytes: int | None
+    total_bytes: int | None
+    status: str
+    messages: list[str]
+
+
+class MissingFileOut(BaseModel):
+    media_id: int
+    match_id: int
+    opponent: str
+    match_date: date
+    relative_path: str
+
+
+class ArchiveSummaryOut(BaseModel):
+    indexed_files: int
+    indexed_bytes: int
+    missing: list[MissingFileOut]
+
+
+class StorageHealthOut(BaseModel):
+    folders: list[FolderHealthOut]
+    archive: ArchiveSummaryOut

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.api.moment_routes import router as moment_router
 from app.api.player_routes import router as player_router
 from app.api.routes import router
+from app.api.settings_routes import router as settings_router
 from app.config import Settings
 from app.db import make_session_factory
 from app.logging_setup import configure_logging
@@ -35,4 +36,5 @@ def create_app(
     app.include_router(router)
     app.include_router(player_router)
     app.include_router(moment_router)
+    app.include_router(settings_router)
     return app

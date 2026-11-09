@@ -8,11 +8,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Event, Playlist, PlaylistItem
+from app.services import app_settings
 from app.services.moments import moment_load_options
 from app.services.players import NotFound
-
-PRE_S = 8.0
-POST_S = 5.0
 
 
 class InvalidPlaylist(ValueError):
@@ -88,11 +86,12 @@ def items(db: Session, playlist_id: int) -> list[Event]:
 
 
 def summaries(db: Session) -> list[tuple[Playlist, int, float]]:
+    timing = app_settings.clip_timing(db)
     rows = db.execute(
         select(
             Playlist,
             func.count(PlaylistItem.id),
-            func.coalesce(func.sum(Event.duration_s + PRE_S + POST_S), 0.0),
+            func.coalesce(func.sum(Event.duration_s + timing.pre_s + timing.post_s), 0.0),
         )
         .outerjoin(PlaylistItem, PlaylistItem.playlist_id == Playlist.id)
         .outerjoin(Event, Event.id == PlaylistItem.event_id)
