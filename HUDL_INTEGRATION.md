@@ -18,7 +18,8 @@ and products change.
 Use **[https://www.hudl.com/login](https://www.hudl.com/login)** as the public
 entry point for each user's own credentials. A read-only public request
 confirmed that it redirects to Hudl's identity authorization flow. The research
-fetcher could not render the final identity page; successful sign-in was not tested.
+fetcher could not render the final identity page. The owner subsequently signed
+in successfully in Safari and in the helper's separate Chrome context.
 
 The owner supplied an `identity.hudl.com/u/login/identifier` URL with a `state`
 query parameter. That is a transaction-specific identity URL, not a reusable
@@ -29,9 +30,10 @@ provided in chat has deliberately not been retained here.
 
 Opening that page signs the user into Hudl in their browser. It does not give
 Football Memories an authenticated session or a supported integration. The
-owner has confirmed permission for normal username/password website access;
-permission from Hudl for app automation has not been established. The existing
-disabled-connector policy therefore remains in force pending clarification.
+owner has explicitly attested Hudl permission for app automation and archiving,
+and approved Playwright with an in-memory browser session (decision 002, D-012).
+That authorizes this scoped implementation for the owner; it is not independent
+verification of an agreement or permission for other users.
 
 ## Match and tagged-moment research (2026-11-09)
 
@@ -46,19 +48,27 @@ endpoints or a verified procedure for the owner's account:
 | Classic breakdown download | Select video in Manage Library; include breakdown data in the download. | Guidance is for American Football; do not assume it describes this soccer account. [Source](https://support.hudl.com/s/article/download-multiple-videos-hudl-classic?language=en_US&topic=Watch_and_Manage_Video_Classic) |
 | Assist / Sportscode | Hudl documented soccer/basketball Assist breakdowns as downloadable Sportscode XML, with timelines under Manage Data. | This is an older product announcement, not proof of current account entitlement or an exact export schema. [Source](https://www.hudl.com/blog/hudl-and-sportscode-integration-improvements) |
 
-Next evidence needed: account role/product, whether the match has Download and
-Manage Data/export controls, and a scrubbed sample export. A converter needs
-to establish video-relative start/end times (including half offsets), event
-categories, player associations and stable event identity. Keep clips as ranges
-over the full imported match (D-004); do not duplicate whole matches per player.
-Actual download and tag extraction remain unimplemented and unverified against
-the real account. No login, cookie capture or authenticated match request was made.
+The owner confirmed normal-user access without download/export controls. An
+owner-authorized read-only inspection of one accessible match confirmed HLS
+playback and Sportscode tagging data in the normal player. The browser adapter
+observes those responses, including stable session/moment IDs, millisecond
+start/end times, sync status and `HUDL_CODE` labels. Labels can be players or
+event types: callers explicitly identify player codes. No overlap-based player
+association is inferred. Clips remain ranges over the full match (D-004).
+
+The helper must account for cancelled playback prefetches and crop clip padding
+outside the playable interval before strict import validation. Synthetic
+fixtures cover those cases; real-account capture validation is still in progress.
+No raw responses, real names, match IDs, session data or media URLs belong here.
 
 ## Consequence for the app
 
-The app **does not log in to Hudl, does not automate the Hudl website and does
-not extract streams.** Doing so would breach Hudl's terms and risk the owner's
-account (golden rule 3).
+The normal server has no background Hudl session or discovery integration.
+Authorized desktop capture is a separate local process, with each user signing
+directly into Hudl in an ephemeral incognito Chrome context. It observes only
+the selected match's actual playback/tag responses, downloads serially and
+assembles a verified local match plus tag CSV. No cookie export, password
+collection, persistent browser profile, HAR capture or auth-state files.
 
 Instead:
 
@@ -66,13 +76,36 @@ Instead:
 |---|---|---|
 | `LocalImportConnector` | **Primary.** Built first. | Import match files the owner obtained through Hudl's own download/export features (or any other legitimate source), with optional tag sidecar files. |
 | `MockConnector` | Tests and clearly labelled demo data only. | All capabilities, fake data. Never shown as real content. |
-| `HudlConnector` | **Present but disabled.** Every capability reports `false` with the reason above. | Enabled only if Hudl provides an official API/OAuth integration or written permission for this use. |
+| `HudlConnector` | **Server sync unavailable.** Every server capability remains `false`. | The UI separately exposes the desktop companion's capture status and form. |
+| Desktop Hudl capture companion | **Implemented; real capture validation in progress.** Owner permission: decision 002. | Normal sign-in, one accessible match, unencrypted complete muxed HLS and synced Sportscode moments. No mutation, retry loop or bypass. |
 
-The UI reads capabilities from `GET /api/connectors` and shows Hudl as
-"Not available: Hudl does not offer a supported integration" with a link to this
-file, instead of dead buttons (brief section 4).
+The UI reads server capabilities from `GET /api/connectors`; the capture form
+reads the host companion directly at `http://127.0.0.1:8766`. It accepts only
+the localhost app Origins (ports 8765/5173) and exact localhost Hosts, and never
+accepts credentials, session data or arbitrary output paths. No service is
+exposed to the LAN. It runs on the host even if the main app runs in Docker.
 
 ## Recommended workflow for the owner
+
+For authorized browser capture, follow
+[the desktop helper setup](DEVELOPMENT.md#authorized-hudl-browser-capture), then
+use **Settings → Connections → Capture match**. Paste the match page URL
+(`/watch/video/...`), not an identity login transaction or a signed media URL.
+After signing in and verification, use **Import captured match** to index the
+new MP4 and `.tags.csv`. Explicit player codes become player-associated
+"Player involvement" events. Other Sportscode codes remain categories.
+
+Limits: Chrome and ffmpeg 8 on the desktop; no encrypted/live media or separate
+audio playlists; no cross-product schema assumptions; no resumable jobs yet.
+Only HTTPS Hudl media hosts served by the player are accepted. Source stream
+addresses stay in memory and never reach ffmpeg (it reads a local-only manifest).
+Completion requires duration verification and exclusive publication, never
+overwriting an existing match/tag pair. Existing import keeps its copy/SHA-256
+verification. In Clip Explorer, **Export clip** renders a one-item reel without
+title cards; its render page provides **Download MP4**. Player filters select
+the explicitly associated moments, and a queue can become a multi-item reel.
+
+For files obtained separately:
 
 1. In Hudl, use Hudl's own download or export feature for each match your role
    allows (coaches/admins typically; parents may need to ask the coach).

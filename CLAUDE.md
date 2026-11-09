@@ -10,9 +10,16 @@ checkpoint, and keep HANDOFF.md and PROGRESS.md current. Another agent may take
 over at any moment.
 
 The app protects two things: the owner's Hudl account (Hudl's terms forbid
-automation, so the app never logs in to Hudl; see
+automation without permission; authorized desktop capture is scoped in
 [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md)) and a footage archive of a child
 that may be the only surviving copy.
+
+**Hudl exception authorized by the owner (2026-11-09, D-012):** normal-user
+browser capture may proceed within the owner's attested automation/download
+permission. Each user signs into Hudl directly; the local desktop helper uses
+an ephemeral browser session, captures only that user's accessible match, and
+never persists credentials. This supersedes the blanket no-login assumption;
+all account/library safeguards and the offline-only test rule still apply.
 
 Read **[docs/system/rules/10-golden-rules.md](docs/system/rules/10-golden-rules.md)**
 before changing anything. It is short and it is not optional.

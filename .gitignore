@@ -16,6 +16,8 @@ config.local.*
 *.mov
 *.m4v
 *.ts
+# TypeScript source/config is not MPEG transport-stream footage.
+!frontend/**/*.ts
 *.m3u8
 !tests/fixtures/**/*.m3u8
 *.db

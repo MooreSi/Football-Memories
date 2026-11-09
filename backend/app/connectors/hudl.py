@@ -3,14 +3,14 @@ from __future__ import annotations
 from app.connectors.base import Capabilities, ConnectorInfo
 
 REASON = (
-    "Hudl does not offer a public API for team video, and Hudl's Terms of Service "
-    "(section 3.2) prohibit automated access such as bots and scrapers. This connector stays "
-    "disabled until Hudl provides an official integration or written permission."
+    "Background account sync is not connected. The desktop capture helper can save "
+    "an authorized match and its Sportscode tags using your own browser sign-in; "
+    "then import the captured files here. Hudl's Terms require permission for automated access."
 )
 
 
 class HudlConnector:
-    """Deliberately reports no capabilities. See HUDL_INTEGRATION.md before changing this."""
+    """Server sync stays unavailable; desktop capture is a separate local workflow."""
 
     def info(self) -> ConnectorInfo:
         return ConnectorInfo(
@@ -21,6 +21,8 @@ class HudlConnector:
             reason=REASON,
             docs="HUDL_INTEGRATION.md",
             limitations=[
-                "Use Hudl's own download/export, then import the file here.",
+                "Each user needs permission for automated access and archiving their footage.",
+                "The capture helper runs on your desktop with Chrome and ffmpeg, outside Docker.",
+                "Player codes must be selected explicitly; labels are not guessed to be players.",
             ],
         )

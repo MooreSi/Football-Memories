@@ -217,3 +217,47 @@ class PlaylistItem(Base):
 
     playlist: Mapped[Playlist] = relationship(back_populates="items")
     event: Mapped[Event] = relationship()
+
+
+class Reel(Base):
+    """A highlight reel: ordered moments rendered into one MP4 (spec 080)."""
+
+    __tablename__ = "reels"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    opening_title: Mapped[str | None] = mapped_column(String(200))
+    opening_subtitle: Mapped[str | None] = mapped_column(String(200))
+    closing_text: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
+    progress: Mapped[float] = mapped_column(Float, default=0.0)
+    error: Mapped[str | None] = mapped_column(Text)
+    output_relpath: Mapped[str | None] = mapped_column(Text)
+    output_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    output_duration_s: Mapped[float | None] = mapped_column(Float)
+    output_width: Mapped[int | None] = mapped_column(Integer)
+    output_height: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    rendered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    items: Mapped[list[ReelItem]] = relationship(
+        back_populates="reel", order_by="ReelItem.position", cascade="all, delete-orphan"
+    )
+
+
+class ReelItem(Base):
+    """One clip in a reel. pre_s/post_s override the global clip timing for this clip."""
+
+    __tablename__ = "reel_items"
+    __table_args__ = (Index("ix_reel_items_order", "reel_id", "position"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    reel_id: Mapped[int] = mapped_column(ForeignKey("reels.id", ondelete="CASCADE"))
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), index=True)
+    position: Mapped[int] = mapped_column(Integer)
+    pre_s: Mapped[float | None] = mapped_column(Float)
+    post_s: Mapped[float | None] = mapped_column(Float)
+
+    reel: Mapped[Reel] = relationship(back_populates="items")
+    event: Mapped[Event] = relationship()

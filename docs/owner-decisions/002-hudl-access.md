@@ -1,6 +1,6 @@
 # 002: How does footage get from Hudl into the app?
 
-**Status:** open (provisional default in use)
+**Status:** permission answered; capture implementation and account validation in progress
 **Raised by:** phase 1 discovery, 2026-11-09
 
 ## The question
@@ -43,9 +43,18 @@ username/password login, and requested reusable login, match downloads and
 player/tag cataloguing. Use the public entry point `https://www.hudl.com/login`;
 do not retain the transaction-specific identity URL supplied in chat.
 
-Still awaiting: role/product, visible match download/data-export options, and
-whether permission covers this app automating access. Normal website access
-does not by itself settle the existing automation restriction. Research and
-product-specific export limitations are recorded in
-[HUDL_INTEGRATION.md](../../HUDL_INTEGRATION.md). No real-account login or
-download has been attempted; the connector remains disabled.
+Owner subsequently answered in this session:
+
+- Normal user; no match or moment/player download/export controls.
+- Confirms permission to download/use these videos and explicitly selected
+  "Hudl permission for app automation". Proceed within that stated permission;
+  do not repeatedly ask for it. This is the owner's attestation, not independent
+  verification of a written agreement or permission for other users.
+- Owner signed in directly in Safari and authorized enabling Web Inspector.
+
+Read-only inspection confirmed full-match HLS playback and Sportscode moment
+data through the normal player. No credential/session extraction or download
+has occurred yet. The connector's existing capability flags remain false until
+working capture code is verified. Keep all real names, roster data and match
+identifiers out of the repository. Research:
+[HUDL_INTEGRATION.md](../../HUDL_INTEGRATION.md).

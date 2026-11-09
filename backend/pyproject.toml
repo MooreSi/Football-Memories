@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.3",
     "psycopg[binary]>=3.2",
     "python-multipart>=0.0.33",
+    "playwright>=1.58,<2",
 ]
 
 [dependency-groups]

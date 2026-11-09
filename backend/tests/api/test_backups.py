@@ -151,7 +151,29 @@ def test_a_failing_restore_leaves_the_database_unchanged(
     assert _snapshot(session_factory) == before
 
 
-def test_a_backup_from_a_different_schema_is_refused(
+def test_an_older_backup_without_newer_tables_and_columns_still_restores(
+    client: TestClient,
+    populated: dict,
+    settings: Settings,
+    session_factory: sessionmaker[Session],  # type: ignore[type-arg]
+) -> None:
+    """Long-term preservation: a backup from before a feature existed must stay restorable."""
+    before = _snapshot(session_factory)
+    name = _make(client)
+    path = settings.library_root / "Backups" / name
+    doc = json.loads(path.read_text())
+    doc["schema"] = "made-by-an-older-version"
+    for newer_table in ("reels", "reel_items"):
+        doc["tables"].pop(newer_table, None)
+    for row in doc["tables"]["players"]:
+        row.pop("photo_relpath")  # a column added after the backup was made
+    path.write_text(json.dumps(doc))
+    client.put("/api/settings", json={"clip_pre_s": 9})
+    assert _restore(client, name).status_code == 200
+    assert _snapshot(session_factory) == before
+
+
+def test_a_backup_from_a_newer_version_is_refused_and_changes_nothing(
     client: TestClient,
     populated: dict,
     settings: Settings,
@@ -160,12 +182,12 @@ def test_a_backup_from_a_different_schema_is_refused(
     name = _make(client)
     path = settings.library_root / "Backups" / name
     doc = json.loads(path.read_text())
-    doc["schema"] = "something-else"
+    doc["tables"]["matches"][0]["weather"] = "rain"  # a column this version does not know
     path.write_text(json.dumps(doc))
     before = _snapshot(session_factory)
     r = _restore(client, name)
     assert r.status_code == 400
-    assert "different version" in r.json()["detail"]
+    assert "newer version" in r.json()["detail"]
     assert _snapshot(session_factory) == before
 
 

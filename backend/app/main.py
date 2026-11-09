@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import threading
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
@@ -13,12 +14,13 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.api.backup_routes import router as backup_router
 from app.api.moment_routes import router as moment_router
 from app.api.player_routes import router as player_router
+from app.api.reel_routes import router as reel_router
 from app.api.routes import router
 from app.api.settings_routes import router as settings_router
 from app.config import Settings
 from app.db import make_session_factory
 from app.logging_setup import configure_logging
-from app.services import backups
+from app.services import backups, reels
 
 log = logging.getLogger(__name__)
 AUTO_BACKUP_CHECK_SECONDS = 3600
@@ -41,6 +43,21 @@ async def _auto_backup_loop(factory: sessionmaker[Session], settings: Settings) 
         await asyncio.sleep(AUTO_BACKUP_CHECK_SECONDS)
 
 
+def _render_loop(factory: sessionmaker[Session], settings: Settings, stop: threading.Event) -> None:
+    """One background renderer. Recovers renders interrupted by a crash, then polls the queue."""
+    with factory() as db:
+        recovered = reels.recover(db)
+    if recovered:
+        log.info("re-queued %d interrupted reel render(s)", recovered)
+    while not stop.is_set():
+        try:
+            if reels.process_next(factory, settings) is None:
+                stop.wait(2.0)
+        except Exception:
+            log.exception("reel render loop error")
+            stop.wait(5.0)
+
+
 def create_app(
     settings: Settings | None = None,
     session_factory: sessionmaker[Session] | None = None,
@@ -56,9 +73,22 @@ def create_app(
             if settings.auto_backup
             else None
         )
+        stop = threading.Event()
+        worker = None
+        if settings.render_worker:
+            worker = threading.Thread(
+                target=_render_loop,
+                args=(factory, settings, stop),
+                name="reel-renderer",
+                daemon=True,
+            )
+            worker.start()
         try:
             yield
         finally:
+            stop.set()
+            if worker:
+                worker.join(timeout=5)
             if task:
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
@@ -84,4 +114,5 @@ def create_app(
     app.include_router(moment_router)
     app.include_router(settings_router)
     app.include_router(backup_router)
+    app.include_router(reel_router)
     return app

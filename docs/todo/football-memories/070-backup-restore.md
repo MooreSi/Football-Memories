@@ -21,7 +21,9 @@ destructive operation in the app. Protections below are the point of this spec.
   error leaves the database exactly as it was. It requires an explicit
   `confirm: "RESTORE"`, and **first writes an automatic `pre-restore` backup** so
   a restore can itself be undone. Restore never touches video or photo files.
-  A backup from a different schema is refused with a clear message.
+  Backups from older versions restore (tables and columns added since start
+  empty or take their defaults); a backup from a newer version is refused with a
+  clear message (changed 2026-11-09, so adding features never strands old backups).
 - **Automatic backups**: one per day while the app runs (`auto-` prefix); the 14
   newest automatic backups are kept, older automatic ones are removed. Manual,
   uploaded and pre-restore backups are never removed automatically.

@@ -20,7 +20,7 @@ backend/app/connectors/   footage-source adapters, each reporting real capabilit
 | `services/` | import FastAPI; write outside `ARCHIVE_ROOT`; modify anything in `IMPORT_ROOT` |
 | `connectors/` | claim a capability that has no working, tested code behind it |
 | anything | turn a user-supplied name into a path without `services/paths.safe_join` |
-| anything | contact Hudl (see HUDL_INTEGRATION.md) |
+| anything except the authorized desktop capture adapter | contact Hudl (see HUDL_INTEGRATION.md and D-012) |
 
 ## Frontend
 
@@ -30,6 +30,15 @@ backend/app/connectors/   footage-source adapters, each reporting real capabilit
 - A route appears in the nav only when its page works (brief section 19).
 
 ## Connector capabilities drive the UI
+
+The desktop companion (`app/connectors/hudl_companion.py`) is a separate local
+process on port 8766, even when the main app runs in Docker. It delegates all
+Hudl access to `hudl_browser.py`; parsing and local assembly live in
+`hudl_capture.py`. It accepts match addresses and explicit player-code choices,
+never credentials, cookies or arbitrary filesystem destinations. Its output
+folder is chosen by its startup command. Browser Origin and Host are restricted
+to the local app. The normal server connector still reports no background-sync
+capabilities; the UI separately reports actual companion state.
 
 The UI reads `GET /api/connectors` and shows only what a connector can do. The
 mock connector is never registered in production

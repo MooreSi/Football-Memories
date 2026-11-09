@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, PlugZap, X } from "lucide-react";
 import { api } from "../api/client";
+import { HudlCapture } from "../components/settings/HudlCapture";
 import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -37,6 +38,23 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                 {c.available ? <Badge tone="ok">Available</Badge> : <Badge tone="warn">Not available</Badge>}
               </div>
               {c.reason && <p className="text-sm text-fg-muted">{c.reason}</p>}
+              {c.id === "hudl" && (
+                <div className="space-y-2 border-y border-line py-3">
+                  <a
+                    href="https://www.hudl.com/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex rounded-lg bg-accent/10 px-3.5 py-2 text-sm font-semibold text-accent hover:bg-accent/20 focus-visible:outline-2 focus-visible:outline-accent"
+                  >
+                    Sign in on Hudl
+                  </a>
+                  <p className="text-xs text-fg-muted">
+                    Use your own Hudl credentials. This opens Hudl and does not connect this app
+                    to your account. The desktop capture helper signs in separately to save a match
+                    and its tags; then use Import to add those files to your library.
+                  </p>
+                </div>
+              )}
               <ul className="grid grid-cols-2 gap-2 text-sm">
                 {Object.entries(c.capabilities).map(([k, on]) => (
                   <li key={k} className={`flex items-center gap-2 ${on ? "text-fg" : "text-fg-subtle"}`}>
@@ -60,6 +78,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                   Details: <code>{c.docs}</code> in the project folder.
                 </p>
               )}
+              {c.id === "hudl" && <HudlCapture />}
             </section>
           ))}
         </div>

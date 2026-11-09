@@ -14,9 +14,11 @@ markers, speeds, frame stepping, keyboard shortcuts). See
 [docs/HANDOFF.md](docs/HANDOFF.md) and
 [PROGRESS.md](docs/todo/football-memories/PROGRESS.md).
 
-**About Hudl:** Hudl's terms prohibit automated access and there is no public
-video API, so the app does not log in to Hudl. Download matches with Hudl's own
-download feature and import them. Details: [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md).
+**About Hudl:** authorized users can capture an accessible match and its
+Sportscode moments through normal browser sign-in, using the desktop helper
+under Settings → Connections. Passwords are entered only into Hudl. The owner
+has attested permission for this use; other users need their own permission.
+Setup and limitations: [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md).
 
 ## Quick start
 

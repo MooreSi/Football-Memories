@@ -10,7 +10,7 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 
 | Task | Status | Notes |
 |---|---|---|
-| Hudl capability research | done | HUDL_INTEGRATION.md; owner question 002 open |
+| Hudl capability research | done | HUDL_INTEGRATION.md; owner question 002 answered |
 | Architecture + decision log | done | ARCHITECTURE.md, docs/DECISIONS.md |
 | Backend: FastAPI, SQLAlchemy, Alembic, Postgres | done | backend/ |
 | Frontend: Vite, React 19, TS, Tailwind v4, TanStack Query | done | frontend/ |
@@ -64,7 +64,9 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Play one / play all / shuffle, autoplay across matches, loop, speeds | done | QueuePlayer |
 | Reorder (drag + buttons), save playlist, open/rename/reorder/delete playlists | done | rename is API-only for now |
 | Favourite from results | done | |
-| Notes, custom local tags, export, compilation | todo | phases 5-6 (clip editor, jobs) |
+| Compilation (highlight reel) | done | spec 080 |
+| Single-clip export | done | Export clip → one-item reel → Download MP4 |
+| Notes, custom local tags | todo | |
 
 ## Backup and integrity (brief section 22)
 
@@ -81,10 +83,31 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 
 ## Phases 3, 5-7
 
-Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
-connection) is **blocked** on owner decision 002 and Hudl's terms.
+Phase 3 desktop capture is implemented within owner-attested permission (002,
+D-012); real capture verification is in progress. Server background sync and
+resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
+backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Authorized desktop Hudl capture checkpoint (codex/hudl-access-research)
+- Implemented ephemeral Chrome login, observed HLS/Sportscode conversion, serial
+  capture, verified exclusive publication, scoped localhost companion and Settings
+  progress/import controls (spec 090, D-012). Playwright approved by owner.
+- Clip Explorer exports a moment through the existing one-item reel renderer.
+  Integrated existing highlight-reels commits to preserve the running DB schema.
+- Backend: 220 passed SQLite and 220 Postgres; ruff check/format and mypy clean;
+  Alembic no drift against dev Postgres. Initial check without FM_DATABASE_URL
+  targeted unused port 5432; rerun against documented 55432 succeeded.
+- Frontend: 88 passed; typecheck and production build passed. Docker rebuild and
+  health check passed. Live full-match download is in progress after owner login;
+  import/playback/export still need real-capture verification. Mobile not checked.
+- Tests written red first for parsing/publication/companion/UI; browser transport
+  truncation regression also checked with a failing negative control. All tests
+  offline, with synthetic labels and local generated media.
+- Fixed MPEG-TS ignore rule that silently excluded TypeScript: restored previously
+  ignored frontend API/types/utilities/config to version control. No media included.
+
 
 ### 2026-11-09 Hudl normal-login and export research (branch codex/hudl-access-research)
 - Docs-only checkpoint: reusable public login entry point redirects to Hudl
@@ -94,6 +117,15 @@ connection) is **blocked** on owner decision 002 and Hudl's terms.
   account capabilities and export schema remain unknown; connector unchanged.
 - Local Markdown links checked; no code/test changes, so runtime suites not run
   (docs-only procedure in `/commit`). No authenticated Hudl access or downloads.
+
+### 2026-11-09 Highlight reels (branch highlight-reels)
+- backend: 167 passed on SQLite and Postgres (real ffmpeg renders: output length, height, audio, silent sources,
+  title cards, failure keeps previous output, crash recovery); ruff, mypy clean; migrations a1229716e71a, 77cf12b23a29
+- frontend: 81 passed; typecheck and build OK
+- real dev run: playlist "Best saves 2026" -> reel with subtitle and closing card; first render FAILED because the dev
+  archive path was relative and ffmpeg runs in a scratch folder -> fixed (absolute folder settings, test first);
+  re-render done in ~20 s: 84 s (6 x 13 s + 2 x 3 s), 1280x720, H.264 + AAC 48 kHz stereo; frames checked
+- found while testing: backups were refused after any schema change -> older backups now restore (D-011)
 
 ### 2026-11-09 Backup, restore, integrity (branch backup-restore)
 - backend: 149 passed on SQLite and Postgres (round trip identical, atomic failure, confirm, pre-restore undo,

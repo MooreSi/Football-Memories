@@ -5,8 +5,9 @@ human, on every change, without exception.**
 
 This app archives footage of a child that may be the only surviving copy, and
 must never put the owner's Hudl account at risk. Hudl's terms forbid automated
-access, so the app does not log in to Hudl at all (HUDL_INTEGRATION.md); rules
-1-3 still bind any future connector. Rules 1-5
+access without permission. The owner has attested permission for app automation
+and archiving (decision 002, D-012), authorizing the local browser capture helper.
+Other users need their own permission; all safeguards still apply. Rules 1-5
 protect those. Rules 6-10 keep the codebase honest.
 
 ---
@@ -18,6 +19,11 @@ protect those. Rules 6-10 keep the codebase honest.
 The Hudl password lives in the OS keychain (or an equivalent secret store),
 and nowhere else. The same goes for session cookies, bearer tokens and any
 browser storage-state file.
+
+The authorized desktop helper does not accept a password: users enter it
+directly into Hudl in a visible incognito browser. Its session and media URLs
+exist only in memory for that run. Never export browser cookies, capture a HAR,
+enable tracing or persist browser state. Closing capture destroys that context.
 
 Never in: the repo, a config file that is committed, a log line, an exception
 message, a URL or query string, a test fixture, a screenshot, a crash report,

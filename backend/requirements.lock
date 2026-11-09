@@ -14,6 +14,8 @@ click==8.5.1
     # via uvicorn
 fastapi==0.162.2
     # via football-memories
+greenlet==3.5.6
+    # via playwright
 h11==0.16.0
     # via uvicorn
 httptools==0.9.0
@@ -26,6 +28,8 @@ markupsafe==3.0.4
     # via mako
 opentelemetry-api==1.45.2
     # via fastapi
+playwright==1.64.1
+    # via football-memories
 psycopg==3.3.8
     # via football-memories
 psycopg-binary==3.3.8 ; implementation_name != 'pypy'
@@ -39,6 +43,8 @@ pydantic-core==2.50.4
     # via pydantic
 pydantic-settings==2.16.2
     # via football-memories
+pyee==14.0.0
+    # via playwright
 python-dotenv==1.2.4
     # via
     #   pydantic-settings
@@ -63,6 +69,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-settings
+    #   pyee
     #   sqlalchemy
     #   starlette
     #   typing-inspection

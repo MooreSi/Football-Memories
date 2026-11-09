@@ -3,6 +3,7 @@ import type { MomentItem } from "../../api/types";
 import { formatClock, formatDate } from "../../lib/format";
 import { useClipBuffers } from "../../lib/useClipBuffers";
 import { windowFor } from "./QueuePlayer";
+import { ExportClipButton } from "./ExportClipButton";
 
 export function ClipCard({ m, onPlay, onQueue, onFavourite, queued }: {
   m: MomentItem;
@@ -39,6 +40,7 @@ export function ClipCard({ m, onPlay, onQueue, onFavourite, queued }: {
           <button type="button" onClick={onQueue} disabled={queued} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs text-fg-muted hover:bg-white/5 hover:text-fg disabled:opacity-40">
             <ListPlus size={14} aria-hidden /> {queued ? "In queue" : "Add to queue"}
           </button>
+          <ExportClipButton moment={m} />
           <button type="button" aria-pressed={m.favourite} aria-label={m.favourite ? "Remove from favourites" : "Add to favourites"}
             onClick={() => onFavourite(!m.favourite)} className="ml-auto grid size-8 place-items-center rounded-lg hover:bg-white/5">
             <Heart size={15} className={m.favourite ? "fill-danger text-danger" : "text-fg-subtle"} />

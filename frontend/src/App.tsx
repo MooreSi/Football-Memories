@@ -11,6 +11,8 @@ import { ImportPage } from "./pages/ImportPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { MatchDetailPage } from "./pages/MatchDetailPage";
 import { PlayerHubPage } from "./pages/PlayerHubPage";
+import { ReelBuilderPage } from "./pages/ReelBuilderPage";
+import { ReelsPage } from "./pages/ReelsPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { Compass } from "lucide-react";
 
@@ -21,6 +23,8 @@ export function App() {
         <Route index element={<LibraryPage />} />
         <Route path="matches/:id" element={<MatchDetailPage />} />
         <Route path="clips" element={<ClipExplorerPage />} />
+        <Route path="clips/reels" element={<ReelsPage />} />
+        <Route path="clips/reels/:id" element={<ReelBuilderPage />} />
         <Route path="player" element={<PlayerPage />} />
         <Route path="player/choose" element={<PlayerPage choose />} />
         <Route path="player/:id" element={<PlayerHubPage />} />

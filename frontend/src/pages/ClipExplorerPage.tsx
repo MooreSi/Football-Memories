@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ListVideo, Save, Search, Shuffle } from "lucide-react";
+import { Clapperboard, ListVideo, Save, Search, Shuffle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { MomentFilters, MomentItem } from "../api/types";
@@ -17,6 +18,7 @@ const START: MomentFilters = { categories: [], playerIds: [], playerMode: "any",
 /** Brief section 10. Layout follows reference 02: filter rail + playlists left, player + clip bar centre. */
 export function ClipExplorerPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<MomentFilters>(START);
   const [text, setText] = useState("");
   const [queue, setQueue] = useState<MomentItem[]>([]);
@@ -93,6 +95,14 @@ export function ClipExplorerPage() {
     void qc.invalidateQueries({ queryKey: ["playlists"] });
   };
   const activeName = playlists.data?.find((p) => p.id === playlistId)?.name;
+  const makeReel = useMutation({
+    mutationFn: () => api.createReel({
+      name: activeName ?? `Highlights ${new Date().toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`,
+      opening_title: activeName ?? "Highlights",
+      items: queue.map((m) => ({ event_id: m.event_id, pre_s: null, post_s: null })),
+    }),
+    onSuccess: (r) => navigate(`/clips/reels/${r.id}`),
+  });
 
   return (
     <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -115,6 +125,7 @@ export function ClipExplorerPage() {
           <div>
             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-accent uppercase">Clips</p>
             <h1 className="text-3xl font-semibold tracking-tight">Clip Explorer</h1>
+            <Link to="/clips/reels" className="text-sm text-accent hover:underline">Highlight reels</Link>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="relative">
@@ -146,6 +157,9 @@ export function ClipExplorerPage() {
                 <h2 className="font-semibold">Queue</h2>
                 <p className="truncate text-xs text-fg-subtle">{activeName ? `Playlist: ${activeName}${dirty ? " (changed)" : ""}` : `${queue.length} moments`}</p>
               </div>
+              <Button onClick={() => makeReel.mutate()} disabled={queue.length === 0 || makeReel.isPending}>
+                <Clapperboard size={14} aria-hidden /> Make highlight reel
+              </Button>
               {playlistId && dirty && (
                 <Button onClick={() => updatePlaylist.mutate()} disabled={updatePlaylist.isPending}><Save size={14} aria-hidden /> Save</Button>
               )}

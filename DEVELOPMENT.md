@@ -63,6 +63,43 @@ in `.env.example`.
 
 ## Importing existing matches
 
+### Authorized Hudl browser capture
+
+On the Mac (not inside Docker), with Chrome and ffmpeg 8 installed:
+
+```bash
+cd backend
+uv sync
+uv run python -m app.connectors.hudl_companion --output ../data/inbox
+```
+
+Use the actual host inbox from `FM_HOST_INBOX` if it differs. Keep this terminal
+running while capturing. Open **Settings → Connections**, paste a Hudl match
+page URL, select a maximum quality and optionally enter the exact Sportscode
+codes representing players (semicolon-separated). **Capture match** opens a
+separate Chrome sign-in. Enter credentials directly into Hudl; the app never
+asks for or saves them. Once capture verifies, **Import captured match** opens
+the existing import form for team/opponent/date/season.
+
+The helper saves a new MP4 and `.tags.csv`, refusing existing destinations.
+The app then copies/verifies those files as usual. Ensure disk space for media
+parts, remuxing, the capture and archive copy. Capture is not resumable yet:
+interruptions clean temporary files, leave existing files untouched, and require
+a fresh browser sign-in. It does not create or change anything on Hudl.
+
+Command-line alternative (use a real match URL from your browser):
+
+```bash
+uv run python -m app.connectors.hudl_browser 'https://www.hudl.com/watch/video/VIDEO_ID' \
+  --output ../data/inbox --max-height 720 --player-code 'SAM EXAMPLE'
+```
+
+Repeat `--player-code` for more players. `--inspect-only` lists observed codes
+locally without downloading media; it still requires sign-in. Never paste those
+real player lists, session URLs or browser storage into GitHub or fixtures.
+
+### Files obtained separately
+
 1. Download the match through Hudl's own download/export (see
    [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md)).
 2. Copy it into the inbox folder. Optionally add `<same name>.tags.csv`.
