@@ -1,0 +1,43 @@
+# Secrets and session state: never committed (golden rule 1)
+.env
+.env.*
+*.cookies
+cookies*.json
+storage_state*.json
+*.storage.json
+secrets/
+config.local.*
+
+# Downloaded footage and local library/index (golden rule 4, personal data)
+library/
+downloads/
+*.part
+*.mp4
+*.mov
+*.m4v
+*.ts
+*.m3u8
+!tests/fixtures/**/*.m3u8
+*.db
+*.sqlite
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code worktrees are complete second checkouts
+.claude/worktrees/
+.claude/settings.local.json
