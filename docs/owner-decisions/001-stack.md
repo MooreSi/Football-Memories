@@ -1,6 +1,6 @@
 # 001: Which stack does the app use?
 
-**Status:** open
+**Status:** answered 2026-11-09 (by the owner's brief, docs/BRIEF.md section 3)
 **Raised by:** repo setup, 2026-11-09
 
 ## The question
@@ -30,3 +30,6 @@ CLAUDE.md "Before you commit", `/verify`, `/test` (runner commands and fixture
 examples) and `rules/30-architecture.md` are updated in the same change.
 
 ANSWER:
+React + TypeScript + Vite + Tailwind front end; Python 3.12+ FastAPI +
+SQLAlchemy + Alembic + PostgreSQL back end; FFmpeg; Docker Compose. Recorded in
+docs/DECISIONS.md D-001.

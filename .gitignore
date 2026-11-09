@@ -41,3 +41,6 @@ build/
 # Claude Code worktrees are complete second checkouts
 .claude/worktrees/
 .claude/settings.local.json
+
+# Local app data (archive, inbox, db)
+data/
