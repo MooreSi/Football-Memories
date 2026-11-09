@@ -70,6 +70,7 @@ source media records. Each arrives with its migration and tests.
   Matches/<season>/<team>/<date> vs <opponent>/<original file name>
   Thumbnails/<sha256[:2]>/<sha256>.jpg
   Thumbnails/moments/<media sha[:16]>-<event id>.jpg   (per-moment frames, made on first view)
+  Backups/<kind>-<YYYYMMDD-HHMMSS>.json   (manual, auto (14 kept), pre-restore, uploaded)
   Players/<player id>/photo-<hash>.jpg   (profile photo, 512x512, metadata stripped)
   Clips/  Compilations/                  (created when those features land)
 ```
@@ -105,5 +106,12 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | GET / PUT / DELETE | `/api/playlists/{id}` | open, rename/reorder, delete (never deletes moments or files) |
 | GET / PUT | `/api/settings` | clip timing: seconds before/after a tag (defaults 8 / 5, range 0-60) |
 | GET | `/api/storage/health` | archive + import folder checks (exists, readable, writable, free space) and missing indexed files |
+| GET / POST | `/api/backups` | list / make a backup (JSON of every row) |
+| POST | `/api/backups/upload` | add a backup file from elsewhere (validated) |
+| GET / DELETE | `/api/backups/{name}` | download / delete a backup |
+| POST | `/api/backups/{name}/restore` | replace all rows; needs `{"confirm": "RESTORE"}`; writes a pre-restore backup first; one transaction |
+| POST / GET | `/api/storage/verify` | start / poll background SHA-256 verification of every video |
+| POST | `/api/storage/relink` | find moved videos under the archive by size + hash and re-point them |
+| POST | `/api/storage/rebuild-thumbnails` | recreate missing match thumbnails |
 | PUT | `/api/events/{id}/favourite` | favourite on/off (idempotent) |
 | POST | `/api/events/{id}/viewed` | mark a moment watched |

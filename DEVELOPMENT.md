@@ -70,14 +70,20 @@ in `.env.example`.
 
 The file is copied and checksum-verified; the original is never changed.
 
-## Backup (until the in-app backup lands, phase 6)
+## Backup and restore
 
-```bash
-docker compose exec db pg_dump -U memories memories > backup-$(date +%F).sql
-```
+In the app: **Settings > Backups**. One backup is made automatically each day
+the app runs (14 kept); press **Back up now** before big changes. Backups live in
+`FM_HOST_ARCHIVE/FootballMemories/Backups/`, so backing up the archive folder
+(Time Machine or an external drive) protects both the videos and the index.
 
-Back up `FM_HOST_ARCHIVE` with Time Machine or any file backup. Restore:
-`docker compose exec -T db psql -U memories memories < backup-YYYY-MM-DD.sql`.
+**Restoring on a new Mac:** install as above, point `FM_HOST_ARCHIVE` at the
+copied archive folder, start the app, then Settings > Backups and restore the
+newest backup (or upload one with **Upload a backup**). If you moved videos
+around, run Settings > Storage > **Find moved files**.
+
+A raw database dump is still possible as an extra:
+`docker compose exec db pg_dump -U memories memories > db-$(date +%F).sql`.
 
 ## Troubleshooting
 

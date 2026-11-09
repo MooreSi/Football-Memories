@@ -1,9 +1,10 @@
-import { HardDrive, PlugZap, SlidersHorizontal } from "lucide-react";
+import { HardDrive, PlugZap, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const TABS = [
   { to: "/settings", label: "Playback", icon: SlidersHorizontal, end: true },
   { to: "/settings/storage", label: "Storage", icon: HardDrive, end: false },
+  { to: "/settings/backups", label: "Backups", icon: ShieldCheck, end: false },
   { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false },
 ];
 

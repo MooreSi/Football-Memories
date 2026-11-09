@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { EmptyState } from "./components/ui/EmptyState";
 import { ClipExplorerPage } from "./pages/ClipExplorerPage";
+import { BackupSettings } from "./components/settings/BackupSettings";
 import { PlaybackSettings } from "./components/settings/PlaybackSettings";
 import { StorageSettings } from "./components/settings/StorageSettings";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
@@ -27,6 +28,7 @@ export function App() {
         <Route path="settings" element={<SettingsLayout />}>
           <Route index element={<PlaybackSettings />} />
           <Route path="storage" element={<StorageSettings />} />
+          <Route path="backups" element={<BackupSettings />} />
           <Route path="connections" element={<ConnectionsPage embedded />} />
         </Route>
         <Route path="*" element={<EmptyState icon={Compass} title="Page not found" />} />

@@ -66,12 +66,33 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Favourite from results | done | |
 | Notes, custom local tags, export, compilation | todo | phases 5-6 (clip editor, jobs) |
 
+## Backup and integrity (brief section 22)
+
+| Task | Status | Notes |
+|---|---|---|
+| Database backups (manual + daily automatic, 14 kept) | done | JSON of every row in `Backups/` |
+| Metadata / playlist export | done | download a backup |
+| Restore (safe, atomic, undoable) | done | confirm + pre-restore backup |
+| Media integrity verification | done | background SHA-256 |
+| Missing-file detection | done | Storage tab |
+| Relinking moved files | done | by size + hash, inside the archive |
+| Rebuild thumbnails | done | match thumbnails |
+| Rebuild search indexes | n/a | no separate index yet (queries hit the DB) |
+
 ## Phases 3, 5-7
 
 Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Backup, restore, integrity (branch backup-restore)
+- backend: 149 passed on SQLite and Postgres (round trip identical, atomic failure, confirm, pre-restore undo,
+  schema mismatch, fresh ids after restore, retention, auto-backup on startup); ruff, mypy clean; no schema change
+- frontend: 71 passed; typecheck and build OK
+- real dev Postgres: automatic backup appeared on server start; manual backup; deleted a playlist; restored in the
+  UI after typing RESTORE -> playlist back with 6 items, next new id 2 (sequence reset); pre-restore backup listed;
+  verify on the real archive: 2/2 ok
 
 ### 2026-11-09 Settings and storage health (branch settings-storage)
 - backend: 122 passed on SQLite and Postgres (disk usage pinned in tests; a separate test covers low space); ruff, mypy clean; no schema change

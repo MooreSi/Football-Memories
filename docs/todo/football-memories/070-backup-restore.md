@@ -1,6 +1,6 @@
 # 070: Backup, restore and archive integrity
 
-**Status:** Building
+**Status:** Shipped 2026-11-09 (branch backup-restore)
 **Brief:** section 22 (database backups, metadata/playlist export, media integrity
 verification, missing-file detection, relinking, rebuilding thumbnails, restore),
 acceptance criterion 17.

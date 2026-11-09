@@ -5,6 +5,7 @@ import { api } from "../../api/client";
 import type { FolderHealth } from "../../api/types";
 import { formatBytes, formatDate } from "../../lib/format";
 import { Badge } from "../ui/Badge";
+import { ArchiveTools } from "./ArchiveTools";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
 
@@ -88,6 +89,8 @@ export function StorageSettings() {
       <div className="grid gap-5 lg:grid-cols-2">
         {folders.map((f) => <FolderCard key={f.role} f={f} />)}
       </div>
+
+      <ArchiveTools />
 
       <section aria-label="Archive contents" className="panel space-y-4 p-5">
         <div className="flex items-center gap-3">

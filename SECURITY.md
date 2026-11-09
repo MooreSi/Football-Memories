@@ -15,6 +15,8 @@ This app stores footage of children. Privacy is a requirement, not a feature.
 | Secrets in git | `.env`, cookies, storage-state, footage, `data/` gitignored | `.gitignore` |
 | Input validation | Pydantic schemas with length limits; CSV sidecar validated before any copy | `schemas.py`, `sidecar.py` |
 | Player photos | Re-encoded by ffmpeg to a 512x512 JPEG: validates it is a real image and strips all metadata (EXIF GPS location, device, timestamps); 10 MB limit; client file name never used; stored only under the local archive | `services/photos.py` + tests incl. a planted GPS string |
+| Restore | Needs an explicit `confirm: "RESTORE"` (typed in the UI), refuses a backup from another schema, writes a pre-restore backup first, runs in one transaction; never touches video or photo files | `services/backups.py` + tests |
+| Backup names | Strict pattern + `safe_join`; uploads validated before saving | same |
 | Storage checks | The archive write test creates one `.fm-probe-*` file and deletes it at once; the import folder is never written to | `services/storage.py` + tests |
 | Third-party requests | None: no CDN fonts or scripts; the UI is fully self-hosted | `frontend/index.html` |
 

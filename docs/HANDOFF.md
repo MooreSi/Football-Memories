@@ -31,7 +31,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   queue player that crosses matches, saved playlists.
 - Settings (`/settings`): clip timing used everywhere moments play; storage
   health with free space and missing-file detection.
-- Tests: backend 122 (SQLite + Postgres), frontend 66. All green.
+- Backups (Settings > Backups): daily automatic + manual, download/upload,
+  safe restore; Storage tab has verify / find moved files / rebuild thumbnails.
+- Tests: backend 149 (SQLite + Postgres), frontend 71. All green.
 - **Owner's Mac disk is 98% full (23 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.
 
