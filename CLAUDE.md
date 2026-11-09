@@ -1,11 +1,18 @@
 # CLAUDE.md
 
-**Football Clip Recorder** logs in to the owner's Hudl account and downloads
-full games/matches and clips to a local library.
+**Football Memories** (repo: Football-Clip-Recorder) is a local-first web app
+that archives the owner's football match footage, indexes tagged moments and
+builds a player's memories timeline. Brief: [docs/BRIEF.md](docs/BRIEF.md).
 
-It holds the owner's Hudl credentials and a live logged-in session, and it
-writes into a library of footage that may not exist anywhere else once Hudl
-expires it. Those two facts drive the rules.
+**Picking this up? Read [docs/HANDOFF.md](docs/HANDOFF.md) first**, then follow
+[the handoff rule](docs/system/rules/60-handoff.md): commit and push at every
+checkpoint, and keep HANDOFF.md and PROGRESS.md current. Another agent may take
+over at any moment.
+
+The app protects two things: the owner's Hudl account (Hudl's terms forbid
+automation, so the app never logs in to Hudl; see
+[HUDL_INTEGRATION.md](HUDL_INTEGRATION.md)) and a footage archive of a child
+that may be the only surviving copy.
 
 Read **[docs/system/rules/10-golden-rules.md](docs/system/rules/10-golden-rules.md)**
 before changing anything. It is short and it is not optional.
@@ -35,17 +42,25 @@ the open decision.
 
 ## Before you commit
 
+[`/verify`](.claude/skills/verify/SKILL.md) lists every check. In short:
+
 ```bash
-.venv/bin/python -m pytest tests/ -q
+cd backend && uv run pytest && uv run ruff check app tests && uv run mypy app
+cd backend && TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest
+cd frontend && npm test && npm run typecheck && npm run build
 ```
 
-Everything must pass. As gates are added (lint, import contracts, coverage
-ratchet) they join this step and [`/verify`](.claude/skills/verify/SKILL.md)
-lists them. **A failing check is not noise.**
+Everything must pass. **A failing check is not noise.**
 
-Use `.venv/bin/python`, never bare `python`: bare `python` on this Mac is a
-different interpreter with a different package set, and its failures read
-like findings about your change.
+Use `uv run` (backend/.venv, Python 3.12), never bare `python`: bare `python3`
+on this Mac is 3.13 without the project's packages, and its failures read like
+findings about your change.
+
+## Stack (decided: docs/DECISIONS.md D-001)
+
+FastAPI + SQLAlchemy 2 + Alembic + PostgreSQL 17 (`backend/`); React 19 +
+TypeScript + Vite + Tailwind v4 + TanStack Query (`frontend/`); ffmpeg; Docker
+Compose. Layout and data model: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## The knowledge base: docs/system/
 
@@ -72,6 +87,7 @@ file and the code disagree, the code is the fact: fix the file and say so.
 | Layers and boundaries | [docs/system/rules/30-architecture.md](docs/system/rules/30-architecture.md) |
 | Testing protocol | [docs/system/rules/40-testing.md](docs/system/rules/40-testing.md) |
 | How to make a change | [docs/system/rules/50-workflow.md](docs/system/rules/50-workflow.md) |
+| **Handoff between agents** | [docs/system/rules/60-handoff.md](docs/system/rules/60-handoff.md) |
 | Splitting a big file | [docs/system/rules/70-file-organisation.md](docs/system/rules/70-file-organisation.md) |
 
 Plain Markdown on purpose, so any tool or human reads the same rules.
@@ -91,6 +107,10 @@ Plain Markdown on purpose, so any tool or human reads the same rules.
 | `/push` | publishing the branch and watching CI |
 
 ## Do not
+
+- end a session with unpushed work or a stale docs/HANDOFF.md
+- add a nav item, button or control that does not do something real
+- show mock/demo data as if it were real footage
 
 - commit credentials, cookies, session/storage-state files, tokens or `.env`
 - log, print or screenshot a password, cookie or bearer token

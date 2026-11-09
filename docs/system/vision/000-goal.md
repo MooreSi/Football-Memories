@@ -1,13 +1,14 @@
 # Goal
 
-**Football Clip Recorder** gives the owner a reliable local copy of the
-footage in their Hudl account: full games/matches and individual clips.
+**Football Memories** gives the owner a reliable, beautiful local archive of
+their son's football footage: full matches, tagged moments and a player
+memories timeline. The full brief is [../../BRIEF.md](../../BRIEF.md).
 
 ## What success looks like
 
-- Log in once with the owner's Hudl account; the password lives in the OS
-  keychain, never in a file.
-- See the games and clips the account can access, and choose what to download.
+- Get footage in easily: import files downloaded through Hudl's own features
+  (Hudl automation is not permitted; see HUDL_INTEGRATION.md).
+- Browse every match and tagged moment; filter by player and event type.
 - Downloads land in a predictable folder structure with predictable names,
   verified complete, and are never downloaded twice.
 - An interrupted run resumes; a failed download says why and leaves nothing

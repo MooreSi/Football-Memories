@@ -8,12 +8,12 @@ same commit when a change teaches you something non-obvious.
 
 | Domain | Covers | Sensitive? |
 |---|---|---|
-| `auth/` | keychain access, login flow, session lifecycle, challenges (CAPTCHA/MFA) | **yes**: `/safe-change` |
-| `hudl/` | the client: endpoints/selectors, throttling, backoff, recorded fixtures | **yes**: `/safe-change` |
-| `catalog/` | listing teams, seasons, games and clips the account can see | no |
-| `downloads/` | stream formats (HLS/MP4), fetch, `.part` + verify + rename, resume | partly: verification rules |
-| `library/` | folder layout, naming, "already downloaded", index | **yes** for anything that moves/deletes files |
-| `entry/` | CLI/UI, progress, error messages | no |
+| `import/` | inbox listing, copy + verify + rename, sidecar CSV, dedup | **yes**: never touch originals or overwrite |
+| `library/` | matches, teams, seasons, age groups, search, storage layout | **yes** for anything that moves/deletes files |
+| `playback/` | streaming with Range, the player, clip windows and buffers | no |
+| `connectors/` | capability reporting; Hudl stays disabled (HUDL_INTEGRATION.md) | **yes**: `/safe-change` |
+| `players/` | primary player, player hub, memories timeline (phase 4) | privacy: minimal data about children |
+| `jobs/` | downloads, sync, notifications, backups (phases 5-6) | **yes**: idempotency, no duplicate files |
 
 Directories are created when the first code for that domain lands. Do not
 create empty ones.

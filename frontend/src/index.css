@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* Design tokens: docs/design/DESIGN.md. Dark navy/charcoal, electric cyan accent,
+   restrained violet-to-blue gradient. Change colours here, not in components. */
+@theme {
+  --color-ink-950: #060a14;
+  --color-ink-900: #0a1020;
+  --color-ink-850: #0e1529;
+  --color-ink-800: #121b33;
+  --color-ink-700: #1a2542;
+  --color-line: #233152;
+  --color-fg: #e8eef8;
+  --color-fg-muted: #93a1bd;
+  --color-fg-subtle: #64728f;
+  --color-accent: #22d3ee;
+  --color-accent-strong: #06b6d4;
+  --color-violet: #7c5cff;
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-card: 1rem;
+  --shadow-glow: 0 0 0 1px rgb(34 211 238 / 0.35), 0 8px 30px -8px rgb(34 211 238 / 0.35);
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--color-ink-950);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(1200px 600px at 85% -10%, rgb(124 92 255 / 0.12), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgb(34 211 238 / 0.08), transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: rgb(34 211 238 / 0.3);
+  }
+}
+
+@layer components {
+  .panel {
+    background: linear-gradient(180deg, rgb(18 27 51 / 0.85), rgb(14 21 41 / 0.85));
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    backdrop-filter: blur(12px);
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, var(--color-accent), var(--color-violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .field {
+    width: 100%;
+    background: var(--color-ink-900);
+    border: 1px solid var(--color-line);
+    border-radius: 0.6rem;
+    padding: 0.55rem 0.8rem;
+    color: var(--color-fg);
+    font-size: 0.875rem;
+  }
+  .field:focus {
+    border-color: var(--color-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(34 211 238 / 0.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

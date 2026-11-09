@@ -1,56 +1,59 @@
 # Handoff
 
 **Read this first.** Then [PROGRESS.md](todo/football-memories/PROGRESS.md) and
-[DECISIONS.md](DECISIONS.md). Rules: [CLAUDE.md](../CLAUDE.md).
+[DECISIONS.md](DECISIONS.md). Rules: [CLAUDE.md](../CLAUDE.md) (any agent) and
+[60-handoff.md](system/rules/60-handoff.md) (how to leave the work).
 
 ## What this is
 
 **Football Memories**: a local-first web app that archives football match
-footage (originally from Hudl), indexes tagged moments, and builds a player's
-"memories" timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
-[design/reference/](design/reference/).
+footage, indexes tagged moments, and (next) builds a player's memories
+timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
+[design/](design/DESIGN.md).
 
 ## Current state (2026-11-09)
 
-- Branch: **`phase1-foundation`** (not yet merged to `main`).
-- Backend first vertical slice works and is tested: import a video from the
-  inbox folder → copy + verify + thumbnail → index → list/detail API → stream
-  with Range → tagged events from a sidecar CSV.
-- Frontend: not started yet.
-- Hudl: **no automation, by design** (Terms of Service). See
-  [HUDL_INTEGRATION.md](../HUDL_INTEGRATION.md).
+- Branch: **`phase1-foundation`**, pushed. Not merged to `main` yet (owner decides).
+- **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
+  inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
+  Match page with player, event markers, filters (AND/OR), "play moments only".
+- Runs in Docker Compose at http://127.0.0.1:8765 (localhost only, D-008).
+- Hudl: **not automated, by design** (Terms of Service 3.2). See
+  [HUDL_INTEGRATION.md](../HUDL_INTEGRATION.md). Waiting on owner decision 002.
+- Tests: backend 52 (SQLite + Postgres), frontend 22. All green.
 
-## How to run (development)
+## How to run
 
-```bash
-cd backend && uv sync                       # once
-cd backend && uv run pytest                 # tests, SQLite
-docker run -d --rm --name fm-pg-dev -e POSTGRES_USER=memories \
-  -e POSTGRES_PASSWORD=memories -e POSTGRES_DB=memories \
-  -p 127.0.0.1:55432:5432 postgres:17-alpine
-export FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories
-cd backend && uv run alembic upgrade head
-cd backend && FM_ARCHIVE_ROOT=../data/archive FM_IMPORT_ROOT=../data/inbox \
-  uv run uvicorn app.main:create_app --factory --reload --port 8000
-```
+Docker (normal use): see [DEVELOPMENT.md](../DEVELOPMENT.md) "Run everything in Docker".
+Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../TESTING.md).
 
-API docs: http://localhost:8000/api/docs
+## Next steps (in order)
 
-## Next steps
-
-1. Frontend scaffold (Vite + React + TS + Tailwind) with the design tokens.
-2. Library page, Import page, Match detail page with player and event markers.
-3. Docker Compose (db, backend, frontend) bound to 127.0.0.1.
-4. Then phase 4 (Player Hub) per the brief.
+1. **Phase 4, Player Hub** (the owner's headline screen 3): `preferences` table
+   with the primary player; `GET /api/players/{id}/moments` cross-match query
+   (indexed on event_players.player_id); Player Hub page; Memories Timeline
+   (season → month → match → event); viewed/unviewed + favourites tables.
+2. Settings page: pre/post buffers (now fixed 8s/5s), archive/inbox health
+   (exists, writable, free space).
+3. Clip Explorer (brief section 10) across matches, reusing EventPanel filters.
+4. Playwright e2e for import → play → filter.
+5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
+   backup/restore, storage health.
 
 ## Blocked on / waiting for the owner
 
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
-  role on Hudl, whether tag export exists, whether to seek Hudl permission.
+  Hudl role, tag export availability, whether to ask Hudl for permission.
+- Merge `phase1-foundation` into `main`.
 
 ## Gotchas
 
-- Use `backend/.venv` (uv, Python 3.12). Bare `python3` is 3.13 without deps.
-- ffmpeg/ffprobe must be on PATH for tests (Homebrew on the Mac; in the Docker
-  image for containers).
-- Starlette 1.10 deprecates httpx in its TestClient (a warning only).
+- Backend: always `uv run ...` from `backend/` (Python 3.12 venv). Bare
+  `python3` is 3.13 without the deps.
+- Postgres test runs need the dev container `fm-pg-dev` on 127.0.0.1:55432
+  and a `memories_test` database (TESTING.md).
+- Port 8080 is used by the owner's HomeBoard app; Football Memories uses 8765.
+- The inbox is mounted read-only in Docker on purpose (originals are never touched).
+- Starlette 1.10 warns that its TestClient's httpx use is deprecated; harmless.
+- shadcn/ui is in the brief but not installed yet; primitives live in
+  `frontend/src/components/ui/`. Decide before building forms-heavy screens.

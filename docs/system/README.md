@@ -1,6 +1,6 @@
 # docs/system: the knowledge base
 
-The single point of truth for what Football Clip Recorder is and what we know
+The single point of truth for what Football Memories is and what we know
 about it.
 
 | Directory | Holds |

@@ -313,10 +313,16 @@ after Hudl genuinely changed. Name either in the commit message.
 ## Running
 
 ```bash
-.venv/bin/python -m pytest tests/services/downloads/ -q    # the directory you touched
-.venv/bin/python -m pytest tests/ -q                       # full suite
-.venv/bin/python -m pytest tests/ -q -k "captcha"          # by name
+cd backend && uv run pytest tests/services/        # the directory you touched
+cd backend && uv run pytest                        # full backend suite
+cd backend && uv run pytest -k duplicate           # by name
+cd frontend && npx vitest run src/lib              # frontend, one area
+cd frontend && npm test                            # full frontend suite
 ```
+
+Frontend tests use Vitest + Testing Library; render with
+`renderWithProviders` and stub the API with `stubFetch` from
+`frontend/src/test/render.tsx` (it fails loudly on an unstubbed path).
 
 **Never run two full suites at once.**
 

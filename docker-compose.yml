@@ -1,0 +1,44 @@
+# Football Memories. See DEVELOPMENT.md / README.md.
+# Ports are bound to 127.0.0.1 until LAN authentication exists (docs/DECISIONS.md D-008).
+name: football-memories
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${FM_DB_USER:-memories}
+      POSTGRES_PASSWORD: ${FM_DB_PASSWORD:?set FM_DB_PASSWORD in .env}
+      POSTGRES_DB: ${FM_DB_NAME:-memories}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FM_DB_USER:-memories}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      FM_DATABASE_URL: postgresql+psycopg://${FM_DB_USER:-memories}:${FM_DB_PASSWORD}@db:5432/${FM_DB_NAME:-memories}
+      FM_LOG_LEVEL: ${FM_LOG_LEVEL:-INFO}
+      FM_CORS_ORIGINS: '["http://localhost:${FM_PORT:-8765}"]'
+    volumes:
+      - ${FM_HOST_ARCHIVE:-./data/archive}:/archive
+      - ${FM_HOST_INBOX:-./data/inbox}:/inbox:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:${FM_PORT:-8765}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db-data:

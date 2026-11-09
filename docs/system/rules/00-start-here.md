@@ -1,10 +1,12 @@
 # Start here
 
-You are working on **Football Clip Recorder**: an app that logs in to the
-owner's Hudl account and downloads games/matches and clips to a local library.
+You are working on **Football Memories**: a local-first app that archives the
+owner's football match footage (from Hudl, via Hudl's own downloads), indexes
+tagged moments and builds a player's memories timeline.
 
-It holds a real password, drives a real logged-in session, and writes footage
-that may be the only copy once Hudl expires it. That drives everything below.
+It holds footage of a child that may be the only copy once Hudl expires it, and
+it must never put the owner's Hudl account at risk. That drives everything
+below. Current state: [../../HANDOFF.md](../../HANDOFF.md).
 
 ## Read these, in this order
 
@@ -16,7 +18,8 @@ that may be the only copy once Hudl expires it. That drives everything below.
 | 3 | [30-architecture.md](30-architecture.md) | before adding a file or an import |
 | 4 | [40-testing.md](40-testing.md) | before writing a test, i.e. before writing code |
 | 5 | [50-workflow.md](50-workflow.md) | how a change gets made, end to end |
-| 6 | [70-file-organisation.md](70-file-organisation.md) | when a file is too big |
+| 6 | [60-handoff.md](60-handoff.md) | **every session**: how to leave the work for the next agent |
+| 7 | [70-file-organisation.md](70-file-organisation.md) | when a file is too big |
 
 ## The thirty-second version
 

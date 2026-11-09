@@ -8,17 +8,26 @@ description: Run every check before committing Football Clip Recorder work. Use 
 ## The checks
 
 ```bash
-.venv/bin/python -m pytest tests/ -q
+# backend
+cd backend && uv run pytest
+cd backend && TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest
+cd backend && uv run ruff check app tests && uv run ruff format --check app tests && uv run mypy app
+cd backend && FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories uv run alembic check
+
+# frontend
+cd frontend && npm test && npm run typecheck && npm run build
+
+# when Docker files, migrations or config changed
+docker compose up -d --build && curl -s http://127.0.0.1:8765/api/health
 ```
 
-That is the whole list today, because the project is new. **When a gate is
-added (lint, import contracts, fixture scrub, coverage ratchet), add its
-command here and to CLAUDE.md "Before you commit" in the same commit.** A gate
-that exists but is not listed here does not get run.
+The Postgres runs need the dev database container from DEVELOPMENT.md. If it
+is not running, say so in the report; do not quietly skip the Postgres run.
 
-Use `.venv/bin/python`, never bare `python`. If a third-party module is
-"missing", check the interpreter before concluding anything:
-`head -1 "$(command -v python)"` versus `.venv/bin/python`.
+**When a gate is added, add its command here and to CLAUDE.md in the same
+commit.** A gate that is not listed here does not get run.
+
+Use `uv run` from `backend/`, never bare `python`.
 
 ## What must be true before you commit
 
@@ -58,7 +67,8 @@ client, and say what changed upstream in the commit.
 State the real numbers:
 
 ```
-Verified: suite 212 passed, 0 failed. Staged-secret scan: 2 hits, both the
+Verified: backend 52 passed (SQLite) and 52 passed (Postgres), ruff/mypy
+clean, alembic no drift; frontend 22 passed, typecheck and build OK. Staged-secret scan: 2 hits, both the
 word "token" in docstrings. Not checked against the real Hudl account.
 ```
 

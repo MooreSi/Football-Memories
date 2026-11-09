@@ -3,8 +3,10 @@
 **Read this before changing anything. It applies to every AI agent and every
 human, on every change, without exception.**
 
-This app holds the owner's Hudl login, drives a live session against Hudl, and
-writes footage into a library that may be the only surviving copy. Rules 1-5
+This app archives footage of a child that may be the only surviving copy, and
+must never put the owner's Hudl account at risk. Hudl's terms forbid automated
+access, so the app does not log in to Hudl at all (HUDL_INTEGRATION.md); rules
+1-3 still bind any future connector. Rules 1-5
 protect those. Rules 6-10 keep the codebase honest.
 
 ---
@@ -95,11 +97,14 @@ the library. See [30-architecture.md](30-architecture.md). Dead code that
 looks live is how a codebase accumulates thousands of unreachable lines. Git
 remembers. If it is not called, remove it.
 
-### 10. Say what you actually did
+### 10. Say what you actually did, and leave it for the next agent
 
 If you skipped part of the task, say which part and why. If a download was not
 verified against the real account, say so. If you are unsure a change is safe,
 say that instead of shipping it with confident wording.
+
+Commit and push at every checkpoint and keep `docs/HANDOFF.md` current, so any
+agent can take over at any time ([60-handoff.md](60-handoff.md)).
 
 ---
 

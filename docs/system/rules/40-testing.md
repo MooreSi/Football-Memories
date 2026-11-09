@@ -77,8 +77,9 @@ read-only, owner-run check (see `20-account-and-library-safety.md`).
 
 ## Where tests live
 
-The tree mirrors the source tree: `services/downloads/verify.py` is tested by
-`tests/services/downloads/test_verify.py`. Every test directory has an
+Backend: `backend/tests/` mirrors `backend/app/`
+(`app/services/importer.py` → `tests/services/test_importer.py`). Frontend:
+tests sit next to the file they cover (`EventPanel.tsx` → `EventPanel.test.tsx`). Every test directory has an
 `__init__.py`; without it pytest imports two same-named files as one module
 and silently runs only one.
 
@@ -116,10 +117,13 @@ existing file was touched.
 ## Running
 
 ```bash
-.venv/bin/python -m pytest tests/ -q
+cd backend && uv run pytest                 # SQLite
+cd backend && TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest
+cd frontend && npm test                     # vitest + Testing Library
 ```
 
-**Never run two full suites at once.** It produces phantom failures.
+Full command list: [TESTING.md](../../../TESTING.md). **Never run two full
+suites at once.** It produces phantom failures.
 
 ## Coverage
 

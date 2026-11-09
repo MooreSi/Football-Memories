@@ -1,24 +1,43 @@
-# Football Clip Recorder
+# Football Memories
 
-Logs in to your Hudl account and downloads games/matches and clips to a local
-library: verified, never downloaded twice, never overwriting what you already
-have.
+A private, local-first archive for football match footage: import matches,
+index tagged moments, watch whole matches or only the moments that matter, and
+(coming next) follow one player's journey across seasons.
 
-**Status:** project setup. No application code yet. The stack is an open
-decision: [docs/owner-decisions/001-stack.md](docs/owner-decisions/001-stack.md).
+Runs on your Mac with Docker. Nothing is uploaded anywhere.
 
-## For contributors (human or AI)
+## Status
 
-Start at [CLAUDE.md](CLAUDE.md), then
-[docs/system/rules/10-golden-rules.md](docs/system/rules/10-golden-rules.md).
-The short version:
+Phase 1-2 vertical slice works: **import a match → index → thumbnail → play →
+tagged moments** (filter by event type and player, play moments only, event
+markers, speeds, frame stepping, keyboard shortcuts). See
+[docs/HANDOFF.md](docs/HANDOFF.md) and
+[PROGRESS.md](docs/todo/football-memories/PROGRESS.md).
 
-- Credentials and session tokens never leave the OS keychain.
-- No automated test talks to Hudl; nothing ever changes anything on Hudl.
-- Never delete or overwrite library files without an explicit request.
-- Test first, watch it fail, never edit a test to make a change pass.
+**About Hudl:** Hudl's terms prohibit automated access and there is no public
+video API, so the app does not log in to Hudl. Download matches with Hudl's own
+download feature and import them. Details: [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md).
 
-## Use
+## Quick start
 
-Only download content your Hudl account is entitled to view, and follow Hudl's
-terms of service.
+```bash
+cp .env.example .env            # set FM_DB_PASSWORD and your folders
+docker compose up -d --build
+open http://127.0.0.1:8765
+```
+
+Put videos in the inbox folder (`FM_HOST_INBOX`), then use **Import**.
+
+## Documentation
+
+| | |
+|---|---|
+| [DEVELOPMENT.md](DEVELOPMENT.md) | install, run, migrations, backup, troubleshooting |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | components, data model, storage layout, API |
+| [TESTING.md](TESTING.md) | how to run and what the tests guarantee |
+| [SECURITY.md](SECURITY.md) | privacy and security measures |
+| [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md) | what Hudl allows and the import workflow |
+| [docs/BRIEF.md](docs/BRIEF.md) | the full product brief |
+| [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) | rules for anyone (human or AI) changing the code |
+
+Only import footage you are entitled to keep, and follow Hudl's terms of service.

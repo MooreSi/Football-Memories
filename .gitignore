@@ -44,3 +44,7 @@ build/
 
 # Local app data (archive, inbox, db)
 data/
+
+# Node
+node_modules/
+*.tsbuildinfo

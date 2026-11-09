@@ -13,10 +13,10 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Hudl capability research | done | HUDL_INTEGRATION.md; owner question 002 open |
 | Architecture + decision log | done | ARCHITECTURE.md, docs/DECISIONS.md |
 | Backend: FastAPI, SQLAlchemy, Alembic, Postgres | done | backend/ |
-| Frontend: Vite, React, TS, Tailwind | todo | |
-| Docker Compose | todo | |
-| Design system + layout/navigation | todo | |
-| Test environment (pytest, vitest) | partial | pytest done |
+| Frontend: Vite, React 19, TS, Tailwind v4, TanStack Query | done | frontend/ |
+| Docker Compose | done | db + backend + nginx frontend on 127.0.0.1:8765; inbox mounted read-only |
+| Design system + layout/navigation | done | tokens in src/index.css; docs/design/DESIGN.md; shadcn/ui not added yet (D-009 pending) |
+| Test environment (pytest, vitest) | partial | pytest + vitest done; Playwright not set up |
 
 ## Phase 2: Functional match library (first vertical slice)
 
@@ -27,10 +27,21 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Tag sidecar CSV import | done | format in HUDL_INTEGRATION.md |
 | Match list/detail API, search, pagination | done | /api/matches |
 | Video streaming with Range | done | /api/media/{id}/stream |
-| Library UI | todo | |
-| Match detail UI + player + event markers | todo | |
-| Import UI | todo | |
-| Team/season filters UI | todo | |
+| Library UI | done | grid cards, search, team/season filters, load-more pagination, empty states |
+| Match detail UI + player + event markers | done | markers, moments-only playlist, AND/OR filters, speeds, frame step, PiP, fullscreen, shortcuts, resume |
+| Import UI | done | inbox list, form, season guess, 409 link to existing match |
+| Team/season filters UI | done | |
+
+### Phase 2 gaps still open
+
+| Task | Status | Notes |
+|---|---|---|
+| Grid/list toggle, sort options, multi-select, bulk ops | todo | brief section 7 |
+| Watched/unwatched, favourite-player counts on cards | todo | needs phase 4 tables |
+| Configurable pre/post buffers in Settings | todo | fixed 8s/5s today (src/lib/events.ts) |
+| Resume position stored server-side | todo | browser localStorage today |
+| Vidstack evaluation | todo | D-006 |
+| Playwright e2e for the slice | todo | checked by hand, see log |
 
 ## Phases 3-7
 
@@ -38,6 +49,19 @@ Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 vertical slice complete (branch phase1-foundation)
+- backend `uv run pytest`: 52 passed (SQLite) and 52 passed (Postgres 17)
+- `ruff check`, `ruff format --check`, `mypy app` (strict): clean; `alembic check`: no drift
+- frontend `npm test`: 22 passed; `npm run typecheck`: clean; `npm run build`: OK
+- negative control: planted "overwrite allowed" in importer -> 1 test failed
+  (`test_never_overwrites_an_existing_different_file_at_the_target_path`); restored -> 52 passed
+- manual, dev servers: imported a 3-min synthetic 1280x720 match + 7-tag CSV through the
+  UI; library card, detail page, 7 markers; "Play 7 moments" started at 0:04 (12s - 8s)
+  and advanced to the 0:31 moment after the window ended
+- Docker Compose: built and ran; through nginx on :8765 import 201 with 7 events,
+  Range 206, thumbnail 200 image/jpeg, duplicate 409; inbox original unchanged
+- Not checked: real Hudl footage, Safari/iPad, keyboard-only walkthrough, large libraries
 
 ### 2026-11-09 backend checkpoint
 - `uv run pytest` (SQLite): 52 passed

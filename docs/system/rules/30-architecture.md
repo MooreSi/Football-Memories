@@ -1,62 +1,47 @@
-# Architecture: the shape and the boundaries
+# Architecture: the boundaries
 
-**Status: provisional.** No application code exists yet. This is the intended
-shape; the stack choice is open in
-[../../owner-decisions/001-stack.md](../../owner-decisions/001-stack.md).
-When the code lands, update this file to match it, and add the structural
-tests that enforce it.
+Overview, data model and API: [ARCHITECTURE.md](../../../ARCHITECTURE.md).
+This file is the rules.
 
-## The layers
+## Backend layers point downward
 
 ```
-entry/        CLI and/or UI. Parses input, shows progress, renders errors.
-  │           Knows nothing about HTTP, browsers, cookies or file layout.
-  ▼
-services/     All the behaviour. One package per domain:
-  │             auth/       credentials (secret store) + session lifecycle
-  │             catalog/    what games/clips the account can see
-  │             downloads/  fetch, verify, resume
-  │             library/    where files go, naming, "already have it"
-  ▼
-hudl/         The ONLY code that talks to Hudl (HTTP + browser automation).
-              Throttling, backoff, challenge detection, redaction live here.
-storage/      Local index (what was downloaded, from which Hudl id, verified
-              how). The only code that writes the index.
-
-utils/, config/   Bottom of the stack. Import nothing above themselves.
+backend/app/api/          routes: validate input, call services, map errors to HTTP
+      ▼
+backend/app/services/     all behaviour (importer, library, media, sidecar, paths)
+      ▼
+backend/app/models.py     SQLAlchemy schema  ──▶ PostgreSQL (Alembic)
+backend/app/connectors/   footage-source adapters, each reporting real capabilities
 ```
-
-## What each layer may not do
 
 | Layer | Must never |
 |---|---|
-| `entry/` | import `hudl/` or `storage/` directly, hold credentials, touch library paths |
-| `services/` | import an HTTP or browser library directly; bypass `hudl/` |
-| `hudl/` | write to the library or index; expose any write/modify call to Hudl |
-| `storage/` | talk to the network |
-| `utils/`, `config/` | import anything above themselves |
-| anything | log a secret, or construct a Hudl resource id it was not given |
+| `api/` | hold business logic; open files except via a service; build paths from user input |
+| `services/` | import FastAPI; write outside `ARCHIVE_ROOT`; modify anything in `IMPORT_ROOT` |
+| `connectors/` | claim a capability that has no working, tested code behind it |
+| anything | turn a user-supplied name into a path without `services/paths.safe_join` |
+| anything | contact Hudl (see HUDL_INTEGRATION.md) |
 
-Each row becomes a structural test with a negative control (the scanner is
-shown a planted violation and must find it) as soon as the layer exists.
+## Frontend
 
-## Why one Hudl choke point
+- `src/lib/` is pure logic and is unit-tested; components stay thin.
+- `src/api/types.ts` mirrors `backend/app/schemas.py`; change both together.
+- Colours only from tokens in `src/index.css`.
+- A route appears in the nav only when its page works (brief section 19).
 
-Rate limiting, backoff, challenge detection and secret redaction only work if
-every request passes through them. A second module that "just does one quick
-request" with its own client silently skips all four. The structural test
-that forbids importing the HTTP/browser library outside `hudl/` is what keeps
-the choke point real.
+## Connector capabilities drive the UI
 
-## Where a helper lives
+The UI reads `GET /api/connectors` and shows only what a connector can do. The
+mock connector is never registered in production
+(`tests/connectors/test_connectors.py`).
 
-- Used by **two or more services** → `utils/`
-- Used by **one service** → inside that service's package
-- Used only by the entry layer → `entry/`
+## Schema changes
 
-## Long-running work
+Every model change ships with an Alembic migration in the same commit, and
+`alembic check` reports no drift. Never edit an applied migration.
 
-Downloads are slow and interruptible. Model them as jobs with explicit state
-(queued, downloading, verifying, done, failed) persisted in `storage/`, so a
-crash or Ctrl-C resumes instead of starting over or leaving a half-file under
-its final name.
+## Long-running work (phase 5)
+
+Imports are synchronous for now (a 2 GB file copies and hashes in seconds on
+SSD). Downloads, sync and exports will be persistent DB-backed jobs with
+explicit states, so a crash resumes instead of restarting.
