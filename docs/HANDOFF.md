@@ -25,7 +25,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   reference 02, Player Hub = reference 03 (docs/design/DESIGN.md).
 - Phase 4 Player Hub merged to `main`: primary player (kept
   across restarts), profile, favourites, watched state, Memories Timeline.
-- Tests: backend 73 (SQLite + Postgres), frontend 44. All green.
+- Profile photos: upload/replace/remove in the hub's Edit panel; re-encoded and
+  metadata-stripped (D-009).
+- Tests: backend 85 (SQLite + Postgres), frontend 49. All green.
 
 ## How to run
 
@@ -34,8 +36,7 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
-1. **Phase 4 leftovers:** profile photo upload (needs `python-multipart`, a new
-   runtime dependency: ask the owner first); calendar view of the timeline;
+1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
 2. Settings page: pre/post buffers (now fixed 8s/5s), archive/inbox health
    (exists, writable, free space).

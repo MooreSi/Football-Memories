@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Pencil, Shield, Shirt } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
@@ -29,6 +29,16 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
       void qc.invalidateQueries();
     },
   });
+  const photoInput = useRef<HTMLInputElement>(null);
+  const upload = useMutation({
+    mutationFn: (file: File) => api.uploadPhoto(player.id, file),
+    onSuccess: () => void qc.invalidateQueries(),
+  });
+  const removePhoto = useMutation({
+    mutationFn: () => api.removePhoto(player.id),
+    onSuccess: () => void qc.invalidateQueries(),
+  });
+  const photoError = (upload.error ?? removePhoto.error) as Error | null;
   const scroller = useRef<HTMLDivElement>(null);
   const scroll = (d: number) => scroller.current?.scrollBy({ left: d * 200, behavior: "smooth" });
 
@@ -64,6 +74,36 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
               save.mutate();
             }}
           >
+            <div className="space-y-2 rounded-xl border border-white/10 bg-ink-900/60 p-3 sm:col-span-3">
+              <p className="text-sm text-fg-muted">Photo</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={photoInput}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Choose a photo"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) upload.mutate(f);
+                    e.target.value = "";
+                  }}
+                />
+                <Button type="button" onClick={() => photoInput.current?.click()} disabled={upload.isPending}>
+                  <Camera size={15} aria-hidden /> {upload.isPending ? "Uploading" : player.photo_url ? "Change photo" : "Add photo"}
+                </Button>
+                {player.photo_url && (
+                  <Button type="button" variant="ghost" onClick={() => removePhoto.mutate()} disabled={removePhoto.isPending}>
+                    <Trash2 size={15} aria-hidden /> Remove photo
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-fg-subtle">
+                JPEG, PNG or WebP up to 10 MB. Stored only on this computer, cropped square, with location and camera
+                details removed.
+              </p>
+              {photoError && <p role="alert" className="text-sm text-danger">{photoError.message}</p>}
+            </div>
             <label className="space-y-1 text-sm sm:col-span-3">
               <span className="text-fg-muted">Display name</span>
               <input className="field" required value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />

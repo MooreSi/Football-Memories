@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, UserRound } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { PlayerAvatar } from "../components/player/PlayerAvatar";
 import { api } from "../api/client";
-import { initials } from "../components/TeamBadge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
@@ -41,9 +41,7 @@ export function PlayerPage({ choose = false }: { choose?: boolean }) {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {players.data.map((p) => (
             <li key={p.id} className="tile flex items-center gap-4 p-4">
-              <span className="grid size-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent/90 to-[#2563eb] text-lg font-bold text-ink-950">
-                {initials(p.display_name)}
-              </span>
+              <PlayerAvatar name={p.display_name} photoUrl={p.photo_url} />
               <div className="min-w-0 flex-1">
                 <Link to={`/player/${p.id}`} className="block truncate font-semibold hover:text-accent">{p.display_name}</Link>
                 <p className="text-xs text-fg-muted">{p.moments} moments · {p.matches} matches</p>

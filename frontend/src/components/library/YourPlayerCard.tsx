@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { PlayerAvatar } from "../player/PlayerAvatar";
 import { api } from "../../api/client";
-import { initials } from "../TeamBadge";
 
 /** Reference 01's "MVP of the day" slot, holding the owner's primary player (brief section 20). */
 export function YourPlayerCard() {
@@ -32,9 +32,7 @@ export function YourPlayerCard() {
     >
       <p className="text-sm text-fg-muted">Your player</p>
       <div className="mt-2 flex items-center gap-3">
-        <span className="grid size-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent/90 to-[#2563eb] text-lg font-bold text-ink-950 shadow-[0_0_24px_-4px_rgb(34_211_238/0.7)]">
-          {initials(p.display_name)}
-        </span>
+        <PlayerAvatar name={p.display_name} photoUrl={p.photo_url} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-semibold">{p.display_name}</p>
           <p className="text-xs text-fg-muted">{[p.position, p.teams[0]?.team_name].filter(Boolean).join(" · ") || "Player hub"}</p>

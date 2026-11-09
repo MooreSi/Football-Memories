@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
-from app.models import Event, EventMark
+from app.api.deps import get_db, get_settings
+from app.config import Settings
+from app.models import Event, EventMark, Player
 from app.schemas import (
     FavouriteIn,
     MatchCountOut,
@@ -24,10 +26,11 @@ from app.schemas import (
     TeammateOut,
     TeamSeasonOut,
 )
-from app.services import players
+from app.services import photos, players
 
 router = APIRouter(prefix="/api")
 Db = Annotated[Session, Depends(get_db)]
+Cfg = Annotated[Settings, Depends(get_settings)]
 
 
 def _404(exc: players.NotFound) -> HTTPException:
@@ -57,6 +60,7 @@ def list_players(db: Db) -> list[PlayerListItem]:
             position=r.player.position,
             moments=r.moments,
             matches=r.matches,
+            photo_url=photos.photo_url(r.player),
         )
         for r in players.list_players(db)
     ]
@@ -70,6 +74,7 @@ def _profile_out(db: Session, player_id: int) -> PlayerProfileOut:
         shirt_number=p.player.shirt_number,
         position=p.player.position,
         is_primary=p.is_primary,
+        photo_url=photos.photo_url(p.player),
         totals=PlayerTotals(
             matches=p.matches, moments=p.moments, unwatched=p.unwatched, favourites=p.favourites
         ),
@@ -195,3 +200,38 @@ def post_viewed(event_id: int, db: Db) -> dict[str, bool]:
     except players.NotFound as exc:
         raise _404(exc) from exc
     return {"viewed": True}
+
+
+@router.put("/players/{player_id}/photo", response_model=PlayerProfileOut)
+def put_photo(player_id: int, file: UploadFile, db: Db, settings: Cfg) -> PlayerProfileOut:
+    try:
+        photos.save_photo(db, settings, player_id, file.file)
+        return _profile_out(db, player_id)
+    except players.NotFound as exc:
+        raise _404(exc) from exc
+    except photos.PhotoTooLarge as exc:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, detail=str(exc)) from exc
+    except photos.InvalidPhoto as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.delete("/players/{player_id}/photo", response_model=PlayerProfileOut)
+def delete_photo(player_id: int, db: Db, settings: Cfg) -> PlayerProfileOut:
+    try:
+        photos.remove_photo(db, settings, player_id)
+        return _profile_out(db, player_id)
+    except players.NotFound as exc:
+        raise _404(exc) from exc
+
+
+@router.get("/players/{player_id}/photo")
+def get_photo(player_id: int, db: Db, settings: Cfg) -> FileResponse:
+    player = db.get(Player, player_id)
+    path = photos.photo_path(settings, player) if player else None
+    if path is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="no photo")
+    return FileResponse(
+        path,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "private, max-age=31536000, immutable"},
+    )

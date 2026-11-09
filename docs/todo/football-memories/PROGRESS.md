@@ -52,7 +52,7 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Cross-match player moments query + filters | done | `/api/players/{id}/moments` |
 | Favourites and viewed tracking | done | `event_marks`; match page hearts + unwatched dots; feed marks watched on play |
 | Memories Timeline | partial | timeline + favourites/unwatched/by-type views; calendar and card-gallery views todo |
-| Profile photo | todo | needs a new runtime dependency (owner decision) |
+| Profile photo | done | python-multipart approved (D-009); re-encoded 512x512 JPEG, metadata stripped |
 | Primary player on the dashboard | done | "Your player" card on the Library |
 
 ## Phases 3, 5-7
@@ -61,6 +61,14 @@ Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Player photos (branch player-photos)
+- backend: 85 passed on SQLite and Postgres; ruff, mypy clean; migration 3ea11db09197, alembic check no drift
+- frontend: 49 passed; typecheck and build OK
+- real upload against the dev API: a synthetic portrait carrying a fake GPS EXIF string came back as
+  mjpeg 512x512 with no EXIF segment and no GPS text; shown on the card in the browser; then removed
+  through DELETE (no files left in Players/1)
+- Not checked: HEIC photos straight from an iPhone (not accepted: JPEG/PNG/WebP only)
 
 ### 2026-11-09 Player Hub (branch phase4-player-hub)
 - backend: 73 passed on SQLite and on Postgres 17; ruff, mypy clean; migration f7153841c25d, alembic check no drift

@@ -4,6 +4,12 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-009 (2026-11-09) Profile photos via python-multipart + ffmpeg re-encode
+Owner approved adding `python-multipart` (FastAPI's dependency for file
+uploads). No image library: ffmpeg (already required) validates and re-encodes
+every photo to a 512x512 JPEG, which also strips EXIF/GPS metadata. Replacing or
+removing a photo deletes only the app's own re-encoded copy, never a user file.
+
 ## D-008 (2026-11-09) Bind to localhost until LAN authentication exists
 Docker Compose publishes ports on `127.0.0.1` only. The brief wants LAN access
 with authentication (section 21); until login is built, exposing footage of

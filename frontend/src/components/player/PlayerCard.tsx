@@ -1,6 +1,6 @@
 import type { PlayerProfile } from "../../api/types";
 import { abbreviate } from "../../lib/player";
-import { initials } from "../TeamBadge";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 /** Reference 03's shield card. The six numbers are the player's most frequent tag counts. */
 export function PlayerCard({ player }: { player: PlayerProfile }) {
@@ -16,13 +16,13 @@ export function PlayerCard({ player }: { player: PlayerProfile }) {
   return (
     <figure
       aria-label={`${player.display_name} player card`}
-      className="relative mx-auto w-full max-w-[300px] bg-gradient-to-b from-accent/70 via-[#3b82f6]/50 to-violet/60 p-[2px] [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]"
+      className="relative mx-auto w-full max-w-[300px] self-start bg-gradient-to-b from-accent/70 via-[#3b82f6]/50 to-violet/60 p-[2px] [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]"
     >
       <div className="bg-gradient-to-b from-ink-700 to-ink-900 px-6 pt-8 pb-16 text-center [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]">
-        <div className="relative mx-auto mb-4 grid size-28 place-items-center rounded-full bg-gradient-to-br from-accent/90 to-[#2563eb] text-4xl font-bold text-ink-950 shadow-[0_0_40px_-6px_rgb(34_211_238/0.7)]">
-          {initials(player.display_name)}
+        <div className="relative mx-auto mb-4 w-fit">
+          <PlayerAvatar name={player.display_name} photoUrl={player.photo_url} size={player.photo_url ? "xl" : "lg"} square={Boolean(player.photo_url)} />
           {player.shirt_number && (
-            <span className="absolute -right-1 -bottom-1 grid size-9 place-items-center rounded-full border-2 border-ink-800 bg-pin text-sm text-ink-950">
+            <span className="absolute -right-2 -bottom-2 grid size-9 place-items-center rounded-full border-2 border-ink-800 bg-pin text-sm font-bold text-ink-950">
               {player.shirt_number}
             </span>
           )}

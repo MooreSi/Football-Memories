@@ -49,7 +49,7 @@ Design direction and references: [docs/design/DESIGN.md](docs/design/DESIGN.md).
 | `teams` | a team (e.g. "Riverside U12") | unique name |
 | `seasons` | "2026/27" | unique label |
 | `team_seasons` | the team's **age group in that season** | PK (team, season) |
-| `players` | a person who appears in tags | unique display_name |
+| `players` | a person who appears in tags; optional shirt number, position, photo path | unique display_name |
 | `matches` | one game | unique (source, source_match_id); index (team, date), season |
 | `media_assets` | a local file for a match (full match / clip / compilation) | unique sha256; path relative to ARCHIVE_ROOT |
 | `tag_definitions` | source tag names, kept verbatim | unique (source, name) |
@@ -67,7 +67,8 @@ source media records. Each arrives with its migration and tests.
 <ARCHIVE_ROOT>/FootballMemories/
   Matches/<season>/<team>/<date> vs <opponent>/<original file name>
   Thumbnails/<sha256[:2]>/<sha256>.jpg
-  Clips/  Compilations/  Players/        (created when those features land)
+  Players/<player id>/photo-<hash>.jpg   (profile photo, 512x512, metadata stripped)
+  Clips/  Compilations/                  (created when those features land)
 ```
 
 Paths in the database are relative to `ARCHIVE_ROOT`, so the archive can be
@@ -93,5 +94,6 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | GET | `/api/players` | players with moment and match counts |
 | GET / PATCH | `/api/players/{id}` | profile: totals, tag counts, team/season history, per-match series, co-tagged players; edit name/shirt/position |
 | GET | `/api/players/{id}/moments` | cross-match moments, newest match first; filters `category`, `favourites`, `unwatched` |
+| PUT / DELETE / GET | `/api/players/{id}/photo` | upload (multipart, re-encoded), remove, serve the profile photo |
 | PUT | `/api/events/{id}/favourite` | favourite on/off (idempotent) |
 | POST | `/api/events/{id}/viewed` | mark a moment watched |

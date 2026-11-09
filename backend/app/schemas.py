@@ -122,6 +122,7 @@ class PlayerListItem(BaseModel):
     display_name: str
     shirt_number: str | None
     position: str | None
+    photo_url: str | None = None
     moments: int
     matches: int
 
@@ -164,6 +165,7 @@ class PlayerProfileOut(BaseModel):
     display_name: str
     shirt_number: str | None
     position: str | None
+    photo_url: str | None
     is_primary: bool
     totals: PlayerTotals
     categories: list[TagCount]

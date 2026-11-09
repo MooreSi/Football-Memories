@@ -10,7 +10,7 @@ import { PlayerPage } from "./PlayerPage";
 afterEach(() => vi.unstubAllGlobals());
 
 const profile: PlayerProfile = {
-  id: 5, display_name: "Sam Example", shirt_number: "1", position: "Goalkeeper", is_primary: false,
+  id: 5, display_name: "Sam Example", shirt_number: "1", position: "Goalkeeper", photo_url: null, is_primary: false,
   totals: { matches: 2, moments: 4, unwatched: 3, favourites: 1 },
   categories: [{ name: "Save", count: 2 }, { name: "GK Claim", count: 1 }, { name: "GK Distribution", count: 1 }],
   teams: [{ team_name: "Riverside", season_label: "2026/27", age_group: "U12", matches: 2 }],
@@ -78,7 +78,7 @@ describe("PlayerPage", () => {
   it("lists players to choose from when no primary player is set", async () => {
     stubFetch({
       "/api/preferences": { primary_player_id: null },
-      "/api/players": [{ id: 5, display_name: "Sam Example", shirt_number: null, position: null, moments: 4, matches: 2 }],
+      "/api/players": [{ id: 5, display_name: "Sam Example", shirt_number: null, position: null, photo_url: null, moments: 4, matches: 2 }],
     });
     renderWithProviders(<PlayerPage />, "/player");
     expect(await screen.findByText("Choose your player")).toBeInTheDocument();

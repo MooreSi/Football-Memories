@@ -67,6 +67,7 @@ class Player(Base):
     display_name: Mapped[str] = mapped_column(String(200))
     shirt_number: Mapped[str | None] = mapped_column(String(10))
     position: Mapped[str | None] = mapped_column(String(40))
+    photo_relpath: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
