@@ -23,6 +23,7 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 | Player Hub (+ chooser) | 03 | done: shield card with photo (or initials), teams/numbers/position with Edit, tagged-with carousel, dates column, tag radar, moments-per-match bars, phone moments feed |
 | Clip Explorer | 02 | done: event-type rail with counts + solid active row, PLAYLISTS panel with "+", clip bar, queue, moment-frame cards |
 | Settings (Playback, Storage + archive tools, Backups, Connections) | 01 tiles/panels | done |
+| Highlight reels (list + builder) | 02 queue/clip bar + 01 panels | done; title cards drawn in the app's palette |
 | Memories Timeline | 03 styling | done (season > month > match > moment; all / favourites / unwatched / by type) |
 | Library "Your player" card | 01 (MVP card slot) | done |
 

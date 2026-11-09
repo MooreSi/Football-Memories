@@ -58,6 +58,7 @@ Design direction and references: [docs/design/DESIGN.md](docs/design/DESIGN.md).
 | `event_marks` | favourite + first-viewed time per moment | PK event (cascade); index favourite |
 | `preferences` | key/value app preferences (`primary_player_id`) | PK key |
 | `playlists` | a saved, named list | |
+| `reels` / `reel_items` | highlight reels: name, title text, render status/progress/error, output file; items with per-clip pre/post trims | items cascade |
 | `playlist_items` | moment + position in a playlist | unique (playlist, event); index (playlist, position); cascades from both |
 
 Planned (brief section 14): playback_history, download/sync jobs, notifications, settings,
@@ -72,7 +73,9 @@ source media records. Each arrives with its migration and tests.
   Thumbnails/moments/<media sha[:16]>-<event id>.jpg   (per-moment frames, made on first view)
   Backups/<kind>-<YYYYMMDD-HHMMSS>.json   (manual, auto (14 kept), pre-restore, uploaded)
   Players/<player id>/photo-<hash>.jpg   (profile photo, 512x512, metadata stripped)
-  Clips/  Compilations/                  (created when those features land)
+  Compilations/<reel name> (<id>).mp4    (rendered highlight reels)
+  Compilations/.cards/<id>-opening.png   (title cards)
+  Clips/                                 (created when single-clip export lands)
 ```
 
 Paths in the database are relative to `ARCHIVE_ROOT`, so the archive can be
@@ -113,5 +116,10 @@ OpenAPI: `/api/docs` (Swagger UI) and `/api/openapi.json`.
 | POST / GET | `/api/storage/verify` | start / poll background SHA-256 verification of every video |
 | POST | `/api/storage/relink` | find moved videos under the archive by size + hash and re-point them |
 | POST | `/api/storage/rebuild-thumbnails` | recreate missing match thumbnails |
+| GET / POST | `/api/reels` | highlight reels: list / create (ordered moments, per-clip trims, title text) |
+| GET / PUT / DELETE | `/api/reels/{id}` | open / edit (409 while rendering) / delete (removes its video and cards, never sources) |
+| PUT / DELETE | `/api/reels/{id}/cards/{opening,closing}` | title card PNG drawn by the browser |
+| POST | `/api/reels/{id}/render` | queue a render (background worker; progress on the reel) |
+| GET | `/api/reels/{id}/video` | the rendered MP4 (Range; `?download=1` as attachment) |
 | PUT | `/api/events/{id}/favourite` | favourite on/off (idempotent) |
 | POST | `/api/events/{id}/viewed` | mark a moment watched |

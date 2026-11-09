@@ -18,10 +18,12 @@ interface Props {
   onIndex: (i: number) => void;
   /** bumps every time the owner asks to (re)start playback */
   playToken: number;
+  /** per-clip window (e.g. a highlight reel's own trims); defaults to the saved clip timing */
+  windowOf?: (m: MomentItem) => { start: number; end: number };
 }
 
 /** Plays a queue of moments from different matches back to back (brief section 10). */
-export function QueuePlayer({ queue, index, onIndex, playToken }: Props) {
+export function QueuePlayer({ queue, index, onIndex, playToken, windowOf }: Props) {
   const qc = useQueryClient();
   const video = useRef<HTMLVideoElement>(null);
   const shell = useRef<HTMLDivElement>(null);
@@ -32,7 +34,7 @@ export function QueuePlayer({ queue, index, onIndex, playToken }: Props) {
   const [t, setT] = useState(0);
   const buffers = useClipBuffers();
   const m = queue[index];
-  const win = m ? windowFor(m, buffers) : null;
+  const win = m ? (windowOf ? windowOf(m) : windowFor(m, buffers)) : null;
 
   // Load the current moment: switch source if needed, seek to the window start, play if asked.
   useEffect(() => {

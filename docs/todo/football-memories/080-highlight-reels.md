@@ -1,6 +1,6 @@
 # 080: Highlight reels (compilations) with per-clip trims
 
-**Status:** Building
+**Status:** Shipped 2026-11-09 (branch highlight-reels)
 **Brief:** sections 17 (adjust start/end, export MP4, quality tradeoffs, never
 overwrite source) and 18 (select, reorder, preview, opening/ending titles,
 transitions where practical, export via FFmpeg); section 9 per-clip buffer

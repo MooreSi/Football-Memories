@@ -226,6 +226,9 @@ class Reel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
+    opening_title: Mapped[str | None] = mapped_column(String(200))
+    opening_subtitle: Mapped[str | None] = mapped_column(String(200))
+    closing_text: Mapped[str | None] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
     progress: Mapped[float] = mapped_column(Float, default=0.0)
     error: Mapped[str | None] = mapped_column(Text)

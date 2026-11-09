@@ -64,7 +64,8 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Play one / play all / shuffle, autoplay across matches, loop, speeds | done | QueuePlayer |
 | Reorder (drag + buttons), save playlist, open/rename/reorder/delete playlists | done | rename is API-only for now |
 | Favourite from results | done | |
-| Notes, custom local tags, export, compilation | todo | phases 5-6 (clip editor, jobs) |
+| Compilation (highlight reel) | done | spec 080 |
+| Notes, custom local tags, single-clip export | todo | |
 
 ## Backup and integrity (brief section 22)
 
@@ -85,6 +86,15 @@ Not started. See the brief section 26 for the task lists. Phase 3 (Hudl
 connection) is **blocked** on owner decision 002 and Hudl's terms.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Highlight reels (branch highlight-reels)
+- backend: 167 passed on SQLite and Postgres (real ffmpeg renders: output length, height, audio, silent sources,
+  title cards, failure keeps previous output, crash recovery); ruff, mypy clean; migrations a1229716e71a, 77cf12b23a29
+- frontend: 81 passed; typecheck and build OK
+- real dev run: playlist "Best saves 2026" -> reel with subtitle and closing card; first render FAILED because the dev
+  archive path was relative and ffmpeg runs in a scratch folder -> fixed (absolute folder settings, test first);
+  re-render done in ~20 s: 84 s (6 x 13 s + 2 x 3 s), 1280x720, H.264 + AAC 48 kHz stereo; frames checked
+- found while testing: backups were refused after any schema change -> older backups now restore (D-011)
 
 ### 2026-11-09 Backup, restore, integrity (branch backup-restore)
 - backend: 149 passed on SQLite and Postgres (round trip identical, atomic failure, confirm, pre-restore undo,

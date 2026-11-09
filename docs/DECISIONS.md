@@ -4,6 +4,21 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-011 (2026-11-09) Older backups always restore
+Restore originally refused any backup whose schema fingerprint differed, which
+would strand every backup each time a feature adds a table. Now a backup restores
+if every table and column it contains exists today (newer tables start empty,
+newer columns take defaults); only a backup from a newer app version is refused.
+
+## D-010 (2026-11-09) Highlight reels: browser-drawn title cards, one re-encode
+The Homebrew ffmpeg on the owner's Mac has no text rendering; the Docker one
+does. Title cards are drawn on a canvas in the browser and uploaded as PNG, so
+they look the same everywhere. Each clip is re-encoded once (H.264 CRF 18, AAC
+48 kHz) at the tallest source height so different matches join cleanly; no
+upscaling. Folder settings are resolved to absolute paths at start-up because
+ffmpeg runs in a scratch working folder (a relative archive path broke the first
+real render).
+
 ## D-009 (2026-11-09) Profile photos via python-multipart + ffmpeg re-encode
 Owner approved adding `python-multipart` (FastAPI's dependency for file
 uploads). No image library: ffmpeg (already required) validates and re-encodes

@@ -232,6 +232,8 @@ def test_failure_leaves_no_partial_file_and_keeps_the_previous_output(
     assert failed["status"] == "failed"
     assert "missing" in failed["error"]
     assert good.is_file() and failed["output_relpath"] == first["output_relpath"]
+    edited = client.put(f"/api/reels/{reel['id']}", json={"name": "Renamed"}).json()
+    assert (edited["status"], edited["error"]) == ("draft", None)
     assert list((settings.library_root / "Compilations").rglob("*.part*")) == []
 
 
@@ -317,3 +319,14 @@ def test_list_shows_status_and_counts(client: TestClient, archive: dict) -> None
     _create(client, [{"event_id": archive["Save"]}, {"event_id": archive["Goal"]}])
     [r] = client.get("/api/reels").json()
     assert (r["name"], r["status"], r["item_count"]) == ("Best saves", "draft", 2)
+
+
+def test_title_text_is_saved_and_can_be_edited(client: TestClient, archive: dict) -> None:  # type: ignore[type-arg]
+    reel = _create(client, [], opening_title="Best saves", opening_subtitle="Season 2026/27")
+    assert (reel["opening_title"], reel["opening_subtitle"], reel["closing_text"]) == (
+        "Best saves",
+        "Season 2026/27",
+        None,
+    )
+    r = client.put(f"/api/reels/{reel['id']}", json={"closing_text": "Thanks for watching"}).json()
+    assert (r["opening_title"], r["closing_text"]) == ("Best saves", "Thanks for watching")

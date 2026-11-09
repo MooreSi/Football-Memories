@@ -79,3 +79,29 @@ describe("ClipExplorerPage", () => {
     expect(post?.body).toEqual({ name: "Best", event_ids: [1, 3, 2] });
   });
 });
+
+describe("ClipExplorerPage highlight reel", () => {
+  it("Make highlight reel sends the queue in order", async () => {
+    const calls: { method: string; url: string; body?: unknown }[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      calls.push({ method, url, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      const path = url.split("?")[0];
+      const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
+      if (path === "/api/moments") return json({ total: items.length, items });
+      if (path === "/api/moments/facets") return json(facets);
+      if (path === "/api/reels" && method === "POST") return json({ id: 4 }, 201);
+      if (path === "/api/playlists") return json([]);
+      return json({ detail: "unstubbed" }, 599);
+    }));
+    renderWithProviders(<ClipExplorerPage />);
+    await userEvent.click(await screen.findByRole("button", { name: /Play all/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Make highlight reel/ }));
+    const post = calls.find((c) => c.method === "POST" && c.url === "/api/reels");
+    expect((post?.body as { items: unknown }).items).toEqual([
+      { event_id: 1, pre_s: null, post_s: null },
+      { event_id: 2, pre_s: null, post_s: null },
+      { event_id: 3, pre_s: null, post_s: null },
+    ]);
+  });
+});

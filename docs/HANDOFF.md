@@ -33,7 +33,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   health with free space and missing-file detection.
 - Backups (Settings > Backups): daily automatic + manual, download/upload,
   safe restore; Storage tab has verify / find moved files / rebuild thumbnails.
-- Tests: backend 149 (SQLite + Postgres), frontend 71. All green.
+- Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
+  closing cards drawn in the browser, background render to one MP4 with progress,
+  crash recovery; download.
+- Tests: backend 167 (SQLite + Postgres), frontend 81. All green.
 - **Owner's Mac disk is 98% full (23 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.
 
@@ -47,7 +50,8 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
 2. Per-clip timing override (brief section 9) and playback history on the server.
-3. Clip Explorer leftovers: notes and custom local tags on moments, export.
+3. Clip Explorer leftovers: notes and custom local tags on moments; single-clip
+   export (reuse the reel renderer with one item); crossfade transitions.
 4. Playwright e2e for import → play → filter → playlist.
 5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
    backup/restore, storage health.

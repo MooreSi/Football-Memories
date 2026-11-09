@@ -54,6 +54,9 @@ def _detail(db: Session, settings: Settings, reel_id: int) -> ReelDetail:
     marks = players.marks_for(db, [c.event.id for c in clips])
     return ReelDetail(
         **summary.model_dump(),
+        opening_title=reel.opening_title,
+        opening_subtitle=reel.opening_subtitle,
+        closing_text=reel.closing_text,
         has_opening_card=reels.card_path(settings, reel.id, "opening").is_file(),
         has_closing_card=reels.card_path(settings, reel.id, "closing").is_file(),
         items=[
@@ -97,7 +100,9 @@ def list_reels(db: Db, settings: Cfg) -> list[ReelSummary]:
 @router.post("/reels", response_model=ReelDetail, status_code=status.HTTP_201_CREATED)
 def create_reel(body: ReelIn, db: Db, settings: Cfg) -> ReelDetail:
     try:
-        reel = reels.create(db, body.name, _items(body.items))
+        reel = reels.create(
+            db, body.name, _items(body.items), body.model_dump(include=set(reels.TEXT_FIELDS))
+        )
     except HANDLED as exc:
         db.rollback()
         raise _errors(exc) from exc
@@ -115,7 +120,13 @@ def get_reel(reel_id: int, db: Db, settings: Cfg) -> ReelDetail:
 @router.put("/reels/{reel_id}", response_model=ReelDetail)
 def update_reel(reel_id: int, body: ReelPatch, db: Db, settings: Cfg) -> ReelDetail:
     try:
-        reels.update(db, reel_id, body.name, _items(body.items) if body.items is not None else None)
+        reels.update(
+            db,
+            reel_id,
+            body.name,
+            _items(body.items) if body.items is not None else None,
+            body.model_dump(include=set(reels.TEXT_FIELDS), exclude_unset=True),
+        )
     except HANDLED as exc:
         db.rollback()
         raise _errors(exc) from exc

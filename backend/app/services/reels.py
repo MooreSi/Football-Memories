@@ -128,11 +128,26 @@ def get(db: Session, reel_id: int) -> Reel:
     return reel
 
 
-def create(db: Session, name: str, items: list[tuple[int, float | None, float | None]]) -> Reel:
+TEXT_FIELDS = ("opening_title", "opening_subtitle", "closing_text")
+
+
+def _apply_text(reel: Reel, text: dict[str, str | None]) -> None:
+    for key, value in text.items():
+        if key in TEXT_FIELDS:
+            setattr(reel, key, (value or "").strip() or None)
+
+
+def create(
+    db: Session,
+    name: str,
+    items: list[tuple[int, float | None, float | None]],
+    text: dict[str, str | None] | None = None,
+) -> Reel:
     if not name.strip():
         raise ReelInvalid("a reel needs a name")
     _validate_items(db, items)
     reel = Reel(name=name.strip(), status="draft", progress=0.0)
+    _apply_text(reel, text or {})
     db.add(reel)
     db.flush()
     _set_items(reel, items)
@@ -145,6 +160,7 @@ def update(
     reel_id: int,
     name: str | None,
     items: list[tuple[int, float | None, float | None]] | None,
+    text: dict[str, str | None] | None = None,
 ) -> Reel:
     reel = get(db, reel_id)
     if reel.status in ("rendering", "queued"):
@@ -153,12 +169,13 @@ def update(
         if not name.strip():
             raise ReelInvalid("a reel needs a name")
         reel.name = name.strip()
+    _apply_text(reel, text or {})
     if items is not None:
         _validate_items(db, items)
         _set_items(reel, [])
         db.flush()
         _set_items(reel, items)
-    reel.status = "draft"
+    reel.status, reel.error = "draft", None
     reel.updated_at = datetime.now(UTC)
     db.commit()
     return get(db, reel_id)

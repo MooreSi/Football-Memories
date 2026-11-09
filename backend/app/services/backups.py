@@ -223,22 +223,33 @@ def _reset_sequences(db: Session) -> None:
             )
 
 
+def _check_compatible(tables: dict[str, list[dict[str, Any]]]) -> None:
+    """Older backups restore (newer tables start empty, newer columns take their defaults).
+    A backup that knows tables or columns this version does not is refused."""
+    known = Base.metadata.tables
+    newer = "this backup was made by a newer version of the app; update the app, then restore it"
+    for tname, rows in tables.items():
+        if tname not in known:
+            raise BackupError(newer)
+        columns = set(known[tname].columns.keys())
+        for row in rows:
+            if not isinstance(row, dict) or not set(row) <= columns:
+                raise BackupError(newer)
+
+
 def restore(db: Session, settings: Settings, name: str) -> str:
     """Replace every row with the backup's. Returns the safety backup's name."""
     doc = _read(backup_path(settings, name))
-    if doc.get("schema") != schema_fingerprint():
-        raise BackupError(
-            "this backup was made by a different version of the app's database; "
-            "restore it with the version that made it"
-        )
     tables: dict[str, list[dict[str, Any]]] = doc["tables"]
+    _check_compatible(tables)
     safety = create_backup(db, settings, prefix="pre-restore")
     try:
         for t in reversed(Base.metadata.sorted_tables):
             db.execute(t.delete())
         for t in Base.metadata.sorted_tables:
+            # Only the columns the backup has: newer columns fall back to their defaults.
             rows = [
-                {c.name: _from_json(c, r.get(c.name)) for c in t.columns}
+                {c.name: _from_json(c, r[c.name]) for c in t.columns if c.name in r}
                 for r in tables.get(t.name, [])
             ]
             if rows:

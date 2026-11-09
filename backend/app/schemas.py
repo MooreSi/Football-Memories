@@ -354,11 +354,17 @@ class ReelItemIn(BaseModel):
 
 class ReelIn(BaseModel):
     name: str = Field(max_length=200)
+    opening_title: str | None = Field(default=None, max_length=200)
+    opening_subtitle: str | None = Field(default=None, max_length=200)
+    closing_text: str | None = Field(default=None, max_length=200)
     items: list[ReelItemIn] = Field(default_factory=list, max_length=500)
 
 
 class ReelPatch(BaseModel):
     name: str | None = Field(default=None, max_length=200)
+    opening_title: str | None = Field(default=None, max_length=200)
+    opening_subtitle: str | None = Field(default=None, max_length=200)
+    closing_text: str | None = Field(default=None, max_length=200)
     items: list[ReelItemIn] | None = Field(default=None, max_length=500)
 
 
@@ -392,6 +398,9 @@ class ReelSummary(BaseModel):
 
 
 class ReelDetail(ReelSummary):
+    opening_title: str | None
+    opening_subtitle: str | None
+    closing_text: str | None
     has_opening_card: bool
     has_closing_card: bool
     items: list[ReelItemOut]
