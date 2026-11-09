@@ -186,3 +186,34 @@ class Preference(Base):
 
     key: Mapped[str] = mapped_column(String(80), primary_key=True)
     value: Mapped[str | None] = mapped_column(Text)
+
+
+class Playlist(Base):
+    __tablename__ = "playlists"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    items: Mapped[list[PlaylistItem]] = relationship(
+        back_populates="playlist", order_by="PlaylistItem.position", cascade="all, delete-orphan"
+    )
+
+
+class PlaylistItem(Base):
+    """One moment in a playlist. Deleting a playlist never deletes the moment."""
+
+    __tablename__ = "playlist_items"
+    __table_args__ = (
+        UniqueConstraint("playlist_id", "event_id", name="uq_playlist_event"),
+        Index("ix_playlist_items_order", "playlist_id", "position"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    playlist_id: Mapped[int] = mapped_column(ForeignKey("playlists.id", ondelete="CASCADE"))
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), index=True)
+    position: Mapped[int] = mapped_column(Integer)
+
+    playlist: Mapped[Playlist] = relationship(back_populates="items")
+    event: Mapped[Event] = relationship()

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.api.moment_routes import router as moment_router
 from app.api.player_routes import router as player_router
 from app.api.routes import router
 from app.config import Settings
@@ -33,4 +34,5 @@ def create_app(
     )
     app.include_router(router)
     app.include_router(player_router)
+    app.include_router(moment_router)
     return app

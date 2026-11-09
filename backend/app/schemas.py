@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -212,3 +212,50 @@ class PrimaryPlayerIn(BaseModel):
 
 class FavouriteIn(BaseModel):
     favourite: bool
+
+
+class MomentOut(PlayerMomentOut):
+    offline: bool
+
+
+class MomentPage(BaseModel):
+    total: int
+    items: list[MomentOut]
+
+
+class FacetOut(BaseModel):
+    id: int | None
+    name: str
+    count: int
+
+
+class FacetsOut(BaseModel):
+    categories: list[FacetOut]
+    players: list[FacetOut]
+    teams: list[FacetOut]
+    seasons: list[FacetOut]
+    matches: list[FacetOut]
+
+
+class PlaylistIn(BaseModel):
+    name: str = Field(max_length=200)
+    event_ids: list[int] = Field(default_factory=list, max_length=2000)
+
+
+class PlaylistPatch(BaseModel):
+    name: str | None = Field(default=None, max_length=200)
+    event_ids: list[int] | None = Field(default=None, max_length=2000)
+
+
+class PlaylistSummary(BaseModel):
+    id: int
+    name: str
+    item_count: int
+    total_seconds: float
+    updated_at: datetime
+
+
+class PlaylistDetail(BaseModel):
+    id: int
+    name: str
+    items: list[MomentOut]
