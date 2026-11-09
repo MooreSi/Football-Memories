@@ -84,11 +84,25 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 ## Phases 3, 5-7
 
 Phase 3 desktop capture is implemented within owner-attested permission (002,
-D-012); real capture verification is in progress. Server background sync and
+D-012); real capture/import/clip download verified. Server background sync and
 resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-09 Live Hudl capture verification (codex/hudl-access-research)
+- Owner signed into the app-opened Chrome helper. Full capture finished:
+  1,257 media parts, 5,012.2 seconds, 960×540 H.264/AAC, 287.9 MiB.
+- Import UI indexed all 1,717 moments across 60 codes. Every range lies within
+  the video; copied archive SHA-256 equals the inbox source. Local match and
+  tagged-goal playback exercised. No Hudl mutations or saved session state.
+- Export clip UI created a one-item reel without cards. Render completed;
+  Download MP4 returned HTTP 200 attachment, 38.02 seconds, H.264/AAC at 960×540.
+- Player-code association is tested offline; live run retained all codes as
+  categories. Mobile and other Hudl products/accounts were not tested.
+- Docs-only completion checkpoint after green implementation checks above.
+  Local Markdown links checked. No GitHub Actions workflow exists; no CI claim.
+
 
 ### 2026-11-09 Authorized desktop Hudl capture checkpoint (codex/hudl-access-research)
 - Implemented ephemeral Chrome login, observed HLS/Sportscode conversion, serial

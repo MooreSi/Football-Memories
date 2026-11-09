@@ -12,10 +12,16 @@ browser ──HTTP──▶ frontend (nginx: static React build, proxies /api)
                   backend (FastAPI)
                    ├─ api/          routes: validate, call one service, shape the response
                    ├─ services/     behaviour: importer, library queries, media, sidecar, paths
-                   ├─ connectors/   adapters: LocalImport (primary), Hudl (disabled), Mock (tests)
+                   ├─ connectors/   adapters: LocalImport (primary), Hudl (server sync disabled), Mock (tests)
                    ├─ models.py     SQLAlchemy schema  ──▶ PostgreSQL (Alembic migrations)
                    └─ ffmpeg/ffprobe (subprocess)      ──▶ archive folder (bind mount)
 ```
+
+Authorized desktop capture is a separate host-only process on 127.0.0.1:8766.
+Settings talks directly to its scoped API; it opens ephemeral Chrome, captures
+one accessible match and Sportscode tags into the inbox, then closes the session.
+The existing importer copies/verifies/indexes that pair. It is independent of
+server background sync and does not give the Docker backend a Hudl session.
 
 ## Backend layers
 

@@ -53,8 +53,9 @@ Owner subsequently answered in this session:
 - Owner signed in directly in Safari and authorized enabling Web Inspector.
 
 Read-only inspection confirmed full-match HLS playback and Sportscode moment
-data through the normal player. No credential/session extraction or download
-has occurred yet. The connector's existing capability flags remain false until
-working capture code is verified. Keep all real names, roster data and match
+data through the normal player. The owner approved Playwright and signed into
+the ephemeral Chrome helper. Full-match capture, tagged import, playback and
+one-moment MP4 download verified. Server background-sync capability flags
+remain false: capture is a separate host process. Keep real names, roster data and match
 identifiers out of the repository. Research:
 [HUDL_INTEGRATION.md](../../HUDL_INTEGRATION.md).

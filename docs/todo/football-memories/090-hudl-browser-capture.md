@@ -1,6 +1,6 @@
 # 090: Hudl capture through normal browser sign-in
 
-**Status:** Building (offline checks passing; live capture validation in progress)
+**Status:** Done (offline checks and real capture/import/export verified)
 **Sensitive:** YES: login, authenticated read-only requests, verified new media.
 Follow the repository's `/safe-change` procedure. Owner permission: decision 002.
 
@@ -49,7 +49,8 @@ API assumptions. Browser sign-in is not OAuth integration with Football Memories
 
 Playwright runtime dependency approved by the owner. The companion runs on the
 host at `127.0.0.1:8766`; Settings accesses it directly, including when the main
-app runs in Docker. Exact player-code choices and actual capture remain unverified.
+app runs in Docker. Actual capture verified. Explicit player-code mapping is covered offline; the
+live capture preserved all labels as categories without guessing identities.
 
 ## Test plan
 
@@ -63,13 +64,18 @@ app runs in Docker. Exact player-code choices and actual capture remain unverifi
 ## Real-account check
 
 Owner signed into Safari. Agent opened one accessible match, inspected playback
-and tag responses, and paused playback. No Hudl mutations. A full-match download is underway after normal Chrome sign-in.
-Capture check must compare imported timeline ranges with the real player and
-verify saved video with ffprobe. Never commit real capture data.
+and tag responses, and paused playback. No Hudl mutations. Normal Chrome sign-in → 83m32s full match → 1,717
+moments in 60 codes → Import → local playback verified. ffprobe confirms
+960×540 H.264/AAC, 5,012.2 seconds; archive checksum equals source. All tag
+ranges are within the recording. A tagged goal rendered and downloaded through
+the app as a 38.02s MP4 (HTTP 200 attachment, H.264/AAC). Real player-code
+classification was not exercised; exact mapping is covered offline. Never
+commit real capture data.
 
 ## Verification
 
 Browser, HLS capture, companion and Settings controls implemented. Offline tests
 cover real ffmpeg assembly, truncated segments, auth/rate-limit stops, scoped
 origins/hosts and input redaction. First live runs exposed cancelled prefetches
-and padded tag times; regression tests added. Final capture validation pending.
+and padded tag times; regression tests added. Final checks: 220 backend tests on both SQLite and Postgres, 88 frontend tests;
+lint/format/types/build/schema clean, Docker rebuilt and healthy.

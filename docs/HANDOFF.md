@@ -18,7 +18,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   127.0.0.1:8766, normal incognito Chrome login, HLS capture and Sportscode tag
   CSV, Settings → Connections form/progress, then existing Import workflow.
   Owner attests automation/download permission and approved Playwright.
-  Offline checks pass so far; real full-match capture validation is in progress.
+  Real capture → import → playback → single-clip render/download verified.
+  Captured 83m32s at 960×540 with H.264/AAC and 1,717 moments across 60 codes.
   Existing `highlight-reels` commits are integrated here because the running
   database already uses that schema; no database downgrade was performed.
 - **`main` is current** (phase 1-2 slice, reference-image UI, phase 4 Player Hub, player photos, Clip Explorer, Settings and backup/restore merged 2026-11-09). Start new work on a fresh
@@ -47,7 +48,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   crash recovery; download.
 - Tests: backend 220 passed on SQLite and Postgres; frontend 88 passed.
   Lint, types, build, schema drift and Docker health checks green.
-- **Owner's Mac disk is 98% full (23 GB free of 926 GB on 2026-11-09).** Full
+- **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.
 
 ## How to run
@@ -69,9 +70,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 ## Blocked on / waiting for the owner
 
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
-  Normal-user/no-export role and automation permission answered. Final real
-  capture is downloading after the owner completed sign-in. First runs exposed
-  cancelled prefetches and out-of-bounds tag padding, now covered by regressions. No password or session is saved; each fresh run needs login.
+  Normal-user/no-export role and automation permission answered. Real capture/import and clip download verified after owner sign-in. Explicit
+  player-code mapping is covered offline; this live run preserved all labels
+  as categories. No password/session is saved; each fresh run needs login.
 
 ## Gotchas
 

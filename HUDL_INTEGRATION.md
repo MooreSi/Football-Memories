@@ -58,7 +58,8 @@ association is inferred. Clips remain ranges over the full match (D-004).
 
 The helper must account for cancelled playback prefetches and crop clip padding
 outside the playable interval before strict import validation. Synthetic
-fixtures cover those cases; real-account capture validation is still in progress.
+fixtures cover those cases. Real capture, import, playback and single-clip
+render/download were verified after the owner signed in.
 No raw responses, real names, match IDs, session data or media URLs belong here.
 
 ## Consequence for the app
@@ -77,7 +78,7 @@ Instead:
 | `LocalImportConnector` | **Primary.** Built first. | Import match files the owner obtained through Hudl's own download/export features (or any other legitimate source), with optional tag sidecar files. |
 | `MockConnector` | Tests and clearly labelled demo data only. | All capabilities, fake data. Never shown as real content. |
 | `HudlConnector` | **Server sync unavailable.** Every server capability remains `false`. | The UI separately exposes the desktop companion's capture status and form. |
-| Desktop Hudl capture companion | **Implemented; real capture validation in progress.** Owner permission: decision 002. | Normal sign-in, one accessible match, unencrypted complete muxed HLS and synced Sportscode moments. No mutation, retry loop or bypass. |
+| Desktop Hudl capture companion | **Implemented and checked against one accessible match.** Owner permission: decision 002. | Normal sign-in, one accessible match, unencrypted complete muxed HLS and synced Sportscode moments. No mutation, retry loop or bypass. |
 
 The UI reads server capabilities from `GET /api/connectors`; the capture form
 reads the host companion directly at `http://127.0.0.1:8766`. It accepts only
