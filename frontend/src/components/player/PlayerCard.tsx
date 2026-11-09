@@ -16,9 +16,9 @@ export function PlayerCard({ player }: { player: PlayerProfile }) {
   return (
     <figure
       aria-label={`${player.display_name} player card`}
-      className="relative mx-auto w-full max-w-[300px] self-start bg-gradient-to-b from-accent/70 via-[#3b82f6]/50 to-violet/60 p-[2px] [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]"
+      className="player-shield relative mx-auto w-full max-w-[300px] self-start bg-gradient-to-b from-accent/70 via-[#3b82f6]/50 to-violet/60 p-[2px] [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]"
     >
-      <div className="bg-gradient-to-b from-ink-700 to-ink-900 px-6 pt-8 pb-16 text-center [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]">
+      <div className="player-shield-inner bg-gradient-to-b from-ink-700 to-ink-900 px-6 pt-8 pb-16 text-center [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]">
         <div className="relative mx-auto mb-4 w-fit">
           <PlayerAvatar name={player.display_name} photoUrl={player.photo_url} size={player.photo_url ? "xl" : "lg"} square={Boolean(player.photo_url)} />
           {player.shirt_number && (

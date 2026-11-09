@@ -9,7 +9,7 @@ export function LatestMatchPanel({ match, moments }: { match: MatchSummary | und
   return (
     <div className="space-y-5">
       {match && (
-        <section aria-label="Latest match" className="panel p-5">
+        <section aria-label="Latest match" className="latest-match-panel panel p-5">
           <h2 className="text-lg font-semibold">Latest match</h2>
           <p className="mt-3 text-center text-sm text-fg-muted">
             {[match.competition, match.season_label].filter(Boolean).join(" · ")}

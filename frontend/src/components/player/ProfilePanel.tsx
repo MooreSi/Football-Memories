@@ -9,7 +9,7 @@ import { Button } from "../ui/Button";
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-ink-800/80 px-3.5 py-2 text-sm">
+    <span className="profile-chip inline-flex items-center gap-2 rounded-xl border border-white/10 bg-ink-800/80 px-3.5 py-2 text-sm">
       {children}
     </span>
   );

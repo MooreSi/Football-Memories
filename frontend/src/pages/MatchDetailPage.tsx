@@ -80,14 +80,14 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
   ];
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <div className="order-2 min-w-0 xl:order-1">
+    <div className="analysis-workspace">
+      <div className="analysis-rail min-w-0">
         <MomentsRail match={m} filter={filter} />
       </div>
 
-      <div className="order-1 min-w-0 space-y-4 xl:order-2">
+      <div className="analysis-stage min-w-0 space-y-3">
         {/* Header pill (reference 2 top centre) */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="analysis-match-heading flex flex-wrap items-center justify-between gap-3">
           <div className="panel mx-auto flex items-center gap-4 !rounded-full px-4 py-2 xl:mx-0">
             <TeamBadge name={m.team_name} size="sm" />
             <div className="text-center leading-tight">
@@ -141,7 +141,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
         )}
 
         {/* Clip bar + chips + full-match timeline (reference 2 bottom) */}
-        <section aria-label="Moment timeline" className="panel space-y-3 !rounded-2xl p-4">
+        <section aria-label="Moment timeline" className="analysis-timeline panel space-y-3 p-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 font-mono text-xs text-fg-muted">
             <span>{clipWin ? formatClock(clipWin.start) : formatClock(clock.time)}</span>
             <div className="text-center font-sans">

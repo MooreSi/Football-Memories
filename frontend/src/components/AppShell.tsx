@@ -1,6 +1,6 @@
 import { Clapperboard, Film, FolderInput, Library, Search, Settings, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 
 // Only screens that work are listed (brief section 19). Layout follows reference 1:
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
@@ -14,34 +14,30 @@ const NAV = [
 
 function Brand() {
   return (
-    <NavLink to="/" className="flex items-center gap-3" aria-label="Football Memories home">
+    <NavLink to="/" className="app-brand flex items-center gap-3" aria-label="Football Memories home">
       <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-accent/30 to-violet/40 ring-1 ring-accent/50 shadow-[0_0_24px_-4px_rgb(34_211_238/0.6)]">
         <Clapperboard size={19} className="text-accent" aria-hidden />
       </span>
-      <span className="hidden text-lg font-semibold tracking-tight sm:block">Football Memories</span>
+      <span className="brand-name text-lg font-semibold tracking-tight">Football Memories</span>
     </NavLink>
   );
 }
 
 function PillNav() {
   return (
-    <nav aria-label="Main" className="flex items-center gap-1.5 sm:gap-2">
+    <nav aria-label="Main" className="screen-navigation flex items-center gap-1.5 sm:gap-2">
       {NAV.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
           end={end}
           title={label}
-          className={({ isActive }) =>
-            isActive
-              ? "flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-[#1d4ed8]/70 to-accent/40 px-3 text-sm sm:h-11 sm:px-5 font-medium text-fg ring-1 ring-accent/50 shadow-[0_0_28px_-6px_rgb(34_211_238/0.75)]"
-              : "grid size-10 place-items-center rounded-full bg-ink-800/80 sm:size-11 text-fg-muted ring-1 ring-line transition hover:text-fg hover:ring-accent/40"
-          }
+          className={({ isActive }) => `screen-link ${isActive ? "is-active" : ""}`}
         >
           {({ isActive }) => (
             <>
               <Icon size={18} aria-hidden />
-              {isActive ? <span className="whitespace-nowrap">{label}</span> : <span className="sr-only">{label}</span>}
+              <span className={isActive ? "nav-label active-label" : "nav-label"}>{label}</span>
             </>
           )}
         </NavLink>
@@ -75,18 +71,22 @@ function GlobalSearch() {
 }
 
 export function AppShell() {
+  const { pathname } = useLocation();
+  const screen = pathname.startsWith("/player") ? "profile"
+    : pathname.startsWith("/matches/") || pathname.startsWith("/clips") ? "analysis"
+    : pathname === "/" ? "dashboard" : "settings";
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-line/60 bg-ink-950/75 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1680px] items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+    <div className="app-surface min-h-screen" data-screen={screen}>
+      <header className="app-header sticky top-0 z-30">
+        <div className="header-inner">
           <Brand />
-          <div className="mx-auto">
+          <div className="nav-wrap">
             <PillNav />
           </div>
           <GlobalSearch />
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1680px] px-4 py-6 sm:px-6 lg:px-8">
+      <main className="app-main">
         <Outlet />
       </main>
     </div>

@@ -51,7 +51,7 @@ export function MomentsFeed({ moments, shirt }: { moments: PlayerMoment[]; shirt
   };
 
   return (
-    <section aria-label="Moments feed" className="relative mx-auto aspect-[9/19] w-full max-w-[300px] overflow-hidden rounded-[2.75rem] border-[10px] border-[#1f2937] bg-black shadow-[0_30px_80px_-20px_rgb(0_0_0/0.9)] ring-1 ring-white/10">
+    <section aria-label="Moments feed" className="phone-feed relative mx-auto aspect-[9/19] w-full max-w-[300px] overflow-hidden rounded-[2.75rem] border-[10px] border-[#1f2937] bg-black shadow-[0_30px_80px_-20px_rgb(0_0_0/0.9)] ring-1 ring-white/10">
       <div className="absolute top-2 left-1/2 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-black" aria-hidden />
       {m.stream_url ? (
         <video

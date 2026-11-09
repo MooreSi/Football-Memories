@@ -38,8 +38,8 @@ export function PlayerHubPage() {
   const recentMatches = [...p.per_match].reverse().slice(0, 6);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <div className="player-profile space-y-6">
+      <header className="profile-heading flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-accent uppercase">Player hub</p>
           <h1 className="text-3xl font-semibold tracking-tight">{p.display_name}</h1>
@@ -63,12 +63,12 @@ export function PlayerHubPage() {
         </div>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0 space-y-6">
-          <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)_120px]">
+      <div className="profile-workspace">
+        <div className="profile-details min-w-0 space-y-6">
+          <div className="profile-top">
             <PlayerCard player={p} />
             <ProfilePanel key={`${p.id}-${p.display_name}-${p.shirt_number}-${p.position}`} player={p} />
-            <nav aria-label="Recent matches" className="panel flex gap-2 overflow-x-auto p-2 lg:flex-col lg:overflow-visible">
+            <nav aria-label="Recent matches" className="profile-dates panel flex gap-2 overflow-x-auto p-2">
               {recentMatches.map((m) => (
                 <Link key={m.match_id} to={`/matches/${m.match_id}`} title={`vs ${m.opponent}`}
                   className="tile shrink-0 px-3 py-2.5 text-center text-xs text-fg-muted hover:text-fg">
@@ -98,7 +98,7 @@ export function PlayerHubPage() {
           </div>
         </div>
 
-        <aside className="xl:sticky xl:top-[84px] xl:self-start">
+        <aside className="profile-feed">
           {feed.isPending ? <Spinner label="Loading moments" /> : <MomentsFeed moments={feed.data?.items ?? []} shirt={p.shirt_number} />}
         </aside>
       </div>

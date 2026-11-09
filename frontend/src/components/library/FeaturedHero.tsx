@@ -13,13 +13,13 @@ export function FeaturedHero({ matches }: { matches: MatchSummary[] }) {
   const go = (d: number) => setI((x) => (x + d + matches.length) % matches.length);
 
   return (
-    <section aria-label="Featured match" className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-ink-900">
-      <div className="relative aspect-[16/8] min-h-[260px]">
+    <section aria-label="Featured match" className="featured-hero relative overflow-hidden">
+      <div className="hero-stage relative">
         {m.thumbnail_url && <img src={m.thumbnail_url} alt="" className="absolute inset-0 size-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/40 to-ink-950/10" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-transparent" />
 
-        <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 p-6 sm:p-8">
+        <div className="hero-caption absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-5 p-6 sm:p-8">
           <div className="max-w-xl">
             <div className="mb-3 flex flex-wrap gap-1.5">
               <Badge tone="accent">Latest</Badge>
@@ -28,7 +28,7 @@ export function FeaturedHero({ matches }: { matches: MatchSummary[] }) {
               {m.competition && <Badge>{m.competition}</Badge>}
             </div>
             <p className="text-sm text-fg-muted">{m.team_name}</p>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="hero-title font-semibold tracking-tight">
               <span className="text-fg-muted">vs</span> {m.opponent}
             </h2>
             <p className="mt-2 text-sm text-fg-muted">

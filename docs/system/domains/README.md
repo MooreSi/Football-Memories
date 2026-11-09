@@ -8,6 +8,7 @@ same commit when a change teaches you something non-obvious.
 
 | Domain | Covers | Sensitive? |
 |---|---|---|
+| [`interface/`](interface/README.md) | screen themes, navigation, reference-led layouts | no |
 | `import/` | inbox listing, copy + verify + rename, sidecar CSV, dedup | **yes**: never touch originals or overwrite |
 | `library/` | matches, teams, seasons, age groups, search, storage layout | **yes** for anything that moves/deletes files |
 | `playback/` | streaming with Range, the player, clip windows and buffers | no |

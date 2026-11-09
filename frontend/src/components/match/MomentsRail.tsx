@@ -22,12 +22,12 @@ export function MomentsRail({ match, filter }: { match: MatchDetail; filter: Mom
   const noFilter = filter.categories.length === 0 && filter.players.length === 0;
 
   const row = (active: boolean) =>
-    `flex w-full items-center gap-3 px-4 py-3 text-left text-[13px] font-medium tracking-wide uppercase transition ${
+    `flex w-full items-center gap-2 px-3 py-2.5 text-left text-[11px] font-medium tracking-wide uppercase transition ${
       active ? "bg-gradient-to-r from-[#2563eb] to-[#3b82f6] text-white" : "text-fg-muted hover:bg-white/5 hover:text-fg"
     }`;
 
   return (
-    <aside className="panel flex min-h-0 flex-col overflow-hidden !rounded-2xl xl:sticky xl:top-[84px] xl:max-h-[calc(100vh-100px)]" aria-label="Moments">
+    <aside className="moments-rail panel flex min-h-0 flex-col overflow-hidden" aria-label="Moments">
       <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
         <Link to="/" aria-label="Back to the library" className="rounded-md p-1 text-fg-muted hover:bg-white/5 hover:text-fg">
           <ChevronLeft size={18} />

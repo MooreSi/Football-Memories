@@ -69,17 +69,13 @@ export function LibraryPage() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-[300px_minmax(0,1fr)_340px]">
-      <div className="md:col-span-2 xl:hidden">
-        <h1 className="text-3xl font-semibold tracking-tight">Match Library</h1>
-        <p className="mt-1 text-sm text-fg-muted">Every game you have saved, ready to relive.</p>
-      </div>
-      {/* Left: title + overview tiles + top tags (reference 1 left column) */}
-      <aside className="order-2 space-y-5 xl:order-1">
-        <div className="hidden xl:block">
-          <h1 className="text-3xl font-semibold tracking-tight">Match Library</h1>
-          <p className="mt-1 text-sm text-fg-muted">Every game you have saved, ready to relive.</p>
-        </div>
+    <div className="library-dashboard">
+      <header className="dashboard-heading">
+        <div><p className="screen-eyebrow">YOUR FOOTBALL ARCHIVE</p><h1>Match Library</h1>
+        <p>Every game. Every moment. Your football story.</p></div>
+        <Link to="/import" className="dashboard-import">+ Import a match</Link>
+      </header>
+      <aside className="dashboard-overview space-y-5">
         <YourPlayerCard />
         <div className="flex items-baseline justify-between">
           <h2 className="text-xl font-semibold">Overview</h2>
@@ -115,15 +111,15 @@ export function LibraryPage() {
       </aside>
 
       {/* Right: latest match + recent moments (reference 1 right column) */}
-      <div className="order-3">
+      <div className="dashboard-latest">
         <LatestMatchPanel match={featured[0]} moments={s?.recent_moments ?? []} />
       </div>
 
       {/* Centre: featured hero + all matches */}
-      <div className="order-1 min-w-0 space-y-6 md:col-span-2 xl:order-2 xl:col-span-1">
+      <div className="dashboard-centre min-w-0 space-y-6">
         {featured.length > 0 && <FeaturedHero matches={featured} />}
 
-        <section aria-label="All matches" className="panel p-5">
+        <section aria-label="All matches" className="match-collection panel p-5">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <h2 className="mr-auto text-xl font-semibold">All matches</h2>
             <label className="relative min-w-[200px] flex-1 sm:flex-none">
@@ -168,7 +164,7 @@ export function LibraryPage() {
             <p className="py-10 text-center text-sm text-fg-muted">{filtering ? "No matches found for these filters." : "No matches yet."}</p>
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {items.map((m) => <MatchCard key={m.id} match={m} />)}
               </div>
               {matches.hasNextPage && (

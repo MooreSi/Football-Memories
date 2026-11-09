@@ -13,7 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-09)
 
-- **Current branch: `codex/hudl-access-research`**, based on `origin/main`.
+- **Current branch: `codex/reference-screen-redesign`**, based on the verified
+  Hudl branch (preserves capture and highlight reels). Spec 100 redesigns three
+  distinct screens: charcoal Library, compact navy Match Analysis, light/lime
+  Player Profile. Existing routes, data and actions unchanged. Desktop and
+  375px Safari previews checked; rebuilt Docker app serves the new design.
+- Authorized capture from `codex/hudl-access-research` remains integrated.
   Authorized browser capture implemented (spec 090, D-012): host companion on
   127.0.0.1:8766, normal incognito Chrome login, HLS capture and Sportscode tag
   CSV, Settings → Connections form/progress, then existing Import workflow.
@@ -22,8 +27,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Captured 83m32s at 960×540 with H.264/AAC and 1,717 moments across 60 codes.
   Existing `highlight-reels` commits are integrated here because the running
   database already uses that schema; no database downgrade was performed.
-- **`main` is current** (phase 1-2 slice, reference-image UI, phase 4 Player Hub, player photos, Clip Explorer, Settings and backup/restore merged 2026-11-09). Start new work on a fresh
-  branch from `main`, e.g. `phase4-player-hub`.
+- `main` predates the Hudl/reel and screen redesign branches. Continue from the
+  current branch to retain these features until they are merged.
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
   inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
   Match page with player, event markers, filters (AND/OR), "play moments only".
@@ -88,6 +93,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 - `*.ts` also matches TypeScript source: `!frontend/**/*.ts` keeps source/config
   tracked while root/data MPEG transport streams remain ignored. Previously
   ignored API/types/utilities/config are included with this capture change.
+- Screen-specific theme variables live in `frontend/src/screens.css`, scoped
+  to AppShell `data-screen`. Keep the Player Profile light and its feed dark.
+  Mobile analysis filters must appear before the potentially long moment list.
 - After adding a new folder of components, restart the Vite dev server if
   Tailwind classes look missing (it once served stale CSS). `npm run build` is
   the source of truth.

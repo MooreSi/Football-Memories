@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-013 (2026-11-09) Separate visual canvases for the three reference screens
+The owner re-supplied the three references and asked for a redesign with separate
+screens. Keep existing routes, but scope the palette and layout by screen:
+charcoal dashboard, compact navy analysis, white/lime player profile. Shared
+components inherit canvas tokens; the phone feed explicitly restores dark ones.
+Preserve real archive data rather than copying sample scores, player images,
+ratings or social controls from mockups. At phone widths put analysis filters
+before the long moment list so they remain reachable.
+
 ## D-012 (2026-11-09) Authorized desktop Hudl capture, ephemeral browser session
 Owner reports normal-user access without export controls and explicitly attests
 Hudl permission for app automation/downloads (owner decision 002). Build within

@@ -90,6 +90,20 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-09 Distinct reference-led screens (codex/reference-screen-redesign)
+- Spec 100: charcoal dashboard with overview/hero/latest match, compact navy
+  analysis workspace, and white/lime Player Profile with dark phone feed.
+  Existing routes, real data, API calls and controls retained. No dependencies.
+- Desktop Safari screenshots compared with all three owner-supplied references;
+  375×812 responsive previews checked for each screen. Mobile analysis filters
+  sit before the long moment list. Real Docker library also opened after rebuild.
+- Backend: 220 passed SQLite, 220 Postgres; ruff check/format and mypy clean,
+  Alembic no drift. Frontend: 88 passed unchanged; typecheck/build clean.
+  Docker rebuild + HTTP health check passed. No Hudl access for this task.
+- Pure presentation change: no new tests that mirror CSS. Existing behaviour
+  suite retained. No new photos, generated people, ratings or invented metrics.
+
+
 ### 2026-11-09 Live Hudl capture verification (codex/hudl-access-research)
 - Owner signed into the app-opened Chrome helper. Full capture finished:
   1,257 media parts, 5,012.2 seconds, 960×540 H.264/AAC, 287.9 MiB.
