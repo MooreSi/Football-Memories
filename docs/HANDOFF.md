@@ -24,6 +24,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **D-024 (2026-11-10, owner report):** tag sweep no longer stops on
+  unreadable videos (saved as unavailable with reason, retried weekly) and
+  reports overall progress. 28 of 286 matches indexed before this fix. Check
+  `tag_error` in `data/.hudl-account/details/*.json` to learn why the
+  unreadable ones fail.
 - **D-023 (2026-11-10, owner request):** moment downloads fetch only the
   covering stream segments (stream keeps playing); Clips shows the full
   explorer under the match picker; app open auto-checks Hudl (6 h) and indexes
@@ -143,7 +148,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 301 passed on SQLite and Postgres; frontend 139 (see D-020 note on the one updated match-page test).
+- Tests: backend 308 passed on SQLite and Postgres; frontend 140 (see D-020 note on the one updated match-page test).
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

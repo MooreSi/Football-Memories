@@ -16,6 +16,7 @@ export function HudlPlayerPage() {
   const all = library.data || [];
   const matches = all.filter(m => m.moments?.some(t => t.category === name));
   const indexed = all.filter(m => m.tag_status || m.moments?.length).length;
+  const unreadable = all.filter(m => m.tag_status === 'unavailable').length;
   const hub = useMutation({
     mutationFn: () => api.playerFromHudlTag(name),
     onSuccess: r => { localStorage.removeItem('fm.hudl.player'); void qc.invalidateQueries(); navigate(`/player/${r.player_id}`); },
@@ -32,7 +33,7 @@ export function HudlPlayerPage() {
     </header>
     {hub.isError && <p role="alert" className="text-danger">{hub.error.message}</p>}
     {all.length > 0 && <div className="panel flex flex-wrap items-center gap-3 p-4 text-sm">
-      <p className="mr-auto text-fg-muted">Tags indexed for {indexed} of {all.length} matches. {status.data?.syncing ? status.data.message : indexed < all.length ? 'Tags for new matches are recorded automatically after each Hudl refresh (metadata only, no video).' : 'Every cached match is indexed.'}</p>
+      <p className="mr-auto text-fg-muted">Tags indexed for {indexed} of {all.length} matches{unreadable ? ` (${unreadable} ${unreadable === 1 ? 'video has' : 'videos have'} no readable tags and will be retried in a week)` : ''}. {status.data?.syncing ? status.data.message : indexed < all.length ? 'Tags for new matches are recorded automatically after each Hudl refresh (metadata only, no video).' : 'Every cached match is indexed.'}</p>
       {indexed < all.length && !status.data?.syncing && <Button disabled={hudlBlocked(status.data) || sync.isPending} onClick={() => sync.mutate()}><RefreshCw size={14} /> Index remaining matches</Button>}
     </div>}
     {sync.isError && <p role="alert" className="text-danger">{sync.error.message}</p>}

@@ -53,10 +53,11 @@ def test_sync_pauses_between_matches(tmp_path):
 
 
 def test_sync_stops_after_repeated_failures_and_reports(tmp_path):
-    connection = connection_with(tmp_path, ["one", "two", "three", "four"])
+    # Owner report 2026-11-10: two failures was too strict (D-024); now five in a row.
+    connection = connection_with(tmp_path, ["one", "two", "three", "four", "five", "six"])
     with patch.object(connection, "_observe", side_effect=CaptureError("did not load")) as observe:
         connection._sync_tags()
-    assert observe.call_count == 2
+    assert observe.call_count == 5
     assert connection.status()["state"] == "error"
     connection._executor.shutdown()
 

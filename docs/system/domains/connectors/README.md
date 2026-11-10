@@ -200,3 +200,12 @@ never call load on an hls.js MediaSource, which would detach it.
 - The fetch callback is `BrowserConnection.resource`, which queues on the
   single Playwright worker, so the encode runs on its own thread; the clips
   action decrements `_pending` from that thread (`handed_off`).
+
+## Tag sweep resume (D-024)
+
+- Details cache `tag_status` may be `unavailable` with `tag_error` (<=300
+  chars, CaptureError text only) and `checked_at`; retried after 7 days.
+- `_login` raises `HudlBlocked` (a CaptureError) so a sign-in failure is never
+  recorded against a video. On 2026-11-10 failing examples were
+  "Doku Combo 2", "260813 U10 v TA Elite New York", "260906 U10s v Coventry (H)"
+  and "261108 U10s v Stoke City (H) - Pitch One"; cause unconfirmed.

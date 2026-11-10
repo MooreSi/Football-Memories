@@ -53,12 +53,23 @@ def match_id(url: str) -> str:
     return found.group(1)
 
 
+class HudlBlocked(CaptureError):
+    """Hudl refused the account (sign-in, access check or rate limit): stop everything."""
+
+
+# Owner decision 003 (provisional): skip unreadable videos for a week; stop when
+# this many pages in a row fail, which points at a wider problem than one video.
+UNAVAILABLE_RETRY_S = 7 * 86400
+MAX_FAILURES_IN_A_ROW = 5
+
+
 class Observation:
     def __init__(self, video_id: str) -> None:
         self.video_id = video_id
         self.payloads: list[dict[str, Any]] = []
         self.manifests: dict[str, str] = {}
         self.failure: str | None = None
+        self.blocked = False
 
     def response(self, response: Response) -> None:
         parsed = urlsplit(response.url)
@@ -66,6 +77,7 @@ class Observation:
         if not relevant or not (parsed.hostname or "").endswith(".hudl.com"):
             return
         if response.status in {401, 403, 429}:
+            self.blocked = True
             self.failure = (
                 "Hudl requires sign-in, access verification or a rate-limit pause. Capture stopped."
             )
@@ -343,7 +355,6 @@ class BrowserConnection:
         self._pending = 0
         self._syncing = False
         self._cancel_sync = threading.Event()
-        self._tag_failures: set[str] = set()
         self._visible_next = False
         self._visible_session = False
         self._progress: dict[str, Any] | None = None
@@ -507,13 +518,13 @@ class BrowserConnection:
                 # Verification, CAPTCHA or terms are the owner's to complete, never automated.
                 self._visible_session = True
                 self._visible_next = True
-                raise CaptureError(
+                raise HudlBlocked(
                     "Hudl asked for verification or terms. The Hudl window is open: complete "
                     "it there, then select Test again."
                 ) from error
             self._close()
             self._visible_next = True
-            raise CaptureError(
+            raise HudlBlocked(
                 "Hudl sign-in did not finish in the hidden browser. Select Test again to sign "
                 "in with a visible Hudl window."
             ) from error
@@ -691,7 +702,9 @@ class BrowserConnection:
             while time.monotonic() < deadline:
                 self._page.wait_for_timeout(500)
                 if observation.failure:
-                    raise CaptureError(observation.failure)
+                    raise (HudlBlocked if observation.blocked else CaptureError)(
+                        observation.failure
+                    )
                 if len(observation.payloads) != count:
                     count, settled = len(observation.payloads), time.monotonic()
                 if (
@@ -869,39 +882,59 @@ class BrowserConnection:
     def _sync_tags(self) -> None:
         """Sequential, paced sweep of matches whose tags were never recorded.
 
-        Pacing is the provisional owner decision 007: one match at a time with a
-        pause between pages, stopping on repeated failures (golden rule 3).
+        Pacing is provisional owner decision 003: one match at a time with a pause
+        between pages (golden rule 3). A video Hudl cannot show (no player, no tag
+        data) is recorded as unavailable with its reason and skipped for a week, so
+        the sweep resumes past it. Account-level refusals stop at once.
         """
-        pending = [
-            item["id"]
-            for item in self.catalogue.items()
-            if "tag_status" not in self.details.read(item["id"])
-            and item["id"] not in self._tag_failures
-        ]
-        failures = done = 0
-        for identity in pending:
+        items = self.catalogue.items()
+        now = time.time()
+
+        def due(identity: str) -> bool:
+            saved = self.details.read(identity)
+            if saved.get("tag_status") == "unavailable":
+                return now - float(saved.get("checked_at", 0)) > UNAVAILABLE_RETRY_S
+            return "tag_status" not in saved
+
+        pending = [item["id"] for item in items if due(item["id"])]
+        known = len(items) - len(pending)
+        failures = unreadable = 0
+        for done, identity in enumerate(pending):
             if self._cancel_sync.is_set():
-                self.report("ready", f"Tag indexing paused; {len(pending) - done} matches left.")
+                self.report(
+                    "ready", f"Tag indexing paused at {known + done} of {len(items)} matches."
+                )
                 return
-            self.report("syncing", f"Indexing tags: match {done + 1} of {len(pending)}…")
+            self.report("syncing", f"Indexing tags: {known + done + 1} of {len(items)} matches…")
             try:
                 self._cache_tags(identity)
                 failures = 0
-            except CaptureError:
-                self._tag_failures.add(identity)
+            except HudlBlocked as error:
+                self.report("error", f"Tag indexing stopped: {error} Cached tags are kept.")
+                return
+            except CaptureError as error:
+                self.details.write(
+                    identity,
+                    {
+                        **self.details.read(identity),
+                        "tag_status": "unavailable",
+                        "tag_error": str(error),
+                        "checked_at": time.time(),
+                    },
+                )
+                unreadable += 1
                 failures += 1
-                if failures >= 2:
+                if failures >= MAX_FAILURES_IN_A_ROW:
                     self.report(
                         "error",
-                        "Tag indexing stopped after Hudl pages failed to load twice. "
-                        "Cached tags are kept; Refresh Hudl to continue.",
+                        f"Tag indexing stopped after {failures} Hudl pages in a row failed to "
+                        "load. Cached tags are kept; Refresh Hudl to continue.",
                     )
                     return
-            done += 1
             if self._page is not None:
                 self._page.wait_for_timeout(2500)
-        skipped = f" {len(self._tag_failures)} could not be read." if self._tag_failures else ""
-        self.report("ready", f"Tag indexing complete for {len(pending)} new matches.{skipped}")
+        skipped = f" {unreadable} videos had no readable tags." if unreadable else ""
+        self.report("ready", f"Tags indexed for {len(items)} matches.{skipped}")
 
     def _perform(
         self,

@@ -85,8 +85,13 @@ class MatchCache:
                         "category": item["category"][:200],
                     }
                 )
-        if details.get("tag_status") in {"unsynced", "synced", "none"}:
+        if details.get("tag_status") in {"unsynced", "synced", "none", "unavailable"}:
             clean["tag_status"] = details["tag_status"]
+        if isinstance(details.get("tag_error"), str):
+            clean["tag_error"] = details["tag_error"][:300]
+        checked = details.get("checked_at")
+        if isinstance(checked, (int, float)) and math.isfinite(checked) and checked > 0:
+            clean["checked_at"] = checked
         for key in ("duration_s", "quality_height"):
             value = details.get(key)
             if isinstance(value, (int, float)) and math.isfinite(value) and value > 0:

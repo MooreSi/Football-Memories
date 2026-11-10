@@ -4,6 +4,18 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-024 (2026-11-10) Tag sweep skips unreadable videos and resumes
+Owner report: indexing stopped every run and appeared to restart at match 1.
+Finished matches were already saved; the message numbered only the remaining
+matches. The stop came from videos that never load tags (e.g. "Doku Combo 2",
+a non-match clip, next to "TA Elite New York"): they were retried each run and
+two in a row tripped the 2-failure stop. Now a per-video failure is saved as
+`tag_status: unavailable` with its reason and `checked_at`, skipped for 7 days,
+and the sweep carries on. Sign-in failures and 401/403/429 (`HudlBlocked`) stop
+at once; five consecutive per-video failures still stop. Progress reads
+"N of total matches". Why those videos fail is not yet known: the saved
+`tag_error` will show it.
+
 ## D-023 (2026-11-10) Segment-only moment exports, Hudl stats in the hub, auto-check
 Owner requests. Moment exports no longer capture the whole match: the helper
 reuses (or opens) the match stream and fetches only the HLS segments covering

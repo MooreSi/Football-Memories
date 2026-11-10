@@ -14,6 +14,7 @@ const library=[
  {id:'b',title:'261101 U11 v City (H)',age_group:'U11',tag_status:'synced',moments:[{id:'3',category:'Sam Example',time_s:1,duration_s:2}]},
  {id:'c',title:'261025 U11 v Town (H)',age_group:'U11',tag_status:'synced',moments:[{id:'4',category:'Goal',time_s:1,duration_s:2}]},
  {id:'d',title:'261018 U11 v United (H)',age_group:'U11'},
+ {id:'e',title:'Highlights clip',age_group:'U11',tag_status:'unavailable',tag_error:'did not load'},
 ];
 const hudl={'http://127.0.0.1:8766/library':library,'http://127.0.0.1:8766/account':{configured:true,state:'ready',busy:false},'http://127.0.0.1:8766/account/action':{accepted:true}};
 const posted=(path:string)=>vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith(path)).map(c=>JSON.parse(String(c[1]?.body)));
@@ -27,7 +28,8 @@ it('lists every cached match where the player is tagged and how many are still u
  expect(await screen.findByRole('heading',{name:'261108 U11 v Rovers (A)'})).toBeInTheDocument();
  expect(screen.getByRole('heading',{name:'261101 U11 v City (H)'})).toBeInTheDocument();
  expect(screen.queryByRole('heading',{name:'261025 U11 v Town (H)'})).toBeNull();
- expect(screen.getByText(/Tags indexed for 3 of 4 matches/)).toBeInTheDocument();
+ expect(screen.getByText(/Tags indexed for 4 of 5 matches/)).toBeInTheDocument();
+ expect(screen.getByText(/1 video has no readable tags/)).toBeInTheDocument();
  await userEvent.setup().click(screen.getByRole('button',{name:'Index remaining matches'}));
  expect(posted('/account/action')).toContainEqual({action:'sync_tags'});
 });

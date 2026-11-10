@@ -22,8 +22,9 @@ page per match; after that only new matches are visited.
   when it is over 6 hours old, otherwise indexes matches still lacking tags.
   No server background sync; nothing runs on a timer.
 - One match at a time, about 2.5 s pause after each page settles.
-- Stops after two consecutive pages fail to load and reports it. Matches that
-  failed are skipped until the helper restarts.
+- A video whose page or tags cannot be read is saved as unavailable (with the
+  reason) and skipped for 7 days. Sign-in or 401/403/429 refusals stop at once;
+  five failures in a row stop the sweep (D-024).
 - Any user action (stream, download, refresh) pauses the sweep immediately.
 - Read-only: metadata and tag ranges only, never video, never changes Hudl.
 
