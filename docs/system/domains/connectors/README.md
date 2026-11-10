@@ -209,3 +209,31 @@ never call load on an hls.js MediaSource, which would detach it.
   recorded against a video. On 2026-11-10 failing examples were
   "Doku Combo 2", "260813 U10 v TA Elite New York", "260906 U10s v Coventry (H)"
   and "261108 U10s v Stoke City (H) - Pitch One"; cause unconfirmed.
+
+## Selected-age index and readable downloads (spec 180, D-025)
+Browser code is now the hudl_browser package: public facade, _capture transport /
+legacy CLI, _account worker and _timing manifest duration. Public imports remain;
+existing test mock targets were relocated only in the separate split checkpoint.
+
+AccountAction.age_group scopes Test/Refresh/sync_tags metadata work. Omitted or
+empty HTTP scope means no automatic account-wide tag sweep; app sends its saved
+Library age. Direct internal legacy calls retain their prior default. Match
+membership lists take precedence over historical title age. Status exposes the
+active scope. Switching scope cancels the old sweep at a page boundary without
+raising request concurrency/rate or changing account stop conditions.
+
+Most historical unavailable rows were premature video.duration reads (17 seen).
+If the player is not ready, parse a complete observed media manifest, or follow
+at most three served playlist levels using existing serial fetch policy. Fetch
+only manifests, never video segments. Retry this specific old readiness error
+within the selected age; leave other unavailable rows on weekly retry.
+
+Downloads use pure sanitized hudl_names.download_name. Keep hashed source capture
+identity for reuse and send a readable attachment name. Export ZIP/MP4 containers
+and their MP4 members use actual title-derived date and player/type; unknown dates
+and venue are explicit. Short random markers prevent export overwrites. Friendly
+file downloads require current completed filename plus the existing local scope;
+encode filename path components so # and spaces cannot corrupt attachment URLs.
+Explicit download_kind keeps moment exports separate from full-match Import.
+Live 26-second goal ZIP verified at 1080p H.264; downloaded attachment SHA-256
+matched helper output. Prior archive files unchanged; no new full match capture.

@@ -1,8 +1,9 @@
+import { useArchiveFilters } from "../lib/archiveFilters";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw, UserRound } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
-import { hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
+import { hudlAgeGroups, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { TaggedPlayerPicker } from '../components/player/TaggedPlayerPicker';
 import { Button } from '../components/ui/Button';
 
@@ -13,7 +14,8 @@ export function HudlPlayerPage() {
   const status = useHudlStatus();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const all = library.data || [];
+  const {age}=useArchiveFilters();
+  const all = (library.data || []).filter(m=>!age||hudlAgeGroups(m).includes(age));
   const matches = all.filter(m => m.moments?.some(t => t.category === name));
   const indexed = all.filter(m => m.tag_status || m.moments?.length).length;
   const unreadable = all.filter(m => m.tag_status === 'unavailable').length;
@@ -33,7 +35,7 @@ export function HudlPlayerPage() {
     </header>
     {hub.isError && <p role="alert" className="text-danger">{hub.error.message}</p>}
     {all.length > 0 && <div className="panel flex flex-wrap items-center gap-3 p-4 text-sm">
-      <p className="mr-auto text-fg-muted">Tags indexed for {indexed} of {all.length} matches{unreadable ? ` (${unreadable} ${unreadable === 1 ? 'video has' : 'videos have'} no readable tags and will be retried in a week)` : ''}. {status.data?.syncing ? status.data.message : indexed < all.length ? 'Tags for new matches are recorded automatically after each Hudl refresh (metadata only, no video).' : 'Every cached match is indexed.'}</p>
+      <p className="mr-auto text-fg-muted">Tags indexed for {indexed} of {all.length} matches{unreadable ? ` (${unreadable} ${unreadable === 1 ? 'video has' : 'videos have'} no readable tags and will be retried in a week)` : ''}. {status.data?.syncing ? status.data.message : indexed < all.length ? 'Tags for the selected age group are recorded after each Hudl refresh (metadata only, no video).' : 'Every cached match is indexed.'}</p>
       {indexed < all.length && !status.data?.syncing && <Button disabled={hudlBlocked(status.data) || sync.isPending} onClick={() => sync.mutate()}><RefreshCw size={14} /> Index remaining matches</Button>}
     </div>}
     {sync.isError && <p role="alert" className="text-danger">{sync.error.message}</p>}

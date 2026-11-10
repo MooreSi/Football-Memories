@@ -27,9 +27,9 @@ function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose
   </Overlay>;
 }
 
-function downloadLabel(filename?: string): string {
+function downloadLabel(filename?: string, kind?: string): string {
   if (filename?.endsWith('.zip')) return 'Download moments ZIP';
-  if (filename?.startsWith('hudl-moments-')) return 'Download combined moments video';
+  if (kind==='moments'||filename?.startsWith('hudl-moments-')) return 'Download combined moments video';
   return 'Download original-quality MP4';
 }
 
@@ -115,10 +115,10 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
       <header className="flex flex-wrap items-center gap-4">
-        <div className="mr-auto">{!embedded && <Link to="/" className="text-sm text-fg-muted">← Library</Link>}<p className={`screen-eyebrow ${embedded ? '' : 'mt-4'}`}>{match.age_group} · HUDL MATCH</p><h1 className="text-2xl font-semibold">{match.title}</h1><p className="mt-2 text-sm text-fg-muted">Highest available source quality · Original-resolution offline copies</p></div>
+        <div className="mr-auto">{!embedded && <Link to="/" className="text-sm text-fg-muted">← Library</Link>}<p className={`screen-eyebrow ${embedded ? '' : 'mt-4'}`}>{match.age_group} · HUDL MATCH</p><h1 className={embedded ? "sr-only" : "text-2xl font-semibold"}>{match.title}</h1><p className="mt-2 text-sm text-fg-muted">Highest available source quality · Original-resolution offline copies</p></div>
         <Button variant="primary" disabled={busy} onClick={() => action.mutate({ action: 'download', match_id: id })}><Download size={16} /> Download full match</Button>
       </header>
-      {streamUrl ? <StreamPlayer url={streamUrl} seek={seek} onTime={onTime} /> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}
+      {streamUrl ? <StreamPlayer url={streamUrl} seek={seek} onTime={onTime} poster={match.thumbnail_url} /> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}
       {current && <div role="status" aria-label="Tagged playback" className="panel flex flex-wrap items-center gap-3 p-3 text-sm">
         <ListVideo size={16} className="text-accent" aria-hidden />
         <span className="mr-auto">Playing tagged moment {queue!.index + 1} of {queue!.list.length} · <span className="text-pin">{formatClock(current.time_s)}</span> {current.category}</span>
@@ -132,11 +132,11 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
       </div>}
       {own && <p role="status" className={`text-sm ${status.data?.state === 'error' ? 'text-danger' : 'text-fg-muted'}`}>{status.data?.message}</p>}
       {action.isError && <p role="alert" className="text-danger">{action.error.message}</p>}
-      {own && status.data?.download_url && <div className="panel flex flex-wrap items-center gap-4 p-4"><a className="font-semibold text-accent underline" href={status.data.download_url}>{downloadLabel(status.data.filename)}</a>{!status.data.filename?.startsWith('hudl-moments-') && <Link to="/import" className="text-sm text-fg-muted underline">{match.tag_status === 'unsynced' ? 'Import offline match' : 'Import offline match and tags'}</Link>}<Button onClick={() => action.mutate({ action: 'stream', match_id: id })} disabled={busy}>Resume stream</Button></div>}
+      {own && status.data?.download_url && <div className="panel flex flex-wrap items-center gap-4 p-4"><a className="font-semibold text-accent underline" href={status.data.download_url}>{downloadLabel(status.data.filename,status.data.download_kind)}</a>{status.data.download_kind!=='moments' && !status.data.filename?.startsWith('hudl-moments-') && !status.data.filename?.endsWith('.zip') && <Link to="/import" className="text-sm text-fg-muted underline">{match.tag_status === 'unsynced' ? 'Import offline match' : 'Import offline match and tags'}</Link>}<Button onClick={() => action.mutate({ action: 'stream', match_id: id })} disabled={busy}>Resume stream</Button></div>}
       <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
         <div className="flex flex-wrap items-end gap-3">
           <h2 className="mr-auto text-xl font-semibold">Tagged moments & players</h2>
-          <label className="text-xs text-fg-muted">Tagged code / player<select className="field mt-1" aria-label="Tagged code / player" value={code} onChange={e => { setCode(e.target.value); setSelected([]); }}><option value="">All tagged moments</option>{codes.map(c => <option key={c}>{c}</option>)}</select></label>
+          <label className="text-xs text-fg-muted lg:hidden">Tagged code / player<select className="field mt-1" aria-label="Tagged code / player" value={code} onChange={e => { setCode(e.target.value); setSelected([]); }}><option value="">All tagged moments</option>{codes.map(c => <option key={c}>{c}</option>)}</select></label>
           {chosen.length > 0 && <Button variant="primary" disabled={!streamUrl} title={streamUrl ? undefined : 'Available once the stream is ready'} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
           <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : code ? 'player / code moments' : 'all moments'}</Button>
         </div>

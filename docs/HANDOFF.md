@@ -24,11 +24,19 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
-- **Spec 180 in progress:** owner requests Clips/timeline cleanup, persistent
-  filters, selected-age-only indexing and readable download names. First
-  checkpoint is behavior-preserving hudl_browser package split (old file 1,036
-  lines). Public imports unchanged; test edits only relocate mock targets.
-  Feature implementation and restart remain pending.
+- **Spec 180 complete:** Library team selector removed; age/season persist and
+  scope metadata indexing to the selected team's served memberships. Fixed
+  premature video-duration failures using recorded manifest duration (no video
+  fetch). Clips has one main workspace and secondary saved-clips/playlist tools;
+  memories merge into season/month cards with six moment previews, twelve match
+  previews and explicit expansion. Phone grid/chart overflow fixed. Friendly
+  attachment/ZIP member names include fixture, venue or player/type, ISO date;
+  stable old capture identities remain reusable. Live U11 sweep completed all
+  87 checks: 74,260 ranges (57 tagged / 28 without tags / 2 invalid timelines).
+  A 1080p H.264 26.04s goal ZIP downloaded with
+  matching SHA-256. Seven pre-existing archive files unchanged. Docker rebuilt
+  and restarted; host helper PID 9872. Desktop/375px checked. Backend 318 /
+  frontend 146 green.
 - **D-024 (2026-11-10, owner report):** tag sweep no longer stops on
   unreadable videos (saved as unavailable with reason, retried weekly) and
   reports overall progress. 28 of 286 matches indexed before this fix. Check
@@ -153,7 +161,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 308 passed on SQLite and Postgres; frontend 140 (see D-020 note on the one updated match-page test).
+- Tests: backend 318 passed on SQLite and Postgres; frontend 146 (see D-020 note on the one updated match-page test).
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

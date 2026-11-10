@@ -23,8 +23,8 @@ export function TagRadar({ categories }: { categories: PlayerProfile["categories
       ))}
       <polygon points={shape.map((p) => p.join(",")).join(" ")} fill="rgb(34 211 238 / 0.28)" stroke="#22d3ee" strokeWidth={2} />
       {labels.map(([x, y], i) => (
-        <g key={axes[i].name}>
-          <text x={x} y={y - 4} textAnchor="middle" className="fill-fg text-[11px] font-medium">{axes[i].name}</text>
+        <g key={axes[i].name}><title>{axes[i].name}</title>
+          <text x={x} y={y - 4} textAnchor="middle" className="fill-fg text-[11px] font-medium">{axes[i].name.length>16?axes[i].name.slice(0,15)+"…":axes[i].name}</text>
           <text x={x} y={y + 10} textAnchor="middle" className="fill-accent text-[12px] font-semibold">{axes[i].count}</text>
         </g>
       ))}
@@ -49,7 +49,7 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
       </p>
       <ol className="flex h-44 items-end gap-2" aria-label="Moments per match, oldest to newest">
         {last.map((s, i) => (
-          <li key={s.match_id} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+          <li key={s.match_id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
             <span className="text-sm font-semibold tabular-nums">{s.moments}</span>
             <Link
               to={s.href ?? `/matches/${s.match_id}`}

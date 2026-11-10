@@ -56,7 +56,7 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          {player.teams.length === 0 && <span className="text-sm text-fg-muted">No matches yet.</span>}
+          {player.teams.length === 0 && <span className="text-sm text-fg-muted">Import a match to add team history.</span>}
           {player.teams.map((t) => (
             <Chip key={`${t.team_name}-${t.season_label}`}>
               <Shield size={15} className="text-accent" aria-hidden />

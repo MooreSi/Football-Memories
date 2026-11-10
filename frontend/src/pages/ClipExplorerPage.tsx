@@ -1,7 +1,8 @@
+import { useArchiveFilters } from "../lib/archiveFilters";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clapperboard, ListVideo, Save, Search, Shuffle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { MomentFilters, MomentItem } from "../api/types";
 import { ClipCard } from "../components/clips/ClipCard";
@@ -23,15 +24,15 @@ const START: MomentFilters = { categories: [], playerIds: [], playerMode: "any",
 export function ClipExplorerPage() {
   const library = useHudlLibrary();
   const [chosen, setChosen] = useState<string | null>(null);
-  const age = localStorage.getItem("fm.hudl.age") || "";
+  const {age,season}=useArchiveFilters();
   const all = latestFirst(library.data ?? []);
-  const forAge = all.filter((m) => !age || hudlAgeGroups(m).includes(age));
-  const fallback = forAge[0]?.id ?? all[0]?.id ?? "imported";
+  const forAge = all.filter((m) => (!age || hudlAgeGroups(m).includes(age)) && (!season || m.season_label===season));
+  const fallback = forAge[0]?.id ?? "imported";
   const selected = chosen && (chosen === "imported" || all.some((m) => m.id === chosen)) ? chosen : fallback;
   if (!all.length) return <ImportedClips />;
   return (
-    <div className="space-y-5">
-      <label className="flex flex-wrap items-center gap-3 text-sm text-fg-muted">
+    <ImportedClips compact={selected!=="imported"}>
+      <label className="panel flex flex-wrap items-center gap-3 p-4 text-sm text-fg-muted">
         Match
         <select aria-label="Match" className="field w-auto max-w-full rounded-full" value={selected} onChange={(e) => setChosen(e.target.value)}>
           <optgroup label={age ? `Hudl · ${age} (newest first)` : "Hudl (newest first)"}>
@@ -46,17 +47,16 @@ export function ClipExplorerPage() {
         </select>
       </label>
       {selected !== "imported" && (
-        <section aria-label="Selected Hudl match" className="border-b border-line pb-6">
+        <section aria-label="Selected Hudl match" className="min-w-0">
           <HudlMatchView key={selected} id={selected} embedded />
         </section>
       )}
-      <ImportedClips />
-    </div>
+    </ImportedClips>
   );
 }
 
 /** Brief section 10. Layout follows reference 02: filter rail + playlists left, player + clip bar centre. */
-function ImportedClips() {
+function ImportedClips({children,compact=false}:{children?:ReactNode;compact?:boolean}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<MomentFilters>(START);
@@ -145,7 +145,11 @@ function ImportedClips() {
   });
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-end justify-between gap-3"><div><p className="screen-eyebrow mb-2">MATCH ANALYSIS</p><h1 className="text-3xl font-semibold tracking-tight">Clip Explorer</h1><p className="mt-2 text-sm text-fg-muted">Watch, collect and share your best moments.</p></div><Link to="/clips/reels" className="dashboard-import">Highlight reels</Link></header>
+      {children}
+      <details open={!compact} className="panel min-w-0 p-4 sm:p-5"><summary className="cursor-pointer text-sm font-semibold">Saved clips &amp; playlists</summary><p className="mb-5 mt-2 text-xs text-fg-muted">Search offline moments, build a queue or create a highlight reel.</p>
+      <div className="grid gap-5 xl:grid-cols-[250px_minmax(0,1fr)]">
       <div className="order-2 min-w-0 xl:order-1">
         <ClipFiltersRail
           facets={facets.data}
@@ -162,11 +166,6 @@ function ImportedClips() {
 
       <div className="order-1 min-w-0 space-y-5 xl:order-2">
         <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-accent uppercase">Clips</p>
-            <h1 className="text-3xl font-semibold tracking-tight">Clip Explorer</h1>
-            <Link to="/clips/reels" className="text-sm text-accent hover:underline">Highlight reels</Link>
-          </div>
           <div className="flex flex-wrap items-center gap-2">
             <label className="relative">
               <span className="sr-only">Search notes and opponents</span>
@@ -254,6 +253,6 @@ function ImportedClips() {
           )}
         </section>
       </div>
-    </div>
+    </div></details></div>
   );
 }

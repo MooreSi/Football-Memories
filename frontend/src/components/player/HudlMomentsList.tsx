@@ -17,7 +17,7 @@ export function HudlMomentsList({ matches }: { matches: HudlPlayerMatch[] }) {
             <p className="truncate px-3 py-2 text-sm font-semibold">vs {m.opponent}</p>
           </Link>
           <ul className="flex flex-wrap gap-1.5">
-            {m.moments.map((x) => (
+            {m.moments.slice(0,6).map((x) => (
               <li key={x.id}>
                 <Link to={`/hudl/${encodeURIComponent(m.id)}?moment=${encodeURIComponent(x.id)}`}
                   className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] hover:border-accent/60 ${watched.has(x.id) ? "border-white/10 text-fg-muted" : "border-accent/40 text-fg"}`}>
@@ -26,6 +26,7 @@ export function HudlMomentsList({ matches }: { matches: HudlPlayerMatch[] }) {
               </li>
             ))}
           </ul>
+          {m.moments.length>6&&<Link className="block text-xs text-accent hover:underline" to={`/hudl/${encodeURIComponent(m.id)}?player=${encodeURIComponent(m.moments[0].category)}`}>View all {m.moments.length} moments →</Link>}
         </div>
       ))}
     </section>

@@ -34,3 +34,25 @@ Spec 150 displays unverified Hudl tag sync as a separate match warning, while
 stream/full-video controls continue to work. Show no fabricated moments or
 player ranges; zero ranges keep moment export disabled. Completed unsynced-tag
 video captures offer Import offline match without promising a populated tag file.
+
+## Library, Clips and memories polish (spec 180)
+Shared age/season preferences live in localStorage (nonsecret), notify mounted
+screens and persist across app restarts. Validate a stale age only after remote
+catalogue success, not against a partly loaded offline list. Library removes its
+redundant Team filter and suppresses the empty offline gap when Hudl matches fit.
+Hero and Clips default follow both age and season. Specific other matches remain
+selectable. A missing scope prevents account-wide automatic tag indexing.
+
+Clips keeps one visible page heading, match picker and analysis workspace.
+Imported explorer, filters, queues, saved playlists and reels remain behind an
+explicit Saved clips & playlists disclosure when a Hudl match is active; it is
+open for imported-only mode. Desktop uses the code rail; mobile uses the compact
+selector. Thumbnail poster avoids an empty black player before first Play.
+
+Memories uses one newest-first season/month stream for Hudl/offline cards, six
+moment previews with Show all, and twelve matches with Show more. Event filters,
+favourites, unwatched and every moment link remain. Right feed caps previews and
+links to the whole match. Charts and match-link grids must use min-w-0: ten flex
+bars' intrinsic date widths previously expanded the phone grid. Radar text uses
+short labels with full accessible descriptions/tooltips. Both screens checked
+at 375px with document width exactly 375; desktop checked against references.

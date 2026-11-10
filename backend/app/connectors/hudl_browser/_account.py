@@ -36,6 +36,7 @@ from ._capture import (
     authenticate,
     fetch_media,
 )
+from ._timing import recorded_duration
 
 
 class BrowserConnection:
@@ -56,6 +57,7 @@ class BrowserConnection:
         self._lock = threading.Lock()
         self._pending = 0
         self._syncing = False
+        self._tag_age: str | None = None
         self._cancel_sync = threading.Event()
         self._visible_next = False
         self._visible_session = False
@@ -86,6 +88,7 @@ class BrowserConnection:
                 **self._state,
                 "busy": self._pending > 0,
                 "syncing": self._syncing,
+                "tag_age_group": self._tag_age,
                 "progress": dict(self._progress) if self._progress else None,
                 "matches": self.catalogue.items(),
                 "session_active": self._context is not None,
@@ -119,15 +122,20 @@ class BrowserConnection:
         moment_ids: list[str] | None = None,
         *,
         combined: bool = False,
+        age_group: str | None = None,
     ) -> None:
         with self._lock:
             # A background tag sync yields to one user action; nothing else queues.
             if self._pending and not (
-                self._syncing and self._pending == 1 and action != "sync_tags"
+                self._syncing
+                and self._pending == 1
+                and (action != "sync_tags" or age_group is not None)
             ):
                 raise CaptureError("A Hudl operation is already running.")
             if self._syncing:
                 self._cancel_sync.set()
+            if age_group is not None:
+                self._tag_age = age_group
             self._pending += 1
             if action == "sync_tags":
                 self._syncing = True
@@ -147,6 +155,8 @@ class BrowserConnection:
                 message="Preparing moments…" if action == "clips" else "Opening Hudl…",
                 stream_url=self._state.get("stream_url") if keep else None,
                 filename=completed,
+                download_name=self._state.get("download_name") if completed else None,
+                download_kind=self._state.get("download_kind") if completed else None,
                 match_id=identity,
             )
         self._executor.submit(self._perform, action, identity, moment_ids, combined)
@@ -443,7 +453,11 @@ class BrowserConnection:
         else:
             raise CaptureError("Unsupported nested stream manifest.")
         if isinstance(observation.payloads, list) and observation.payloads:
-            duration = self._page.locator("video").first.evaluate("element => element.duration")
+            duration = recorded_duration(
+                observation.manifests,
+                self._page.locator("video").first.evaluate("element => element.duration"),
+                lambda address: fetch_media(self._context, address),
+            )
             moments, tag_status = optional_moments(observation.payloads, identity, duration)
             self.details.write(
                 identity,
@@ -491,6 +505,14 @@ class BrowserConnection:
         observation = self._observe(identity, False)
         master = observation.master(65536)
         rendition = parse_manifest(observation.manifests[master], master, max_height=65536)
+        from app.connectors.hudl_names import download_name
+
+        title = self.catalogue.find(identity).get("title")
+        with self._lock:
+            self._state["download_kind"] = "match"
+            self._state["download_name"] = (
+                download_name(title) + ".mp4" if isinstance(title, str) else None
+            )
         name = f"hudl-{capture_key(identity)}-highest-{rendition.height}p-{rendition.bandwidth}"
         destination = self.output / f"{name}.mp4"
         if destination.exists() and destination.with_suffix(".tags.csv").exists():
@@ -501,7 +523,11 @@ class BrowserConnection:
             )
             return destination
         video = self._page.locator("video").first
-        duration = video.evaluate("element => element.duration")
+        duration = recorded_duration(
+            observation.manifests,
+            video.evaluate("element => element.duration"),
+            lambda address: fetch_media(self._context, address),
+        )
         moments, tag_status = optional_moments(observation.payloads, identity, duration)
         self.details.write(
             identity,
@@ -548,7 +574,11 @@ class BrowserConnection:
     def _cache_tags(self, identity: str) -> int:
         """Record one match's tag metadata from its normal playback page; never the video."""
         observation = self._observe(identity, False)
-        duration = self._page.locator("video").first.evaluate("element => element.duration")
+        duration = recorded_duration(
+            observation.manifests,
+            self._page.locator("video").first.evaluate("element => element.duration"),
+            lambda address: fetch_media(self._context, address),
+        )
         moments, tag_status = (
             optional_moments(observation.payloads, identity, duration)
             if observation.payloads
@@ -589,11 +619,20 @@ class BrowserConnection:
         data) is recorded as unavailable with its reason and skipped for a week, so
         the sweep resumes past it. Account-level refusals stop at once.
         """
-        items = self.catalogue.items()
+        age = self._tag_age
+        items = [
+            m
+            for m in self.catalogue.items()
+            if age is None or (age and age in (m.get("age_groups") or [m.get("age_group")]))
+        ]
         now = time.time()
 
         def due(identity: str) -> bool:
             saved = self.details.read(identity)
+            if saved.get("tag_error") == "The player has not reported a recorded video duration.":
+                return (
+                    True  # Retry this now-fixed metadata readiness failure within the chosen age.
+                )
             if saved.get("tag_status") == "unavailable":
                 return now - float(saved.get("checked_at", 0)) > UNAVAILABLE_RETRY_S
             return "tag_status" not in saved
@@ -602,7 +641,7 @@ class BrowserConnection:
         known = len(items) - len(pending)
         failures = unreadable = 0
         for done, identity in enumerate(pending):
-            if self._cancel_sync.is_set():
+            if self._cancel_sync.is_set() or age != self._tag_age:
                 self.report(
                     "ready", f"Tag indexing paused at {known + done} of {len(items)} matches."
                 )
@@ -710,18 +749,22 @@ class BrowserConnection:
 
         try:
             self.report("exporting", "Fetching and encoding the selected moments…")
+            title = self.catalogue.find(self._stream_match).get("title")
             target = export_from_segments(
                 playlist,
                 lambda index: self.resource(stream, str(index))[0],
                 selected,
                 self.output,
                 combined=combined,
+                **({"match_title": title} if isinstance(title, str) else {}),
                 progress=lambda done, total: self._set_progress(
                     "Fetching and encoding the selected moments", 1, done, total
                 ),
             )
             with self._lock:
                 self._state["filename"] = target.name
+                self._state["download_name"] = target.name
+                self._state["download_kind"] = "moments"
             self.report(
                 "done",
                 "Combined moments video ready to download."

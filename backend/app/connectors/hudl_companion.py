@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
+from urllib.parse import quote
 
 import uvicorn
 from fastapi import FastAPI, Request, Response
@@ -57,6 +58,7 @@ class AccountAction(BaseModel):
     match_id: str | None = Field(default=None, max_length=300)
     moment_ids: list[str] = Field(default_factory=list, max_length=2000)
     combined: bool = False
+    age_group: str | None = Field(default=None, pattern=r"^(?:U[0-9]{1,2})?$", max_length=3)
 
 
 class FolderAction(BaseModel):
@@ -201,13 +203,15 @@ def create_companion(output: Path) -> FastAPI:
             checked: float | None = request.app.state.catalogue.path.stat().st_mtime
         except OSError:
             checked = None
+        current = request.app.state.account.status()
+        filename = quote(str(current.get("filename") or ""), safe="")
         return {
-            **request.app.state.account.status(),
+            **current,
             "catalogue_checked_at": checked,
             "configured": request.app.state.account_configured,
             "download_url": (
-                f"http://127.0.0.1:8766/files/{app.state.file_scope}/{request.app.state.account.status()['filename']}"
-                if request.app.state.account.status().get("filename")
+                f"http://127.0.0.1:8766/files/{app.state.file_scope}/{filename}"
+                if filename
                 else None
             ),
         }
@@ -276,12 +280,19 @@ def create_companion(output: Path) -> FastAPI:
 
         if scope != app.state.file_scope:
             raise CaptureError("This download link has expired.")
-        if not re.fullmatch(r"hudl-[a-zA-Z0-9-]+\.(mp4|zip|csv)", filename):
+        status = request.app.state.account.status()
+        if not re.fullmatch(r"hudl-[a-zA-Z0-9-]+\.(mp4|zip|csv)", filename) and not (
+            filename == status.get("filename")
+            and Path(filename).name == filename
+            and Path(filename).suffix in {".mp4", ".zip", ".csv"}
+        ):
             raise CaptureError("Select a completed capture.")
         path = request.app.state.downloads.folder / filename
         if not path.is_file() or path.is_symlink():
             raise CaptureError("Capture is not available.")
-        return FileResponse(path, filename=filename)
+        status = request.app.state.account.status()
+        attachment = status.get("download_name") if status.get("filename") == filename else None
+        return FileResponse(path, filename=attachment or filename)
 
     @app.post("/account/credentials")
     def save_credentials(body: AccountCredentials, request: Request) -> dict[str, bool]:
@@ -308,7 +319,15 @@ def create_companion(output: Path) -> FastAPI:
                     body.action, body.match_id, body.moment_ids, combined=body.combined
                 )
             else:
-                request.app.state.account.start(body.action, body.match_id)
+                request.app.state.account.start(
+                    body.action,
+                    body.match_id,
+                    **(
+                        {"age_group": body.age_group or ""}
+                        if body.action in {"test", "refresh", "sync_tags"}
+                        else {}
+                    ),
+                )
         return {"accepted": True}
 
     @app.get("/stream/{stream}/{asset}")

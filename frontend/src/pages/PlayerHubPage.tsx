@@ -84,7 +84,7 @@ export function PlayerHubPage() {
       <div className="profile-workspace">
         <div className="profile-details min-w-0 space-y-6">
           <div className="profile-top">
-            <PlayerCard player={p} />
+            <PlayerCard player={p.categories.length || !hudlMoments.length ? p : {...p,categories:[{name:"Tagged moments",count:hudlMoments.length}]}} />
             <ProfilePanel key={`${p.id}-${p.display_name}-${p.shirt_number}-${p.position}`} player={p} />
             <nav aria-label="Recent matches" className="profile-dates panel flex gap-2 overflow-x-auto p-2">
               {recentMatches.map((m) => (
@@ -103,8 +103,8 @@ export function PlayerHubPage() {
             <StatTile label="Favourites" icon={Heart} value={String(p.totals.favourites)} unit="saved" />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section aria-label="Tag profile" className="panel p-5">
+          <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
+            <section aria-label="Tag profile" className="panel min-w-0 overflow-hidden p-5">
               <h2 className="text-lg font-semibold">Tag profile</h2>
               <p className="mb-2 text-xs text-fg-subtle">
                 {fromHudl
@@ -113,7 +113,7 @@ export function PlayerHubPage() {
               </p>
               <TagRadar categories={categories} />
             </section>
-            <section aria-label="Moments per match" className="panel p-5">
+            <section aria-label="Moments per match" className="panel min-w-0 p-5">
               <h2 className="mb-3 text-lg font-semibold">Recent matches</h2>
               <MomentsPerMatch series={perMatch} />
             </section>
@@ -133,9 +133,9 @@ export function PlayerHubPage() {
             <h2 className="text-lg font-semibold">Tagged in Hudl matches</h2>
             <span className="text-xs text-fg-subtle">{hudlMatches.length} {hudlMatches.length === 1 ? "match" : "matches"} · tag metadata only, no download needed</span>
           </div>
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid min-w-0 max-h-40 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
             {hudlMatches.map((m) => (
-              <li key={m.id}>
+              <li key={m.id} className="min-w-0">
                 <Link to={`/hudl/${encodeURIComponent(m.id)}?player=${encodeURIComponent(p.display_name)}`} className="tile flex items-center justify-between gap-3 p-3 hover:border-accent/60">
                   <span className="min-w-0 truncate text-sm">{m.title}</span>
                   <span className="shrink-0 text-xs text-pin">{m.count} moments</span>

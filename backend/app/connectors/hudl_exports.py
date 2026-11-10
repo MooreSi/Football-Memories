@@ -20,11 +20,22 @@ from pathlib import Path
 from typing import Any
 
 from app.connectors.hudl_capture import CaptureError
+from app.connectors.hudl_names import download_name
 from app.services.media import probe
 
 # Near-transparent quality at the source resolution; yuv420p for universal playback.
 _VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]
 _AUDIO = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
+
+
+def _export_stem(title: str | None, moments: list[dict[str, Any]]) -> str:
+    if not title:
+        return f"hudl-moments-{uuid.uuid4().hex[:16]}"
+    codes = sorted({m["category"] for m in moments})
+    # A short unique marker keeps concurrent/repeated exports append-only.
+    return download_name(
+        title, (codes[0] if len(codes) == 1 else "Selected moments") + f" ({uuid.uuid4().hex[:8]})"
+    )
 
 
 def _ffmpeg(arguments: list[str], timeout: int = 900) -> bool:
@@ -87,13 +98,14 @@ def export_ranges(
     output: Path,
     *,
     combined: bool = False,
+    match_title: str | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> Path:
     if not moments:
         raise CaptureError("Select at least one tagged moment or player code.")
     ordered = sorted(moments, key=lambda m: (m["time_s"], m["id"]))
     original = probe(source)
-    stem = f"hudl-moments-{uuid.uuid4().hex[:16]}"
+    stem = _export_stem(match_title, ordered)
     target = output / f"{stem}.{'mp4' if combined else 'zip'}"
     with tempfile.TemporaryDirectory(prefix=".hudl-clips-", dir=output) as folder:
         scratch = Path(folder)
@@ -107,7 +119,7 @@ def export_ranges(
             _verify(clip, original.width, original.height)
             clips.append(clip)
             report(index + 1, total)
-        _publish(scratch, clips, ordered, combined, report, total)
+        _publish(scratch, clips, ordered, combined, report, total, match_title)
         os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target
 
@@ -119,6 +131,7 @@ def _publish(
     combined: bool,
     report: Callable[[int, int], None],
     total: int,
+    match_title: str | None = None,
 ) -> None:
     """Join encoded parts into one MP4, or store them as one file per moment."""
     if combined:
@@ -149,8 +162,13 @@ def _publish(
     else:
         result = scratch / "moments.zip"
         with zipfile.ZipFile(result, "x", compression=zipfile.ZIP_STORED) as bundle:
-            for clip in clips:
-                bundle.write(clip, clip.name)
+            for index, (clip, moment) in enumerate(zip(clips, ordered, strict=True), start=1):
+                name = (
+                    download_name(match_title, moment["category"], index) + ".mp4"
+                    if match_title
+                    else clip.name
+                )
+                bundle.write(clip, name)
             bundle.writestr("moments.json", json.dumps(ordered))
 
 
@@ -181,6 +199,7 @@ def export_from_segments(
     output: Path,
     *,
     combined: bool = False,
+    match_title: str | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> Path:
     """Fetch only the stream segments covering the chosen moments, then encode them.
@@ -213,7 +232,7 @@ def export_from_segments(
     total = len(needed) + len(ordered) + (1 if combined else 0)
     report = progress or (lambda done, total: None)
     report(0, total)
-    target = output / f"hudl-moments-{uuid.uuid4().hex[:16]}.{'mp4' if combined else 'zip'}"
+    target = output / f"{_export_stem(match_title, ordered)}.{'mp4' if combined else 'zip'}"
     with tempfile.TemporaryDirectory(prefix=".hudl-clips-", dir=output) as folder:
         scratch = Path(folder)
         for done, index in enumerate(needed, start=1):
@@ -239,6 +258,6 @@ def export_from_segments(
             _verify(clip, reference.width, reference.height)
             clips.append(clip)
             report(len(needed) + number, total)
-        _publish(scratch, clips, ordered, combined, report, total)
+        _publish(scratch, clips, ordered, combined, report, total, match_title)
         os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_settings
 from app.config import Settings
+from app.connectors.hudl_names import download_name
 from app.connectors.registry import production_connectors
 from app.models import Match, MediaAsset
 from app.schemas import (
@@ -213,7 +214,9 @@ def download_media(media_id: int, db: Db, settings: Cfg) -> FileResponse:
     path = library.media_path(settings.archive_root, media)
     if not path.is_file():
         raise HTTPException(status.HTTP_410_GONE, detail="the local file is missing")
-    return FileResponse(path, media_type="video/mp4", filename=media.original_filename)
+    match = media.match
+    title = f"{match.match_date:%y%m%d} {match.team.name} v {match.opponent}"
+    return FileResponse(path, media_type="video/mp4", filename=download_name(title) + ".mp4")
 
 
 @router.get("/media/{media_id}/thumbnail")

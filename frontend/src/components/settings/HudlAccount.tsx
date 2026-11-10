@@ -1,3 +1,4 @@
+import { scopedHudlAction } from "../../lib/archiveFilters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type Hls from "hls.js";
 import { Download, Play, RefreshCw, ShieldCheck } from "lucide-react";
@@ -12,14 +13,14 @@ type Status = { session_active?: boolean; configured: boolean; busy: boolean; st
   matches: Match[]; stream_url?: string | null; filename?: string | null };
 async function request<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${BASE}${path}`, body === undefined ? {} : {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(path === "/account/action" ? scopedHudlAction(body) : body),
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || "Hudl request failed.");
   return data;
 }
 
-export function StreamPlayer({ url, seek, onTime }: { url: string; seek?: {time:number; nonce:number}; onTime?: (seconds:number)=>void }) {
+export function StreamPlayer({ url, seek, onTime, poster }: { url: string; seek?: {time:number; nonce:number}; onTime?: (seconds:number)=>void; poster?:string|null }) {
   const video = useRef<HTMLVideoElement>(null);
   const timeHandler = useRef(onTime);
   timeHandler.current = onTime;
@@ -72,7 +73,7 @@ export function StreamPlayer({ url, seek, onTime }: { url: string; seek?: {time:
   const touch = typeof window.matchMedia === "function" && window.matchMedia("(hover: none)").matches;
   const [hover, setHover] = useState(false);
   return <div className="space-y-2">
-    <video ref={video} crossOrigin="anonymous" controls={touch || hover} playsInline preload="none"
+    <video ref={video} poster={poster||undefined} crossOrigin="anonymous" controls={touch || hover} playsInline preload="none"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       aria-label="Hudl match stream" className="aspect-video w-full rounded-xl bg-black" />
     {error && <p role="alert" className="text-sm text-danger">{error}</p>}

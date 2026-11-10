@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_settings
 from app.api.moment_routes import moment_out
 from app.config import Settings
+from app.connectors.hudl_names import download_name
 from app.models import Reel
 from app.schemas import ReelDetail, ReelIn, ReelItemOut, ReelPatch, ReelSummary
 from app.services import players, reels
@@ -169,7 +170,14 @@ def reel_video(reel_id: int, db: Db, settings: Cfg, download: bool = False) -> F
     if path is None or not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="this reel has not been rendered")
     if download:
-        return FileResponse(path, media_type="video/mp4", filename=path.name)
+        name = path.name
+        if reel and len(reel.items) == 1:
+            event = reel.items[0].event
+            match = event.match
+            title = f"{match.match_date:%y%m%d} {match.team.name} v {match.opponent}"
+            label = " & ".join(p.display_name for p in event.players) or event.tag.name
+            name = download_name(title, f"{reel.name} - {label}") + ".mp4"
+        return FileResponse(path, media_type="video/mp4", filename=name)
     return FileResponse(path, media_type="video/mp4")
 
 

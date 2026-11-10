@@ -219,3 +219,11 @@ Live U11 Stoke: 2,191 tags, 66 codes, 1080p streaming and goal seek. U11 West Br
 1,927 tags, 65 codes, streaming/goal seek, no offline match copy. Both caches
 survived a helper restart without an active login; all ten archive files kept
 identical SHA-256. Unsupported tag formats still show their actual warning.
+
+Spec 180: choose an age in Library before indexing. The saved age is sent with
+Test/Refresh/Index actions; only that team's memberships enter the tag queue.
+Season and age survive reload/restart. Metadata indexing uses recorded playlist
+duration if browser metadata is not ready, with no full-video download. New
+attachments use readable fixture/venue or player/type/date names. Existing full
+capture identities and files remain reusable and unchanged. Individual ZIP clips
+have sequence numbers; export container names add a short unique marker.

@@ -4,6 +4,31 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-025 (2026-11-10) Selected-age indexing and consistent archive presentation
+Owner requests selected-age-only metadata indexing, persistent age/season,
+no Library team control, tidier Clips and memories, and readable download names.
+Use served age memberships for the metadata queue; requests without a selected
+age do not start an account-wide sweep. Existing access/rate/five-failure stops
+remain. Changing scope yields at the next page boundary. App-open indexing
+avoids active match/Clips routes so metadata work does not compete with playback.
+
+Observed 17 unavailable records were player-duration readiness failures. Use
+recorded playlist duration (manifest-only fallback, never video segments) and
+retry this specific repaired failure within the selected scope. Other unreadable
+records retain weekly retry. Never invent offsets or accept invalid ranges.
+
+New attachments use fixture + venue or player/type + actual ISO date. Unknown
+metadata is labelled unknown, never inferred. Existing internal full-capture IDs
+and files remain untouched/reusable. ZIP members include a sequence number;
+export containers keep a short collision-resistant marker. Filename components
+are sanitized; completed friendly files stay scoped and URL encoded. Offline
+single-clip attachments retain their reel title plus fixture/type/date.
+
+Clips has one main workspace; saved-clips/playlists/reels remain accessible in
+one secondary disclosure. Timeline merges sources by season/month, starts with
+12 match cards and six moments each, and reveals all remaining items explicitly.
+Shared filters persist locally and notify other screens; no account data stored.
+
 ## D-024 (2026-11-10) Tag sweep skips unreadable videos and resumes
 Owner report: indexing stopped every run and appeared to restart at match 1.
 Finished matches were already saved; the message numbered only the remaining

@@ -6,6 +6,18 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Spec 180 completed
+- Selected-age indexing, manifest duration fallback, persistent age/season,
+  no Team filter, compact Clips/timeline and readable append-only download names.
+- Backend 318 SQLite/Postgres sequentially; frontend 146; lint/format/mypy,
+  schema drift, TypeScript/build clean. Existing build chunk warning retained.
+- Live U11-only sweep completed 87 checks (57 tagged / 28 none / 2 invalid
+  timelines; 74,260 cached ranges), crossed prior five-failure stop; 1080p
+  H.264 26.04s goal exported from covering segments and downloaded (21,178,316
+  bytes, SHA-256 identical). Seven prior archive files unchanged. No full capture.
+- Desktop and 375px: Library persistence and Clips/timeline checked; chart/grid
+  overflow repaired. Docker/helper restarted. No credential/session policy change.
+
 ## Library/Clips polish (spec 180)
 
 Package split checkpoint: hudl_browser public API preserved, implementation

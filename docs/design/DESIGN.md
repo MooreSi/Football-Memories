@@ -69,3 +69,8 @@ share the club identity. No invented crests, ratings or inferred affiliations.
 Colours only from tokens or the two CTA blues above; motion is short and
 disabled under `prefers-reduced-motion`; every control does something real;
 visible focus rings; no horizontal scroll at 375px.
+
+Spec 180 refines reference 02 Clips into one main analysis workspace with a
+secondary saved-tools disclosure. Reference 03 memories use compact chronological
+match cards with progressive expansion; charts and tag feeds stay bounded on
+phones. Desktop and 375px review completed; real footage/metadata only.

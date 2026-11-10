@@ -17,6 +17,8 @@ import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
 import { clubName, latestFirst } from "../lib/hudlFixture";
 
+import { useArchiveFilters } from "../lib/archiveFilters";
+
 const PAGE_SIZE = 24;
 
 function useDebounced<T>(value: T, ms: number): T {
@@ -37,22 +39,19 @@ function hours(seconds: number): string {
 export function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
-  const [teamId, setTeamId] = useState<number | undefined>();
-  const [seasonLabel, setSeasonLabel] = useState("");
-  const [ageGroup, setAgeGroup] = useState(() => localStorage.getItem("fm.hudl.age") || "");
+  const {age:ageGroup,setAge:setAgeGroup,season:seasonLabel,setSeason:setSeasonLabel} = useArchiveFilters();
   const remote = useHudlLibrary();
   const q = useDebounced(search.trim(), 250);
 
   useEffect(() => setSearch(params.get("q") ?? ""), [params]);
 
   const stats = useQuery({ queryKey: ["stats"], queryFn: api.stats });
-  const teams = useQuery({ queryKey: ["teams"], queryFn: api.teams });
   const seasons = useQuery({ queryKey: ["seasons"], queryFn: api.seasons });
   const latest = useQuery({ queryKey: ["matches", "latest"], queryFn: () => api.matches({ page: 1, pageSize: 5 }) });
   const seasonId = seasons.data?.find(s => s.name === seasonLabel)?.id;
   const matches = useInfiniteQuery({
-    queryKey: ["matches", q, teamId, seasonId, ageGroup],
-    queryFn: ({ pageParam }) => api.matches({ q, teamId, seasonId, ageGroup, page: pageParam, pageSize: PAGE_SIZE }),
+    queryKey: ["matches", q, seasonId, ageGroup],
+    queryFn: ({ pageParam }) => api.matches({ q, seasonId, ageGroup, page: pageParam, pageSize: PAGE_SIZE }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
   });
@@ -60,13 +59,13 @@ export function LibraryPage() {
   const items = (matches.data?.pages.flatMap((p) => p.items) ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel);
   const ageGroups = [...new Set([...(remote.data ?? []).flatMap(hudlAgeGroups), ...items.map(m => m.age_group), ...(latest.data?.items ?? []).map(m => m.age_group)].filter((a): a is string => Boolean(a)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   const seasonLabels = [...new Set([...(seasons.data ?? []).map(s => s.name), ...(remote.data ?? []).map(m => m.season_label || "Unclassified")])].sort().reverse();
-  useEffect(() => { if (ageGroup && ageGroups.length && !ageGroups.includes(ageGroup)) {setAgeGroup("");localStorage.removeItem("fm.hudl.age");} }, [remote.data, latest.data, ageGroup]);
+  useEffect(() => { if (remote.isSuccess && !remote.isFetching && ageGroup && ageGroups.length && !ageGroups.includes(ageGroup)) {setAgeGroup("");localStorage.removeItem("fm.hudl.age");} }, [remote.data, latest.data, ageGroup]);
   const total = seasonLabel && seasonId === undefined ? 0 : matches.data?.pages[0]?.total ?? 0;
-  const remoteCount = (remote.data ?? []).filter(m => !teamId && (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase()))).length;
-  const filtering = Boolean(q || teamId || seasonId);
+  const remoteCount = (remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase()))).length;
+  const filtering = Boolean(q || ageGroup || seasonLabel);
   const s = stats.data;
   const featured = latest.data?.items ?? [];
-  const heroMatches = latestFirst((remote.data ?? []).filter(m => !ageGroup || hudlAgeGroups(m).includes(ageGroup)));
+  const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
   const club = clubName(featured[0]?.team_name);
   const prefs = useQuery({ queryKey: ["preferences"], queryFn: api.preferences });
   const players = useQuery({ queryKey: ["players"], queryFn: api.players });
@@ -144,20 +143,13 @@ export function LibraryPage() {
               />
             </label>
             <label>
-              <span className="sr-only">Team</span>
-              <select className="field w-auto rounded-full" value={teamId ?? ""} onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : undefined)}>
-                <option value="">All teams</option>
-                {teams.data?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </label>
-            <label>
               <span className="sr-only">Season</span>
-              <select className="field w-auto rounded-full" value={seasonLabel} onChange={(e) => setSeasonLabel(e.target.value)}>
+              <select className="field w-auto rounded-full" aria-label="Season" value={seasonLabel} onChange={(e) => setSeasonLabel(e.target.value)}>
                 <option value="">All seasons</option>
                 {seasonLabels.map(label => <option key={label} value={label}>{label}</option>)}
               </select>
             </label>
-            <label><span className="sr-only">Age group</span><select className="field w-auto rounded-full" aria-label="Age group" value={ageGroup} onChange={e=>{setAgeGroup(e.target.value);localStorage.setItem("fm.hudl.age",e.target.value);}}><option value="">All age groups</option>{ageGroups.map(age=><option key={age}>{age}</option>)}</select></label>
+            <label><span className="sr-only">Age group</span><select className="field w-auto rounded-full" aria-label="Age group" value={ageGroup} onChange={e=>setAgeGroup(e.target.value)}><option value="">All age groups</option>{ageGroups.map(age=><option key={age}>{age}</option>)}</select></label>
             {!matches.isPending && (
               <span className="text-xs text-fg-muted">
                 {total} offline · {remoteCount} Hudl
@@ -169,7 +161,7 @@ export function LibraryPage() {
             <Spinner label="Loading matches" />
           ) : matches.isError ? (
             <p className="text-sm text-danger">Could not load the library: {(matches.error as Error).message}</p>
-          ) : items.length === 0 ? (
+          ) : items.length === 0 ? remoteCount > 0 ? null : (
             <p className="py-10 text-center text-sm text-fg-muted">{remote.data?.length ? "No offline matches match these filters." : filtering ? "No matches found for these filters." : "No matches yet."}</p>
           ) : (
             <>
@@ -185,7 +177,7 @@ export function LibraryPage() {
               )}
             </>
           )}
-          <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q,offlineOnly:Boolean(teamId)}} /></div>
+          <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} /></div>
         </section>
       </div>
     </div>

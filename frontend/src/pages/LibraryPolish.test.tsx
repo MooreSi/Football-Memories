@@ -1,0 +1,20 @@
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, expect, it, vi } from 'vitest';
+import { LibraryPage } from './LibraryPage';
+import { renderWithProviders, stubFetch } from '../test/render';
+afterEach(()=>{vi.unstubAllGlobals();localStorage.clear();});
+it('removes teams and restores season and age after a remount without an empty offline gap',async()=>{
+ stubFetch({'/api/matches':{total:0,page:1,page_size:24,items:[]},'/api/stats':{matches:0,moments:0,footage_seconds:0,teams:0,players:0,top_tags:[],recent_moments:[]},'/api/teams':[],'/api/seasons':[],'/api/preferences':{},'http://127.0.0.1:8766/library':[{id:'a',title:'261108 U11 v Rovers',age_group:'U11',season_label:'2026/27'}]});
+ const first=renderWithProviders(<LibraryPage/>);
+ const region=await screen.findByRole('region',{name:'All matches'});
+ await within(region).findByRole('link',{name:'261108 U11 v Rovers'});
+ expect(within(region).queryByLabelText('Team')).toBeNull();
+ await userEvent.selectOptions(within(region).getByLabelText('Season'),'2026/27');
+ await userEvent.selectOptions(within(region).getByLabelText('Age group'),'U11');
+ first.unmount();renderWithProviders(<LibraryPage/>);
+ const restored=await screen.findByRole('region',{name:'All matches'});
+ await vi.waitFor(()=>expect(within(restored).getByLabelText('Season')).toHaveValue('2026/27'));
+ expect(within(restored).getByLabelText('Age group')).toHaveValue('U11');
+ expect(screen.queryByText('No offline matches match these filters.')).toBeNull();
+});
