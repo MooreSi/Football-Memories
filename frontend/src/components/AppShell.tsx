@@ -1,7 +1,8 @@
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
-import { Clapperboard, Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
+import { Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Brand } from "./BrandMark";
 
 // Only screens that work are listed (brief section 19). Layout follows reference 1:
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
@@ -13,17 +14,6 @@ const NAV = [
   { to: "/import", label: "Import", icon: FolderInput, end: false },
   { to: "/settings", label: "Settings", icon: Settings, end: false },
 ];
-
-function Brand() {
-  return (
-    <NavLink to="/" className="app-brand flex items-center gap-3" aria-label="Football Memories home">
-      <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-accent/30 to-violet/40 ring-1 ring-accent/50 shadow-[0_0_24px_-4px_rgb(34_211_238/0.6)]">
-        <Clapperboard size={19} className="text-accent" aria-hidden />
-      </span>
-      <span className="brand-name text-lg font-semibold tracking-tight">Football Memories</span>
-    </NavLink>
-  );
-}
 
 function PillNav() {
   return (

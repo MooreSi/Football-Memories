@@ -16,11 +16,24 @@
   background: radial-gradient(ellipse at 65% 15%, #483b322e, transparent 55%), #151619;
   color: var(--color-fg);
 }
-.app-header { background: #202124e8; border-bottom: 1px solid #ffffff0d; backdrop-filter: blur(24px); }
+.app-header { position: sticky; isolation: isolate; border-bottom: 0; backdrop-filter: blur(24px);
+  /* Spec 190 banner: floodlit night sky across the full width, mown-pitch stripes, tri-colour rule. */
+  background:
+    radial-gradient(520px 140px at 12% -40%, #67e8f933, transparent 70%),
+    radial-gradient(620px 160px at 88% -50%, #c084fc2e, transparent 70%),
+    linear-gradient(100deg, #0a1128f2 0%, #131b3ff2 38%, #1b1645f2 68%, #0b1a2ef2 100%); }
+.app-header::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
+  background: repeating-linear-gradient(90deg, #ffffff05 0 80px, transparent 80px 160px); }
+.app-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee 18%, #818cf8 50%, #f5b70a 82%, transparent); opacity: .8; }
+.brand-crest { filter: drop-shadow(0 6px 14px #22d3ee40); transition: transform .25s; }
+.app-brand:hover .brand-crest { transform: rotate(-4deg) scale(1.04); }
+.brand-kicker { font-size: 10.5px; font-weight: 700; letter-spacing: .38em; text-transform: uppercase;
+  background: linear-gradient(90deg, #67e8f9, #a5b4fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand-name { margin-top: 3px; font-size: 23px; font-weight: 800; letter-spacing: -.03em; font-style: italic;
+  background: linear-gradient(180deg, #ffffff 30%, #c7d2fe); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .header-inner { max-width: 1780px; min-height: 84px; margin: auto; padding: 14px 32px; display: flex; align-items: center; gap: 28px; }
 .app-brand { flex-shrink: 0; }
-.app-brand > span:first-child { background: #353b6e; box-shadow: none; --tw-ring-color: #737fce; }
-.brand-name { max-width: 150px; line-height: 1.12; }
 .nav-wrap { margin: auto; }
 .screen-link { display: flex; height: 46px; align-items: center; gap: 9px; padding: 0 16px; border-radius: 28px; color: var(--color-fg-muted); font-size: 13px; transition: background .18s, color .18s; }
 .screen-link:hover { background: #ffffff0a; color: var(--color-fg); }
@@ -52,7 +65,6 @@
 .dashboard-overview h2, .dashboard-latest h2 { font-size: 17px; font-weight: 500; }
 /* The analysis canvas follows the compact Smart Tagging reference. */
 .app-surface[data-screen="analysis"] { --color-ink-950: #0c111d; --color-ink-900: #101725; --color-ink-800: #192231; --color-ink-700: #263143; --color-line: #2c3748; --color-accent: #56b8e6; --color-accent-strong: #328bc7; background: #0c111d; }
-[data-screen="analysis"] .app-header { background: #1b2230f5; }
 [data-screen="analysis"] .header-inner { min-height: 62px; padding-top: 8px; padding-bottom: 8px; }
 [data-screen="analysis"] .app-main { max-width: none; padding: 16px; }
 [data-screen="analysis"] .panel { background: #121a28; border-color: #293345; border-radius: 8px; box-shadow: none; }
@@ -104,7 +116,7 @@
 .player-shield[data-card-style="sunset"] { --edge: linear-gradient(140deg, #fecdd3, #fb7185 25%, #f97316 50%, #a855f7 80%, #fda4af);
   --face: linear-gradient(160deg, #4c0d2e, #2a0b28 50%, #3b1561); --ink: #fff1f2; --muted: #f9b4c5; --accent: #fdba74; --rule: #fda4af40; --num-bg: #fdba74; }
 .player-shield-inner > div:first-child { margin-top: 0; }
-.player-shield-inner img { box-shadow: none; border-radius: 16px; --tw-ring-color: #727db6; width: 150px; height: 150px; }
+.player-shield-inner img:not(.card-crest) { box-shadow: none; border-radius: 16px; --tw-ring-color: #727db6; width: 150px; height: 150px; }
 .player-shield-inner figcaption { font-family: "Arial Narrow", "Helvetica Neue", sans-serif; font-stretch: condensed; font-size: 25px; letter-spacing: -.035em; line-height: 1.1; }
 .profile-chip { justify-content: center; flex: 1; background: #303137; border-color: #45464e; border-radius: 8px; }
 .profile-details > div:nth-child(2) .tile { background: #292a2ed9; border-color: #ffffff0b; }
@@ -127,7 +139,7 @@
   .profile-workspace { grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; }
 }
 @media (max-width: 1000px) {
-  .brand-name { display: none; }
+  .brand-wordmark { display: none; }
   .profile-workspace { grid-template-columns: minmax(0, 1fr); }
   .profile-feed { position: static; }
   .profile-top { grid-template-columns: 260px minmax(0, 1fr); }
@@ -137,7 +149,7 @@
 }
 @media (max-width: 700px) {
   .header-inner { padding: 10px 14px; min-height: 66px; gap: 12px; }
-  .app-brand > span:first-child { width: 34px; height: 34px; }
+  .brand-crest { width: 34px; height: 40px; }
   .nav-wrap { min-width: 0; margin: 0 0 0 auto; }
   .screen-navigation { gap: 3px; }
   .screen-link { width: 40px; height: 40px; padding: 0; justify-content: center; }
