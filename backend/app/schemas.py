@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -117,6 +118,9 @@ class StatsOut(BaseModel):
     recent_moments: list[RecentMomentOut]
 
 
+CardStyle = Literal["classic", "gold", "silver", "bronze", "emerald", "midnight", "sunset"]
+
+
 class PlayerListItem(BaseModel):
     id: int
     display_name: str
@@ -131,6 +135,8 @@ class PlayerPatch(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=200)
     shirt_number: str | None = Field(default=None, max_length=10)
     position: str | None = Field(default=None, max_length=40)
+    club_name: str | None = Field(default=None, max_length=200)
+    card_style: CardStyle | None = None
 
 
 class PlayerTotals(BaseModel):
@@ -165,6 +171,8 @@ class PlayerProfileOut(BaseModel):
     display_name: str
     shirt_number: str | None
     position: str | None
+    club_name: str | None = None
+    card_style: CardStyle = "classic"
     photo_url: str | None
     is_primary: bool
     totals: PlayerTotals

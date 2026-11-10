@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { type HudlMatch, hudlAgeGroups } from "../../api/hudl";
 import { fixtureDate, fixtureLabel, fixtureParts } from "../../lib/hudlFixture";
+import { TeamBadge } from "../TeamBadge";
 import { Badge } from "../ui/Badge";
 
 /** Reference 1's centre hero, fed by the connected Hudl library: newest first,
@@ -13,7 +14,9 @@ export function HudlHero({ matches, club, age }: { matches: HudlMatch[]; club: s
   if (!m) return null;
   const group = age || hudlAgeGroups(m)[0];
   const date = fixtureDate(m.title);
-  const venue = fixtureParts(m.title)?.venue;
+  const parts = fixtureParts(m.title);
+  const venue = parts?.venue;
+  const home = club || "Home";
   const moments = m.moments?.length ?? 0;
   const link = `/hudl/${encodeURIComponent(m.id)}`;
   return (
@@ -22,6 +25,14 @@ export function HudlHero({ matches, club, age }: { matches: HudlMatch[]; club: s
         {m.thumbnail_url && <img crossOrigin="anonymous" src={m.thumbnail_url} alt="" className="absolute inset-0 size-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/40 to-ink-950/10" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-transparent" />
+        {parts && (
+          <div role="group" aria-label={`${home} vs ${parts.opponent}`}
+            className="hero-crests absolute top-5 left-5 flex items-center gap-2 rounded-full border border-white/10 bg-ink-950/55 p-1.5 pr-2 backdrop-blur-md">
+            <TeamBadge name={home} size="sm" tone="home" />
+            <span className="text-[11px] font-bold tracking-widest text-fg-muted uppercase">v</span>
+            <TeamBadge name={parts.opponent} size="sm" tone="away" />
+          </div>
+        )}
         <div className="hero-caption absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-5 p-6 sm:p-8">
           <div className="max-w-xl">
             <div className="mb-3 flex flex-wrap gap-1.5">

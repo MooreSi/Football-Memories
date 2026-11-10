@@ -199,3 +199,33 @@ def test_viewed_reduces_unwatched_and_filters(client: TestClient, two_matches: d
 def test_marking_an_unknown_event_is_a_404(client: TestClient) -> None:
     assert client.post("/api/events/999/viewed").status_code == 404
     assert client.put("/api/events/999/favourite", json={"favourite": True}).status_code == 404
+
+
+def test_player_club_and_card_style_are_saved_and_returned(
+    client: TestClient,
+    two_matches: dict,  # type: ignore[type-arg]
+) -> None:
+    pid = two_matches["sam"]
+    assert client.get(f"/api/players/{pid}").json()["card_style"] == "classic"
+    r = client.patch(
+        f"/api/players/{pid}", json={"club_name": " Aston Villa ", "card_style": "gold"}
+    )
+    assert r.status_code == 200
+    body = client.get(f"/api/players/{pid}").json()
+    assert body["club_name"] == "Aston Villa"
+    assert body["card_style"] == "gold"
+    # Clearing the club keeps the style.
+    client.patch(f"/api/players/{pid}", json={"club_name": ""})
+    body = client.get(f"/api/players/{pid}").json()
+    assert body["club_name"] is None
+    assert body["card_style"] == "gold"
+
+
+def test_unknown_card_style_is_rejected_and_changes_nothing(
+    client: TestClient,
+    two_matches: dict,  # type: ignore[type-arg]
+) -> None:
+    pid = two_matches["sam"]
+    r = client.patch(f"/api/players/{pid}", json={"card_style": "rainbow-glitter"})
+    assert r.status_code == 422
+    assert client.get(f"/api/players/{pid}").json()["card_style"] == "classic"

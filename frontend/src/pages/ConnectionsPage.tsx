@@ -35,7 +35,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {q.data.map((c) => (
-            <section key={c.id} className={`panel space-y-4 p-5 ${c.id === "hudl" ? "lg:col-span-2" : ""}`} aria-label={c.name}>
+            <section key={c.id} className="panel h-fit space-y-4 p-5" aria-label={c.name}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{c.name}</h2>
                 {c.id === "hudl" && hudlState ? <Badge tone={hudlState === "Connected" ? "ok" : "warn"}>{hudlState}</Badge>

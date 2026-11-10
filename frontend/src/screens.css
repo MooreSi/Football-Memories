@@ -76,13 +76,36 @@
 .profile-top { display: grid; grid-template-columns: 265px minmax(0, 1fr) 85px; gap: 20px; align-items: start; }
 .profile-dates { flex-direction: column; }
 .profile-feed { position: sticky; top: 110px; }
-.player-shield { background: #59659b; filter: drop-shadow(0 12px 15px #0005); }
-.player-shield-inner { background: linear-gradient(145deg, #303342, #23252f 55%, #39344f); min-height: 425px; }
+/* Player card finishes (spec 190). Edge = metallic gradient, face = deep tone of the
+   same metal, sheen = one sharp diagonal highlight. Text colours are set per finish
+   so contrast holds on every style. */
+.player-shield { --edge: linear-gradient(140deg, #22d3ee, #3b82f6 45%, #7c5cff); --face: linear-gradient(150deg, #303342, #23252f 55%, #39344f);
+  --ink: #f4f6fb; --muted: #aab3c8; --accent: #67e8f9; --rule: #ffffff26; --num-bg: #facc15; --num-ink: #0b0d12;
+  background: var(--edge); filter: drop-shadow(0 14px 18px #0007); }
+.player-shield-inner { background: var(--face); min-height: 425px; color: var(--ink); isolation: isolate; }
+.player-shield-inner::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, #ffffff1c 42%, transparent 52%), radial-gradient(120% 60% at 50% 0%, #ffffff14, transparent 60%); }
+.player-shield .card-muted { color: var(--muted); }
+.player-shield .card-accent { color: var(--accent); }
+.player-shield .card-rule { background: var(--rule); }
+.player-shield .card-divider { border-color: var(--rule); }
+.player-shield .card-number { background: var(--num-bg); color: var(--num-ink); border-color: #0006; }
+.player-shield .card-crest { filter: drop-shadow(0 3px 6px #0008); }
+.player-shield[data-card-style="gold"] { --edge: linear-gradient(140deg, #fff3c4, #e4b33a 30%, #fff0b3 50%, #b8860b 75%, #fde68a);
+  --face: linear-gradient(155deg, #4a3608, #2a1e05 55%, #5a4310); --ink: #fff8e1; --muted: #e9cf87; --accent: #fcd34d; --rule: #fde68a40; --num-bg: #fde68a; }
+.player-shield[data-card-style="silver"] { --edge: linear-gradient(140deg, #ffffff, #b9c1cf 30%, #f4f6fa 50%, #7b8496 75%, #e5e9f0);
+  --face: linear-gradient(155deg, #3b4252, #22272f 55%, #4a5262); --ink: #ffffff; --muted: #cfd6e2; --accent: #e2e8f0; --rule: #ffffff38; --num-bg: #e5e9f0; }
+.player-shield[data-card-style="bronze"] { --edge: linear-gradient(140deg, #ffd9b3, #c0763b 30%, #f5b583 50%, #7a3f16 75%, #e8a26b);
+  --face: linear-gradient(155deg, #4a2610, #2a1408 55%, #5c3216); --ink: #fff3e8; --muted: #e6b48c; --accent: #fdba74; --rule: #fdba7440; --num-bg: #fdba74; }
+.player-shield[data-card-style="emerald"] { --edge: linear-gradient(140deg, #c9f7e3, #21b47c 35%, #a7f3d0 55%, #065f46);
+  --face: linear-gradient(155deg, #064e3b, #022c22 55%, #0b5b45); --ink: #f0fdf7; --muted: #9fe3c5; --accent: #6ee7b7; --rule: #6ee7b740; --num-bg: #6ee7b7; }
+.player-shield[data-card-style="midnight"] { --edge: linear-gradient(140deg, #c7d2fe, #4f46e5 35%, #a5b4fc 55%, #1e1b4b);
+  --face: linear-gradient(155deg, #1e1b4b, #0b0a24 55%, #27235f); --ink: #eef0ff; --muted: #a5b0f0; --accent: #a5b4fc; --rule: #a5b4fc38; --num-bg: #a5b4fc; }
+.player-shield[data-card-style="sunset"] { --edge: linear-gradient(140deg, #fecdd3, #fb7185 25%, #f97316 50%, #a855f7 80%, #fda4af);
+  --face: linear-gradient(160deg, #4c0d2e, #2a0b28 50%, #3b1561); --ink: #fff1f2; --muted: #f9b4c5; --accent: #fdba74; --rule: #fda4af40; --num-bg: #fdba74; }
 .player-shield-inner > div:first-child { margin-top: 0; }
 .player-shield-inner img { box-shadow: none; border-radius: 16px; --tw-ring-color: #727db6; width: 150px; height: 150px; }
 .player-shield-inner figcaption { font-family: "Arial Narrow", "Helvetica Neue", sans-serif; font-stretch: condensed; font-size: 25px; letter-spacing: -.035em; line-height: 1.1; }
-.player-shield-inner .border-white\/15 { border-color: #ffffff20; }
-.player-shield-inner > .bg-white\/15 { background: #ffffff26; }
 .profile-chip { justify-content: center; flex: 1; background: #303137; border-color: #45464e; border-radius: 8px; }
 .profile-details > div:nth-child(2) .tile { background: #292a2ed9; border-color: #ffffff0b; }
 .profile-details svg polygon[fill="none"] { stroke: #ffffff20; }

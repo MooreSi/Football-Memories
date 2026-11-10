@@ -84,8 +84,8 @@ export function PlayerHubPage() {
       <div className="profile-workspace">
         <div className="profile-details min-w-0 space-y-6">
           <div className="profile-top">
-            <PlayerCard player={p.categories.length || !hudlMoments.length ? p : {...p,categories:[{name:"Tagged moments",count:hudlMoments.length}]}} />
-            <ProfilePanel key={`${p.id}-${p.display_name}-${p.shirt_number}-${p.position}`} player={p} />
+            <PlayerCard player={p} moments={p.totals.moments + hudlMoments.length} games={p.totals.matches + hudl.length} />
+            <ProfilePanel key={`${p.id}-${p.display_name}-${p.shirt_number}-${p.position}-${p.club_name}-${p.card_style}`} player={p} />
             <nav aria-label="Recent matches" className="profile-dates panel flex gap-2 overflow-x-auto p-2">
               {recentMatches.map((m) => (
                 <Link key={m.match_id} to={href(m)} title={`vs ${m.opponent}`}

@@ -55,7 +55,7 @@ export const api = {
   playerFromHudlTag: (category: string) =>
     request<{ player_id: number }>("/api/players/from-hudl-tag", { method: "POST", body: JSON.stringify({ category }) }),
   player: (id: number) => request<PlayerProfile>(`/api/players/${id}`),
-  updatePlayer: (id: number, body: Partial<Pick<PlayerProfile, "display_name" | "shirt_number" | "position">>) =>
+  updatePlayer: (id: number, body: Partial<Pick<PlayerProfile, "display_name" | "shirt_number" | "position" | "club_name" | "card_style">>) =>
     request<PlayerProfile>(`/api/players/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   playerMoments(id: number, f: { category?: string; favourites?: boolean; unwatched?: boolean } = {}) {
     const p = new URLSearchParams({ limit: "2000" });

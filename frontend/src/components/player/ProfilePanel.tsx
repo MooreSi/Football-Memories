@@ -3,7 +3,8 @@ import { Camera, ChevronLeft, ChevronRight, Pencil, Shield, Shirt, Trash2 } from
 import { type FormEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
-import type { PlayerProfile } from "../../api/types";
+import type { CardStyleId, PlayerProfile } from "../../api/types";
+import { CARD_STYLES } from "./PlayerCard";
 import { initials } from "../TeamBadge";
 import { Button } from "../ui/Button";
 import { PhotoCropper } from "./PhotoCropper";
@@ -22,6 +23,7 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     display_name: player.display_name, shirt_number: player.shirt_number ?? "", position: player.position ?? "",
+    club_name: player.club_name ?? "", card_style: (player.card_style ?? "classic") as CardStyleId,
   });
   const save = useMutation({
     mutationFn: () => api.updatePlayer(player.id, form),
@@ -125,6 +127,25 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
               <span className="text-fg-muted">Position</span>
               <input className="field" maxLength={40} placeholder="e.g. Goalkeeper" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
             </label>
+            <label className="space-y-1 text-sm sm:col-span-3">
+              <span className="text-fg-muted">Plays for</span>
+              <input className="field" aria-label="Plays for" maxLength={200} placeholder="e.g. Aston Villa" value={form.club_name}
+                onChange={(e) => setForm({ ...form, club_name: e.target.value })} />
+              <span className="block text-xs text-fg-subtle">The club's crest is found automatically and shown on the player card.</span>
+            </label>
+            <fieldset className="space-y-2 text-sm sm:col-span-3">
+              <legend className="mb-2 text-fg-muted">Card style</legend>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                {CARD_STYLES.map((s) => (
+                  <label key={s.id} className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border p-2 text-xs ${form.card_style === s.id ? "border-accent bg-accent/10 text-fg" : "border-white/10 text-fg-muted hover:border-white/30"}`}>
+                    <input type="radio" name="card_style" value={s.id} className="sr-only" checked={form.card_style === s.id}
+                      onChange={() => setForm({ ...form, card_style: s.id })} />
+                    <span aria-hidden className="h-8 w-6 rounded-md ring-1 ring-white/20 [clip-path:polygon(0_10%,20%_0,80%_0,100%_10%,100%_78%,50%_100%,0_78%)]" style={{ background: s.swatch }} />
+                    {s.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             {save.isError && <p role="alert" className="text-sm text-danger sm:col-span-3">{(save.error as Error).message}</p>}
             <div className="flex gap-2 sm:col-span-3">
               <Button type="submit" variant="primary" disabled={save.isPending}>Save</Button>
@@ -133,6 +154,16 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
           </form>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <h3 className="mb-2 text-sm font-medium text-fg-muted">Plays for</h3>
+              {player.club_name ? (
+                <Chip>
+                  <img src={`/api/team-logo?name=${encodeURIComponent(player.club_name)}`} alt="" className="size-5 object-contain"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  {player.club_name}
+                </Chip>
+              ) : <span className="text-sm text-fg-subtle">Not set. Edit to add the club.</span>}
+            </div>
             <div>
               <h3 className="mb-2 text-sm font-medium text-fg-muted">Shirt number</h3>
               {player.shirt_number ? (

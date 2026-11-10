@@ -75,6 +75,8 @@ def _profile_out(db: Session, player_id: int) -> PlayerProfileOut:
         display_name=p.player.display_name,
         shirt_number=p.player.shirt_number,
         position=p.player.position,
+        club_name=p.player.club_name,
+        card_style=p.player.card_style or "classic",
         is_primary=p.is_primary,
         photo_url=photos.photo_url(p.player),
         totals=PlayerTotals(
@@ -179,6 +181,8 @@ def patch_player(player_id: int, body: PlayerPatch, db: Db) -> PlayerProfileOut:
             display_name=body.display_name,
             shirt_number=body.shirt_number,
             position=body.position,
+            club_name=body.club_name,
+            card_style=body.card_style,
             fields=set(body.model_fields_set),
         )
         return _profile_out(db, player_id)

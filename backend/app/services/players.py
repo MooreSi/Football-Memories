@@ -131,6 +131,8 @@ def update_player(
     shirt_number: str | None,
     position: str | None,
     fields: set[str],
+    club_name: str | None = None,
+    card_style: str | None = None,
 ) -> Player:
     player = get_player(db, player_id)
     if "display_name" in fields and display_name is not None:
@@ -145,6 +147,10 @@ def update_player(
         player.shirt_number = (shirt_number or "").strip() or None
     if "position" in fields:
         player.position = (position or "").strip() or None
+    if "club_name" in fields:
+        player.club_name = (club_name or "").strip() or None
+    if "card_style" in fields and card_style:
+        player.card_style = card_style
     db.commit()
     return player
 

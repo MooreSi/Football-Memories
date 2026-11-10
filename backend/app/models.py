@@ -68,6 +68,9 @@ class Player(Base):
     shirt_number: Mapped[str | None] = mapped_column(String(10))
     position: Mapped[str | None] = mapped_column(String(40))
     photo_relpath: Mapped[str | None] = mapped_column(Text)
+    # Owner request 2026-11-10 (spec 190): the club shown on the player card, and its style.
+    club_name: Mapped[str | None] = mapped_column(String(200))
+    card_style: Mapped[str] = mapped_column(String(20), default="classic", server_default="classic")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

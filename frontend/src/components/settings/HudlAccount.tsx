@@ -1,7 +1,7 @@
 import { scopedHudlAction } from "../../lib/archiveFilters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type Hls from "hls.js";
-import { Download, Play, RefreshCw, ShieldCheck } from "lucide-react";
+import { RefreshCw, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
@@ -85,7 +85,6 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [saved, setSaved] = useState(false);
-  const [filter, setFilter] = useState("");
   const q = useQuery<Status>({ queryKey: KEY, queryFn: () => request("/account"), retry: false,
     refetchInterval: data => data.state.data?.busy ? 1500 : false });
   useEffect(() => {
@@ -100,7 +99,6 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
   if (q.isError) return null; // The existing capture section provides desktop-helper setup.
   if (q.isPending) return <p className="text-xs text-fg-muted">Checking saved Hudl connection…</p>;
   const busy = q.data.busy || save.isPending || action.isPending;
-  const matches = q.data.matches.filter(m => m.title.toLowerCase().includes(filter.toLowerCase()));
   function submit(event: FormEvent) { event.preventDefault(); setSaved(false); save.mutate(); }
   return <section aria-label="Hudl account connection" className="space-y-4 border-t border-line pt-4">
     <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck size={17} /> Your Hudl account</div>
@@ -123,20 +121,7 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
     {saved && <p className="text-xs text-ok" role="status">Saved in this Mac’s Keychain. Select Test to connect.</p>}
     <p role="status" className={`text-xs ${q.data.state === "error" ? "text-danger" : "text-fg-muted"}`}>{q.data.message}</p>
     {(save.isError || action.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error)?.message}</p>}
-    {q.data.stream_url && <StreamPlayer url={q.data.stream_url} />}
     {q.data.filename && <Link to="/import" className="inline-flex text-sm font-semibold text-accent underline">Import downloaded match</Link>}
-    {q.data.matches.length > 0 && <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">Available matches</h3><span className="text-xs text-fg-subtle">{q.data.matches.length} cached</span></div>
-      <input aria-label="Search Hudl matches" className="field" placeholder="Search matches…" value={filter} onChange={e => setFilter(e.target.value)} />
-      <ul className="max-h-[440px] space-y-2 overflow-y-auto" aria-label="Available Hudl matches">
-        {matches.map(m => <li key={m.id} className="tile space-y-3 p-3">
-          <p className="text-sm font-medium">{m.title}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={busy} aria-label={`Stream ${m.title}`} onClick={() => action.mutate({ action: "stream", match_id: m.id })}><Play size={14} /> Stream</Button>
-            <Button disabled={busy} aria-label={`Download ${m.title}`} onClick={() => action.mutate({ action: "download", match_id: m.id })}><Download size={14} /> Download</Button>
-          </div>
-        </li>)}
-      </ul>
-    </div>}
+    {q.data.matches.length > 0 && <p className="text-xs text-fg-subtle">{q.data.matches.length} matches cached. Watch and download them from <Link to="/" className="text-accent underline">Library</Link> or <Link to="/clips" className="text-accent underline">Clips</Link>.</p>}
   </section>;
 }

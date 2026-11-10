@@ -71,3 +71,24 @@ describe("ProfilePanel photo", () => {
     expect(screen.getByRole("button", { name: /Change photo/ })).toBeInTheDocument();
   });
 });
+
+describe("ProfilePanel club and card style", () => {
+  it("saves the club the player plays for and the card style", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(player), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    renderPanel();
+    await userEvent.click(screen.getByRole("button", { name: /Edit/ }));
+    await userEvent.type(screen.getByLabelText("Plays for"), "Aston Villa");
+    await userEvent.click(screen.getByRole("radio", { name: "Gold" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("/api/players/5");
+    expect(JSON.parse(String(init.body))).toMatchObject({ club_name: "Aston Villa", card_style: "gold" });
+  });
+
+  it("shows the club in the Teams panel once saved", () => {
+    renderPanel({ ...player, club_name: "Aston Villa" });
+    expect(screen.getByText("Plays for")).toBeInTheDocument();
+    expect(screen.getByText("Aston Villa")).toBeInTheDocument();
+  });
+});

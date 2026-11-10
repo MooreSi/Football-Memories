@@ -39,4 +39,18 @@ describe("ConnectionsPage", () => {
     expect(screen.getByText("Not available")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /connect/i })).toBeNull();
   });
+
+  it("places Hudl alongside Import from folder rather than across the full width", async () => {
+    stubFetch({
+      "/api/connectors": [
+        { id: "hudl", name: "Hudl", available: true, reason: "", docs: "", limitations: [], capabilities: {} },
+        { id: "local_import", name: "Import from folder", available: true, reason: "", docs: "", limitations: [], capabilities: {} },
+      ],
+    });
+    renderWithProviders(<ConnectionsPage />);
+    const hudl = await screen.findByRole("region", { name: "Hudl" });
+    const local = screen.getByRole("region", { name: "Import from folder" });
+    expect(hudl.parentElement).toBe(local.parentElement);
+    expect(hudl.className).not.toMatch(/col-span/);
+  });
 });

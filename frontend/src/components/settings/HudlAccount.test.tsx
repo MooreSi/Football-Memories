@@ -20,17 +20,19 @@ describe("HudlAccount", () => {
     const call = vi.mocked(fetch).mock.calls.find(([url]) => url === `${BASE}/account/credentials`);
     expect(JSON.parse(String(call?.[1]?.body))).toEqual({ username: "parent@example.test", password: "FAKE_SECRET" });
   });
-  it("tests the saved connection and offers stream/download for cached matches", async () => {
-    stubFetch({ [`${BASE}/account`]: { ...status, configured: true, matches: [
+  it("tests the saved connection without a duplicate player or match list", async () => {
+    // Owner request 2026-11-10 (spec 190): matches are streamed and downloaded from
+    // Library and Clips, so Settings no longer repeats the player and match list.
+    stubFetch({ [`${BASE}/account`]: { ...status, configured: true, stream_url: "http://127.0.0.1:8766/stream/x/playlist.m3u8", matches: [
       { id: "synthetic-a", title: "Team A vs B", url: "https://www.hudl.com/watch/video/synthetic-a" },
     ] }, [`${BASE}/account/action`]: { accepted: true } });
     const user = userEvent.setup();
     renderWithProviders(<HudlAccount />);
     await user.click(await screen.findByRole("button", { name: "Test" }));
-    expect(screen.getByRole("button", { name: "Stream Team A vs B" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Download Team A vs B" }));
     const calls = vi.mocked(fetch).mock.calls.filter(([url]) => url === `${BASE}/account/action`);
     expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ action: "test" });
-    expect(JSON.parse(String(calls[1][1]?.body))).toEqual({ action: "download", match_id: "synthetic-a" });
+    expect(screen.queryByRole("button", { name: "Stream Team A vs B" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Available Hudl matches" })).toBeNull();
+    expect(screen.queryByLabelText("Hudl match stream")).toBeNull();
   });
 });

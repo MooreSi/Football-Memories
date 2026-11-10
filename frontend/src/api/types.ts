@@ -122,6 +122,9 @@ export interface PlayerProfile {
   shirt_number: string | null;
   position: string | null;
   photo_url: string | null;
+  /** Spec 190: the club shown on the player card, and the card's style. */
+  club_name?: string | null;
+  card_style?: CardStyleId;
   is_primary: boolean;
   totals: { matches: number; moments: number; unwatched: number; favourites: number };
   categories: { name: string; count: number }[];
@@ -286,3 +289,5 @@ export interface ReelItemInput {
   pre_s: number | null;
   post_s: number | null;
 }
+
+export type CardStyleId = "classic" | "gold" | "silver" | "bronze" | "emerald" | "midnight" | "sunset";
