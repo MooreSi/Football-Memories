@@ -32,9 +32,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   explicit tagged-code picker for existing imported codes and opened Hudl videos.
   New highest-quality captures leave older files intact. Moment ZIP exports copy
   encoded streams without resizing; boundaries may include preceding keyframes.
-  Live selected-goal export is currently downloading its full highest-quality
-  source (helper running on 8766); do not restart it until finished. Check safe
-  `/account` status with the local app Origin. Tests/verification below.
+  Live highest-quality full match captured and selected goal ZIP downloaded
+  through the app: source/clip both 1280×720 H.264. Older MP4/CSV checksums
+  unchanged. Full MP4 attachment/reuse verified; 375px Library has no overflow.
+  Final helper is running on 8766 with active Keychain-backed ephemeral session.
 - Authorized capture from `codex/hudl-access-research` remains integrated.
   Authorized browser capture implemented (spec 090, D-012): host companion on
   127.0.0.1:8766, normal incognito Chrome login, HLS capture and Sportscode tag
@@ -96,10 +97,9 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
   player-code mapping is covered offline; this live run preserved all labels
   as categories. Saved-account login, discovery, stream and Download reuse now
   verified. Helper remains on 8766 with active ephemeral session and credentials
-  in Mac Keychain. No pending owner action. Spec 120 selected-range download is in progress;
-  keep the helper alive and verify ZIP + dimensions when complete. Large-library exhaustive
-  enumeration, native Safari HLS and a fresh full-match download through the
-  chooser have not been separately verified (underlying capture was verified).
+  in Mac Keychain. No pending owner action. Spec 120 Library, maximum-quality source capture
+  and selected-range download verified. Large-library exhaustive
+  enumeration and native Safari HLS have not been separately verified.
 
 
 ## Gotchas

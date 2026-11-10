@@ -13,7 +13,7 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 | Main Library age groups and cached thumbnails | done | all 100 thumbnails cached live; U10 filter shows 90 videos |
 | My Player tagged-code selection | done | explicit selection links only matching code events; remote code profiles use cached ranges |
 | Highest-quality automatic playback/capture | done | max served resolution then bitrate; separate names preserve capped copies |
-| Discoverable match / player / moment download controls | partial | built; live high-quality full source for selected range export is downloading |
+| Discoverable match / player / moment download controls | done | highest source captured; selected-goal ZIP downloaded, codec/resolution and old-file preservation verified |
 
 ## Current checkpoint: saved Hudl account and team identity (spec 110)
 
@@ -108,6 +108,27 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+
+### 2026-11-10 Connected Library live completion
+- Live main Library: 100 cached thumbnails, U10 shows 90 videos, mixed ages and
+  Unclassified remain separate. 375px viewport/content both375, images loaded.
+- Dedicated match prepares maximum rendition and caches 1,717 actual tag ranges.
+  Download selected goal captured all 1,257 media parts and verified a separate
+  source: 1280×720 H.264, 5012.24s, 1,511,015,451 bytes. This video's served
+  maximum is 720p. No invented/upscaled quality.
+- ZIP passed testzip and downloaded through actual browser attachment into
+  Downloads. Clip: 1280×720 H.264, 26.056s, 8,034,016 bytes; stream copy retains
+  source encoding. Original ranges/labels included. Previous video and tag CSV
+  SHA-256 unchanged.
+- Final helper restarted on current code. Full Download selected the existing
+  maximum-quality file; its attachment returned206 and MP4 header. Resume stream
+  retained completed attachment. Final UI playback reached15.43s at1280×720,
+  readyState4. Keychain login required no credential re-entry.
+- Final gates: backend250 SQLite/Postgres, frontend94, lint/format/types/build,
+  alembic and Docker health green. Docker browser-module hash matches source.
+  All staged scan hits reviewed; no secrets/private assets staged. No CI exists.
+- Not separately checked: native Safari HLS, exhaustive history enumeration,
+  multi-code exports at the 2,000-range limit. Tag cache covers opened videos.
 
 ### 2026-11-10 Connected Library checkpoint (codex/hudl-library-workflow)
 - Watched new metadata/age/quality/legacy-reuse tests red, then green. Watched

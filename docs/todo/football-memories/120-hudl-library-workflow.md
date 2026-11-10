@@ -1,6 +1,6 @@
 # 120: Hudl Library, tagged players and highest-quality downloads
 
-**Status:** Building
+**Status:** Shipped
 **Sensitive:** YES: read-only Hudl metadata/media; safe-change applies.
 
 ## Missing today
@@ -35,3 +35,23 @@ Library age filtering and stream/download controls. Existing tests unchanged.
 Authorized read-only: refresh library metadata/thumbnails, open the selected
 age group's match, verify maximum rendition stream, inspect tagged codes and
 save one selected moment (highest-quality source capture if necessary).
+
+## Verification
+- Backend 250 passed SQLite and 250 PostgreSQL; ruff/format/mypy clean,
+  alembic no drift. Frontend 94 passed; typecheck/build and Docker health clean.
+- Live Library cached all 100 thumbnails; age selector U10 shows 90 videos.
+  My Player picker has actual imported/observed code options; no live player
+  selection made on the owner's behalf. 375px Library has no horizontal overflow.
+- Maximum source full match captured: H.264 1280×720, 5012.24s, 1511015451 bytes.
+  Selected goal ZIP validated and downloaded through the app into Downloads.
+  Its MP4 is H.264 1280×720, 26.056s; encoded streams copied without re-encoding.
+  Older MP4 and CSV SHA-256 unchanged. Full MP4 attachment returned Range206
+  with valid MP4 header; reuse selected the new maximum-quality copy.
+- Restarted helper on final source, normal Keychain login and maximum-quality
+  playback verified (15.43s, 1280×720, readyState4). Same-match Resume retains
+  completed download.
+- No credentials, source URLs, real roster fixtures or footage in Git; no Hudl
+  mutations or existing library overwrites. No CI workflow exists.
+- Not separately verified: native Safari HLS, every historical library page,
+  very large multi-code ZIPs. Tag cache covers opened videos; age labels derive
+  from actual video titles, including mixed/Unclassified.

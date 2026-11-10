@@ -181,3 +181,11 @@ keyframe boundaries can start slightly early. First clip export needs the full
 highest-quality source and may take minutes. Completed captures expose a scoped
 localhost attachment link; full MP4s can then use the existing Import workflow.
 No signed remote address is stored in metadata or sent to the app.
+
+Spec 120 live verification (2026-11-10): all 100 thumbnails cached, U10 age
+selection90 videos, 1,717 ranges on opened match. Captured the served maximum
+1280×720 H.264 full match and downloaded one goal ZIP through the actual app.
+Clip resolution/codec preserved; prior MP4/CSV checksums unchanged. Full-match
+attachment/reuse and Keychain login after helper restart verified. 375px Library
+has no horizontal overflow. Maximum-quality capture never invents a higher
+rendition than Hudl serves.
