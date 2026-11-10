@@ -1,6 +1,6 @@
 # 110: Saved Hudl connection, match catalogue and team identity
 
-**Status:** Building
+**Status:** Complete
 **Sensitive:** credentials, normal login, read-only catalogue/media. Safe-change
 procedure applies. Owner explicitly requests app username/password Save/Test,
 a cached match chooser and stream/download on 2026-11-09. This supersedes
@@ -28,4 +28,6 @@ Check browser UI and full repo gates; live login needs owner-entered credentials
 
 ## Open decisions
 hls.js runtime dependency approved by owner for Chrome/Edge HLS streaming.
-Live Save/Test awaits owner credential entry in the app; no password in chat.
+Live Save/Test, cached chooser, Keychain login after restart, in-app 720p
+streaming and existing Download reuse verified 2026-11-10. No password in chat.
+100 observed videos cached; exhaustive history enumeration not established.

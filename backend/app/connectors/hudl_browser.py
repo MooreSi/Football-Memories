@@ -73,7 +73,9 @@ class Observation:
             return
         try:
             if parsed.path.endswith(".m3u8"):
-                self.manifests[media_url(response.url)] = response.text()
+                text = response.text()
+                if text.strip().startswith("#EXTM3U"):
+                    self.manifests[media_url(response.url)] = text
             else:
                 payload = response.json()
                 if isinstance(payload, dict) and (

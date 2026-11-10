@@ -20,7 +20,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Shared TeamBadge now caches real club crests (Aston Villa/Stoke verified in
   Library); My Player uses shared charcoal panels/periwinkle accents, preserving
   the reference card/chart/feed layout. Browser preview checked on synthetic
-  Sam Example. Live Save/Test/discovery/stream still awaits owner form entry.
+  Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
+  after helper restart and in-app 720p streaming verified. Download reused the
+  captured match and offered Import; MP4 and CSV checksums unchanged.
 - Authorized capture from `codex/hudl-access-research` remains integrated.
   Authorized browser capture implemented (spec 090, D-012): host companion on
   127.0.0.1:8766, normal incognito Chrome login, HLS capture and Sportscode tag
@@ -54,7 +56,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 237 passed on SQLite and Postgres; frontend 91 passed.
+- Tests: backend 238 passed on SQLite and Postgres; frontend 91 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.
@@ -66,18 +68,13 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
-1. Finish live saved-account verification after owner replies “tested”: read
-   safe helper status, inspect cached chooser, stream one accessible match, then
-   select the already captured match Download to verify reuse/Import. Safari
-   normal-library tab was blank even after refresh; match playback is signed in.
-   New helper observes normal library VideoItem responses in its own Chrome.
-2. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
+1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
-3. Per-clip timing override (brief section 9) and playback history on the server.
-4. Clip Explorer leftovers: notes and custom local tags on moments; crossfade
+2. Per-clip timing override (brief section 9) and playback history on the server.
+3. Clip Explorer leftovers: notes and custom local tags on moments; crossfade
    transitions. Single-clip export now uses the reel renderer with one item.
-5. Playwright e2e for import → play → filter → playlist.
-6. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
+4. Playwright e2e for import → play → filter → playlist.
+5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
    backup/restore, storage health.
 
 ## Blocked on / waiting for the owner
@@ -85,10 +82,12 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
   Normal-user/no-export role and automation permission answered. Real capture/import and clip download verified after owner sign-in. Explicit
   player-code mapping is covered offline; this live run preserved all labels
-  as categories. Saved-account live verification pending owner entering credentials in the open
-  Settings → Connections form and pressing Save/Test. No credentials have been
-  entered yet; helper is running on 8766, configured=false. Passwords save only
-  in Mac Keychain; sessions remain in memory. The manual URL fallback is retained.
+  as categories. Saved-account login, discovery, stream and Download reuse now
+  verified. Helper remains on 8766 with active ephemeral session and credentials
+  in Mac Keychain. No pending owner action for spec 110. Large-library exhaustive
+  enumeration, native Safari HLS and a fresh full-match download through the
+  chooser have not been separately verified (underlying capture was verified).
+
 
 ## Gotchas
 

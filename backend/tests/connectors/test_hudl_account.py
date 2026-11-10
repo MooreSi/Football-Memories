@@ -173,3 +173,15 @@ def test_app_host_match_links_use_canonical_watch_url() -> None:
             "url": "https://www.hudl.com/watch/video/synthetic-a",
         }
     ]
+
+
+def test_empty_prefetch_is_not_playback_evidence() -> None:
+    from unittest.mock import Mock
+
+    from app.connectors.hudl_browser import Observation
+
+    observation = Observation("synthetic")
+    response = Mock(url="https://video.hudl.com/prefetch.m3u8", status=200)
+    response.text.return_value = ""
+    observation.response(response)
+    assert observation.manifests == {}

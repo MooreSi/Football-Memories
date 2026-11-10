@@ -154,5 +154,10 @@ may need you to open the correct library in the helper browser, then Refresh.
 Disconnect releases the account browser for the manual URL capture fallback.
 This is a local desktop feature; server background connector flags stay false.
 Each user needs permission for automation and archiving. The owner attests that
-permission for this installation. Saved-account live verification is pending;
-the earlier manual capture/import/playback flow has been verified.
+permission for this installation. Live verification (2026-11-10): owner saved credentials and Test logged in,
+caching 100 accessible videos. After restarting the helper, Keychain login
+worked without re-entry. In-app playback reached 16 seconds at 1280×720 over
+a 5012.2-second match; Download reused the prior capture and offered Import.
+SHA-256 confirmed its MP4/tag CSV were unchanged. The earlier full capture,
+import and offline playback remain verified. The cached count is observed
+content, not a claim that every historical video was enumerated.

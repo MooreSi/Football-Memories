@@ -55,5 +55,13 @@ exclude deleted nodes/PlaylistItem and all playback credentials. The served
 encoded VideoItem ID maps to the canonical watch URL. `app.hudl.com` DOM links
 normalize to the same canonical www host. Discovery is bounded, so a very large
 or differently structured library may need the owner to open it and Refresh.
-Live saved-account verification is pending owner form entry; prior manual URL
-capture/import/playback was verified. Do not describe discovery as live-proven.
+Live saved-account verification completed 2026-11-10: owner Save/Test cached
+100 accessible VideoItems; after helper restart it logged in via Keychain,
+prepared a stream and played 720p in the app. Download reused the existing
+capture with unchanged SHA-256 for both MP4 and tags. This proves the observed
+catalogue, not exhaustive historical enumeration.
+
+A successful 200 speculative manifest response can have an empty body. Ignore
+non-EXTM3U bodies before they become playback evidence; otherwise master
+selection fails before seeing the valid rendition. Regression test watched
+red for this case, then green after the guard.

@@ -10,8 +10,8 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 
 | Task | Status | Notes |
 |---|---|---|
-| Keychain Save/Test, normal login and metadata cache | partial | built, offline tests green; awaits owner app credential entry for live proof |
-| Cached match Stream/Download chooser | partial | scoped proxy + hls.js + verified capture integration built; live playback/download selection pending |
+| Keychain Save/Test, normal login and metadata cache | done | owner saved/tested; 100 accessible videos cached; Keychain login after restart verified |
+| Cached match Stream/Download chooser | done | 720p playback verified; existing capture reused with MP4/CSV checksums unchanged |
 | Real team crests | done | official Villa/Stoke images cached; verified on Library, shared Moments badge |
 | Consistent My Player styling | done | shared charcoal panels, periwinkle shield/bars; synthetic player browser preview checked |
 
@@ -99,6 +99,25 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+
+### 2026-11-10 Live saved-account verification and empty-prefetch fix
+- Owner entered credentials in the app and clicked Save/Test. Helper reports
+  configured=true, ready, 100 accessible videos cached. No secret values read
+  into agent outputs. After helper restart, Keychain normal login succeeded
+  without password re-entry.
+- Streaming initially stopped on an empty 200 speculative playlist response.
+  Added `test_empty_prefetch_is_not_playback_evidence`, watched it fail, then
+  reject non-EXTM3U bodies before recording them. No existing test changed.
+- In-app stream then played: duration 5012.2s, currentTime 8.8s/16s, readyState4,
+  videoWidth1280 (720p). Proof screenshot stays in ignored data/.
+- Cached chooser Download for the previously captured match returned the
+  existing file + Import link. SHA-256 confirmed both video and CSV unchanged.
+- Backend: 238 passed SQLite and 238 PostgreSQL, ruff/format/mypy clean,
+  alembic no drift. Frontend: 91 passed, typecheck/build clean.
+  Docker rebuilt and health returned ok. Markdown links resolve; staged scan
+  hits are documentation terms only. No CI workflow exists.
+- Not separately tested: native Safari HLS, all historical library pages,
+  fresh full-match capture through chooser (earlier underlying capture verified).
 
 ### 2026-11-10 Saved account checkpoint (codex/hudl-account-library)
 - `uv run pytest`: 237 passed SQLite; `TEST_DATABASE_URL=… uv run pytest`:
