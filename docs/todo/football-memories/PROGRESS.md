@@ -12,7 +12,7 @@ Status values: `done` (built + tested), `partial` (some of it, says what),
 |---|---|---|
 | Allow account video with unverified tag sync | done | narrow exception; strict parser and access failures unchanged |
 | Explicit tag warning and disabled invalid exports | done | UI regression and reported match checked |
-| Full source capture | partial | real U11 1080p capture running; offline tiny-video copy verified; live final verification pending |
+| Full source capture | done | real U11 1080p HEVC/AAC captured, attachment SHA-256 identical, actual playback verified |
 
 ## Hudl team-library age groups (spec 140)
 
@@ -140,12 +140,14 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 - Final `uv run pytest -q`: 267 SQLite and 267 PostgreSQL passed; ruff
   check/format, mypy and alembic no drift green. Frontend `npm test`: 99 passed;
   typecheck/build green. Docker rebuilt/health OK; no CI workflow.
-- Reported U11 match now prepares a stream and shows the separate unsynced-tag
-  warning with moment export disabled. Full match capture started successfully
-  at 1080p, 6195.48 seconds; live final completion/playback not yet verified.
-  Helper on 8766 must stay running while busy. Proof in ignored local data.
-- Eight pre-existing inbox MP4/CSV files checked against SHA-256 baseline: zero
-  changes. No upstream sync change, invented ranges, credentials/session storage
+- Reported U11 match prepares/plays its 1920×1080 stream and shows the separate
+  unsynced-tag warning with moment export disabled. Full capture completed as
+  HEVC/AAC, 6195.52 seconds, 3,721,611,743 bytes. The app attachment downloaded
+  to Downloads; SHA-256 matches the verified inbox source. Empty CSV has zero
+  unverified tag rows. Playback advanced with readyState 4 and no media error;
+  paused after checking. Helper on 8766 is idle. Proof in ignored local data.
+- Eight pre-existing inbox MP4/CSV files rechecked after capture against SHA-256
+  baseline: zero changes. No upstream sync change, invented ranges, credentials/session storage
   change or existing footage overwrite.
 
 
@@ -405,3 +407,8 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 - `mypy app` (strict): no issues; `ruff check`: clean
 - `alembic upgrade head` + `alembic check` on Postgres 17: no drift
 - Not checked: Docker Compose build, frontend (not built yet), real Hudl footage
+
+
+Live completion follow-up (docs-only checkpoint): verified actual full capture,
+browser download checksum and 1080p playback; updated pending handoff/spec facts.
+No source changes or additional test run were needed after the green checkpoint.

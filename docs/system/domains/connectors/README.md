@@ -133,5 +133,7 @@ legacy URL capture remains strict. Cache accepts only the known tag-status enum,
 never raw response/error bodies. The UI separates this warning from video status
 and leaves moment/player export disabled. A full copy with no ranges has an
 empty CSV header and still passes duration/checksum/exclusive publication gates.
-Real reported U11 source served 1080p and began full capture successfully; full
-live completion is still pending (see HANDOFF before touching the active helper).
+Real reported U11 full capture completed at 1920×1080 HEVC/AAC, 6195.52s.
+The app attachment downloaded with the same SHA-256 as the verified inbox source;
+actual 1080p playback also verified. Empty tag CSV has zero rows; all eight prior
+inbox files retain their SHA-256. The host helper is idle; playback paused.

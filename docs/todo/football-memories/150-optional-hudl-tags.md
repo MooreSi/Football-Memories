@@ -1,6 +1,6 @@
 # 150: Unsynced tags must not block the match video
 
-**Status:** Shipped (live full-match capture running)
+**Status:** Shipped
 **Sensitive:** read-only playback/download; safe-change applies.
 
 ## Problem and change
@@ -31,10 +31,11 @@ Backend 267 passed on SQLite and PostgreSQL sequentially; ruff check/format,
 mypy and alembic no drift green. Frontend 99 passed, typecheck/build green.
 Docker rebuild/health green. No CI workflow.
 
-Live reported match: stream preparation succeeds, UI displays unsynced warning
-and disables moment export; full source capture is running at the served 1080p,
-6195.48-second duration. No full live completion/playback claim yet. Offline
-4-second real-video capture verified identical SHA-256 and empty tag CSV. All 8
-pre-existing inbox files remain byte-identical. Keep the helper running; no new
-credential/session storage, guessed timing, Hudl mutation or existing-file write.
-Local proof: ignored data/hudl-unsynced-video.png.
+Live reported match: stream preparation and 1920×1080 playback succeeded
+(readyState 4, advancing time, no media error). Full capture completed as
+1920×1080 HEVC/AAC, 6195.52 seconds, 3,721,611,743 bytes. The app's attachment
+was downloaded to Downloads and matches the verified inbox source SHA-256.
+The tag CSV has zero rows. All 8 pre-existing inbox files remain byte-identical.
+No credential/session storage change, guessed timing or Hudl mutation. Host
+helper is idle; preview playback is paused. Local proof remains ignored:
+data/hudl-unsynced-video-verified.png. No pending live verification.

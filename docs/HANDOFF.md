@@ -27,13 +27,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Strict parsing still rejects them; the account adapter records `tag_status`
   and omits unverified ranges. Match page shows a separate warning; moment/player
   exports remain disabled without valid ranges. Auth/GraphQL errors still stop.
-  The reported U11 match prepared a stream with an unsynced warning. Its real
-  1080p full-match capture (103m15s) is RUNNING on host helper 8766 (PID 56845).
-  **Do not restart the helper while it is busy.** Check `/account` with the app's
-  Origin header; completion publishes verified MP4/empty tag CSV to the inbox.
-  Live full-file completion/playback have not yet been verified. Offline real
-  tiny-media capture/copy and checksum tests pass; all 8 prior inbox files have
-  unchanged SHA-256. App preview remains on download progress.
+  Live reported U11 match now streams/plays at 1920×1080 (readyState 4,
+  advancing time, no media error). Highest full capture completed: HEVC/AAC,
+  6195.52 seconds, 3,721,611,743 bytes. The app's attachment downloaded to the
+  owner's Downloads folder with identical SHA-256 to the inbox copy. Empty tag
+  CSV contains zero unverified ranges. All 8 previous inbox files are unchanged.
+  Host helper 8766 (PID 56845) is idle with an active ephemeral stream; preview
+  playback is paused. No live verification remains pending for this repair.
 - **Spec 140:** connected ages now come from the real Hudl team selector,
   superseding title-based grouping. Follow served context links, verify team
   identity, preserve membership lists across cache restarts/shared videos. Hidden
