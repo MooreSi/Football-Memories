@@ -24,6 +24,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **D-023 (2026-11-10, owner request):** moment downloads fetch only the
+  covering stream segments (stream keeps playing); Clips shows the full
+  explorer under the match picker; app open auto-checks Hudl (6 h) and indexes
+  missing tags; hub/card/timeline include Hudl tag data; crop popup on every
+  photo. **Not live-verified:** segment export on real Hudl HLS, first
+  automatic tag sweep (281 of 286 matches still unindexed at handoff).
 - **D-022 (2026-11-10, owner choice):** Hudl sign-in is now headless (no
   window, honestly identified). Failures fall back to a visible window on the
   next Test. **Not live-verified**: headless sign-in, stream and tag loading on
@@ -137,7 +143,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 297 passed on SQLite and Postgres; frontend 131 (see D-020 note on the one updated match-page test).
+- Tests: backend 301 passed on SQLite and Postgres; frontend 139 (see D-020 note on the one updated match-page test).
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

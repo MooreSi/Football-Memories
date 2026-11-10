@@ -126,7 +126,7 @@ export interface PlayerProfile {
   totals: { matches: number; moments: number; unwatched: number; favourites: number };
   categories: { name: string; count: number }[];
   teams: { team_name: string; season_label: string; age_group: string | null; matches: number }[];
-  per_match: { match_id: number; match_date: string; opponent: string; moments: number }[];
+  per_match: { match_id: number; match_date: string; opponent: string; moments: number; href?: string }[];
   teammates: { id: number; display_name: string; shared_moments: number }[];
   first_match_date: string | null;
   latest_match_date: string | null;

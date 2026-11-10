@@ -3,12 +3,16 @@ import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PlayerAvatar } from "../player/PlayerAvatar";
 import { api } from "../../api/client";
+import { useHudlLibrary } from "../../api/hudl";
+import { hudlPlayerMatches } from "../../lib/hudlPlayer";
+import { watchedHudlMoments } from "../../lib/hudlWatched";
 
 /** Reference 01's "MVP of the day" slot, holding the owner's primary player (brief section 20). */
 export function YourPlayerCard() {
   const prefs = useQuery({ queryKey: ["preferences"], queryFn: api.preferences });
   const id = prefs.data?.primary_player_id ?? null;
   const player = useQuery({ queryKey: ["player", id], queryFn: () => api.player(id!), enabled: id != null });
+  const remote = useHudlLibrary();
 
   if (prefs.isPending) return null;
   if (id == null) {
@@ -24,6 +28,10 @@ export function YourPlayerCard() {
   }
   const p = player.data;
   if (!p) return null;
+  const hudl = hudlPlayerMatches(remote.data, p.display_name);
+  const hudlMoments = hudl.reduce((n, m) => n + m.moments.length, 0);
+  const watched = watchedHudlMoments();
+  const unwatched = p.totals.unwatched + hudl.reduce((n, m) => n + m.moments.filter((x) => !watched.has(x.id)).length, 0);
   return (
     <Link
       to={`/player/${p.id}`}
@@ -39,10 +47,10 @@ export function YourPlayerCard() {
         </div>
         <div className="rounded-xl bg-ink-950/60 px-3 py-1.5 text-center">
           <p className="text-[10px] text-fg-muted">New</p>
-          <p className="text-xl font-semibold text-accent">{p.totals.unwatched}</p>
+          <p className="text-xl font-semibold text-accent">{unwatched}</p>
         </div>
       </div>
-      <p className="mt-3 text-xs text-fg-subtle">{p.totals.moments} moments in {p.totals.matches} matches</p>
+      <p className="mt-3 text-xs text-fg-subtle">{p.totals.moments + hudlMoments} moments in {p.totals.matches + hudl.length} matches</p>
     </Link>
   );
 }

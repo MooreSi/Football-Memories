@@ -4,9 +4,6 @@ import { Button } from "../ui/Button";
 
 const OUTPUT = 1024; // the server stores 512 px; 1024 keeps it sharp and well under its limit
 const PREVIEW = 320;
-/** The server accepts pictures up to 10 MB in JPEG, PNG or WebP. */
-export const SERVER_LIMIT = 10 * 1024 * 1024;
-export const SERVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type Bitmap = { width: number; height: number; close?: () => void };
 type View = { zoom: number; x: number; y: number; turns: number };
@@ -41,7 +38,14 @@ export function PhotoCropper({ file, onCancel, onSave }: { file: File; onCancel:
   useEffect(() => {
     let live = true;
     let loaded: Bitmap | undefined;
-    createImageBitmap(file).then((bitmap) => { loaded = bitmap; if (live) setImage(bitmap); }).catch(() => live && setFailed(true));
+    createImageBitmap(file).then((bitmap) => {
+      loaded = bitmap;
+      if (!live) return;
+      setImage(bitmap);
+      // Portrait photos start aligned to the top, so heads are not cut off.
+      const tall = bitmap.height / bitmap.width;
+      if (tall > 1) setView((v) => ({ ...v, y: (tall - 1) / 2 }));
+    }).catch(() => live && setFailed(true));
     return () => { live = false; loaded?.close?.(); };
   }, [file]);
   useEffect(() => { if (image && canvas.current) paint(canvas.current, image, view, PREVIEW * 2); }, [image, view]);
@@ -53,8 +57,7 @@ export function PhotoCropper({ file, onCancel, onSave }: { file: File; onCancel:
   const move = (e: PointerEvent<HTMLCanvasElement>) => {
     const d = drag.current;
     if (!d) return;
-    const limit = view.zoom / 2;
-    const clamp = (n: number) => Math.max(-limit, Math.min(limit, n));
+    const clamp = (n: number) => Math.max(-1.5 * view.zoom, Math.min(1.5 * view.zoom, n));
     setView((v) => ({ ...v, x: clamp(d.vx + (e.clientX - d.x) / PREVIEW), y: clamp(d.vy + (e.clientY - d.y) / PREVIEW) }));
   };
   const save = () => {
@@ -74,12 +77,17 @@ export function PhotoCropper({ file, onCancel, onSave }: { file: File; onCancel:
           <p className="text-sm text-danger">The browser could not open this picture. Try a JPEG or PNG (on iPhone, share it as "Most Compatible").</p>
         ) : (
           <>
-            <p className="text-sm text-fg-muted">Drag to position, zoom to fit. Any size is fine; the photo is resized before it is saved.</p>
-            <canvas ref={canvas} aria-label="Photo preview" onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = undefined; }}
-              className="mx-auto aspect-square w-full max-w-[320px] cursor-grab touch-none rounded-2xl bg-black active:cursor-grabbing" />
+            <p className="text-sm text-fg-muted">Drag to move, zoom in or out to fit. The square is the player card, the circle the small avatar. Any size works.</p>
+            <div className="relative mx-auto w-full max-w-[320px]">
+              <canvas ref={canvas} aria-label="Photo preview" onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = undefined; }}
+                onWheel={(e) => setView((v) => ({ ...v, zoom: Math.max(0.5, Math.min(4, v.zoom - e.deltaY / 500)) }))}
+                className="block aspect-square w-full cursor-grab touch-none rounded-2xl bg-black active:cursor-grabbing" />
+              {/* The square is the player card; the circle is the small avatar. */}
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-white/50" />
+            </div>
             <div className="flex items-center gap-3">
               <label className="flex flex-1 items-center gap-3 text-xs text-fg-muted">Zoom
-                <input type="range" aria-label="Zoom" min={1} max={4} step={0.05} value={view.zoom} className="flex-1"
+                <input type="range" aria-label="Zoom" min={0.5} max={4} step={0.05} value={view.zoom} className="flex-1"
                   onChange={(e) => setView((v) => ({ ...v, zoom: Number(e.target.value) }))} />
               </label>
               <Button type="button" variant="ghost" aria-label="Rotate" onClick={() => setView((v) => ({ ...v, turns: (v.turns + 1) % 4, x: 0, y: 0 }))}><RotateCw size={15} aria-hidden /></Button>

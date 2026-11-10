@@ -42,10 +42,15 @@ export function ClipExplorerPage() {
               {all.filter((m) => !forAge.includes(m)).map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
             </optgroup>
           )}
-          <option value="imported">All imported matches (offline clips)</option>
+          <option value="imported">No Hudl match (imported clips only)</option>
         </select>
       </label>
-      {selected === "imported" ? <ImportedClips /> : <HudlMatchView key={selected} id={selected} embedded />}
+      {selected !== "imported" && (
+        <section aria-label="Selected Hudl match" className="border-b border-line pb-6">
+          <HudlMatchView key={selected} id={selected} embedded />
+        </section>
+      )}
+      <ImportedClips />
     </div>
   );
 }

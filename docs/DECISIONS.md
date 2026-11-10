@@ -4,6 +4,21 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-023 (2026-11-10) Segment-only moment exports, Hudl stats in the hub, auto-check
+Owner requests. Moment exports no longer capture the whole match: the helper
+reuses (or opens) the match stream and fetches only the HLS segments covering
+the selected ranges through its single worker, interleaved with playback, on
+a separate encode thread; the stream keeps playing. Opening the app reads the
+Hudl match list when it is over 6 hours old (then indexes new matches' tags),
+otherwise indexes any match still lacking tags (owner decision 003). The hub,
+Your player card and timeline count Hudl-tagged matches/moments; Hudl
+"watched" state is per browser (localStorage). When imported data has fewer
+than three kinds, the tag profile shows codes overlapping the player's ranges,
+labelled as context and excluding codes that look like other players' names;
+they are never credited to the player (PlayerCard keeps imported counts only).
+Clips keeps the full explorer (filters, playlists, highlight reels) under the
+match picker. Every photo opens the crop popup; portrait photos start top-aligned.
+
 ## D-022 (2026-11-10) Owner chose headless sign-in
 Told that headless Chrome reports `HeadlessChrome` to Hudl, the owner chose it
 over the minimized window (supersedes D-021's sign-in part). No user-agent or

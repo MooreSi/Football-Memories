@@ -4,13 +4,15 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { formatClock, formatDate } from "../../lib/format";
+import type { HudlPlayerMatch } from "../../lib/hudlPlayer";
+import { watchedHudlMoments } from "../../lib/hudlWatched";
 import { groupTimeline } from "../../lib/player";
 import { Spinner } from "../ui/Spinner";
 
 type View = "all" | "favourites" | "unwatched";
 
 /** Brief section 12: the player's journey, season > month > match > moment. */
-export function MemoriesTimeline({ playerId, categories }: { playerId: number; categories: string[] }) {
+export function MemoriesTimeline({ playerId, categories, hudl = [] }: { playerId: number; categories: string[]; hudl?: HudlPlayerMatch[] }) {
   const [view, setView] = useState<View>("all");
   const [category, setCategory] = useState("");
   const q = useQuery({
@@ -20,6 +22,12 @@ export function MemoriesTimeline({ playerId, categories }: { playerId: number; c
     }),
   });
   const seasons = useMemo(() => groupTimeline(q.data?.items ?? []), [q.data]);
+  // Hudl moments have no favourite state; they show under All and (when not yet played) Unwatched.
+  const watched = watchedHudlMoments();
+  const hudlShown = category || view === "favourites" ? [] : hudl
+    .map((m) => ({ ...m, moments: view === "unwatched" ? m.moments.filter((x) => !watched.has(x.id)) : m.moments }))
+    .filter((m) => m.moments.length);
+  const hudlSeasons = [...new Set(hudlShown.map((m) => m.season))].sort().reverse();
 
   return (
     <section aria-label="Memories timeline" className="panel p-5 sm:p-6">
@@ -47,12 +55,42 @@ export function MemoriesTimeline({ playerId, categories }: { playerId: number; c
 
       {q.isPending ? (
         <Spinner label="Loading memories" />
-      ) : seasons.length === 0 ? (
+      ) : seasons.length === 0 && hudlSeasons.length === 0 ? (
         <p className="py-10 text-center text-sm text-fg-muted">
           {view === "favourites" ? "No favourites yet. Tap the heart on a moment to keep it here." : view === "unwatched" ? "You have watched every moment." : "No moments yet."}
         </p>
       ) : (
         <ol className="space-y-10">
+          {hudlSeasons.map((season) => (
+            <li key={`hudl-${season}`}>
+              <h3 className="mb-4 inline-block rounded-full bg-ink-950/85 px-4 py-1.5 text-lg font-semibold ring-1 ring-accent/40">
+                Season {season}
+              </h3>
+              <div className="grid gap-3 border-l border-white/10 pl-6 lg:grid-cols-2">
+                {hudlShown.filter((m) => m.season === season).reverse().map((m) => (
+                  <article key={m.id} className="tile flex gap-3 overflow-hidden p-3">
+                    <Link to={`/hudl/${encodeURIComponent(m.id)}`} className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-ink-800" aria-label={`Open match vs ${m.opponent}`}>
+                      {m.thumbnail_url ? <img crossOrigin="anonymous" src={m.thumbnail_url} alt="" loading="lazy" className="size-full object-cover" /> : <Images className="m-auto mt-6 text-fg-subtle" aria-hidden />}
+                    </Link>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">vs {m.opponent}</p>
+                      <p className="mb-2 text-xs text-fg-subtle">{m.date ? formatDate(m.date) : m.title} · {m.age} · Hudl</p>
+                      <ul className="flex flex-wrap gap-1.5" aria-label={`Moments vs ${m.opponent}`}>
+                        {m.moments.map((x) => (
+                          <li key={x.id}>
+                            <Link to={`/hudl/${encodeURIComponent(m.id)}?moment=${encodeURIComponent(x.id)}`}
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition hover:border-accent/60 ${watched.has(x.id) ? "border-white/10 text-fg-muted" : "border-accent/40 text-fg"}`}>
+                              <span className="font-mono text-pin">{formatClock(x.time_s)}</span> {x.category}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </li>
+          ))}
           {seasons.map((s) => (
             <li key={s.season}>
               <h3 className="sticky top-[76px] z-10 mb-4 inline-block rounded-full bg-ink-950/85 px-4 py-1.5 text-lg font-semibold ring-1 ring-accent/40 backdrop-blur">

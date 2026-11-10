@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, ChevronLeft, Crop, ChevronRight, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import type { PlayerProfile } from "../../api/types";
 import { initials } from "../TeamBadge";
 import { Button } from "../ui/Button";
-import { PhotoCropper, SERVER_LIMIT, SERVER_TYPES } from "./PhotoCropper";
+import { PhotoCropper } from "./PhotoCropper";
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
@@ -31,7 +31,6 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
     },
   });
   const photoInput = useRef<HTMLInputElement>(null);
-  const cropInput = useRef<HTMLInputElement>(null);
   const [cropping, setCropping] = useState<File>();
   const upload = useMutation({
     mutationFn: (file: File) => api.uploadPhoto(player.id, file),
@@ -88,30 +87,16 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
                   className="sr-only"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    // Too big or a format the server cannot read: resize/crop in the browser first.
-                    if (f && (f.size > SERVER_LIMIT || !SERVER_TYPES.includes(f.type))) setCropping(f);
-                    else if (f) upload.mutate(f);
-                    e.target.value = "";
-                  }}
-                />
-                <input
-                  ref={cropInput}
-                  type="file"
-                  accept="image/*"
-                  aria-label="Choose a photo to crop"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
+                    // Owner request: always position, resize and crop before saving.
                     if (f) setCropping(f);
                     e.target.value = "";
                   }}
                 />
+
                 <Button type="button" onClick={() => photoInput.current?.click()} disabled={upload.isPending}>
                   <Camera size={15} aria-hidden /> {upload.isPending ? "Uploading" : player.photo_url ? "Change photo" : "Add photo"}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => cropInput.current?.click()} disabled={upload.isPending}>
-                  <Crop size={15} aria-hidden /> Crop &amp; resize a photo
-                </Button>
+
                 {player.photo_url && (
                   <Button type="button" variant="ghost" onClick={() => removePhoto.mutate()} disabled={removePhoto.isPending}>
                     <Trash2 size={15} aria-hidden /> Remove photo
@@ -119,8 +104,8 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
                 )}
               </div>
               <p className="text-xs text-fg-subtle">
-                Any photo size. Large or unusual pictures open a crop and resize step first. Stored only on this
-                computer, cropped square, with location and camera details removed.
+                Any photo size. You position, resize and crop it before it is saved. Stored only on this computer,
+                with location and camera details removed.
               </p>
               {photoError && <p role="alert" className="text-sm text-danger">{photoError.message}</p>}
               {cropping && (

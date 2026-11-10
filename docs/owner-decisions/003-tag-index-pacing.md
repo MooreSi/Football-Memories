@@ -18,7 +18,9 @@ page per match; after that only new matches are visited.
 ## Provisional default in use
 
 - Runs after each Test/Refresh, and from "Index remaining matches" on the
-  player page. No server background sync; nothing runs on a timer.
+  player page. Opening the app (owner request, D-023) re-reads the match list
+  when it is over 6 hours old, otherwise indexes matches still lacking tags.
+  No server background sync; nothing runs on a timer.
 - One match at a time, about 2.5 s pause after each page settles.
 - Stops after two consecutive pages fail to load and reports it. Matches that
   failed are skipped until the helper restarts.

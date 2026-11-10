@@ -197,8 +197,13 @@ def create_companion(output: Path) -> FastAPI:
     def account_status(request: Request) -> dict[str, object]:
         if request.app.state.account_configured is None:
             request.app.state.account_configured = request.app.state.keychain.configured()
+        try:
+            checked: float | None = request.app.state.catalogue.path.stat().st_mtime
+        except OSError:
+            checked = None
         return {
             **request.app.state.account.status(),
+            "catalogue_checked_at": checked,
             "configured": request.app.state.account_configured,
             "download_url": (
                 f"http://127.0.0.1:8766/files/{app.state.file_scope}/{request.app.state.account.status()['filename']}"

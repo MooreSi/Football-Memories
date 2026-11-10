@@ -1,3 +1,4 @@
+import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
 import { Clapperboard, Film, FolderInput, Library, Search, Settings, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -72,6 +73,7 @@ function GlobalSearch() {
 
 export function AppShell() {
   const { pathname } = useLocation();
+  useHudlAutoCheck();
   const screen = pathname.startsWith("/player") ? "profile"
     : (pathname.startsWith("/matches/") || pathname.startsWith("/hudl/")) || pathname.startsWith("/clips") ? "analysis"
     : pathname === "/" ? "dashboard" : "settings";

@@ -12,11 +12,12 @@ const player: PlayerProfile = {
   teammates: [], first_match_date: null, latest_match_date: null,
 };
 const draw = vi.fn();
+const translate = vi.fn();
 
 beforeEach(() => {
   vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 4000, height: 3000, close: vi.fn() })));
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => ({
-    drawImage: draw, fillRect: vi.fn(), save: vi.fn(), restore: vi.fn(), translate: vi.fn(), rotate: vi.fn(), scale: vi.fn(), fillStyle: "",
+    drawImage: draw, fillRect: vi.fn(), save: vi.fn(), restore: vi.fn(), translate, rotate: vi.fn(), scale: vi.fn(), fillStyle: "",
   }) as unknown as CanvasRenderingContext2D);
   vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(function (cb: BlobCallback) {
     cb(new Blob([new Uint8Array(200_000)], { type: "image/jpeg" }));
@@ -32,7 +33,7 @@ function renderPanel() {
 }
 const big = () => new File([new Uint8Array(12 * 1024 * 1024)], "phone.jpg", { type: "image/jpeg" });
 
-it("opens a crop and resize popup instead of failing for a large photo", async () => {
+it("crops, resizes and uploads a large photo instead of failing", async () => {
   const fetchMock = renderPanel();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /Edit/ }));
@@ -50,11 +51,11 @@ it("opens a crop and resize popup instead of failing for a large photo", async (
   expect(sent.size).toBeLessThan(1024 * 1024);
 });
 
-it("lets any photo be cropped on purpose, and cancel uploads nothing", async () => {
+it("opens the crop popup for every photo, and cancel uploads nothing", async () => {
   const fetchMock = renderPanel();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: /Edit/ }));
-  await user.upload(screen.getByLabelText("Choose a photo to crop"), new File([new Uint8Array(10)], "me.png", { type: "image/png" }));
+  await user.upload(screen.getByLabelText("Choose a photo"), new File([new Uint8Array(10)], "me.png", { type: "image/png" }));
   const dialog = await screen.findByRole("dialog", { name: "Crop photo" });
   await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
   expect(screen.queryByRole("dialog")).toBeNull();
@@ -68,4 +69,15 @@ it("explains when the browser cannot open the picture", async () => {
   await user.click(screen.getByRole("button", { name: /Edit/ }));
   await user.upload(screen.getByLabelText("Choose a photo"), big());
   expect(await screen.findByText(/could not open this picture/)).toBeInTheDocument();
+});
+
+it("starts a portrait photo aligned to the top so the head stays in frame", async () => {
+  vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 1000, height: 2000, close: vi.fn() })));
+  renderPanel();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: /Edit/ }));
+  await user.upload(screen.getByLabelText("Choose a photo"), new File([new Uint8Array(10)], "me.jpg", { type: "image/jpeg" }));
+  await screen.findByRole("dialog", { name: "Crop photo" });
+  // Preview canvas is 640 px: centred would translate y by 320; top-aligned moves it down by half the overflow.
+  await vi.waitFor(() => expect(translate).toHaveBeenLastCalledWith(320, 640));
 });

@@ -1,12 +1,26 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlayerProfile } from "../../api/types";
 import { ProfilePanel } from "./ProfilePanel";
 
-afterEach(() => vi.unstubAllGlobals());
+// Every photo now goes through the crop popup (owner request 2026-11-10); jsdom has no canvas.
+beforeEach(() => {
+  vi.stubGlobal("createImageBitmap", vi.fn(async () => ({ width: 800, height: 800, close: vi.fn() })));
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => ({
+    drawImage: vi.fn(), fillRect: vi.fn(), save: vi.fn(), restore: vi.fn(), translate: vi.fn(), rotate: vi.fn(), scale: vi.fn(), fillStyle: "",
+  }) as unknown as CanvasRenderingContext2D);
+  vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(function (cb: BlobCallback) {
+    cb(new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: "image/jpeg" }));
+  });
+});
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+async function saveCrop() {
+  await userEvent.click(within(await screen.findByRole("dialog", { name: "Crop photo" })).getByRole("button", { name: "Save photo" }));
+}
 
 const player: PlayerProfile = {
   id: 5, display_name: "Sam Example", shirt_number: null, position: null, photo_url: null, is_primary: true,
@@ -30,11 +44,14 @@ describe("ProfilePanel photo", () => {
     await userEvent.click(screen.getByRole("button", { name: /Edit/ }));
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "me.jpg", { type: "image/jpeg" });
     await userEvent.upload(screen.getByLabelText("Choose a photo"), file);
+    await saveCrop();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("/api/players/5/photo");
     expect(init.method).toBe("PUT");
-    expect((init.body as FormData).get("file")).toBe(file);
+    const sent = (init.body as FormData).get("file") as File;
+    expect(sent.name).toBe("me.jpg");
+    expect(sent.type).toBe("image/jpeg");
     expect(init.headers).toBeUndefined();
   });
 
@@ -43,6 +60,7 @@ describe("ProfilePanel photo", () => {
     renderPanel();
     await userEvent.click(screen.getByRole("button", { name: /Edit/ }));
     await userEvent.upload(screen.getByLabelText("Choose a photo"), new File(["x"], "x.jpg", { type: "image/jpeg" }));
+    await saveCrop();
     expect(await screen.findByRole("alert")).toHaveTextContent("this file is not a picture");
   });
 

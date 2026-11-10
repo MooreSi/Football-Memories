@@ -13,6 +13,7 @@ import json
 import re
 import sys
 import tempfile
+import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -346,6 +347,8 @@ class BrowserConnection:
         self._visible_next = False
         self._visible_session = False
         self._progress: dict[str, Any] | None = None
+        self._stream_match = ""
+        self._stream_playlist = ""
         self._progress_start = 0.0
         self._steps = 1
         self._browser: Any = None
@@ -424,10 +427,12 @@ class BrowserConnection:
                 if action == "stream" and self._state.get("match_id") == identity
                 else None
             )
+            # A moment export of the match being watched keeps its stream playing.
+            keep = action == "clips" and self._state.get("match_id") == identity
             self._state.update(
                 state="working",
-                message="Opening Hudl…",
-                stream_url=None,
+                message="Preparing moments…" if action == "clips" else "Opening Hudl…",
+                stream_url=self._state.get("stream_url") if keep else None,
                 filename=completed,
                 match_id=identity,
             )
@@ -464,6 +469,8 @@ class BrowserConnection:
         self._browser = self._context = self._page = None
         self._assets.clear()
         self._stream_id = ""
+        self._stream_match = ""
+        self._stream_playlist = ""
         self._observed_matches.clear()
         self._thumbnails.clear()
         self._libraries.clear()
@@ -740,6 +747,8 @@ class BrowserConnection:
                 },
             )
         self._stream_id = secrets.token_urlsafe(24)
+        self._stream_match = identity
+        self._stream_playlist = manifest.local_playlist
         self._assets = {str(index): url for index, url in enumerate(manifest.resources)}
         playlist = manifest.local_playlist
         for index in range(len(manifest.resources)):
@@ -903,8 +912,9 @@ class BrowserConnection:
     ) -> None:
         if action in {"clips", "download"}:
             with self._lock:
-                self._steps = 2 if action == "clips" else 1
+                self._steps = 1
                 self._progress = None
+        handed_off = False
         try:
             if action == "sync_tags":
                 self._sync_tags()
@@ -921,31 +931,21 @@ class BrowserConnection:
             elif action == "stream" and identity:
                 self._prepare_stream(identity)
             elif action == "clips" and identity:
-                from app.connectors.hudl_exports import export_ranges
-
                 available = self.details.read(identity).get("moments", [])
                 selected = [m for m in available if m["id"] in (moment_ids or [])]
                 if not selected or len(selected) != len(set(moment_ids or [])):
                     raise CaptureError("Select moments loaded from this match first.")
-                source = self._download(identity)
-                self.report("exporting", "Saving moments at original encoded quality…")
-                target = export_ranges(
-                    source,
-                    selected,
-                    self.output,
-                    combined=combined,
-                    progress=lambda done, total: self._set_progress(
-                        "Encoding moments", 2, done, total
-                    ),
+                if self._stream_match != identity or not self._stream_id:
+                    self._prepare_stream(identity)
+                # Encode on another thread: the segment fetches go through this worker
+                # one at a time, interleaved with the player's own stream requests.
+                worker = threading.Thread(
+                    target=self._export_worker,
+                    args=(self._stream_id, self._stream_playlist, selected, combined),
+                    daemon=True,
                 )
-                with self._lock:
-                    self._state["filename"] = target.name
-                self.report(
-                    "done",
-                    "Combined moments video ready to download."
-                    if combined
-                    else "Moments ZIP (one video per moment) ready to download.",
-                )
+                worker.start()
+                handed_off = True
             elif action == "download" and identity:
                 self._download(identity)
             else:
@@ -959,9 +959,45 @@ class BrowserConnection:
                 "then Test again.",
             )
         finally:
+            if not handed_off:
+                with self._lock:
+                    self._pending -= 1
+                    if action in {"clips", "download"}:
+                        self._progress = None
+                    if action == "sync_tags":
+                        self._syncing = False
+
+    def _export_worker(
+        self, stream: str, playlist: str, selected: list[dict[str, Any]], combined: bool
+    ) -> None:
+        """Fetch only the stream segments covering the moments, then encode them."""
+        from app.connectors.hudl_exports import export_from_segments
+
+        try:
+            self.report("exporting", "Fetching and encoding the selected moments…")
+            target = export_from_segments(
+                playlist,
+                lambda index: self.resource(stream, str(index))[0],
+                selected,
+                self.output,
+                combined=combined,
+                progress=lambda done, total: self._set_progress(
+                    "Fetching and encoding the selected moments", 1, done, total
+                ),
+            )
+            with self._lock:
+                self._state["filename"] = target.name
+            self.report(
+                "done",
+                "Combined moments video ready to download."
+                if combined
+                else "Moments ZIP (one video per moment) ready to download.",
+            )
+        except CaptureError as error:
+            self.report("error", str(error))
+        except Exception:
+            self.report("error", "Moment export stopped. The stream and your files are unchanged.")
+        finally:
             with self._lock:
                 self._pending -= 1
-                if action in {"clips", "download"}:
-                    self._progress = None
-                if action == "sync_tags":
-                    self._syncing = False
+                self._progress = None

@@ -37,11 +37,25 @@ def _ffmpeg(arguments: list[str], timeout: int = 900) -> bool:
     return process.returncode == 0
 
 
-def _encode(source: Path, moment: dict[str, Any], clip: Path) -> None:
+_HLS_INPUT = [
+    "-protocol_whitelist",
+    "file",
+    "-allowed_extensions",
+    "ALL",
+    "-allowed_segment_extensions",
+    "ALL",
+    "-extension_picky",
+    "0",
+]
+
+
+def _encode(source: Path, moment: dict[str, Any], clip: Path, *, offset: float = 0.0) -> None:
+    hls = source.suffix == ".m3u8"
     ok = _ffmpeg(
         [
+            *(_HLS_INPUT if hls else []),
             "-ss",
-            str(moment["time_s"]),
+            str(max(0.0, moment["time_s"] - offset)),
             "-i",
             str(source),
             "-t",
@@ -93,35 +107,138 @@ def export_ranges(
             _verify(clip, original.width, original.height)
             clips.append(clip)
             report(index + 1, total)
-        if combined:
-            listing = scratch / "list.txt"
-            listing.write_text("".join(f"file '{c.name}'\n" for c in clips))
-            result = scratch / "combined.mp4"
-            # Every part shares one encoder configuration, so concatenation is exact.
-            ok = _ffmpeg(
-                [
-                    "-f",
-                    "concat",
-                    "-safe",
-                    "0",
-                    "-i",
-                    str(listing),
-                    "-c",
-                    "copy",
-                    "-movflags",
-                    "+faststart",
-                    str(result),
-                ]
-            )
-            if not ok or not result.is_file():
-                raise CaptureError("Combining moments failed. The original video is unchanged.")
-            _verify(result, original.width, original.height)
-            report(total, total)
-        else:
-            result = scratch / "moments.zip"
-            with zipfile.ZipFile(result, "x", compression=zipfile.ZIP_STORED) as bundle:
-                for clip in clips:
-                    bundle.write(clip, clip.name)
-                bundle.writestr("moments.json", json.dumps(ordered))
-        os.link(result, target)  # Exclusive publication, never replaces a user file.
+        _publish(scratch, clips, ordered, combined, report, total)
+        os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
+    return target
+
+
+def _publish(
+    scratch: Path,
+    clips: list[Path],
+    ordered: list[dict[str, Any]],
+    combined: bool,
+    report: Callable[[int, int], None],
+    total: int,
+) -> None:
+    """Join encoded parts into one MP4, or store them as one file per moment."""
+    if combined:
+        listing = scratch / "list.txt"
+        listing.write_text("".join(f"file '{c.name}'\n" for c in clips))
+        result = scratch / "combined.mp4"
+        # Every part shares one encoder configuration, so concatenation is exact.
+        ok = _ffmpeg(
+            [
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(listing),
+                "-c",
+                "copy",
+                "-movflags",
+                "+faststart",
+                str(result),
+            ]
+        )
+        if not ok or not result.is_file():
+            raise CaptureError("Combining moments failed. The original video is unchanged.")
+        first = probe(clips[0])
+        _verify(result, first.width, first.height)
+        report(total, total)
+    else:
+        result = scratch / "moments.zip"
+        with zipfile.ZipFile(result, "x", compression=zipfile.ZIP_STORED) as bundle:
+            for clip in clips:
+                bundle.write(clip, clip.name)
+            bundle.writestr("moments.json", json.dumps(ordered))
+
+
+def _segments(playlist: str) -> tuple[list[str], list[tuple[float, float, int, str | None]]]:
+    """Header lines and (start, duration, asset index, active init-map line) per segment."""
+    header: list[str] = []
+    segments: list[tuple[float, float, int, str | None]] = []
+    clock, pending, current_map = 0.0, None, None
+    for line in playlist.splitlines():
+        if line.startswith("#EXT-X-MAP:"):
+            current_map = line
+        elif line.startswith("#EXTINF:"):
+            pending = float(line.split(":", 1)[1].split(",", 1)[0])
+        elif line.startswith("asset-") and pending is not None:
+            index = int(line.removeprefix("asset-").removesuffix(".bin"))
+            segments.append((clock, pending, index, current_map))
+            clock, pending = clock + pending, None
+        elif line.startswith("#") and not segments and pending is None:
+            if line not in {"#EXT-X-ENDLIST"} and not line.startswith("#EXT-X-PLAYLIST-TYPE"):
+                header.append(line)
+    return header, segments
+
+
+def export_from_segments(
+    playlist: str,
+    fetch: Callable[[int], bytes],
+    moments: list[dict[str, Any]],
+    output: Path,
+    *,
+    combined: bool = False,
+    progress: Callable[[int, int], None] | None = None,
+) -> Path:
+    """Fetch only the stream segments covering the chosen moments, then encode them.
+
+    Owner request (2026-11-10): selected moments must not wait for the whole match.
+    `playlist` is the helper's local media playlist (asset-N.bin references).
+    """
+    if not moments:
+        raise CaptureError("Select at least one tagged moment or player code.")
+    ordered = sorted(moments, key=lambda m: (m["time_s"], m["id"]))
+    header, segments = _segments(playlist)
+    if not segments:
+        raise CaptureError("The stream playlist is empty. Stream the match again.")
+    plans = []
+    for moment in ordered:
+        start, end = moment["time_s"], moment["time_s"] + max(0.1, moment["duration_s"])
+        chosen = [s for s in segments if s[0] < end and s[0] + s[1] > start]
+        if not chosen:
+            raise CaptureError("A selected moment is outside this video.")
+        plans.append(chosen)
+    needed = sorted(
+        {s[2] for plan in plans for s in plan}
+        | {
+            int(m.split("asset-", 1)[1].split(".bin", 1)[0])
+            for plan in plans
+            for *_, m in plan
+            if m
+        }
+    )
+    total = len(needed) + len(ordered) + (1 if combined else 0)
+    report = progress or (lambda done, total: None)
+    report(0, total)
+    target = output / f"hudl-moments-{uuid.uuid4().hex[:16]}.{'mp4' if combined else 'zip'}"
+    with tempfile.TemporaryDirectory(prefix=".hudl-clips-", dir=output) as folder:
+        scratch = Path(folder)
+        for done, index in enumerate(needed, start=1):
+            data = fetch(index)
+            if not data:
+                raise CaptureError("An empty video segment was received; nothing was saved.")
+            (scratch / f"asset-{index}.bin").write_bytes(data)
+            report(done, total)
+        clips: list[Path] = []
+        for number, (moment, plan) in enumerate(zip(ordered, plans, strict=True), start=1):
+            lines, last_map = list(header), None
+            for _, length, index, init in plan:
+                if init and init != last_map:
+                    lines.append(init)
+                    last_map = init
+                lines += [f"#EXTINF:{length},", f"asset-{index}.bin"]
+            lines.append("#EXT-X-ENDLIST")
+            source = scratch / f"moment-{number:04}.m3u8"
+            source.write_text("\n".join(lines) + "\n")
+            clip = scratch / f"moment-{number:04}.mp4"
+            _encode(source, moment, clip, offset=plan[0][0])
+            reference = probe(clips[0]) if clips else probe(clip)
+            _verify(clip, reference.width, reference.height)
+            clips.append(clip)
+            report(len(needed) + number, total)
+        _publish(scratch, clips, ordered, combined, report, total)
+        os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target

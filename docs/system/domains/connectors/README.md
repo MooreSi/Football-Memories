@@ -190,3 +190,13 @@ never call load on an hls.js MediaSource, which would detach it.
   reuses it if the page is already on a signed-in Hudl route.
 - Unverified: whether Hudl serves playback/tag responses normally to headless
   Chrome. A playback failure in `_observe` has no automatic visible fallback.
+
+## Segment-only moment exports (D-023)
+
+- `export_from_segments` takes the helper's local media playlist (asset-N.bin
+  lines) and a fetch-by-index callback. It writes a mini playlist per moment
+  (header tags, active EXT-X-MAP, covering segments) and encodes with
+  `-ss (moment start - first segment start)`.
+- The fetch callback is `BrowserConnection.resource`, which queues on the
+  single Playwright worker, so the encode runs on its own thread; the clips
+  action decrements `_pending` from that thread (`handed_off`).

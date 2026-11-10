@@ -52,7 +52,7 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
           <li key={s.match_id} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
             <span className="text-sm font-semibold tabular-nums">{s.moments}</span>
             <Link
-              to={`/matches/${s.match_id}`}
+              to={s.href ?? `/matches/${s.match_id}`}
               title={`vs ${s.opponent}, ${s.match_date}`}
               aria-label={`${s.moments} moments vs ${s.opponent}`}
               className={`w-full max-w-10 rounded-md border transition hover:brightness-125 ${

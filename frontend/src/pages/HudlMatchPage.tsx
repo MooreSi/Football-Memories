@@ -7,6 +7,7 @@ import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
 import { formatClock } from '../lib/format';
 import { advanceTagged, needsSeek, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
+import { markHudlMomentWatched } from '../lib/hudlWatched';
 
 function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose: (combined: boolean) => void; onCancel: () => void }) {
   const title = `Download ${count} ${count === 1 ? 'moment' : 'moments'}`;
@@ -102,6 +103,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
     action.mutate({ action: 'clips', match_id: id, moment_ids: chosen, combined });
   };
   const current = queue?.list[queue.index];
+  useEffect(() => { if (current) markHudlMomentWatched(current.id); }, [current]);
 
   if (!match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">{library.isPending ? 'Loading cached match…' : 'This match is not cached. Refresh Hudl from Library.'}</p></div>;
   return <div className="analysis-workspace">
@@ -140,11 +142,11 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
           <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : code ? 'player / code moments' : 'all moments'}</Button>
         </div>
         {moments.length > 0 && <p className="text-xs text-pin">Tags cached locally · No full-match download required</p>}
-        <p className="text-xs text-fg-muted">{filtered.length} tagged ranges. Play Tagged plays each chosen moment back to back. Downloads keep the original resolution and are encoded as H.264 for easy playback; exporting caches a full highest-quality source first.</p>
+        <p className="text-xs text-fg-muted">{filtered.length} tagged ranges. Play Tagged plays each chosen moment back to back. Downloads fetch only the selected moments, keep the original resolution and are encoded as H.264 for easy playback.</p>
         {code && <Link to={`/player/hudl/${encodeURIComponent(code)}`}><Button>See every match tagged “{code}”</Button></Link>}
         {match.tag_status === 'unsynced' && <p role="note" className="rounded-xl border border-warn/20 bg-warn/5 p-4 text-sm text-fg-muted">Hudl has not marked this tag timeline as synced. You can still stream or download the full match. Tagged moment and player downloads are unavailable until verified timings are available.</p>}
         {!moments.length && match.tag_status !== 'unsynced' && <p className="text-sm text-fg-muted">Tags load and cache when you open this match, independently of full-match downloads. Videos without supported tags can still stream.</p>}
-        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li aria-current={current?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${current?.id === m.id ? 'border-2 border-ok shadow-[0_0_0_1px_var(--color-ok)]' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => { setQueue(undefined); setSeek({ time: m.time_s, nonce: Date.now() }); }}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{m.category}</span></button><Play size={14} /></li>)}</ul>
+        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li aria-current={current?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${current?.id === m.id ? 'border-2 border-ok shadow-[0_0_0_1px_var(--color-ok)]' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => { setQueue(undefined); markHudlMomentWatched(m.id); setSeek({ time: m.time_s, nonce: Date.now() }); }}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{m.category}</span></button><Play size={14} /></li>)}</ul>
       </section>
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}
