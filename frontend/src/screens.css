@@ -1,5 +1,5 @@
 /* Each reference has its own canvas. Keep shared component colours scoped so
-   the light profile cannot change the analysis player or the dashboard. */
+   profile components cannot change the analysis player or the dashboard. */
 .app-surface {
   --color-ink-950: #111214;
   --color-ink-900: #191a1d;
@@ -67,35 +67,29 @@
 .analysis-match-heading > div:last-child { font-size: 11px; }
 .analysis-stage > .group { border-radius: 5px; }
 .analysis-timeline { border-radius: 5px; padding: 12px; }
-/* Reference 03 is intentionally a light profile, with a lime shield and dark
-   phone feed. These tokens also cover the chooser and profile edit form. */
-.app-surface[data-screen="profile"] { --color-ink-950: #f2f3f5; --color-ink-900: #f8f9fa; --color-ink-850: #eef0f2; --color-ink-800: #eef0f3; --color-ink-700: #e3e6eb; --color-line: #d4d7dd; --color-fg: #1b2225; --color-fg-muted: #59616b; --color-fg-subtle: #69727c; --color-accent: #51721a; --color-accent-strong: #9bbd52; --color-pin: #65851d; --color-ok: #527a23; background: linear-gradient(180deg, #e2f4ae 0, #f3f8e7 380px, #fafbfc 620px); }
-[data-screen="profile"] .app-header { background: #ffffffed; border-color: #dce0d5; }
-[data-screen="profile"] .screen-link.is-active { background: #e5efcf; box-shadow: none; }
-[data-screen="profile"] .app-brand > span:first-child { background: #dfebc3; --tw-ring-color: #b4c594; }
-[data-screen="profile"] .panel { background: #ffffffed; border: 1px solid #cdd2d6; border-radius: 15px; box-shadow: 0 5px 16px #1d2d1610; }
-[data-screen="profile"] .tile { background: #f0f2f5; border-color: #dde1e5; border-radius: 10px; }
+/* Player Hub shares the dashboard canvas; the shield remains a distinct
+   component, using the same charcoal/periwinkle palette and panel spacing. */
 .profile-heading { padding: 0 0 10px; }
-.profile-heading > div:first-child > p:first-child { color: #5b752c; }
+.profile-heading > div:first-child > p:first-child { color: var(--color-accent); }
 .profile-heading h1 { font-size: 30px; }
 .profile-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 30px; align-items: start; }
 .profile-top { display: grid; grid-template-columns: 265px minmax(0, 1fr) 85px; gap: 20px; align-items: start; }
 .profile-dates { flex-direction: column; }
 .profile-feed { position: sticky; top: 110px; }
-.player-shield { background: #b3c788; filter: drop-shadow(0 10px 9px #33482025); }
-.player-shield-inner { background: linear-gradient(140deg, #f0facf, #d8ed9e 55%, #e8f6bc); min-height: 425px; }
+.player-shield { background: #59659b; filter: drop-shadow(0 12px 15px #0005); }
+.player-shield-inner { background: linear-gradient(145deg, #303342, #23252f 55%, #39344f); min-height: 425px; }
 .player-shield-inner > div:first-child { margin-top: 0; }
-.player-shield-inner img { box-shadow: none; border-radius: 16px; --tw-ring-color: #b1c884; width: 150px; height: 150px; }
+.player-shield-inner img { box-shadow: none; border-radius: 16px; --tw-ring-color: #727db6; width: 150px; height: 150px; }
 .player-shield-inner figcaption { font-family: "Arial Narrow", "Helvetica Neue", sans-serif; font-stretch: condensed; font-size: 25px; letter-spacing: -.035em; line-height: 1.1; }
-.player-shield-inner .border-white\/15 { border-color: #829b4c55; }
-.player-shield-inner > .bg-white\/15 { background: #91a76488; }
-.profile-chip { justify-content: center; flex: 1; background: #f7f8fa; border-color: #dcdfe4; border-radius: 8px; }
-.profile-details > div:nth-child(2) .tile { background: #ffffffaf; border-color: #d1d9c4; }
-.profile-details svg polygon[fill="none"] { stroke: #d9dfe4; }
-.profile-details svg polygon:not([fill="none"]) { fill: #63bde348; stroke: #43a4cd; }
-.profile-details section[aria-label="Moments per match"] ol a { background: #ddebaf; border-color: #9cb858; }
+.player-shield-inner .border-white\/15 { border-color: #ffffff20; }
+.player-shield-inner > .bg-white\/15 { background: #ffffff26; }
+.profile-chip { justify-content: center; flex: 1; background: #303137; border-color: #45464e; border-radius: 8px; }
+.profile-details > div:nth-child(2) .tile { background: #292a2ed9; border-color: #ffffff0b; }
+.profile-details svg polygon[fill="none"] { stroke: #ffffff20; }
+.profile-details svg polygon:not([fill="none"]) { fill: #8998f548; stroke: #a6b1ff; }
+.profile-details section[aria-label="Moments per match"] ol a { background: #7d8ee66b; border-color: #a6b1ff; }
 .phone-feed { --color-ink-950: #0a0c0e; --color-fg: #ffffff; --color-fg-muted: #c5c9cf; --color-fg-subtle: #abb3bb; --color-accent: #dcf59c; --color-pin: #d4ee8f; color: #fff; border-color: #202328; box-shadow: 0 16px 40px #1c221a35; }
-[data-screen="profile"] :focus-visible { outline-color: #5c7f25; }
+[data-screen="profile"] :focus-visible { outline-color: var(--color-accent); }
 @media (min-width: 1600px) { .library-dashboard { grid-template-columns: 300px minmax(0, 1fr) 330px; gap: 28px; } .hero-stage { min-height: 600px; } }
 @media (max-width: 1250px) {
   .header-inner { gap: 18px; padding-inline: 22px; }

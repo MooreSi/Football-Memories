@@ -20,9 +20,10 @@ The Hudl password lives in the OS keychain (or an equivalent secret store),
 and nowhere else. The same goes for session cookies, bearer tokens and any
 browser storage-state file.
 
-The authorized desktop helper does not accept a password: users enter it
-directly into Hudl in a visible incognito browser. Its session and media URLs
-exist only in memory for that run. Never export browser cookies, capture a HAR,
+The authorized desktop helper accepts credentials through the app's Save form
+and stores them only in macOS Keychain (owner request, D-014). Test submits
+them through normal Hudl login in a visible incognito browser. Manual browser
+sign-in remains available. Session and media URLs exist only in memory. Never export browser cookies, capture a HAR,
 enable tracing or persist browser state. Closing capture destroys that context.
 
 Never in: the repo, a config file that is committed, a log line, an exception

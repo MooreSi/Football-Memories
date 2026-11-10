@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.backup_routes import router as backup_router
+from app.api.logo_routes import router as logo_router
 from app.api.moment_routes import router as moment_router
 from app.api.player_routes import router as player_router
 from app.api.reel_routes import router as reel_router
@@ -110,6 +111,7 @@ def create_app(
         allow_headers=["Content-Type", "Range"],
     )
     app.include_router(router)
+    app.include_router(logo_router)
     app.include_router(player_router)
     app.include_router(moment_router)
     app.include_router(settings_router)

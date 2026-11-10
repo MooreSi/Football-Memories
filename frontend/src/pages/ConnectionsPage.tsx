@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, PlugZap, X } from "lucide-react";
 import { api } from "../api/client";
+import { HudlAccount } from "../components/settings/HudlAccount";
 import { HudlCapture } from "../components/settings/HudlCapture";
 import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -18,6 +20,7 @@ const LABELS: Record<string, string> = {
 };
 
 export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
+  const [hudlState, setHudlState] = useState<string | null>(null);
   const q = useQuery({ queryKey: ["connectors"], queryFn: api.connectors });
 
   return (
@@ -32,12 +35,14 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {q.data.map((c) => (
-            <section key={c.id} className="panel space-y-4 p-5" aria-label={c.name}>
+            <section key={c.id} className={`panel space-y-4 p-5 ${c.id === "hudl" ? "lg:col-span-2" : ""}`} aria-label={c.name}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{c.name}</h2>
-                {c.available ? <Badge tone="ok">Available</Badge> : <Badge tone="warn">Not available</Badge>}
+                {c.id === "hudl" && hudlState ? <Badge tone={hudlState === "Connected" ? "ok" : "warn"}>{hudlState}</Badge>
+                  : c.available ? <Badge tone="ok">Available</Badge> : <Badge tone="warn">Not available</Badge>}
               </div>
-              {c.reason && <p className="text-sm text-fg-muted">{c.reason}</p>}
+              {c.reason && (c.id !== "hudl" || !hudlState) && <p className="text-sm text-fg-muted">{c.reason}</p>}
+              {c.id === "hudl" && hudlState && <p className="text-sm text-fg-muted">Save your Hudl account securely, test the connection, then choose a cached match to stream or download.</p>}
               {c.id === "hudl" && (
                 <div className="space-y-2 border-y border-line py-3">
                   <a
@@ -55,7 +60,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                   </p>
                 </div>
               )}
-              <ul className="grid grid-cols-2 gap-2 text-sm">
+              {(c.id !== "hudl" || !hudlState) && <ul className="grid grid-cols-2 gap-2 text-sm">
                 {Object.entries(c.capabilities).map(([k, on]) => (
                   <li key={k} className={`flex items-center gap-2 ${on ? "text-fg" : "text-fg-subtle"}`}>
                     {on ? <Check size={15} className="text-ok" aria-hidden /> : <X size={15} aria-hidden />}
@@ -65,7 +70,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                     </span>
                   </li>
                 ))}
-              </ul>
+              </ul>}
               {c.limitations.length > 0 && (
                 <ul className="list-disc space-y-1 pl-5 text-xs text-fg-muted">
                   {c.limitations.map((l) => (
@@ -78,7 +83,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                   Details: <code>{c.docs}</code> in the project folder.
                 </p>
               )}
-              {c.id === "hudl" && <HudlCapture />}
+              {c.id === "hudl" && <><HudlAccount onConnectionChange={setHudlState} /><details><summary className="cursor-pointer text-sm text-fg-muted">Capture a match by URL</summary><div className="mt-4"><HudlCapture /></div></details></>}
             </section>
           ))}
         </div>

@@ -16,9 +16,10 @@ that may be the only surviving copy.
 
 **Hudl exception authorized by the owner (2026-11-09, D-012):** normal-user
 browser capture may proceed within the owner's attested automation/download
-permission. Each user signs into Hudl directly; the local desktop helper uses
-an ephemeral browser session, captures only that user's accessible match, and
-never persists credentials. This supersedes the blanket no-login assumption;
+permission. The local desktop helper uses an ephemeral browser session and captures only
+that user's accessible matches. The owner's later Save/Test request (D-014)
+authorizes saving username/password in this Mac's Keychain and submitting them
+through normal Hudl login. Cookies and signed media URLs remain in memory. This supersedes the blanket no-login assumption;
 all account/library safeguards and the offline-only test rule still apply.
 
 Read **[docs/system/rules/10-golden-rules.md](docs/system/rules/10-golden-rules.md)**

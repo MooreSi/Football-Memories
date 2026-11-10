@@ -3,7 +3,7 @@
 **Rule (owner, 2026-11-09): the GUI is built from the owner's reference images.**
 Every screen names the reference it follows, and is checked side by side
 against it in the browser before it is called done. Take layout, hierarchy,
-density and mood from the references; never copy their logos, photos, brand
+density and mood from the references; never copy their sample photos, brand
 names or text, and never show invented data (no fake scores, odds or ratings).
 
 | Reference | Used for | What we take |
@@ -20,7 +20,7 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 | Library | 01 | redesigned: charcoal glass, overview / tall footage hero / latest match; single column on phones |
 | Match page | 02 | redesigned: compact navy workstation, 250px tag rail, video/timeline; phone filters precede the moment list |
 | Import, Connections | 01 styling | done |
-| Player Hub (+ chooser) | 03 | redesigned: white/lime canvas, lime shield, white teams/roles/teammates panels, blue radar, lime bars, dark phone feed |
+| Player Hub (+ chooser) | 03 | shared charcoal canvas/panels, periwinkle shield and bars, blue radar, dark phone feed (owner consistency request, D-014) |
 | Clip Explorer | 02 | done: event-type rail with counts + solid active row, PLAYLISTS panel with "+", clip bar, queue, moment-frame cards |
 | Settings (Playback, Storage + archive tools, Backups, Connections) | 01 tiles/panels | done |
 | Highlight reels (list + builder) | 02 queue/clip bar + 01 panels | done; title cards drawn in the app's palette |
@@ -36,7 +36,7 @@ The owner re-supplied all three references and requested distinct screens on
 |---|---|---|
 | `/` | warm charcoal (#151619), neutral translucent cards | periwinkle navigation, blue Watch action |
 | `/matches/:id`, `/clips…` | flat navy (#0c111d), compact bordered panels | blue active rows, yellow timeline pins |
-| `/player…` | white and lime (#e2f4ae → #fafbfc) | lime shield/bars, blue tag radar, dark phone feed |
+| `/player…` | shared charcoal (#151619) | periwinkle shield/bars, blue tag radar, dark phone feed |
 | `/import`, `/settings…` | charcoal utility screens | shared form/control styles |
 
 Theme variables are scoped to `.app-surface`, never `body`; the phone feed
@@ -58,7 +58,10 @@ Only existing match thumbnails and uploaded player photos provide imagery.
 | `ok / warn / danger` | green / amber / red | states only |
 | `.panel` / `.tile` | translucent glass, 24px / 20px radius | every card surface |
 
-Team identity is an initials disc (`TeamBadge`): we never invent crests or flags.
+Team identity uses a real cached club crest (`TeamBadge`) with initials on lookup
+failure. Aston Villa and Stoke City use official club CDN images; other
+unambiguous club names can resolve through Wikipedia pageimages. Age groups
+share the club identity. No invented crests, ratings or inferred affiliations.
 
 ## Rules
 

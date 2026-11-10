@@ -4,6 +4,25 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-014 (2026-11-10) Saved local Hudl account, cached matches and consistent styling
+The owner explicitly requests username/password Save/Test, accessible-match
+caching, stream/download selection and real team logos. Credentials stay in
+macOS Keychain through a native Security framework bridge; stdin carries them,
+never process arguments. This supersedes D-012's no-app-password-form assumption.
+The owner approved hls.js for Chrome/Edge; Safari uses native HLS. Browser cookies
+and source media URLs remain in the ephemeral worker, never saved. The app gets
+only local resource-scoped stream URLs and sanitized match metadata. Test makes
+one normal login attempt; refresh follows only served links and observes normal
+library VideoItem responses, without guessed IDs or replayed queries. Limits
+are 20 served team libraries and 60 scroll passes each, stopping on auth/rate
+failures. Download keeps the existing 720p ceiling and verification rules.
+
+The later owner request for professional consistency supersedes D-013's light
+profile palette: My Player retains its distinct layout with shared charcoal
+surfaces and periwinkle accents. TeamBadge resolves real cached club crests,
+using official club CDNs for known clubs and exact Wikipedia pageimages for
+other unambiguous names; initials remain the failure fallback.
+
 ## D-013 (2026-11-09) Separate visual canvases for the three reference screens
 The owner re-supplied the three references and asked for a redesign with separate
 screens. Keep existing routes, but scope the palette and layout by screen:

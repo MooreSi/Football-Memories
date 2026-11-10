@@ -35,3 +35,25 @@ need the local-only HLS options used by the assembler, with protocol `file` only
 Evidence, sources and missing account/export checks:
 [HUDL_INTEGRATION.md](../../../../HUDL_INTEGRATION.md). Pending owner answers:
 [002-hudl-access.md](../../../owner-decisions/002-hudl-access.md).
+
+## Saved account helper (D-014, 2026-11-10)
+Settings uses the host companion separately from server capability flags.
+`hudl_account.py` sanitizes metadata; `hudl_keychain.py` compiles a small native
+Security bridge with swiftc into the user's cache. JSON credentials go through
+stdin, never argv; no third-party backend dependency or persistent cookies.
+`BrowserConnection` serializes login/discovery/media on one Playwright worker.
+Account and manual capture share a gate; disconnect before manual capture.
+The chooser's cache is private mode 0600 and contains only IDs/titles/canonical
+watch links, cleared on account replacement. Streams expose only registered
+local nonce/asset paths; manifests contain no signed source URLs. Transfers use
+the existing strict HLS parser/host checks and serial fetch policy.
+
+The modern library renders cards from GraphQL VideoItem nodes, so DOM anchors
+alone can miss matches. Observe successful normal UI responses and extract
+`data.library.edges[].node` with `__typename == VideoItem`, `id`, `title`;
+exclude deleted nodes/PlaylistItem and all playback credentials. The served
+encoded VideoItem ID maps to the canonical watch URL. `app.hudl.com` DOM links
+normalize to the same canonical www host. Discovery is bounded, so a very large
+or differently structured library may need the owner to open it and Refresh.
+Live saved-account verification is pending owner form entry; prior manual URL
+capture/import/playback was verified. Do not describe discovery as live-proven.

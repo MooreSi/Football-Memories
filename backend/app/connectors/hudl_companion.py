@@ -1,10 +1,11 @@
-"""Desktop bridge for a Docker-hosted UI; never accepts credentials or sessions."""
+"""Scoped localhost desktop bridge; saved credentials live in macOS Keychain only."""
 
 from __future__ import annotations
 
 import argparse
 import threading
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
@@ -13,10 +14,12 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
-from app.connectors.hudl_browser import match_id, run
+from app.connectors.hudl_account import Catalogue, Credentials
+from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
+from app.connectors.hudl_keychain import Keychain
 
 ORIGINS = {
     "http://127.0.0.1:8765",
@@ -37,6 +40,18 @@ class CaptureRequest(BaseModel):
     def valid_match(cls, value: str) -> str:
         match_id(value)
         return value
+
+
+class AccountCredentials(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    username: str = Field(min_length=3, max_length=320, repr=False)
+    password: SecretStr = Field(min_length=1, max_length=1000, repr=False)
+
+
+class AccountAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    action: Literal["test", "refresh", "stream", "download", "disconnect"]
+    match_id: str | None = Field(default=None, max_length=300)
 
 
 class CaptureBusy(Exception):
@@ -93,8 +108,22 @@ class CaptureManager:
 
 
 def create_companion(output: Path) -> FastAPI:
-    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    app.state.capture = CaptureManager(output.expanduser().resolve())
+    @asynccontextmanager
+    async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+        yield
+        application.state.account.close()
+
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
+    output = output.expanduser().resolve()
+    app.state.capture = CaptureManager(output)
+    cache = output.parent / ".hudl-account"
+    app.state.keychain = Keychain(Path.home() / "Library/Caches/FootballMemories")
+    app.state.catalogue = Catalogue(cache)
+    app.state.account = BrowserConnection(
+        lambda: app.state.keychain.load(), app.state.catalogue, output
+    )
+    app.state.account_configured = None
+    app.state.hudl_gate = threading.Lock()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=sorted(ORIGINS),
@@ -134,6 +163,49 @@ def create_companion(output: Path) -> FastAPI:
             {"detail": "Invalid capture request. Use a Hudl match page address."}, status_code=400
         )
 
+    @app.exception_handler(CaptureError)
+    async def account_error(request: Request, error: CaptureError) -> JSONResponse:
+        return JSONResponse({"detail": str(error)}, status_code=400)
+
+    @app.get("/account")
+    def account_status(request: Request) -> dict[str, object]:
+        if request.app.state.account_configured is None:
+            request.app.state.account_configured = request.app.state.keychain.configured()
+        return {
+            **request.app.state.account.status(),
+            "configured": request.app.state.account_configured,
+        }
+
+    @app.post("/account/credentials")
+    def save_credentials(body: AccountCredentials, request: Request) -> dict[str, bool]:
+        if request.app.state.account.status()["busy"]:
+            raise CaptureError("Wait for the active Hudl operation before changing accounts.")
+        request.app.state.keychain.save(
+            Credentials(body.username, body.password.get_secret_value())
+        )
+        request.app.state.account_configured = True
+        request.app.state.account.reset()
+        return {"saved": True}
+
+    @app.post("/account/action", status_code=202)
+    def account_action(body: AccountAction, request: Request) -> dict[str, bool]:
+        with request.app.state.hudl_gate:
+            if request.app.state.capture.status()["state"] not in {"idle", "done", "error"}:
+                raise CaptureError("A URL capture is already running. Wait for it to finish.")
+            if body.action in {"stream", "download"}:
+                if not body.match_id:
+                    raise CaptureError("Select a cached match first.")
+                request.app.state.catalogue.find(body.match_id)
+            request.app.state.account.start(body.action, body.match_id)
+        return {"accepted": True}
+
+    @app.get("/stream/{stream}/{asset}")
+    def stream_resource(stream: str, asset: str, request: Request) -> Response:
+        content, media_type = request.app.state.account.resource(stream, asset)
+        return Response(
+            content=content, media_type=media_type, headers={"Cache-Control": "no-store"}
+        )
+
     @app.get("/status")
     def status(request: Request) -> dict[str, str | None]:
         manager: CaptureManager = request.app.state.capture
@@ -142,10 +214,17 @@ def create_companion(output: Path) -> FastAPI:
     @app.post("/capture", status_code=202)
     def capture(body: CaptureRequest, request: Request) -> JSONResponse:
         manager: CaptureManager = request.app.state.capture
-        try:
-            manager.start(body)
-        except CaptureBusy:
-            return JSONResponse({"detail": "A capture is already running."}, status_code=409)
+        with request.app.state.hudl_gate:
+            account = request.app.state.account.status()
+            if account["busy"] or account.get("session_active"):
+                return JSONResponse(
+                    {"detail": "Finish the account operation or disconnect its stream first."},
+                    status_code=409,
+                )
+            try:
+                manager.start(body)
+            except CaptureBusy:
+                return JSONResponse({"detail": "A capture is already running."}, status_code=409)
         return JSONResponse({"accepted": True}, status_code=202)
 
     return app

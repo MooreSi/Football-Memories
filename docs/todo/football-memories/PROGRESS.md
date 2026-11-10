@@ -6,6 +6,15 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Current checkpoint: saved Hudl account and team identity (spec 110)
+
+| Task | Status | Notes |
+|---|---|---|
+| Keychain Save/Test, normal login and metadata cache | partial | built, offline tests green; awaits owner app credential entry for live proof |
+| Cached match Stream/Download chooser | partial | scoped proxy + hls.js + verified capture integration built; live playback/download selection pending |
+| Real team crests | done | official Villa/Stoke images cached; verified on Library, shared Moments badge |
+| Consistent My Player styling | done | shared charcoal panels, periwinkle shield/bars; synthetic player browser preview checked |
+
 ## Phase 1: Discovery and foundation
 
 | Task | Status | Notes |
@@ -89,6 +98,25 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+
+### 2026-11-10 Saved account checkpoint (codex/hudl-account-library)
+- `uv run pytest`: 237 passed SQLite; `TEST_DATABASE_URL=… uv run pytest`:
+  237 passed PostgreSQL. Ruff check/format, mypy clean; alembic no drift.
+- `npm test`: 91 passed; typecheck and build clean. HLS light player is lazy
+  loaded (362kB separate chunk; main 470kB), no large-chunk warning.
+- New core tests watched red before implementation. Stream manifest test added
+  later with explicit negative control: injected fake signed secret into the
+  produced manifest, observed expected failure, restored and green.
+- Docker Compose rebuilt successfully; `/api/health` returned status ok.
+- Native Swift Keychain bridge compiled successfully. No test touches real
+  Keychain or Hudl. Owner has not yet entered saved-account credentials.
+- Official Villa/Stoke CDN PNGs fetched to ignored archive crest cache; Library
+  and Moments visibly show both. My Player preview uses synthetic Sam Example and shared
+  dark styling. Screenshot in ignored data/player-consistent-theme.jpg.
+- Not yet live-proven: saved-account login/discovery, streaming, cached chooser
+  Download action. Earlier manual capture/import/playback proof remains valid.
+- No old tests modified or weakened; no schema changes. No CI workflow exists.
 
 ### 2026-11-09 Distinct reference-led screens (codex/reference-screen-redesign)
 - Spec 100: charcoal dashboard with overview/hero/latest match, compact navy

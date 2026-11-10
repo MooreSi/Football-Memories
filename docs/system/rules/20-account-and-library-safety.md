@@ -9,7 +9,7 @@ the reference.
 | Surface | What can go wrong | Protection |
 |---|---|---|
 | **Credentials** | password leaks into git, logs, a fixture, a crash report | keychain only; redacting log filter; a test that plants a secret and proves the filter catches it |
-| **Session** (cookies, tokens, storage state) | a token in a URL or log; a stale session reused after logout | stored beside credentials or in a gitignored, user-only-readable file; never printed |
+| **Session** (cookies, tokens, storage state) | a token in a URL or log; a stale session reused after logout | ephemeral browser memory only for the desktop helper; never printed |
 | **Login flow** | automating around CAPTCHA/MFA; locking the account with retries | one attempt, then hand to the user; no retry loop on auth failure |
 | **Hudl requests** | hammering the API, tripping rate limits, account flagged | bounded concurrency, backoff on 429/5xx, a single choke point that every request goes through |
 | **Access scope** | downloading something the account is not entitled to | only follow links/IDs Hudl itself served to this session; never construct or guess IDs |

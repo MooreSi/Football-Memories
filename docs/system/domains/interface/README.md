@@ -2,7 +2,9 @@
 
 Design authority: [DESIGN.md](../../../design/DESIGN.md), the owner's three
 references and spec 100. Existing routes are separate screens, with independent
-visual canvases; do not flatten the light Player Profile into the dark dashboard.
+layouts. The owner's later consistency request (D-014) gives My Player the
+same charcoal palette, panel borders and periwinkle accents as the dashboard,
+while retaining reference 03's card/charts/feed layout.
 
 `frontend/src/screens.css` scopes CSS variables under AppShell `data-screen`.
 Keep imports above other CSS rules. The phone feed restores dark tokens to avoid

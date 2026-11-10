@@ -11,13 +11,16 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-09)
+## Current state (2026-11-10)
 
-- **Current branch: `codex/reference-screen-redesign`**, based on the verified
-  Hudl branch (preserves capture and highlight reels). Spec 100 redesigns three
-  distinct screens: charcoal Library, compact navy Match Analysis, light/lime
-  Player Profile. Existing routes, data and actions unchanged. Desktop and
-  375px Safari previews checked; rebuilt Docker app serves the new design.
+- **Current branch: `codex/hudl-account-library`**, based on the pushed reference
+  redesign branch. Spec 110 adds username/password Save/Test through macOS
+  Keychain, normal-login accessible match cache, in-app Stream and verified
+  Download → Import. Owner approved hls.js. Server background sync remains off.
+  Shared TeamBadge now caches real club crests (Aston Villa/Stoke verified in
+  Library); My Player uses shared charcoal panels/periwinkle accents, preserving
+  the reference card/chart/feed layout. Browser preview checked on synthetic
+  Sam Example. Live Save/Test/discovery/stream still awaits owner form entry.
 - Authorized capture from `codex/hudl-access-research` remains integrated.
   Authorized browser capture implemented (spec 090, D-012): host companion on
   127.0.0.1:8766, normal incognito Chrome login, HLS capture and Sportscode tag
@@ -51,7 +54,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 220 passed on SQLite and Postgres; frontend 88 passed.
+- Tests: backend 237 passed on SQLite and Postgres; frontend 91 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.
@@ -63,13 +66,18 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
-1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
+1. Finish live saved-account verification after owner replies “tested”: read
+   safe helper status, inspect cached chooser, stream one accessible match, then
+   select the already captured match Download to verify reuse/Import. Safari
+   normal-library tab was blank even after refresh; match playback is signed in.
+   New helper observes normal library VideoItem responses in its own Chrome.
+2. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
-2. Per-clip timing override (brief section 9) and playback history on the server.
-3. Clip Explorer leftovers: notes and custom local tags on moments; crossfade
+3. Per-clip timing override (brief section 9) and playback history on the server.
+4. Clip Explorer leftovers: notes and custom local tags on moments; crossfade
    transitions. Single-clip export now uses the reel renderer with one item.
-4. Playwright e2e for import → play → filter → playlist.
-5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
+5. Playwright e2e for import → play → filter → playlist.
+6. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
    backup/restore, storage health.
 
 ## Blocked on / waiting for the owner
@@ -77,7 +85,10 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
   Normal-user/no-export role and automation permission answered. Real capture/import and clip download verified after owner sign-in. Explicit
   player-code mapping is covered offline; this live run preserved all labels
-  as categories. No password/session is saved; each fresh run needs login.
+  as categories. Saved-account live verification pending owner entering credentials in the open
+  Settings → Connections form and pressing Save/Test. No credentials have been
+  entered yet; helper is running on 8766, configured=false. Passwords save only
+  in Mac Keychain; sessions remain in memory. The manual URL fallback is retained.
 
 ## Gotchas
 
@@ -94,7 +105,8 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
   tracked while root/data MPEG transport streams remain ignored. Previously
   ignored API/types/utilities/config are included with this capture change.
 - Screen-specific theme variables live in `frontend/src/screens.css`, scoped
-  to AppShell `data-screen`. Keep the Player Profile light and its feed dark.
+  to AppShell `data-screen`. My Player now shares the charcoal dashboard palette (latest owner request,
+  D-014 supersedes the light/lime palette).
   Mobile analysis filters must appear before the potentially long moment list.
 - After adding a new folder of components, restart the Vite dev server if
   Tailwind classes look missing (it once served stale CSS). `npm run build` is
