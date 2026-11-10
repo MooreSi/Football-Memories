@@ -224,13 +224,27 @@ def create_companion(output: Path) -> FastAPI:
                 "age_group": (item.get("age_groups") or [age_group(item["title"])])[0],
                 "season_label": season_label(item["title"]),
                 "capture_key": capture_key(item["id"]),
-                "thumbnail_url": f"http://127.0.0.1:8766/account/match/{item['id']}/thumbnail"
-                if request.app.state.details.path(item["id"], ".image").is_file()
-                else None,
+                **_images(request, item["id"]),
                 **request.app.state.details.read(item["id"]),
             }
             for item in request.app.state.catalogue.items()
         ]
+
+    def _images(request: Request, identity: str) -> dict[str, str | None]:
+        """Spec 190: a full-resolution stream frame, when grabbed, replaces the small thumbnail."""
+        base = f"http://127.0.0.1:8766/account/match/{identity}"
+        details = request.app.state.details
+        poster = f"{base}/poster" if details.path(identity, ".poster").is_file() else None
+        thumbnail = f"{base}/thumbnail" if details.path(identity, ".image").is_file() else None
+        return {"poster_url": poster, "thumbnail_url": poster or thumbnail}
+
+    @app.get("/account/match/{identity}/poster")
+    def match_poster(identity: str, request: Request) -> FileResponse:
+        request.app.state.catalogue.find(identity)
+        path = request.app.state.details.path(identity, ".poster")
+        if not path.is_file():
+            raise CaptureError("No full-resolution snapshot yet. Open the match to create one.")
+        return FileResponse(path, media_type="image/jpeg")
 
     @app.get("/account/match/{identity}/thumbnail")
     def match_image(identity: str, request: Request) -> FileResponse:

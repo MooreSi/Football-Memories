@@ -444,16 +444,7 @@ class BrowserConnection:
         import secrets
 
         observation = self._observe(identity, False)
-        address = observation.master(65536)
-        for _ in range(3):
-            manifest = parse_manifest(
-                fetch_media(self._context, address).decode(), address, max_height=65536
-            )
-            if manifest.variant_url is None:
-                break
-            address = manifest.variant_url
-        else:
-            raise CaptureError("Unsupported nested stream manifest.")
+        manifest = self._media_manifest(observation)
         if isinstance(observation.payloads, list) and observation.payloads:
             duration = recorded_duration(
                 observation.manifests,
@@ -485,11 +476,38 @@ class BrowserConnection:
         for index in range(len(manifest.resources)):
             playlist = playlist.replace(f"asset-{index}.bin", f"/stream/{self._stream_id}/{index}")
         self._playlist = playlist.encode()
+        self._poster(identity, manifest)
         with self._lock:
             self._state["stream_url"] = (
                 f"http://127.0.0.1:8766/stream/{self._stream_id}/playlist.m3u8"
             )
         self.report("ready", "Stream ready. Playback uses your active Hudl connection.")
+
+    def _media_manifest(self, observation: Observation) -> Any:
+        address = observation.master(65536)
+        for _ in range(3):
+            manifest = parse_manifest(
+                fetch_media(self._context, address).decode(), address, max_height=65536
+            )
+            if manifest.variant_url is None:
+                return manifest
+            address = manifest.variant_url
+        raise CaptureError("Unsupported nested stream manifest.")
+
+    def _poster(self, identity: str, manifest: Any) -> None:
+        """Spec 190: one full-resolution frame replaces Hudl's 320x240 thumbnail."""
+        from app.connectors.hudl_posters import poster_from_playlist
+
+        target = self.details.path(identity, ".poster")
+        if target.is_file():
+            return
+        resources = list(manifest.resources)
+        with contextlib.suppress(Exception):
+            poster_from_playlist(
+                manifest.local_playlist,
+                lambda index: fetch_media(self._context, resources[index]),
+                target,
+            )
 
     def resource(self, stream: str, asset: str) -> tuple[bytes, str]:
         return self._executor.submit(self._resource, stream, asset).result(timeout=90)
@@ -593,6 +611,9 @@ class BrowserConnection:
             self._page.locator("video").first.evaluate("element => element.duration"),
             lambda address: fetch_media(self._context, address),
         )
+        if not self.details.path(identity, ".poster").is_file():
+            with contextlib.suppress(Exception):
+                self._poster(identity, self._media_manifest(observation))
         moments, tag_status = (
             optional_moments(observation.payloads, identity, duration)
             if observation.payloads
