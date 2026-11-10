@@ -24,3 +24,8 @@ full-match, code/player and individual range download controls.
 My Player offers actual tagged-code selection, including archived codes that
 were previously kept only as categories. Remote code profiles link directly to
 matching videos with their code filter applied.
+
+Spec 140 makes the connected age selector follow actual Hudl team-library
+memberships rather than labels in match titles. All three accessible groups are
+listed; shared videos match each applicable group and display their memberships.
+Keep the shared All matches filters and dashboard placement unchanged.

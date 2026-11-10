@@ -197,7 +197,7 @@ def create_companion(output: Path) -> FastAPI:
         return [
             {
                 **item,
-                "age_group": age_group(item["title"]),
+                "age_group": (item.get("age_groups") or [age_group(item["title"])])[0],
                 "season_label": season_label(item["title"]),
                 "capture_key": capture_key(item["id"]),
                 "thumbnail_url": f"http://127.0.0.1:8766/account/match/{item['id']}/thumbnail"

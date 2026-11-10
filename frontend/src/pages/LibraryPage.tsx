@@ -11,7 +11,7 @@ import { MatchCard } from "../components/MatchCard";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
 
-import { useHudlLibrary } from "../api/hudl";
+import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
 
 const PAGE_SIZE = 24;
@@ -55,11 +55,11 @@ export function LibraryPage() {
   });
 
   const items = (matches.data?.pages.flatMap((p) => p.items) ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel);
-  const ageGroups = [...new Set([...(remote.data ?? []).map(m => m.age_group), ...items.map(m => m.age_group), ...(latest.data?.items ?? []).map(m => m.age_group)].filter((a): a is string => Boolean(a)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const ageGroups = [...new Set([...(remote.data ?? []).flatMap(hudlAgeGroups), ...items.map(m => m.age_group), ...(latest.data?.items ?? []).map(m => m.age_group)].filter((a): a is string => Boolean(a)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   const seasonLabels = [...new Set([...(seasons.data ?? []).map(s => s.name), ...(remote.data ?? []).map(m => m.season_label || "Unclassified")])].sort().reverse();
   useEffect(() => { if (ageGroup && ageGroups.length && !ageGroups.includes(ageGroup)) {setAgeGroup("");localStorage.removeItem("fm.hudl.age");} }, [remote.data, latest.data, ageGroup]);
   const total = seasonLabel && seasonId === undefined ? 0 : matches.data?.pages[0]?.total ?? 0;
-  const remoteCount = (remote.data ?? []).filter(m => !teamId && (!ageGroup || m.age_group === ageGroup) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase()))).length;
+  const remoteCount = (remote.data ?? []).filter(m => !teamId && (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase()))).length;
   const filtering = Boolean(q || teamId || seasonId);
   const s = stats.data;
   const featured = latest.data?.items ?? [];

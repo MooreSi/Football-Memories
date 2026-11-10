@@ -196,3 +196,9 @@ Spec 130 fixes refresh from playback: only verified library-page links or fresh
 normal-library metadata may replace the catalogue; a Tags navigation anchor is
 not discovery evidence. Failure keeps the previous cache. Helper unavailability
 is shown explicitly with retry, rather than silently hiding the section.
+
+Spec 140 replaces title-based connected age grouping with Hudl's actual team
+selector. Discovery opens the menu, follows its served team-context links and
+caches each video's library memberships. A historical title does not change its
+team grouping; shared videos appear in each applicable group. Legacy caches keep
+the old title fallback until refreshed. All matches retains shared filters.

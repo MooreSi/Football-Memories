@@ -6,6 +6,14 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Hudl team-library age groups (spec 140)
+
+| Task | Status | Notes |
+|---|---|---|
+| Read actual team selector and visit each served library | done | verified team context routes; U10 100 / U11 87 / U12 99 cached live |
+| Preserve real memberships across cache restart/shared videos | done | sanitized age_groups override title fallback; legacy metadata still readable |
+| All matches filtering and thumbnails | done | all three filters selected in app; 286 images cached; U11 left selected |
+
 ## Unified All matches repair (spec 130)
 
 | Task | Status | Notes |
@@ -115,6 +123,27 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-10 Actual Hudl team age groups (codex/hudl-team-age-groups)
+- Eight backend regressions and one frontend regression watched red/green:
+  served team links only, membership persistence, serial discovery, avatar label,
+  Home landing, hidden empty menu labels, fragment normalization/fresh reload,
+  and shared-video U11 filtering despite its U10 title. Old tests unchanged.
+- Final backend `uv run pytest -q`: 264 SQLite, then 264 PostgreSQL passed.
+  Ruff check/format, mypy and alembic no drift green. An earlier PostgreSQL run
+  was interrupted to address a newly reproduced discovery edge; final run green.
+- Frontend `npm test`: 98 passed; typecheck/build green. Docker rebuilt/health OK.
+- Live normal-login listing followed only served team-context links. Cached 286
+  unique videos and 286 thumbnails, with U10 100, U11 87, U12 99. Selected all
+  three filters in All matches and verified counts/real U11 thumbnails; repeat
+  refresh retained membership/catalogue. No new footage download.
+- Staged secret-word scan: three hits reviewed (two synthetic rejection/leak
+  probes, one existing Save/Test description); no secret values or media staged.
+  Local Markdown links resolve.
+- Temporary counts-only diagnostics removed. No credential/session persistence
+  changes or account mutations. No CI workflow; bounded discovery does not prove
+  exhaustive enumeration of every historical item.
+
 
 ### 2026-11-10 Unified All matches repair (codex/unified-match-library)
 - Backend `uv run pytest -q`: 256 passed SQLite, then 256 PostgreSQL with

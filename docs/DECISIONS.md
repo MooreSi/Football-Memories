@@ -4,6 +4,22 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-017 (2026-11-10) Hudl team selector defines connected age groups
+The owner points to the actual U10/U11/U12 team selector and requests those
+libraries, especially U11. This supersedes D-015's title-based age grouping for
+new discovery. Open the served navigation dropdown, follow only its actual team
+context links, verify the resulting team-library identity, and cache sanitized
+age memberships with each video. A shared video may belong to multiple groups;
+union memberships without duplicating its canonical match identity. Existing
+legacy caches use the previous title fallback until refreshed. No guessed IDs,
+query replay, increased concurrency/limits or account mutations.
+
+The selector's avatar affects its accessible name, and closed-menu team links
+can exist with empty labels. Match its visible numbered text and open the menu
+when context links lack labels. Login may first land at Home: enter a served
+library before reading the selector. Normalize hash-only selector fragments.
+Preserve the prior complete catalogue if a team route fails verification.
+
 ## D-016 (2026-11-10) One All matches collection and verified refresh provenance
 The owner requests connected matches inside All matches with age and season
 filters, superseding spec 120's top-of-dashboard catalogue. Keep the original

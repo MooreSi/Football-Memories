@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/unified-match-library`**, based on the pushed reference
+- **Current branch: `codex/hudl-team-age-groups`**, based on the pushed reference
   redesign branch. Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.
@@ -23,6 +23,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **Spec 140:** connected ages now come from the real Hudl team selector,
+  superseding title-based grouping. Follow served context links, verify team
+  identity, preserve membership lists across cache restarts/shared videos. Hidden
+  dropdown links have empty labels and avatars alter accessible names; tests
+  cover both plus Home landing and selector hash fragments. Live discovery read
+  U10 100, U11 87, U12 99 videos (286 unique), and the app's three filters showed
+  those counts, with all 286 thumbnails cached. U11 remains selected in the
+  preview. Repeat refresh retained all three groups. No footage download or
+  credential/session storage change in this repair.
 - **Spec 130:** connected Hudl cards now live inside All matches, with shared
   search/age/season filters and the original overview/hero/latest layout restored.
   Refresh previously mistook a playback Tags anchor for the entire catalogue;
@@ -80,7 +89,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 256 passed on SQLite and Postgres; frontend 97 passed.
+- Tests: backend 264 passed on SQLite and Postgres; frontend 98 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

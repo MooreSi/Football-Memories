@@ -336,6 +336,7 @@ class BrowserConnection:
         self.details = MatchCache(output.parent / ".hudl-account" / "details")
         self._thumbnails: dict[str, str] = {}
         self._libraries: set[str] = set()
+        self._teams: dict[str, dict[str, str]] = {}
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="hudl-account")
         self._lock = threading.Lock()
         self._busy = False
@@ -423,6 +424,7 @@ class BrowserConnection:
         self._observed_matches.clear()
         self._thumbnails.clear()
         self._libraries.clear()
+        self._teams.clear()
         self._library_failure = None
         self._playlist = b""
 
@@ -477,42 +479,75 @@ class BrowserConnection:
             ),
         )
 
+    def _team_links(self) -> list[dict[str, str]]:
+        links = self._links()
+        if not any(
+            "/ui/webnav/context/team/" in link["href"] and link["text"].strip() for link in links
+        ):
+            selector = self._page.locator("a[href]").filter(
+                has_text=re.compile(r"^\s*\d+\.\s+.*\bU\d+\b", re.I)
+            )
+            if selector.count() and selector.first.is_visible():
+                selector.first.click()
+                self._page.wait_for_timeout(300)
+                links = self._links()
+        return links
+
     def _discover(self, refresh: bool = False) -> None:
-        from app.connectors.hudl_account import extract_matches
+        from app.connectors.hudl_account import extract_matches, team_libraries
 
         if not refresh or self._context is None or not self._libraries:
             self._login()
-        self.report("discovering", "Reading accessible matches from your Hudl library.")
+        self.report("discovering", "Reading accessible matches from your Hudl team libraries.")
         self._page.wait_for_timeout(1500)
-        links = self._links()
-        self._observed_matches.clear()
-        self._thumbnails.clear()
-        library_pattern = r"https://(?:app|www)\.hudl\.com/watch/team/[0-9]+/analyze/?"
+        links = self._team_links()
+        library_pattern = r"https://(?:app|www)\.hudl\.com/watch/team/([0-9]+)/analyze/?"
         if re.fullmatch(library_pattern, self._page.url):
             self._libraries.add(self._page.url)
+        for team in team_libraries(links):
+            self._teams[team["team_id"]] = team
         libraries = sorted(
             self._libraries
-            | {
-                item["href"]
-                for item in links
-                if re.fullmatch(
-                    r"https://(?:app|www)\.hudl\.com/watch/team/[0-9]+/analyze/?", item["href"]
-                )
-            }
-        )[:20]
-        if not re.fullmatch(library_pattern, self._page.url):
-            links = []
+            | {item["href"] for item in links if re.fullmatch(library_pattern, item["href"])}
+        )
+        prepared: str | None = None
+        if libraries and not self._teams and not re.fullmatch(library_pattern, self._page.url):
+            self._observed_matches.clear()
+            prepared = libraries[0]
+            self._page.goto(prepared, wait_until="domcontentloaded")
+            self._page.wait_for_timeout(1500)
+            for team in team_libraries(self._team_links()):
+                self._teams[team["team_id"]] = team
+        libraries = [
+            url
+            for url in libraries
+            if cast(re.Match[str], re.fullmatch(library_pattern, url)).group(1) not in self._teams
+        ]
+        libraries += [team["url"] for team in self._teams.values()]
+        libraries = libraries[:20]
         if not libraries:
             library = self._page.get_by_role("link", name=re.compile(r"^(Video|Library)$", re.I))
             if library.count():
                 library.first.click()
                 self._page.wait_for_timeout(1500)
-                if re.fullmatch(library_pattern, self._page.url):
-                    links.extend(self._links())
+                for team in team_libraries(self._team_links()):
+                    self._teams[team["team_id"]] = team
+                libraries = [team["url"] for team in self._teams.values()][:20]
+        matches: list[dict[str, Any]] = []
+        self._thumbnails.clear()
         addresses: list[str | None] = list(libraries) if libraries else [None]
         for address in addresses:
-            if address:
-                self._page.goto(address, wait_until="domcontentloaded")
+            if prepared is None or address != prepared:
+                self._observed_matches.clear()
+                if address:
+                    fragment_only = (
+                        "#" in self._page.url and self._page.url.split("#", 1)[0] == address
+                    )
+                    self._page.goto(address, wait_until="domcontentloaded")
+                    if fragment_only:
+                        self._page.reload(wait_until="domcontentloaded")
+            current_team = next((t for t in self._teams.values() if t["url"] == address), None)
+            links = []
             unchanged = 0
             previous = 0
             for step in range(60):
@@ -529,25 +564,34 @@ class BrowserConnection:
                 viewport = self._page.viewport_size or {"width": 1280, "height": 720}
                 self._page.mouse.move(viewport["width"] * 0.7, viewport["height"] * 0.7)
                 self._page.mouse.wheel(0, 850)
-        metadata = [
-            {"href": item["url"], "text": item["title"]} for item in self._observed_matches.values()
-        ]
-        on_library = re.fullmatch(library_pattern, self._page.url) is not None
-        if on_library:
-            self._libraries.add(self._page.url)
-        matches = extract_matches(metadata + (links if on_library else []))
-        if not matches:
-            raise CaptureError(
-                "Login completed, but no match links were found. Open your Video library "
-                "in the Hudl window, then Refresh matches."
+            on_library = re.fullmatch(library_pattern, self._page.url)
+            if current_team and (not on_library or on_library.group(1) != current_team["team_id"]):
+                raise CaptureError(
+                    "Hudl did not open the selected team library. Cached matches preserved."
+                )
+            if on_library:
+                self._libraries.add(self._page.url)
+            metadata = [
+                {"href": item["url"], "text": item["title"]}
+                for item in self._observed_matches.values()
+            ]
+            found = extract_matches(metadata + (links if on_library else []))
+            if not found:
+                raise CaptureError(
+                    "Login completed, but no match links were found. Open your Video library "
+                    "in the Hudl window, then Refresh matches."
+                )
+            matches.extend(
+                {**item, **({"age_groups": [current_team["age_group"]]} if current_team else {})}
+                for item in found
             )
         self.catalogue.replace(matches)
-        for item in matches:
+        for item in self.catalogue.items():
             address = self._thumbnails.get(item["id"])
             if address and not self.details.path(item["id"], ".image").exists():
                 self.report("discovering", "Caching match thumbnails…")
                 self.details.image(item["id"], fetch_media(self._context, address))
-        self.report("ready", f"Connected. Cached {len(matches)} available matches.")
+        self.report("ready", f"Connected. Cached {len(self.catalogue.items())} available matches.")
 
     def _observe(self, identity: str, need_tags: bool) -> Observation:
         match = self.catalogue.find(identity)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -54,15 +55,53 @@ def extract_matches(links: list[dict[str, str]]) -> list[dict[str, str]]:
     return list(matches.values())
 
 
+def team_libraries(links: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Read only team routes supplied by Hudl's normal navigation selector."""
+    from app.connectors.hudl_metadata import age_group
+
+    teams: dict[str, dict[str, str]] = {}
+    for link in links:
+        url = link.get("href", "")
+        context = re.fullmatch(r"https://www\.hudl\.com/ui/webnav/context/team/([0-9]+)/?", url)
+        library = re.fullmatch(
+            r"https://(?:app|www)\.hudl\.com/watch/team/([0-9]+)/analyze/?#*", url
+        )
+        found = context or library
+        group = age_group(link.get("text", ""))
+        if found and re.fullmatch(r"U[0-9]{1,2}", group):
+            teams[found.group(1)] = {
+                "url": url.split("#", 1)[0],
+                "age_group": group,
+                "team_id": found.group(1),
+            }
+    return list(teams.values())
+
+
+def clean_catalogue(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    clean: dict[str, dict[str, Any]] = {}
+    for item in items:
+        for match in extract_matches(
+            [{"href": item.get("url", ""), "text": item.get("title", "")}]
+        ):
+            saved = clean.setdefault(match["id"], dict(match))
+            groups = item.get("age_groups")
+            if isinstance(groups, list):
+                valid = [
+                    g for g in groups if isinstance(g, str) and re.fullmatch(r"U[0-9]{1,2}", g)
+                ]
+                saved["age_groups"] = sorted(
+                    set(saved.get("age_groups", []) + valid), key=lambda g: int(g[1:])
+                )
+    return list(clean.values())
+
+
 class Catalogue:
     def __init__(self, directory: Path) -> None:
         self.directory = directory
         self.path = directory / "matches.json"
 
     def replace(self, items: list[dict[str, Any]]) -> None:
-        clean = extract_matches(
-            [{"href": i.get("url", ""), "text": i.get("title", "")} for i in items]
-        )
+        clean = clean_catalogue(items)
         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         descriptor, temporary = tempfile.mkstemp(dir=self.directory, suffix=".tmp")
         try:
@@ -72,22 +111,16 @@ class Catalogue:
         finally:
             Path(temporary).unlink(missing_ok=True)
 
-    def items(self) -> list[dict[str, str]]:
+    def items(self) -> list[dict[str, Any]]:
         try:
             data = json.loads(self.path.read_text())
             if not isinstance(data, list):
                 return []
-            return extract_matches(
-                [
-                    {"href": i.get("url", ""), "text": i.get("title", "")}
-                    for i in data
-                    if isinstance(i, dict)
-                ]
-            )
+            return clean_catalogue([i for i in data if isinstance(i, dict)])
         except (OSError, ValueError):
             return []
 
-    def find(self, identity: str) -> dict[str, str]:
+    def find(self, identity: str) -> dict[str, Any]:
         for item in self.items():
             if item["id"] == identity:
                 return item

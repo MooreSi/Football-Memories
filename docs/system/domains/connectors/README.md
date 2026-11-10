@@ -68,8 +68,8 @@ red for this case, then green after the guard.
 
 ## Connected Library and highest quality (D-015)
 `GET /library` on the companion joins strict served catalogue identities with
-private detail/image cache. Age labels derive from actual video titles (mixed
-labels remain mixed, absent labels Unclassified). Successful normal library
+private detail/image cache. Legacy age labels derive from video titles; D-017 supersedes that for refreshed
+catalogues with actual team-library memberships. Successful normal library
 responses supply thumbnailUri values; fetch them serially with the ephemeral
 browser, saving only image bytes under hashed filenames. Real run cached all
 100 thumbnails, including 90 U10 videos. Never persist the thumbnail URL.
@@ -105,3 +105,21 @@ with the browser context so they cannot leak across accounts.
 the season boundary (matching Import). Invalid/undated titles are Unclassified.
 Local metadata polling does not trigger Hudl discovery; external refresh remains
 an explicit action with the existing serial scroll bounds and stop conditions.
+
+## Team selector (spec 140, D-017)
+The normal team dropdown serves `/ui/webnav/context/team/<id>` links, which
+redirect to its accessible library. Read IDs from those links only. The selected
+team link can append hash-only fragments; strip those to its served library
+route. The image alt text adds Team Avatar to the accessible name, so use visible
+numbered team text when locating the selector. Closed-menu context anchors can
+already exist with empty text: their presence alone does not mean the menu was
+read. Open it to read real team labels. Login can land at Home first; follow a
+served Video library before opening the selector.
+
+Discovery visits libraries serially within the unchanged 20-library/60-scroll
+bounds and checks the actual resulting team ID before classifying videos. Cache
+only validated `age_groups` alongside canonical video metadata; union shared
+memberships. API and frontend filters prefer memberships over title ages. A U11
+library can legitimately contain videos whose older titles say U10. Legacy
+caches retain title fallback until refreshed. Live counts and checks are in
+spec 140; no real team IDs or roster fixtures are committed.

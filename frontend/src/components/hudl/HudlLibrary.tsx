@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Film, RefreshCw } from "lucide-react";
-import { hudlRequest, useHudlLibrary, useHudlStatus } from "../../api/hudl";
+import { hudlAgeGroups, hudlRequest, useHudlLibrary, useHudlStatus } from "../../api/hudl";
 import { Button } from "../ui/Button";
 
 export type HudlFilters = { age: string; season: string; search: string; offlineOnly?: boolean };
@@ -16,7 +16,7 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
   const [savedSeason, setSavedSeason] = useState("");
   const [shown, setShown] = useState(12);
   const videos = library.data ?? [];
-  const groups = [...new Set(videos.map(m => m.age_group))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const groups = [...new Set(videos.flatMap(hudlAgeGroups))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const seasons = [...new Set(videos.map(m => m.season_label || "Unclassified"))].sort().reverse();
   const age = filters?.age ?? savedAge;
   const season = filters?.season ?? savedSeason;
@@ -33,7 +33,7 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
       setSavedAge(""); localStorage.removeItem("fm.hudl.age");
     }
   }, [library.data, filters, savedAge]);
-  const matches = videos.filter(m => !filters?.offlineOnly && (!age || m.age_group === age)
+  const matches = videos.filter(m => !filters?.offlineOnly && (!age || hudlAgeGroups(m).includes(age))
     && (!season || (m.season_label || "Unclassified") === season)
     && (!filters?.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
 
@@ -67,7 +67,7 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
         <div className="relative aspect-video overflow-hidden bg-ink-800">
           {m.thumbnail_url ? <img crossOrigin="anonymous" src={m.thumbnail_url} alt={m.title} loading="lazy" className="size-full object-cover" />
             : <div className="grid h-full place-items-center text-fg-subtle"><Film size={28} /><span className="text-xs">Thumbnail pending refresh</span></div>}
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{m.age_group} · Hudl</span>
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{hudlAgeGroups(m).join(" / ")} · Hudl</span>
         </div>
         <div className="space-y-2 p-4"><h3 className="text-sm font-semibold leading-snug">{m.title}</h3>
           <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
