@@ -1,3 +1,4 @@
+import { Overlay } from '../components/ui/Overlay';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -11,8 +12,7 @@ import { markHudlMomentWatched } from '../lib/hudlWatched';
 
 function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose: (combined: boolean) => void; onCancel: () => void }) {
   const title = `Download ${count} ${count === 1 ? 'moment' : 'moments'}`;
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/70 p-4" onClick={onCancel}>
-    <div role="dialog" aria-modal="true" aria-label={title} className="panel w-full max-w-md space-y-4 p-5" onClick={e => e.stopPropagation()}>
+  return <Overlay label={title} onClose={onCancel}>
       <h2 className="text-lg font-semibold">{title}</h2>
       <p className="text-sm text-fg-muted">Clips are encoded as H.264 MP4 at the match's original resolution so they play on any phone, browser or TV.</p>
       <button type="button" className="tile flex w-full items-start gap-3 p-4 text-left hover:border-accent/60" onClick={() => onChoose(false)}>
@@ -24,8 +24,7 @@ function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose
         <span><span className="block font-semibold">One combined video</span><span className="block text-xs text-fg-muted">Every moment back to back, in match order</span></span>
       </button>
       <div className="flex justify-end"><Button variant="ghost" onClick={onCancel}>Cancel</Button></div>
-    </div>
-  </div>;
+  </Overlay>;
 }
 
 function downloadLabel(filename?: string): string {

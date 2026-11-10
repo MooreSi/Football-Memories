@@ -1,3 +1,4 @@
+import { Overlay } from "../ui/Overlay";
 import { RotateCw } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { Button } from "../ui/Button";
@@ -70,8 +71,7 @@ export function PhotoCropper({ file, onCancel, onSave }: { file: File; onCancel:
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/75 p-4" onClick={onCancel}>
-      <div role="dialog" aria-modal="true" aria-label="Crop photo" className="panel w-full max-w-sm space-y-4 p-5" onClick={(e) => e.stopPropagation()}>
+    <Overlay label="Crop photo" onClose={onCancel} className="max-w-sm">
         <h2 className="text-lg font-semibold">Crop photo</h2>
         {failed ? (
           <p className="text-sm text-danger">The browser could not open this picture. Try a JPEG or PNG (on iPhone, share it as "Most Compatible").</p>
@@ -98,7 +98,6 @@ export function PhotoCropper({ file, onCancel, onSave }: { file: File; onCancel:
           <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
           <Button type="button" variant="primary" disabled={!image} onClick={save}>Save photo</Button>
         </div>
-      </div>
-    </div>
+    </Overlay>
   );
 }

@@ -1,3 +1,4 @@
+import { Overlay } from "../ui/Overlay";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, FolderInput, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -62,16 +63,14 @@ export function DownloadFolderSettings() {
         </>
       )}
       {confirm && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/70 p-4" onClick={() => setConfirm(undefined)}>
-          <div role="dialog" aria-modal="true" aria-label={`Delete ${confirm}?`} className="panel w-full max-w-md space-y-4 p-5" onClick={(e) => e.stopPropagation()}>
+        <Overlay label={`Delete ${confirm}?`} onClose={() => setConfirm(undefined)}>
             <h2 className="text-lg font-semibold break-all">Delete {confirm}?</h2>
             <p className="text-sm text-fg-muted">The file moves to the Mac's Trash, so you can put it back from Finder until the Trash is emptied. Matches already imported into the Library keep their own copy. If you have not imported it, this may be your only copy.</p>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setConfirm(undefined)}>Cancel</Button>
               <Button variant="primary" onClick={() => { remove.mutate(confirm); setConfirm(undefined); }}><Trash2 size={14} aria-hidden /> Move to Trash</Button>
             </div>
-          </div>
-        </div>
+        </Overlay>
       )}
     </section>
   );

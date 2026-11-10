@@ -81,3 +81,16 @@ it("starts a portrait photo aligned to the top so the head stays in frame", asyn
   // Preview canvas is 640 px: centred would translate y by 320; top-aligned moves it down by half the overflow.
   await vi.waitFor(() => expect(translate).toHaveBeenLastCalledWith(320, 640));
 });
+
+it("draws the popup above the whole page so Save is never covered", async () => {
+  renderPanel();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: /Edit/ }));
+  await user.upload(screen.getByLabelText("Choose a photo"), big());
+  const dialog = await screen.findByRole("dialog", { name: "Crop photo" });
+  const overlay = dialog.parentElement!;
+  expect(overlay.parentElement).toBe(document.body);
+  expect(overlay.className).toMatch(/z-\[100\]/);
+  expect(dialog.className).toMatch(/overflow-y-auto/);
+  expect(dialog.className).toMatch(/max-h-/);
+});
