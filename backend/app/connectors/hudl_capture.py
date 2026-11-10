@@ -25,6 +25,10 @@ class CaptureError(ValueError):
     """Safe, user-facing capture failure (never includes response bodies or URLs)."""
 
 
+class UnsyncedTags(CaptureError):
+    """Tag ranges cannot be trusted; the independently authorized video may still play."""
+
+
 @dataclass(frozen=True)
 class Moment:
     source_event_id: str
@@ -78,7 +82,7 @@ def parse_moments(
             if session.get("dataSource", {}).get("feedType") != "SportsCode":
                 raise CaptureError("This tagging format is unsupported; no tags were saved.")
             if session.get("taggingSessionMetadata", {}).get("isSyncedToVideo") is not True:
-                raise CaptureError("The tag timeline is not synced to video; no tags were saved.")
+                raise UnsyncedTags("The tag timeline is not synced to video; no tags were saved.")
             items = session.get("moments", {}).get("items", [])
             if session.get("moments", {}).get("totalCount", len(items)) != len(items):
                 raise CaptureError("The tag data is incomplete; no tags were saved.")

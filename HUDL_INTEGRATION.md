@@ -202,3 +202,9 @@ selector. Discovery opens the menu, follows its served team-context links and
 caches each video's library memberships. A historical title does not change its
 team grouping; shared videos appear in each applicable group. Legacy caches keep
 the old title fallback until refreshed. All matches retains shared filters.
+
+Spec 150 separates unverified tag sync from video availability. Connected videos
+can stream/download at highest quality with a visible unsynced-tag warning.
+Unverified tag ranges are omitted; player/moment exports remain unavailable for
+that match. No sync flags/offsets are changed. Access errors still stop capture.
+Legacy manual URL/tag capture retains strict tag requirements.

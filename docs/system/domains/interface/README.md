@@ -29,3 +29,8 @@ Spec 140 makes the connected age selector follow actual Hudl team-library
 memberships rather than labels in match titles. All three accessible groups are
 listed; shared videos match each applicable group and display their memberships.
 Keep the shared All matches filters and dashboard placement unchanged.
+
+Spec 150 displays unverified Hudl tag sync as a separate match warning, while
+stream/full-video controls continue to work. Show no fabricated moments or
+player ranges; zero ranges keep moment export disabled. Completed unsynced-tag
+video captures offer Import offline match without promising a populated tag file.

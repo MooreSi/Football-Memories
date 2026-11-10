@@ -6,6 +6,14 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Independent Hudl video / tag-sync outcomes (spec 150)
+
+| Task | Status | Notes |
+|---|---|---|
+| Allow account video with unverified tag sync | done | narrow exception; strict parser and access failures unchanged |
+| Explicit tag warning and disabled invalid exports | done | UI regression and reported match checked |
+| Full source capture | partial | real U11 1080p capture running; offline tiny-video copy verified; live final verification pending |
+
 ## Hudl team-library age groups (spec 140)
 
 | Task | Status | Notes |
@@ -123,6 +131,23 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-10 Unsynced tags no longer block account video (codex/hudl-optional-tags)
+- Backend stream/download regressions watched red/green; full copy uses real
+  4-second media with identical SHA-256 and zero CSV rows. GraphQL-error test
+  passed initially, failed when catch was deliberately broadened, then passed
+  after restoration. Existing strict parser tests unchanged.
+- Final `uv run pytest -q`: 267 SQLite and 267 PostgreSQL passed; ruff
+  check/format, mypy and alembic no drift green. Frontend `npm test`: 99 passed;
+  typecheck/build green. Docker rebuilt/health OK; no CI workflow.
+- Reported U11 match now prepares a stream and shows the separate unsynced-tag
+  warning with moment export disabled. Full match capture started successfully
+  at 1080p, 6195.48 seconds; live final completion/playback not yet verified.
+  Helper on 8766 must stay running while busy. Proof in ignored local data.
+- Eight pre-existing inbox MP4/CSV files checked against SHA-256 baseline: zero
+  changes. No upstream sync change, invented ranges, credentials/session storage
+  change or existing footage overwrite.
+
 
 ### 2026-11-10 Actual Hudl team age groups (codex/hudl-team-age-groups)
 - Eight backend regressions and one frontend regression watched red/green:

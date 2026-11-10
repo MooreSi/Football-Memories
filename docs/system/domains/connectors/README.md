@@ -123,3 +123,15 @@ memberships. API and frontend filters prefer memberships over title ages. A U11
 library can legitimately contain videos whose older titles say U10. Legacy
 caches retain title fallback until refreshed. Live counts and checks are in
 spec 140; no real team IDs or roster fixtures are committed.
+
+## Optional unsynced tags for account video (spec 150)
+`parse_moments` still rejects an unverified `isSyncedToVideo` flag, now via a
+specific `UnsyncedTags` subclass of CaptureError. Account stream/download catches
+only that condition through `optional_moments`, caches `tag_status=unsynced`
+and zero ranges, and continues video work. GraphQL/access errors are not caught;
+legacy URL capture remains strict. Cache accepts only the known tag-status enum,
+never raw response/error bodies. The UI separates this warning from video status
+and leaves moment/player export disabled. A full copy with no ranges has an
+empty CSV header and still passes duration/checksum/exclusive publication gates.
+Real reported U11 source served 1080p and began full capture successfully; full
+live completion is still pending (see HANDOFF before touching the active helper).

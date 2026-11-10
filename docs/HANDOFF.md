@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/hudl-team-age-groups`**, based on the pushed reference
+- **Current branch: `codex/hudl-optional-tags`**, based on the pushed reference
   redesign branch. Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.
@@ -23,6 +23,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **Spec 150:** unsynced tags no longer block account streaming/full capture.
+  Strict parsing still rejects them; the account adapter records `tag_status`
+  and omits unverified ranges. Match page shows a separate warning; moment/player
+  exports remain disabled without valid ranges. Auth/GraphQL errors still stop.
+  The reported U11 match prepared a stream with an unsynced warning. Its real
+  1080p full-match capture (103m15s) is RUNNING on host helper 8766 (PID 56845).
+  **Do not restart the helper while it is busy.** Check `/account` with the app's
+  Origin header; completion publishes verified MP4/empty tag CSV to the inbox.
+  Live full-file completion/playback have not yet been verified. Offline real
+  tiny-media capture/copy and checksum tests pass; all 8 prior inbox files have
+  unchanged SHA-256. App preview remains on download progress.
 - **Spec 140:** connected ages now come from the real Hudl team selector,
   superseding title-based grouping. Follow served context links, verify team
   identity, preserve membership lists across cache restarts/shared videos. Hidden
@@ -89,7 +100,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 264 passed on SQLite and Postgres; frontend 98 passed.
+- Tests: backend 267 passed on SQLite and Postgres; frontend 99 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

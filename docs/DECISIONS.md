@@ -4,6 +4,17 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-018 (2026-11-10) Video availability is independent of tag sync
+The reported U11 match's strict unsynced-tag error prevented both streaming and
+full-match capture. Keep `parse_moments` strict and expose a specific unsynced
+exception. Only the account video adapter may omit these ranges and record a
+sanitized tag status; GraphQL/access failures and other capture errors still
+stop. Never force the upstream sync flag or guess an offset. Legacy explicit
+URL/tag capture retains strict behavior. Warn separately in the match screen;
+no moment/player exports without verified ranges. Full video copies keep the
+highest served quality, source verification, exclusive publication and empty
+CSV header when there are no validated moments. Existing files remain untouched.
+
 ## D-017 (2026-11-10) Hudl team selector defines connected age groups
 The owner points to the actual U10/U11/U12 team selector and requests those
 libraries, especially U11. This supersedes D-015's title-based age grouping for

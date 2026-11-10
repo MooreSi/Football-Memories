@@ -10,7 +10,10 @@ import re
 import tempfile
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.connectors.hudl_capture import Moment
 
 
 def age_group(title: str) -> str:
@@ -34,6 +37,19 @@ def season_label(title: str) -> str:
 
 def capture_key(identity: str) -> str:
     return hashlib.sha256(identity.encode()).hexdigest()[:16]
+
+
+def optional_moments(
+    payloads: list[dict[str, Any]], identity: str, duration: float
+) -> tuple[list[Moment], str]:
+    """Do not claim unverified tag times; keep the video independent of tag sync."""
+    from app.connectors.hudl_capture import UnsyncedTags, clip_tag_padding, parse_moments
+
+    try:
+        moments = parse_moments(clip_tag_padding(payloads, identity, duration), identity, set())
+    except UnsyncedTags:
+        return [], "unsynced"
+    return moments, "synced" if moments else "none"
 
 
 class MatchCache:
@@ -67,6 +83,8 @@ class MatchCache:
                         "category": item["category"][:200],
                     }
                 )
+        if details.get("tag_status") in {"unsynced", "synced", "none"}:
+            clean["tag_status"] = details["tag_status"]
         for key in ("duration_s", "quality_height"):
             value = details.get(key)
             if isinstance(value, (int, float)) and math.isfinite(value) and value > 0:

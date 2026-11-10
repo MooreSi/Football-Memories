@@ -30,7 +30,7 @@ from app.connectors.hudl_capture import (
     parse_moments,
     save_capture,
 )
-from app.connectors.hudl_metadata import MatchCache, capture_key
+from app.connectors.hudl_metadata import MatchCache, capture_key, optional_moments
 
 LOGIN_URL = "https://www.hudl.com/login"
 
@@ -637,13 +637,12 @@ class BrowserConnection:
             raise CaptureError("Unsupported nested stream manifest.")
         if isinstance(observation.payloads, list) and observation.payloads:
             duration = self._page.locator("video").first.evaluate("element => element.duration")
-            moments = parse_moments(
-                clip_tag_padding(observation.payloads, identity, duration), identity, set()
-            )
+            moments, tag_status = optional_moments(observation.payloads, identity, duration)
             self.details.write(
                 identity,
                 {
                     "duration_s": duration,
+                    "tag_status": tag_status,
                     "moments": [
                         {
                             "id": m.source_event_id,
@@ -694,13 +693,13 @@ class BrowserConnection:
             return destination
         video = self._page.locator("video").first
         duration = video.evaluate("element => element.duration")
-        payloads = clip_tag_padding(observation.payloads, identity, duration)
-        moments = parse_moments(payloads, identity, set())
+        moments, tag_status = optional_moments(observation.payloads, identity, duration)
         self.details.write(
             identity,
             {
                 "duration_s": duration,
                 "quality_height": rendition.height,
+                "tag_status": tag_status,
                 "moments": [
                     {
                         "id": m.source_event_id,
