@@ -11,12 +11,47 @@ import { QueuePlayer } from "../components/clips/QueuePlayer";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
 import { moveItem, removeAt } from "../lib/queue";
+import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
+import { latestFirst } from "../lib/hudlFixture";
+import { HudlMatchView } from "./HudlMatchPage";
 
 const PAGE = 60;
 const START: MomentFilters = { categories: [], playerIds: [], playerMode: "any", favourites: false, unwatched: false, sort: "newest" };
 
-/** Brief section 10. Layout follows reference 02: filter rail + playlists left, player + clip bar centre. */
+/** Clips: pick one Hudl match (newest for the selected age group by default) or
+ *  search moments across imported matches. */
 export function ClipExplorerPage() {
+  const library = useHudlLibrary();
+  const [chosen, setChosen] = useState<string | null>(null);
+  const age = localStorage.getItem("fm.hudl.age") || "";
+  const all = latestFirst(library.data ?? []);
+  const forAge = all.filter((m) => !age || hudlAgeGroups(m).includes(age));
+  const fallback = forAge[0]?.id ?? all[0]?.id ?? "imported";
+  const selected = chosen && (chosen === "imported" || all.some((m) => m.id === chosen)) ? chosen : fallback;
+  if (!all.length) return <ImportedClips />;
+  return (
+    <div className="space-y-5">
+      <label className="flex flex-wrap items-center gap-3 text-sm text-fg-muted">
+        Match
+        <select aria-label="Match" className="field w-auto max-w-full rounded-full" value={selected} onChange={(e) => setChosen(e.target.value)}>
+          <optgroup label={age ? `Hudl · ${age} (newest first)` : "Hudl (newest first)"}>
+            {forAge.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
+          </optgroup>
+          {age && forAge.length < all.length && (
+            <optgroup label="Hudl · other age groups">
+              {all.filter((m) => !forAge.includes(m)).map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
+            </optgroup>
+          )}
+          <option value="imported">All imported matches (offline clips)</option>
+        </select>
+      </label>
+      {selected === "imported" ? <ImportedClips /> : <HudlMatchView key={selected} id={selected} embedded />}
+    </div>
+  );
+}
+
+/** Brief section 10. Layout follows reference 02: filter rail + playlists left, player + clip bar centre. */
+function ImportedClips() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<MomentFilters>(START);

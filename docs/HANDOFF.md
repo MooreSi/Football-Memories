@@ -24,6 +24,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **D-021 (2026-11-10, owner request):** sign-in Chrome is minimized (not
+  headless, see D-021); progress bar with time left for moment exports; Play
+  Tagged highlights the playing moment green, hides video controls unless the
+  pointer is over the video and skips seeks between adjacent moments; Clips
+  has a match picker (newest Hudl match for the selected age group); Library
+  Latest match and Recent moments follow that match; photo crop/resize dialog
+  and nginx upload limit fixed (was 1 MB). Browser-checked: Library latest
+  panel (U11 Stoke, Lawson Moore moments). **Not live-verified:** minimized
+  sign-in against Hudl, export progress on a real export, smoothness of real
+  moment transitions, photo crop with a real phone photo.
 - **D-020 (2026-11-10, owner request):** match page "Play Tagged" plays the
   chosen player's/selected moments back to back; moment download asks for
   separate files (ZIP) or one combined MP4, both re-encoded H.264 at source
@@ -123,7 +133,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 290 passed on SQLite and Postgres; frontend 118 (see D-020 note on the one updated match-page test).
+- Tests: backend 295 passed on SQLite and Postgres; frontend 131 (see D-020 note on the one updated match-page test).
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

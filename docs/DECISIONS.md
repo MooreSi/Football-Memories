@@ -4,6 +4,22 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-021 (2026-11-10) Hidden sign-in window, export progress, Clips match picker
+Owner requests. Account sign-in launches the same real Chrome (headed) and
+minimizes it immediately via CDP `Browser.setWindowBounds`. Headless Chrome
+was rejected because it reports `HeadlessChrome` in its user agent (rule 3)
+and spoofing it would disguise automation; macOS clamps off-screen window
+positions, so `--window-position` cannot hide it. A verification, CAPTCHA or
+terms page restores the window for the owner and stops (never automated).
+Chrome still shows in the Dock while connected. Moment exports report
+step/fraction/time-left in `status.progress`. Clips opens on a match picker
+defaulting to the newest Hudl match for the selected age group; imported
+clips remain one option. Library "Latest match" and "Recent moments" follow
+that same match (the primary player's moments first). Photos: nginx allowed
+only 1 MB (also blocking 200 MB backup uploads); now 210 MB with backend
+limits unchanged. Oversized or non-JPEG/PNG/WebP photos open a browser crop,
+zoom and rotate step that uploads a 1024 px JPEG.
+
 ## D-020 (2026-11-10) Player tags indexed for every match; downloads re-encoded; download folder
 Owner requests. (1) After Test/Refresh the helper visits each match whose tags
 were never recorded and stores only tag metadata (no video); pacing is

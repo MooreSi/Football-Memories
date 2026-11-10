@@ -13,7 +13,7 @@ const local: MatchSummary = {
   opponent: "Stoke City", match_date: "2026-11-08", competition: null, event_count: 0, media_id: 3,
   duration_s: 60, thumbnail_url: null, offline: true,
 };
-const remote = [
+const remote: Record<string, unknown>[] = [
   { id: "wba", title: "261101 U11s v West Brom (A)", age_group: "U11", age_groups: ["U11"], season_label: "2026/27", tag_status: "synced", moments: [{ id: "1", category: "Goal", time_s: 1, duration_s: 1 }] },
   { id: "u10", title: "261109 U10 v Derby (H)", age_group: "U10", age_groups: ["U10"], season_label: "2026/27" },
   { id: "stoke", title: "261108 U11 v Stoke (A)", age_group: "U11", age_groups: ["U11"], season_label: "2026/27", thumbnail_url: "http://127.0.0.1:8766/account/match/stoke/thumbnail" },
@@ -57,4 +57,28 @@ it("features the latest Hudl match for the selected age group and steps with the
   await user.click(within(hero).getByRole("button", { name: "Previous match" }));
   expect(within(hero).getByRole("heading", { name: "Aston Villa vs. Stoke City U11" })).toBeInTheDocument();
   expect(within(hero).getByRole("button", { name: "Previous match" })).toBeDisabled();
+});
+
+it("shows the latest Hudl match for the age group and that match's moments", async () => {
+  localStorage.setItem("fm.hudl.age", "U11");
+  render();
+  const latest = await screen.findByRole("region", { name: "Latest match" });
+  expect(await within(latest).findByText("Stoke City")).toBeInTheDocument();
+  expect(within(latest).getByText("Aston Villa")).toBeInTheDocument();
+  expect(within(latest).getByRole("link", { name: /Watch now/ })).toHaveAttribute("href", "/hudl/stoke");
+  const recent = screen.getByRole("region", { name: "Recent moments" });
+  expect(within(recent).getByText(/Moments appear here once this match's tags are indexed/)).toBeInTheDocument();
+});
+
+it("lists moments from the latest match for the selected age group", async () => {
+  localStorage.setItem("fm.hudl.age", "U11");
+  remote[2] = { ...remote[2], moments: [{ id: "g1", category: "Goal", time_s: 600, duration_s: 5 }, { id: "s1", category: "Save", time_s: 30, duration_s: 5 }] };
+  render();
+  await screen.findByText(/Latest tagged moments in this match/);
+  const recent = screen.getByRole("region", { name: "Recent moments" });
+  const links = within(recent).getAllByRole("link");
+  expect(links[0]).toHaveAttribute("href", "/hudl/stoke?moment=g1");
+  expect(links[0]).toHaveTextContent("10:00");
+  expect(links[0]).toHaveTextContent("Goal");
+  expect(links).toHaveLength(2);
 });

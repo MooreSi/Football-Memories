@@ -14,6 +14,7 @@ import { Spinner } from "../components/ui/Spinner";
 import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
 import { HudlHero } from "../components/library/HudlHero";
+import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
 import { clubName, latestFirst } from "../lib/hudlFixture";
 
 const PAGE_SIZE = 24;
@@ -67,6 +68,9 @@ export function LibraryPage() {
   const featured = latest.data?.items ?? [];
   const heroMatches = latestFirst((remote.data ?? []).filter(m => !ageGroup || hudlAgeGroups(m).includes(ageGroup)));
   const club = clubName(featured[0]?.team_name);
+  const prefs = useQuery({ queryKey: ["preferences"], queryFn: api.preferences });
+  const players = useQuery({ queryKey: ["players"], queryFn: api.players });
+  const primaryName = players.data?.find(p => p.id === prefs.data?.primary_player_id)?.display_name;
   const maxTag = Math.max(1, ...(s?.top_tags.map((t) => t.count) ?? [1]));
 
 
@@ -114,7 +118,8 @@ export function LibraryPage() {
 
       {/* Right: latest match + recent moments (reference 1 right column) */}
       <div className="dashboard-latest">
-        <LatestMatchPanel match={featured[0]} moments={s?.recent_moments ?? []} />
+        {heroMatches[0] ? <HudlLatestPanel match={heroMatches[0]} club={club} age={ageGroup} player={primaryName} />
+          : <LatestMatchPanel match={featured[0]} moments={s?.recent_moments ?? []} />}
       </div>
 
       {/* Centre: featured hero + all matches */}

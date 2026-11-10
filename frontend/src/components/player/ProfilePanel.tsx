@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, ChevronLeft, ChevronRight, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
+import { Camera, ChevronLeft, Crop, ChevronRight, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import type { PlayerProfile } from "../../api/types";
 import { initials } from "../TeamBadge";
 import { Button } from "../ui/Button";
+import { PhotoCropper, SERVER_LIMIT, SERVER_TYPES } from "./PhotoCropper";
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
@@ -30,6 +31,8 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
     },
   });
   const photoInput = useRef<HTMLInputElement>(null);
+  const cropInput = useRef<HTMLInputElement>(null);
+  const [cropping, setCropping] = useState<File>();
   const upload = useMutation({
     mutationFn: (file: File) => api.uploadPhoto(player.id, file),
     onSuccess: () => void qc.invalidateQueries(),
@@ -80,17 +83,34 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
                 <input
                   ref={photoInput}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
                   aria-label="Choose a photo"
                   className="sr-only"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) upload.mutate(f);
+                    // Too big or a format the server cannot read: resize/crop in the browser first.
+                    if (f && (f.size > SERVER_LIMIT || !SERVER_TYPES.includes(f.type))) setCropping(f);
+                    else if (f) upload.mutate(f);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={cropInput}
+                  type="file"
+                  accept="image/*"
+                  aria-label="Choose a photo to crop"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) setCropping(f);
                     e.target.value = "";
                   }}
                 />
                 <Button type="button" onClick={() => photoInput.current?.click()} disabled={upload.isPending}>
                   <Camera size={15} aria-hidden /> {upload.isPending ? "Uploading" : player.photo_url ? "Change photo" : "Add photo"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => cropInput.current?.click()} disabled={upload.isPending}>
+                  <Crop size={15} aria-hidden /> Crop &amp; resize a photo
                 </Button>
                 {player.photo_url && (
                   <Button type="button" variant="ghost" onClick={() => removePhoto.mutate()} disabled={removePhoto.isPending}>
@@ -99,10 +119,14 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
                 )}
               </div>
               <p className="text-xs text-fg-subtle">
-                JPEG, PNG or WebP up to 10 MB. Stored only on this computer, cropped square, with location and camera
-                details removed.
+                Any photo size. Large or unusual pictures open a crop and resize step first. Stored only on this
+                computer, cropped square, with location and camera details removed.
               </p>
               {photoError && <p role="alert" className="text-sm text-danger">{photoError.message}</p>}
+              {cropping && (
+                <PhotoCropper file={cropping} onCancel={() => setCropping(undefined)}
+                  onSave={(photo) => { setCropping(undefined); upload.mutate(photo); }} />
+              )}
             </div>
             <label className="space-y-1 text-sm sm:col-span-3">
               <span className="text-fg-muted">Display name</span>

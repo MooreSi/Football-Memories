@@ -6,7 +6,7 @@ import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatu
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
 import { formatClock } from '../lib/format';
-import { advanceTagged, taggedPlaylist } from '../lib/taggedPlayback';
+import { advanceTagged, needsSeek, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 
 function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose: (combined: boolean) => void; onCancel: () => void }) {
   const title = `Download ${count} ${count === 1 ? 'moment' : 'moments'}`;
@@ -36,15 +36,22 @@ function downloadLabel(filename?: string): string {
 export function HudlMatchPage() {
   const id = useParams().id!;
   const [params] = useSearchParams();
+  return <HudlMatchView key={id} id={id} initialCode={params.get('player') || ''} initialMoment={params.get('moment') || undefined} />;
+}
+
+/** One Hudl match: stream, tagged moments by player/code, Play Tagged and downloads.
+ *  Used by the match page and, with a match picker above it, by Clips. */
+export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = false }: { id: string; initialCode?: string; initialMoment?: string; embedded?: boolean }) {
   const library = useHudlLibrary();
   const status = useHudlStatus();
   const qc = useQueryClient();
-  const [code, setCode] = useState(params.get('player') || '');
+  const [code, setCode] = useState(initialCode);
   const [selected, setSelected] = useState<string[]>([]);
   const [seek, setSeek] = useState<{ time: number; nonce: number }>();
   const [asking, setAsking] = useState(false);
   const [queue, setQueue] = useState<{ list: HudlMoment[]; index: number }>();
   const started = useRef(false);
+  const linked = useRef(false);
   const action = useMutation({
     mutationFn: (body: unknown) => hudlRequest('/account/action', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['hudl-account'] }),
@@ -61,6 +68,14 @@ export function HudlMatchPage() {
   useEffect(() => { if (own && !blocked) void qc.invalidateQueries({ queryKey: ['hudl-library'] }); }, [status.data?.state, blocked, own, qc]);
 
   const moments = match?.moments || [];
+  useEffect(() => {
+    const target = moments.find(m => m.id === initialMoment);
+    if (target && !linked.current) {
+      linked.current = true;
+      setQueue({ list: [target], index: 0 });
+      setSeek({ time: target.time_s, nonce: Date.now() });
+    }
+  }, [moments, initialMoment]);
   const codes = [...new Set(moments.map(m => m.category))].sort();
   const filtered = moments.filter(m => !code || m.category === code);
   const chosen = selected.length ? selected : filtered.map(m => m.id);
@@ -79,7 +94,7 @@ export function HudlMatchPage() {
     if (next === null) setQueue(undefined);
     else if (next !== queue.index) {
       setQueue({ list: queue.list, index: next });
-      setSeek({ time: queue.list[next].time_s, nonce: Date.now() });
+      if (needsSeek(queue.list[next], time)) setSeek({ time: queue.list[next].time_s, nonce: Date.now() });
     }
   };
   const download = (combined: boolean) => {
@@ -91,7 +106,7 @@ export function HudlMatchPage() {
   if (!match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">{library.isPending ? 'Loading cached match…' : 'This match is not cached. Refresh Hudl from Library.'}</p></div>;
   return <div className="analysis-workspace">
     <aside className="analysis-rail panel overflow-hidden">
-      <div className="space-y-2 border-b border-line p-4"><Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link><h2 className="text-sm font-semibold">{match.title}</h2><p className="text-xs text-fg-subtle">{match.age_group} · {moments.length} moments</p></div>
+      <div className="space-y-2 border-b border-line p-4">{!embedded && <Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link>}<h2 className="text-sm font-semibold">{match.title}</h2><p className="text-xs text-fg-subtle">{match.age_group} · {moments.length} moments</p></div>
       <div className="max-h-[75vh] overflow-y-auto">
         <button className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!code ? 'bg-blue-600 text-white' : 'text-fg-muted'}`} onClick={() => { setCode(''); setSelected([]); }}>ALL MOMENTS <span>{moments.length}</span></button>
         {codes.map(c => <button key={c} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs ${code === c ? 'bg-blue-600 text-white' : 'text-fg-muted hover:bg-white/5'}`} onClick={() => { setCode(c); setSelected([]); }}><span className="truncate">{c}</span><span>{moments.filter(m => m.category === c).length}</span></button>)}
@@ -99,7 +114,7 @@ export function HudlMatchPage() {
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
       <header className="flex flex-wrap items-center gap-4">
-        <div className="mr-auto"><Link to="/" className="text-sm text-fg-muted">← Library</Link><p className="screen-eyebrow mt-4">{match.age_group} · HUDL MATCH</p><h1 className="text-2xl font-semibold">{match.title}</h1><p className="mt-2 text-sm text-fg-muted">Highest available source quality · Original-resolution offline copies</p></div>
+        <div className="mr-auto">{!embedded && <Link to="/" className="text-sm text-fg-muted">← Library</Link>}<p className={`screen-eyebrow ${embedded ? '' : 'mt-4'}`}>{match.age_group} · HUDL MATCH</p><h1 className="text-2xl font-semibold">{match.title}</h1><p className="mt-2 text-sm text-fg-muted">Highest available source quality · Original-resolution offline copies</p></div>
         <Button variant="primary" disabled={busy} onClick={() => action.mutate({ action: 'download', match_id: id })}><Download size={16} /> Download full match</Button>
       </header>
       {streamUrl ? <StreamPlayer url={streamUrl} seek={seek} onTime={onTime} /> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}
@@ -107,6 +122,12 @@ export function HudlMatchPage() {
         <ListVideo size={16} className="text-accent" aria-hidden />
         <span className="mr-auto">Playing tagged moment {queue!.index + 1} of {queue!.list.length} · <span className="text-pin">{formatClock(current.time_s)}</span> {current.category}</span>
         <Button variant="ghost" aria-label="Stop tagged playback" onClick={() => setQueue(undefined)}><Square size={14} /> Stop</Button>
+      </div>}
+      {own && status.data?.progress && <div className="panel space-y-2 p-4">
+        <div className="flex flex-wrap justify-between gap-2 text-sm"><span>Step {status.data.progress.step} of {status.data.progress.steps}: {status.data.progress.label}</span><span className="text-fg-muted">{Math.round(status.data.progress.fraction * 100)}% · {timeLeft(status.data.progress.eta_s)}</span></div>
+        <div role="progressbar" aria-label="Download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(status.data.progress.fraction * 100)} className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-ok to-accent transition-[width] duration-500" style={{ width: `${Math.max(2, status.data.progress.fraction * 100)}%` }} />
+        </div>
       </div>}
       {own && <p role="status" className={`text-sm ${status.data?.state === 'error' ? 'text-danger' : 'text-fg-muted'}`}>{status.data?.message}</p>}
       {action.isError && <p role="alert" className="text-danger">{action.error.message}</p>}
@@ -123,7 +144,7 @@ export function HudlMatchPage() {
         {code && <Link to={`/player/hudl/${encodeURIComponent(code)}`}><Button>See every match tagged “{code}”</Button></Link>}
         {match.tag_status === 'unsynced' && <p role="note" className="rounded-xl border border-warn/20 bg-warn/5 p-4 text-sm text-fg-muted">Hudl has not marked this tag timeline as synced. You can still stream or download the full match. Tagged moment and player downloads are unavailable until verified timings are available.</p>}
         {!moments.length && match.tag_status !== 'unsynced' && <p className="text-sm text-fg-muted">Tags load and cache when you open this match, independently of full-match downloads. Videos without supported tags can still stream.</p>}
-        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li className={`tile flex items-center gap-3 p-3 ${current?.id === m.id ? 'border-accent' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => { setQueue(undefined); setSeek({ time: m.time_s, nonce: Date.now() }); }}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{m.category}</span></button><Play size={14} /></li>)}</ul>
+        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li aria-current={current?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${current?.id === m.id ? 'border-2 border-ok shadow-[0_0_0_1px_var(--color-ok)]' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => { setQueue(undefined); setSeek({ time: m.time_s, nonce: Date.now() }); }}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{m.category}</span></button><Play size={14} /></li>)}</ul>
       </section>
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}

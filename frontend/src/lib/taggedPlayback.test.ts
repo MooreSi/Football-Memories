@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { advanceTagged, taggedPlaylist } from "./taggedPlayback";
+import { advanceTagged, needsSeek, taggedPlaylist, timeLeft } from "./taggedPlayback";
 
 const list = taggedPlaylist([
   { id: "b", category: "Sam", time_s: 50, duration_s: 10 },
@@ -19,4 +19,17 @@ it("keeps playing a moment until its tagged range ends, then moves to the next",
 it("stops after the last tagged moment", () => {
   expect(advanceTagged(list, 1, 60)).toBeNull();
   expect(advanceTagged([], 0, 1)).toBeNull();
+});
+
+it("continues without seeking when the next moment starts where playback already is", () => {
+  expect(needsSeek({ id: "n", category: "Sam", time_s: 15.5, duration_s: 5 }, 15)).toBe(false);
+  expect(needsSeek({ id: "n", category: "Sam", time_s: 13, duration_s: 5 }, 15)).toBe(false);
+  expect(needsSeek({ id: "n", category: "Sam", time_s: 50, duration_s: 5 }, 15)).toBe(true);
+  expect(needsSeek({ id: "n", category: "Sam", time_s: 5, duration_s: 2 }, 15)).toBe(true);
+});
+
+it("describes time left in plain words", () => {
+  expect(timeLeft(null)).toBe("estimating time left");
+  expect(timeLeft(8)).toBe("about 8 sec left");
+  expect(timeLeft(150)).toBe("about 3 min left");
 });

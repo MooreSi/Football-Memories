@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 export const HUDL = 'http://127.0.0.1:8766';
 export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number};
 export type HudlMatch = {id:string; title:string; age_group:string; age_groups?:string[]; capture_key:string; season_label?:string; tag_status?:"synced"|"unsynced"|"none"; thumbnail_url?:string|null; moments?:HudlMoment[]; duration_s?:number};
-export type HudlStatus = {state:string; message:string; busy:boolean; syncing?:boolean; configured:boolean; match_id?:string; filename?:string; download_url?:string; stream_url?:string};
+export type HudlProgress = {label:string; step:number; steps:number; done:number; total:number; fraction:number; eta_s:number|null};
+export type HudlStatus = {state:string; message:string; busy:boolean; syncing?:boolean; progress?:HudlProgress|null; configured:boolean; match_id?:string; filename?:string; download_url?:string; stream_url?:string};
 export async function hudlRequest<T>(path:string,body?:unknown):Promise<T> {
  const response=await fetch(HUDL+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const data=await response.json(); if(!response.ok)throw new Error(data.detail||'Hudl helper unavailable');return data;

@@ -176,3 +176,14 @@ never call load on an hls.js MediaSource, which would detach it.
   `--output` parent. Import still reads only the configured inbox.
 - Trash is `~/.Trash` via same-volume `os.rename`; a different volume fails
   safely with nothing removed.
+
+## Hidden sign-in (D-021)
+
+- macOS ignores negative `--window-position` (probe on 2026-11-10 put the
+  window at 0,30). Minimizing through CDP keeps forms, clicks and
+  `document.visibilityState == "visible"` working.
+- Headless `channel="chrome"` reports `HeadlessChrome/<version>` in
+  `navigator.userAgent`; headed Chrome reports `Chrome/<version>`.
+- After a verification prompt the window is restored, but Test still starts a
+  new browser; completing verification there and reusing that session is not
+  implemented.

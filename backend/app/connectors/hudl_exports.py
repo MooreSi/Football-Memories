@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 import uuid
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -67,7 +68,12 @@ def _verify(clip: Path, width: int | None, height: int | None) -> None:
 
 
 def export_ranges(
-    source: Path, moments: list[dict[str, Any]], output: Path, *, combined: bool = False
+    source: Path,
+    moments: list[dict[str, Any]],
+    output: Path,
+    *,
+    combined: bool = False,
+    progress: Callable[[int, int], None] | None = None,
 ) -> Path:
     if not moments:
         raise CaptureError("Select at least one tagged moment or player code.")
@@ -78,11 +84,15 @@ def export_ranges(
     with tempfile.TemporaryDirectory(prefix=".hudl-clips-", dir=output) as folder:
         scratch = Path(folder)
         clips = []
+        total = len(ordered) + (1 if combined else 0)
+        report = progress or (lambda done, total: None)
+        report(0, total)
         for index, moment in enumerate(ordered):
             clip = scratch / f"moment-{index + 1:04}.mp4"
             _encode(source, moment, clip)
             _verify(clip, original.width, original.height)
             clips.append(clip)
+            report(index + 1, total)
         if combined:
             listing = scratch / "list.txt"
             listing.write_text("".join(f"file '{c.name}'\n" for c in clips))
@@ -106,6 +116,7 @@ def export_ranges(
             if not ok or not result.is_file():
                 raise CaptureError("Combining moments failed. The original video is unchanged.")
             _verify(result, original.width, original.height)
+            report(total, total)
         else:
             result = scratch / "moments.zip"
             with zipfile.ZipFile(result, "x", compression=zipfile.ZIP_STORED) as bundle:

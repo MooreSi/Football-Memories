@@ -66,8 +66,14 @@ export function StreamPlayer({ url, seek, onTime }: { url: string; seek?: {time:
     }
     return ()=>element.removeEventListener("loadedmetadata",play);
   },[seek]);
+  // Controls (and their dimming overlay) appear only while the pointer is over the
+  // video, so moving between tagged moments looks like one continuous playback.
+  // Touch screens have no hover, so they keep controls.
+  const touch = typeof window.matchMedia === "function" && window.matchMedia("(hover: none)").matches;
+  const [hover, setHover] = useState(false);
   return <div className="space-y-2">
-    <video ref={video} crossOrigin="anonymous" controls playsInline preload="none"
+    <video ref={video} crossOrigin="anonymous" controls={touch || hover} playsInline preload="none"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       aria-label="Hudl match stream" className="aspect-video w-full rounded-xl bg-black" />
     {error && <p role="alert" className="text-sm text-danger">{error}</p>}
   </div>;

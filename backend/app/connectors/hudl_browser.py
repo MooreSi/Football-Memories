@@ -298,7 +298,8 @@ def authenticate(page: Page, credentials: Any) -> None:
         )
         if challenge.count() and challenge.first.is_visible():
             raise CaptureError(
-                "Hudl requires verification. Complete it in the browser, then test again."
+                "Hudl requires verification. The Hudl window is now shown: complete it there, "
+                "then test again."
             )
         heading = page.get_by_role(
             "heading", name=re.compile(r"^(Verify|Enter.*code|Security check|Accept.*terms)", re.I)
@@ -343,6 +344,9 @@ class BrowserConnection:
         self._syncing = False
         self._cancel_sync = threading.Event()
         self._tag_failures: set[str] = set()
+        self._progress: dict[str, Any] | None = None
+        self._progress_start = 0.0
+        self._steps = 1
         self._browser: Any = None
         self._playwright: Any = None
         self._context: Any = None
@@ -365,8 +369,26 @@ class BrowserConnection:
                 **self._state,
                 "busy": self._pending > 0,
                 "syncing": self._syncing,
+                "progress": dict(self._progress) if self._progress else None,
                 "matches": self.catalogue.items(),
                 "session_active": self._context is not None,
+            }
+
+    def _set_progress(self, label: str, step: int, done: int, total: int) -> None:
+        """Step fraction plus a time-left estimate from this step's own pace."""
+        now = time.monotonic()
+        with self._lock:
+            if not self._progress or self._progress["label"] != label:
+                self._progress_start = now
+            elapsed = now - self._progress_start
+            self._progress = {
+                "label": label,
+                "step": step,
+                "steps": self._steps,
+                "done": done,
+                "total": total,
+                "fraction": done / total if total else 0.0,
+                "eta_s": round(elapsed / done * (total - done), 1) if done else None,
             }
 
     def report(self, state: str, message: str) -> None:
@@ -452,18 +474,37 @@ class BrowserConnection:
         if self._playwright is None:
             self._playwright = sync_playwright().start()
         self._close()
+        # Owner request (2026-11-10): no visible window. Same real Chrome as before
+        # (headless would announce "HeadlessChrome"; never spoof), minimized at once.
+        # macOS clamps off-screen positions, so minimizing is the reliable way to hide.
         self._browser = self._playwright.chromium.launch(channel="chrome", headless=False)
         self._context = self._browser.new_context()
         self._page = self._context.new_page()
+        with contextlib.suppress(Exception):
+            self._window({"windowState": "minimized"})
         self._page.on("response", self._library_response)
         self.report("login", "Signing into Hudl using this Mac's Keychain.")
         self._page.goto(LOGIN_URL, wait_until="domcontentloaded")
-        self._page.bring_to_front()
         credentials = self.loader()
         try:
             authenticate(self._page, credentials)
+        except CaptureError:
+            # Verification, CAPTCHA or terms are the owner's to complete, never automated.
+            with contextlib.suppress(Exception):
+                self._reveal()
+            raise
         finally:
             del credentials
+
+    def _window(self, bounds: dict[str, Any]) -> None:
+        session = self._context.new_cdp_session(self._page)
+        window = session.send("Browser.getWindowForTarget")["windowId"]
+        session.send("Browser.setWindowBounds", {"windowId": window, "bounds": bounds})
+
+    def _reveal(self) -> None:
+        """Restore the hidden Hudl window so the owner can see what Hudl asks."""
+        self._window({"windowState": "normal"})
+        self._page.bring_to_front()
 
     def _library_response(self, response: Response) -> None:
         from app.connectors.hudl_account import library_matches
@@ -742,6 +783,7 @@ class BrowserConnection:
         with tempfile.TemporaryDirectory(prefix=".hudl-download-", dir=self.output) as temp:
 
             def progress(done: int, total: int) -> None:
+                self._set_progress("Caching the full-quality match video", 1, done, total)
                 if done == total or done % 25 == 0:
                     self.report("downloading", f"Downloaded {done}/{total} media parts")
 
@@ -842,6 +884,10 @@ class BrowserConnection:
         moment_ids: list[str] | None = None,
         combined: bool = False,
     ) -> None:
+        if action in {"clips", "download"}:
+            with self._lock:
+                self._steps = 2 if action == "clips" else 1
+                self._progress = None
         try:
             if action == "sync_tags":
                 self._sync_tags()
@@ -866,7 +912,15 @@ class BrowserConnection:
                     raise CaptureError("Select moments loaded from this match first.")
                 source = self._download(identity)
                 self.report("exporting", "Saving moments at original encoded quality…")
-                target = export_ranges(source, selected, self.output, combined=combined)
+                target = export_ranges(
+                    source,
+                    selected,
+                    self.output,
+                    combined=combined,
+                    progress=lambda done, total: self._set_progress(
+                        "Encoding moments", 2, done, total
+                    ),
+                )
                 with self._lock:
                     self._state["filename"] = target.name
                 self.report(
@@ -890,5 +944,7 @@ class BrowserConnection:
         finally:
             with self._lock:
                 self._pending -= 1
+                if action in {"clips", "download"}:
+                    self._progress = None
                 if action == "sync_tags":
                     self._syncing = False

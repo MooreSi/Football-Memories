@@ -52,3 +52,29 @@ it('does not let background tag indexing block streaming this match',async()=>{
  await screen.findByRole('option',{name:'Sam Example'});
  await vi.waitFor(()=>expect(actions()).toContainEqual({action:'stream',match_id:'synthetic-a'}));
 });
+
+it('outlines the playing moment in green',async()=>{
+ open();const user=userEvent.setup();
+ await screen.findByRole('option',{name:'Sam Example'});
+ await user.selectOptions(screen.getByLabelText('Tagged code / player'),'Sam Example');
+ await user.click(screen.getByRole('button',{name:'Play Tagged (2)'}));
+ const playing=screen.getByRole('listitem',{current:true});
+ expect(playing).toHaveTextContent('0:10');
+ expect(playing.className).toMatch(/border-ok/);
+ expect(screen.getAllByRole('listitem').filter(li=>li.className.includes('border-ok'))).toHaveLength(1);
+});
+
+it('shows export progress with the step and time left',async()=>{
+ open({configured:true,state:'exporting',busy:true,match_id:'synthetic-a',message:'Saving moments',progress:{label:'Encoding moments',step:2,steps:2,done:3,total:12,fraction:0.25,eta_s:95}});
+ const bar=await screen.findByRole('progressbar',{name:'Download progress'});
+ expect(bar).toHaveAttribute('aria-valuenow','25');
+ expect(screen.getByText(/Step 2 of 2: Encoding moments/)).toBeInTheDocument();
+ expect(screen.getByText(/about 2 min left/)).toBeInTheDocument();
+});
+
+it('opens at a linked moment',async()=>{
+ stubFetch({'http://127.0.0.1:8766/library':library,'http://127.0.0.1:8766/account':{configured:true,state:'ready',busy:false,match_id:'synthetic-a',stream_url:'http://127.0.0.1:8766/stream/x/playlist.m3u8'},'http://127.0.0.1:8766/account/action':{accepted:true}});
+ renderWithProviders(<Routes><Route path='/hudl/:id' element={<HudlMatchPage/>}/></Routes>,'/hudl/synthetic-a?moment=m3');
+ const playing=await screen.findByRole('listitem',{current:true});
+ expect(playing).toHaveTextContent('0:20');
+});
