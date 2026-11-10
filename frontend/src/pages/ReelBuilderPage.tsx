@@ -5,14 +5,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { MomentItem, ReelDetail } from "../api/types";
 import { QueuePlayer } from "../components/clips/QueuePlayer";
-import { CardEditor } from "../components/reels/CardEditor";
+import { CardEditor, drawStill } from "../components/reels/CardEditor";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { formatBytes, formatClock, formatDate } from "../lib/format";
 import { moveItem } from "../lib/queue";
-import { canvasToPng, drawTitleCard } from "../lib/titleCard";
+import { canvasToPng } from "../lib/titleCard";
+import type { ThemeId } from "../lib/reelCards";
 import { useClipBuffers } from "../lib/useClipBuffers";
 import { STATUS } from "./ReelsPage";
 
@@ -53,6 +54,14 @@ function Builder({ reel }: { reel: ReelDetail }) {
   const [title, setTitle] = useState(reel.opening_title ?? reel.name);
   const [subtitle, setSubtitle] = useState(reel.opening_subtitle ?? "");
   const [closingText, setClosingText] = useState(reel.closing_text ?? "");
+  const themeKey = (kind: string) => `fm.reel.${reel.id}.${kind}.theme`;
+  const storedTheme = (kind: string): ThemeId => {
+    try { return (localStorage.getItem(themeKey(kind)) as ThemeId) || (kind === "opening" ? "floodlights" : "gold"); } catch { return "floodlights"; }
+  };
+  const [openingTheme, setOpeningThemeState] = useState<ThemeId>(() => storedTheme("opening"));
+  const [closingTheme, setClosingThemeState] = useState<ThemeId>(() => storedTheme("closing"));
+  const setOpeningTheme = (t: ThemeId) => { setOpeningThemeState(t); try { localStorage.setItem(themeKey("opening"), t); } catch { /* per-viewer only */ } };
+  const setClosingTheme = (t: ThemeId) => { setClosingThemeState(t); try { localStorage.setItem(themeKey("closing"), t); } catch { /* per-viewer only */ } };
   const [items, setItems] = useState<DraftItem[]>(reel.items.map((i) => ({ event_id: i.moment.event_id, pre_s: i.pre_s, post_s: i.post_s, moment: i.moment })));
   const [preview, setPreview] = useState(0);
   const [playToken, setPlayToken] = useState(0);
@@ -76,11 +85,11 @@ function Builder({ reel }: { reel: ReelDetail }) {
       name, items: items.map(({ event_id, pre_s, post_s }) => ({ event_id, pre_s, post_s })),
       opening_title: opening ? title : null, opening_subtitle: opening ? subtitle : null, closing_text: closing ? closingText : null,
     });
-    for (const [kind, on, canvas, text, sub] of [
-      ["opening", opening, openingCanvas.current, title, subtitle],
-      ["closing", closing, closingCanvas.current, closingText, undefined],
+    for (const [kind, on, canvas, text, sub, theme] of [
+      ["opening", opening, openingCanvas.current, title, subtitle, openingTheme],
+      ["closing", closing, closingCanvas.current, closingText, undefined, closingTheme],
     ] as const) {
-      if (on && canvas && drawTitleCard(canvas, { kind, title: text || " ", subtitle: sub || undefined })) {
+      if (on && canvas && drawStill(canvas, kind, text, sub || undefined, theme)) {
         const png = await canvasToPng(canvas);
         if (png) await api.uploadCard(reel.id, kind, png);
       } else if (!on) {
@@ -216,8 +225,8 @@ function Builder({ reel }: { reel: ReelDetail }) {
         </section>
 
         <aside className="space-y-4">
-          <CardEditor kind="opening" enabled={opening} onEnabled={setOpening} title={title} onTitle={setTitle} subtitle={subtitle} onSubtitle={setSubtitle} canvasRef={openingCanvas} />
-          <CardEditor kind="closing" enabled={closing} onEnabled={setClosing} title={closingText} onTitle={setClosingText} canvasRef={closingCanvas} />
+          <CardEditor kind="opening" enabled={opening} onEnabled={setOpening} title={title} onTitle={setTitle} subtitle={subtitle} onSubtitle={setSubtitle} canvasRef={openingCanvas} theme={openingTheme} onTheme={setOpeningTheme} />
+          <CardEditor kind="closing" enabled={closing} onEnabled={setClosing} title={closingText} onTitle={setClosingText} canvasRef={closingCanvas} theme={closingTheme} onTheme={setClosingTheme} />
         </aside>
       </div>
     </div>

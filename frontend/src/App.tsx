@@ -3,6 +3,7 @@ import { AppShell } from "./components/AppShell";
 import { EmptyState } from "./components/ui/EmptyState";
 import { ClipExplorerPage } from "./pages/ClipExplorerPage";
 import { DownloadedPage } from "./pages/DownloadedPage";
+import { ReelStudioPage } from "./pages/ReelStudioPage";
 import { BackupSettings } from "./components/settings/BackupSettings";
 import { PlaybackSettings } from "./components/settings/PlaybackSettings";
 import { StorageSettings } from "./components/settings/StorageSettings";
@@ -29,6 +30,7 @@ export function App() {
         <Route path="matches/:id" element={<MatchDetailPage />} />
         <Route path="clips" element={<ClipExplorerPage />} />
         <Route path="downloaded" element={<DownloadedPage />} />
+        <Route path="clips/reel/new" element={<ReelStudioPage />} />
         <Route path="clips/reels" element={<ReelsPage />} />
         <Route path="clips/reels/:id" element={<ReelBuilderPage />} />
         <Route path="player" element={<PlayerPage />} />

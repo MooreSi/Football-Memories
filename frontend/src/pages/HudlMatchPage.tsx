@@ -1,8 +1,8 @@
 import { Overlay } from '../components/ui/Overlay';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Download, Film, FolderArchive, ListVideo, Play, Square } from 'lucide-react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Square } from 'lucide-react';
 import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
@@ -45,6 +45,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
   const library = useHudlLibrary();
   const status = useHudlStatus();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [code, setCode] = useState(initialCode);
   const [selected, setSelected] = useState<string[]>([]);
   const [seek, setSeek] = useState<{ time: number; nonce: number }>();
@@ -139,6 +140,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
           <label className="text-xs text-fg-muted lg:hidden">Tagged code / player<select className="field mt-1" aria-label="Tagged code / player" value={code} onChange={e => { setCode(e.target.value); setSelected([]); }}><option value="">All tagged moments</option>{codes.map(c => <option key={c}>{c}</option>)}</select></label>
           {chosen.length > 0 && <Button variant="primary" disabled={!streamUrl} title={streamUrl ? undefined : 'Available once the stream is ready'} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
           <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : code ? 'player / code moments' : 'all moments'}</Button>
+          <Button disabled={!chosen.length || match.tag_status === 'unsynced'} onClick={() => navigate('/clips/reel/new', { state: { name: code ? `${code} highlights` : undefined, items: [{ match_id: id, moment_ids: chosen }] } })}><Clapperboard size={16} /> Make Highlight Reel</Button>
         </div>
         {moments.length > 0 && <p className="text-xs text-pin">Tags cached locally · No full-match download required</p>}
         <p className="text-xs text-fg-muted">{filtered.length} tagged ranges. Play Tagged plays each chosen moment back to back. Downloads fetch only the selected moments, keep the original resolution and are encoded as H.264 for easy playback.</p>

@@ -15,6 +15,7 @@ import { moveItem, removeAt } from "../lib/queue";
 import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { latestFirst } from "../lib/hudlFixture";
 import { HudlMatchView } from "./HudlMatchPage";
+import { BatchDownload } from "../components/clips/BatchDownload";
 
 const PAGE = 60;
 const START: MomentFilters = { categories: [], playerIds: [], playerMode: "any", favourites: false, unwatched: false, sort: "newest" };
@@ -29,9 +30,7 @@ export function ClipExplorerPage() {
   const forAge = all.filter((m) => (!age || hudlAgeGroups(m).includes(age)) && (!season || m.season_label===season));
   const fallback = forAge[0]?.id ?? "imported";
   const selected = chosen && (chosen === "imported" || all.some((m) => m.id === chosen)) ? chosen : fallback;
-  if (!all.length) return <ImportedClips />;
-  return (
-    <ImportedClips compact={selected!=="imported"}>
+  const picker = (
       <label className="panel flex flex-wrap items-center gap-3 p-4 text-sm text-fg-muted">
         Match
         <select aria-label="Match" className="field w-auto max-w-full rounded-full" value={selected} onChange={(e) => setChosen(e.target.value)}>
@@ -46,17 +45,29 @@ export function ClipExplorerPage() {
           <option value="imported">No Hudl match (imported clips only)</option>
         </select>
       </label>
-      {selected !== "imported" && (
-        <section aria-label="Selected Hudl match" className="min-w-0">
-          <HudlMatchView key={selected} id={selected} embedded />
-        </section>
-      )}
-    </ImportedClips>
+  );
+  if (!all.length) return <ImportedClips />;
+  if (selected === "imported") return <ImportedClips>{picker}</ImportedClips>;
+  // Spec 190: a Hudl match has one workspace. Make Highlight Reel and Batch download
+  // replace the duplicate saved-clips explorer; imported clips stay one option away.
+  return (
+    <div className="space-y-5">
+      <ClipsHeader />
+      {picker}
+      <section aria-label="Selected Hudl match" className="min-w-0">
+        <HudlMatchView key={selected} id={selected} embedded />
+      </section>
+      <BatchDownload matches={forAge.length ? forAge : all} />
+    </div>
   );
 }
 
+function ClipsHeader() {
+  return <header className="flex flex-wrap items-end justify-between gap-3"><div><p className="screen-eyebrow mb-2">MATCH ANALYSIS</p><h1 className="text-3xl font-semibold tracking-tight">Clip Explorer</h1><p className="mt-2 text-sm text-fg-muted">Watch, collect and share your best moments.</p></div><div className="flex gap-2"><Link to="/downloaded" className="dashboard-import">Downloaded</Link><Link to="/clips/reels" className="dashboard-import">Highlight reels</Link></div></header>;
+}
+
 /** Brief section 10. Layout follows reference 02: filter rail + playlists left, player + clip bar centre. */
-function ImportedClips({children,compact=false}:{children?:ReactNode;compact?:boolean}) {
+function ImportedClips({children}:{children?:ReactNode}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<MomentFilters>(START);
@@ -146,9 +157,9 @@ function ImportedClips({children,compact=false}:{children?:ReactNode;compact?:bo
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3"><div><p className="screen-eyebrow mb-2">MATCH ANALYSIS</p><h1 className="text-3xl font-semibold tracking-tight">Clip Explorer</h1><p className="mt-2 text-sm text-fg-muted">Watch, collect and share your best moments.</p></div><Link to="/clips/reels" className="dashboard-import">Highlight reels</Link></header>
+      <ClipsHeader />
       {children}
-      <details open={!compact} className="panel min-w-0 p-4 sm:p-5"><summary className="cursor-pointer text-sm font-semibold">Saved clips &amp; playlists</summary><p className="mb-5 mt-2 text-xs text-fg-muted">Search offline moments, build a queue or create a highlight reel.</p>
+      <section aria-label="Imported clips and playlists" className="panel min-w-0 p-4 sm:p-5"><h2 className="text-sm font-semibold">Imported clips &amp; playlists</h2><p className="mb-5 mt-2 text-xs text-fg-muted">Search offline moments, build a queue or create a highlight reel.</p>
       <div className="grid gap-5 xl:grid-cols-[250px_minmax(0,1fr)]">
       <div className="order-2 min-w-0 xl:order-1">
         <ClipFiltersRail
@@ -253,6 +264,6 @@ function ImportedClips({children,compact=false}:{children?:ReactNode;compact?:bo
           )}
         </section>
       </div>
-    </div></details></div>
+    </div></section></div>
   );
 }

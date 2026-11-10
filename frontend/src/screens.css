@@ -187,3 +187,12 @@
   .profile-heading > div:last-child button { font-size: 11px; padding: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .screen-link { transition: none; } }
+
+/* Reel studio theme swatches (spec 190): a quick impression of each animated card style. */
+.theme-swatch { background-size: cover; min-height: 64px; text-shadow: 0 1px 2px #000a; }
+.theme-floodlights { background: radial-gradient(60% 90% at 15% 0%, #fff6dc55, transparent 60%), radial-gradient(60% 90% at 85% 0%, #fff6dc44, transparent 60%), linear-gradient(#050a1c, #0c1838 60%, #0d3b1c); }
+.theme-kickoff { background: repeating-linear-gradient(90deg, #1f7a3a 0 18px, #238a42 18px 36px); }
+.theme-gold { background: linear-gradient(120deg, #120c03, #3a2a08 45%, #c99a2e 50%, #3a2a08 55%, #120c03); }
+.theme-neon { background: linear-gradient(#07020f, #1d0a35); box-shadow: inset 0 0 0 1px #e879f966, inset 0 -18px 30px -12px #c026d388; }
+.theme-matchday { background: linear-gradient(90deg, #0b1020 55%, transparent 55%), linear-gradient(-60deg, #0b1020 20%, #2563eb 20% 40%, #f43f5e 40% 60%, #facc15 60% 72%, #0b1020 72%); }
+.theme-minimal { background: linear-gradient(135deg, #15171c, #262a31); }
