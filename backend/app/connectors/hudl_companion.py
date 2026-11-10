@@ -61,6 +61,35 @@ class AccountAction(BaseModel):
     age_group: str | None = Field(default=None, pattern=r"^(?:U[0-9]{1,2})?$", max_length=3)
 
 
+class CardUpload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    data: str = Field(min_length=8, max_length=34_000_000)
+
+
+class BatchItem(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    match_id: str = Field(max_length=300)
+    moment_ids: list[str] = Field(default_factory=list, max_length=2000)
+    codes: list[str] = Field(default_factory=list, max_length=50)
+    card_id: str | None = Field(default=None, max_length=64)
+
+
+class ReelSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    name: str = Field(default="Highlight reel", max_length=120)
+    opening_card: str | None = Field(default=None, max_length=64)
+    closing_card: str | None = Field(default=None, max_length=64)
+
+
+class BatchRequest(BaseModel):
+    """Spec 190: moments from several matches, as files or one highlight reel."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    items: list[BatchItem] = Field(min_length=1, max_length=200)
+    combined: bool = False
+    reel: ReelSpec | None = None
+
+
 class FolderAction(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     action: Literal["choose", "reset"]
@@ -175,7 +204,11 @@ def create_companion(output: Path) -> FastAPI:
         if request.method == "POST" and (
             request.headers.get("content-type") != "application/json"
             or int(request.headers.get("content-length", "0"))
-            > (262144 if request.url.path == "/account/action" else 8192)
+            > {
+                "/account/action": 262144,
+                "/account/batch": 1_048_576,
+                "/reel/cards": 34_000_000,
+            }.get(request.url.path, 8192)
         ):
             return JSONResponse({"detail": "Invalid capture request."}, status_code=400)
         response = await call_next(request)
@@ -313,7 +346,7 @@ def create_companion(output: Path) -> FastAPI:
         status = request.app.state.account.status()
         root = request.app.state.downloads.folder
         parts = filename.split("/")
-        if len(parts) == 2 and parts[0] == "moments":
+        if len(parts) == 2 and parts[0] in {"moments", "reels"}:
             # Moment exports are served only when the index or the finished export names them.
             if (
                 Path(parts[1]).name != parts[1]
@@ -373,6 +406,33 @@ def create_companion(output: Path) -> FastAPI:
                         else {}
                     ),
                 )
+        return {"accepted": True}
+
+    @app.post("/reel/cards")
+    def upload_card(body: CardUpload, request: Request) -> dict[str, str]:
+        import base64
+        import binascii
+
+        try:
+            data = base64.b64decode(body.data, validate=True)
+        except (binascii.Error, ValueError) as error:
+            raise CaptureError("The title card upload was damaged. Try again.") from error
+        return {"card_id": request.app.state.account.cards.save(data)}
+
+    @app.post("/account/batch", status_code=202)
+    def account_batch(body: BatchRequest, request: Request) -> dict[str, bool]:
+        with request.app.state.hudl_gate:
+            if request.app.state.capture.status()["state"] not in {"idle", "done", "error"}:
+                raise CaptureError("A URL capture is already running. Wait for it to finish.")
+            for item in body.items:
+                request.app.state.catalogue.find(item.match_id)
+                if not item.moment_ids and not item.codes:
+                    raise CaptureError("Choose moments or a player/code for every match.")
+            request.app.state.account.start_batch(
+                [item.model_dump() for item in body.items],
+                combined=body.combined,
+                reel=body.reel.model_dump() if body.reel else None,
+            )
         return {"accepted": True}
 
     @app.get("/stream/{stream}/{asset}")

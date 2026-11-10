@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import re
+import secrets
 import tempfile
 import threading
 import time
@@ -18,6 +19,7 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Response, sync_playwright
 
+from app.connectors.hudl_batch import CardStore
 from app.connectors.hudl_capture import (
     CaptureError,
     capture_hls,
@@ -52,6 +54,7 @@ class BrowserConnection:
         self.output = output
         self.details = MatchCache(output.parent / ".hudl-account" / "details")
         self.index = DownloadIndex(output.parent / ".hudl-account" / "downloads-index.json")
+        self.cards = CardStore(output.parent / ".hudl-account" / "reel-cards")
         self._thumbnails: dict[str, str] = {}
         self._libraries: set[str] = set()
         self._teams: dict[str, dict[str, str]] = {}
@@ -162,6 +165,158 @@ class BrowserConnection:
                 match_id=identity,
             )
         self._executor.submit(self._perform, action, identity, moment_ids, combined)
+
+    def start_batch(
+        self,
+        items: list[dict[str, Any]],
+        *,
+        combined: bool = False,
+        reel: dict[str, Any] | None = None,
+    ) -> None:
+        """Spec 190: export moments from several matches in turn, or one reel from them."""
+        with self._lock:
+            if self._pending and not (self._syncing and self._pending == 1):
+                raise CaptureError("A Hudl operation is already running.")
+            if self._syncing:
+                self._cancel_sync.set()
+            self._pending += 1
+            self._steps = max(1, len(items)) + (1 if reel else 0)
+            self._progress = None
+            self._state.update(
+                state="working",
+                message="Preparing the batch…",
+                filename=None,
+                download_name=None,
+                download_kind=None,
+                match_id=None,
+            )
+        self._executor.submit(self._run_batch, items, combined, reel)
+
+    def _pause(self) -> None:
+        """Golden rule 3: a normal person's pause between Hudl match pages."""
+        if self._page is not None:
+            self._page.wait_for_timeout(2500)
+        else:
+            time.sleep(2.5)
+
+    def _fetcher(self, stream: str) -> Callable[[int], bytes]:
+        return lambda index: self._resource(stream, str(index))[0]
+
+    def _reporter(self, label: str, step: int) -> Callable[[int, int], None]:
+        return lambda done, total: self._set_progress(label, step, done, total)
+
+    def _run_batch(
+        self, items: list[dict[str, Any]], combined: bool, reel: dict[str, Any] | None
+    ) -> None:
+        from app.connectors import hudl_exports
+        from app.connectors.hudl_batch import assemble_reel
+
+        card_ids = [i.get("card_id") for i in items] + (
+            [reel.get("opening_card"), reel.get("closing_card")] if reel else []
+        )
+        try:
+            plans = []
+            for item in items:
+                available = self.details.read(item["match_id"]).get("moments", [])
+                ids, codes = set(item.get("moment_ids") or []), set(item.get("codes") or [])
+                chosen = [
+                    m for m in available if (m["id"] in ids if ids else m["category"] in codes)
+                ]
+                if chosen:
+                    plans.append((item["match_id"], chosen, item.get("card_id")))
+            if not plans:
+                raise CaptureError("None of the chosen matches has those tagged moments cached.")
+            with self._lock:
+                self._steps = len(plans) + (1 if reel else 0)
+            folder = self.output / ("reels" if reel else "moments")
+            folder.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(prefix=".batch-", dir=folder) as scratch_name:
+                scratch = Path(scratch_name)
+                parts: list[Path] = []
+                cards: list[Path] = []
+                if reel and reel.get("opening_card"):
+                    cards.append(self.cards.path(reel["opening_card"]))
+                    parts.append(cards[-1])
+                for number, (identity, chosen, card_id) in enumerate(plans, start=1):
+                    if number > 1:
+                        self._pause()
+                    title = self.catalogue.find(identity).get("title")
+                    label = f"Match {number} of {len(plans)}: fetching and encoding moments"
+                    self.report("exporting", f"{label}…")
+                    if self._stream_match != identity or not self._stream_id:
+                        self._prepare_stream(identity)
+                    stream = self._stream_id
+                    target = hudl_exports.export_from_segments(
+                        self._stream_playlist,
+                        self._fetcher(stream),
+                        chosen,
+                        scratch if reel else folder,
+                        combined=True if reel else combined,
+                        match_title=title if isinstance(title, str) else None,
+                        progress=self._reporter(label, number),
+                    )
+                    if reel:
+                        if card_id:
+                            cards.append(self.cards.path(card_id))
+                            parts.append(cards[-1])
+                        parts.append(target)
+                    else:
+                        self.index.record(
+                            "moments",
+                            identity,
+                            title if isinstance(title, str) else None,
+                            target,
+                            self.output,
+                            chosen,
+                            combined=combined,
+                        )
+                if not reel:
+                    self.report(
+                        "done",
+                        f"Moments from {len(plans)} matches saved in the moments folder.",
+                    )
+                    return
+                if reel.get("closing_card"):
+                    cards.append(self.cards.path(reel["closing_card"]))
+                    parts.append(cards[-1])
+                name = re.sub(r"[^\w .,()&'-]", "", str(reel.get("name") or "")).strip()[:80]
+                output = folder / f"{name or 'Highlight reel'} ({secrets.token_hex(4)}).mp4"
+                self.report("exporting", "Assembling the highlight reel…")
+                assemble_reel(
+                    parts,
+                    output,
+                    cards=cards,
+                    progress=lambda done, total: self._set_progress(
+                        "Assembling the highlight reel", len(plans) + 1, done, total
+                    ),
+                )
+            moments = [m for _, chosen, _ in plans for m in chosen]
+            self.index.record(
+                "reel",
+                None,
+                str(reel.get("name") or "Highlight reel"),
+                output,
+                self.output,
+                moments,
+                combined=True,
+                matches=[identity for identity, _, _ in plans],
+            )
+            with self._lock:
+                self._state["filename"] = f"reels/{output.name}"
+                self._state["download_name"] = output.name
+                self._state["download_kind"] = "reel"
+            self.report(
+                "done", f"Highlight reel ready: {len(moments)} moments from {len(plans)} matches."
+            )
+        except CaptureError as error:
+            self.report("error", str(error))
+        except Exception:
+            self.report("error", "The batch stopped. Files already saved are kept.")
+        finally:
+            self.cards.discard(card_ids)
+            with self._lock:
+                self._pending -= 1
+                self._progress = None
 
     def close(self) -> None:
         def finish() -> None:
