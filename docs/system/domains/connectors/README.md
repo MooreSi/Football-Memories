@@ -137,3 +137,23 @@ Real reported U11 full capture completed at 1920×1080 HEVC/AAC, 6195.52s.
 The app attachment downloaded with the same SHA-256 as the verified inbox source;
 actual 1080p playback also verified. Empty tag CSV has zero rows; all eight prior
 inbox files retain their SHA-256. The host helper is idle; playback paused.
+
+## Native playback tags independent of download (spec 160, D-019)
+The earlier false-sync interpretation was incomplete: modern Sportscode sessions
+have presentationViews with id/attributes/subViews/title, and their native UI
+uses startTimeMs/endTimeMs directly despite isSyncedToVideo=false. Verified a
+native goal selection against its served start, then the same app seek at 1080p.
+The account adapter opts into this observed native-view contract; strict legacy
+parse_moments calls still reject false flags. No flag rewriting or guessed offset.
+Validation and matching-video filtering remain shared with the strict parser.
+Unsupported false-flag sessions retain the explicit unavailable warning.
+
+Observation now waits for three seconds of tag-response quiet (90s bound),
+instead of stopping at the first payload. No-tag streams wait ten seconds;
+declared incomplete counts still fail rather than pretending a partial list is
+complete. Only metadata for opened matches is collected; the library thumbnail
+refresh does not scan every historical video's tags. Two opened U11 matches
+cached 2,191/66 and 1,927/65 ranges/codes with no new MP4/CSV. Both caches survived
+helper restart with no browser session active. All ten inbox files unchanged.
+Native HLS preload=none needs load/play when the first user action is a tag seek;
+never call load on an hls.js MediaSource, which would detach it.

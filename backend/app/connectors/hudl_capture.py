@@ -69,7 +69,11 @@ def clip_tag_padding(
 
 
 def parse_moments(
-    payloads: list[dict[str, Any]], video_id: str, player_codes: set[str]
+    payloads: list[dict[str, Any]],
+    video_id: str,
+    player_codes: set[str],
+    *,
+    native_playback: bool = False,
 ) -> list[Moment]:
     result: dict[str, Moment] = {}
     for payload in payloads:
@@ -81,7 +85,21 @@ def parse_moments(
                 continue
             if session.get("dataSource", {}).get("feedType") != "SportsCode":
                 raise CaptureError("This tagging format is unsupported; no tags were saved.")
-            if session.get("taggingSessionMetadata", {}).get("isSyncedToVideo") is not True:
+            # Native Sportscode playback views expose video-relative milliseconds even
+            # when the legacy sync flag is false. Strict capture remains opt-in.
+            playback_views = session.get("presentationViews")
+            native_timing = (
+                native_playback
+                and isinstance(playback_views, list)
+                and any(
+                    isinstance(view, dict) and view.get("id") and "subViews" in view
+                    for view in playback_views
+                )
+            )
+            if (
+                session.get("taggingSessionMetadata", {}).get("isSyncedToVideo") is not True
+                and not native_timing
+            ):
                 raise UnsyncedTags("The tag timeline is not synced to video; no tags were saved.")
             items = session.get("moments", {}).get("items", [])
             if session.get("moments", {}).get("totalCount", len(items)) != len(items):

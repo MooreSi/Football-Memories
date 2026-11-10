@@ -48,7 +48,13 @@ export function StreamPlayer({ url, seek }: { url: string; seek?: {time:number; 
   useEffect(() => {
     const element=video.current;if(!element||!seek)return;
     const play=()=>{element.currentTime=seek.time;void element.play().catch(()=>undefined);};
-    if(element.readyState)play();else element.addEventListener("loadedmetadata",play,{once:true});
+    if(element.readyState)play();else {
+      element.addEventListener("loadedmetadata",play,{once:true});
+      // Native HLS with preload=none needs a load to emit loadedmetadata.
+      // Avoid resetting hls.js's attached MediaSource in other browsers.
+      if(element.canPlayType("application/vnd.apple.mpegurl"))element.load();
+      void element.play().catch(()=>undefined);
+    }
     return ()=>element.removeEventListener("loadedmetadata",play);
   },[seek]);
   return <div className="space-y-2">

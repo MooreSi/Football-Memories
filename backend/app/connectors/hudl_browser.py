@@ -602,12 +602,19 @@ class BrowserConnection:
         try:
             self._page.goto(match["url"] + "/explore/sportscode", wait_until="domcontentloaded")
             deadline = time.monotonic() + 90
+            settled, count = time.monotonic(), 0
             while time.monotonic() < deadline:
                 self._page.wait_for_timeout(500)
                 if observation.failure:
                     raise CaptureError(observation.failure)
-                if observation.manifests and (
-                    observation.payloads or (not need_tags and time.monotonic() > deadline - 85)
+                if len(observation.payloads) != count:
+                    count, settled = len(observation.payloads), time.monotonic()
+                if (
+                    observation.manifests
+                    and time.monotonic() - settled >= 3
+                    and (
+                        observation.payloads or (not need_tags and time.monotonic() > deadline - 80)
+                    )
                 ):
                     break
             if not observation.manifests or (need_tags and not observation.payloads):

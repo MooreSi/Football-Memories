@@ -6,6 +6,14 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Streaming tag cache (spec 160)
+
+| Task | Status | Notes |
+|---|---|---|
+| Retain native playback tags without full download | done | observed view contract, shared validation, legacy strict unchanged |
+| Wait for later tag responses / persist local metadata | done | quiet window regression; both live caches survived helper restart |
+| Tag-first native HLS playback | done | red regression; 1080p seek and advancing playback verified |
+
 ## Independent Hudl video / tag-sync outcomes (spec 150)
 
 | Task | Status | Notes |
@@ -131,6 +139,18 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-10 Streaming tag cache (codex/hudl-stream-tags)
+- Backend: 273 passed SQLite and 273 Postgres; ruff check/format, mypy and
+  Alembic drift clean. Frontend: 101 passed; typecheck/build passed. Docker
+  rebuilt and /api/health ok. Initial frontend/backend overlap was corrected by
+  repeating frontend independently after backend completion.
+- Red regressions: modern tags omitted, later response lost, native tag-first
+  load missing, cached-state text missing. Pre-existing tests unchanged.
+- Live: U11 Stoke 2,191 tags/66 codes; West Brom 1,927/65. Goal seeks and
+  advancing 1080p/720p streams verified. No full download; all ten original
+  MP4/CSV SHA-256 unchanged. Tags returned after helper restart without session.
+- No new clip export or full capture run. Screenshot is private ignored data.
 
 ### 2026-11-10 Unsynced tags no longer block account video (codex/hudl-optional-tags)
 - Backend stream/download regressions watched red/green; full copy uses real

@@ -208,3 +208,14 @@ can stream/download at highest quality with a visible unsynced-tag warning.
 Unverified tag ranges are omitted; player/moment exports remain unavailable for
 that match. No sync flags/offsets are changed. Access errors still stop capture.
 Legacy manual URL/tag capture retains strict tag requirements.
+
+Spec 160 supersedes the unsynced warning for modern native Sportscode playback
+views: Hudl uses those served millisecond times even with its legacy flag false.
+Opening a match now retains those validated tags locally without downloading the
+full match. All code/player filters and tag seeking work against that cache.
+The UI states “Tags cached locally · No full-match download required”. Full
+source download remains necessary only for offline video or clip export.
+Live U11 Stoke: 2,191 tags, 66 codes, 1080p streaming and goal seek. U11 West Brom:
+1,927 tags, 65 codes, streaming/goal seek, no offline match copy. Both caches
+survived a helper restart without an active login; all ten archive files kept
+identical SHA-256. Unsupported tag formats still show their actual warning.

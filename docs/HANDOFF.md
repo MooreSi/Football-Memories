@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/hudl-optional-tags`**, based on the pushed reference
+- **Current branch: `codex/hudl-stream-tags`**, based on the pushed reference
   redesign branch. Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.
@@ -23,6 +23,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **Spec 160:** native Sportscode tags now cache independently of full video
+  capture (D-019 supersedes the false-sync omission for observed native views).
+  U11 Stoke: 2,191 tags / 66 codes; U11 West Brom: 1,927 / 65, streamed without
+  downloading. Native Hudl and app goal seeks matched; actual 1080p/720p playback
+  verified. Both caches survived helper restart with session_active=false; all
+  ten inbox MP4/CSV files retain SHA-256. Existing CSV files were not rewritten.
+  Observation waits for tag-response quiet; native HLS first tag-seek starts
+  loading media. Legacy strict capture and unsupported-format warnings remain.
+  Host helper 8766 PID 63629 runs final source. No pending owner action.
 - **Spec 150:** unsynced tags no longer block account streaming/full capture.
   Strict parsing still rejects them; the account adapter records `tag_status`
   and omits unverified ranges. Match page shows a separate warning; moment/player
@@ -100,7 +109,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 267 passed on SQLite and Postgres; frontend 99 passed.
+- Tests: backend 273 passed on SQLite and Postgres; frontend 101 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

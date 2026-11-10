@@ -4,6 +4,18 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-019 (2026-11-10) Cache native playback tags without full-media capture
+Native Sportscode playback responses can report `isSyncedToVideo=false` while
+Hudl displays and seeks their video-relative millisecond ranges. Live native UI
+selection matched a served goal start exactly. Account parsing now explicitly
+accepts the observed presentation-view contract (identified view with subViews)
+without changing the upstream flag or applying offsets. This supersedes D-018's
+omission for that contract only; legacy URL capture remains strict. Timing,
+stable identity, completeness totals, conflicts and access errors still validate.
+Wait for observed tag responses to settle before publishing cached metadata.
+Streaming writes tag metadata independently of MP4/CSV capture. Native HLS seeks
+must start an unstarted stream rather than waiting forever for loadedmetadata.
+
 ## D-018 (2026-11-10) Video availability is independent of tag sync
 The reported U11 match's strict unsynced-tag error prevented both streaming and
 full-match capture. Keep `parse_moments` strict and expose a specific unsynced

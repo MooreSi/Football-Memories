@@ -42,11 +42,13 @@ def capture_key(identity: str) -> str:
 def optional_moments(
     payloads: list[dict[str, Any]], identity: str, duration: float
 ) -> tuple[list[Moment], str]:
-    """Do not claim unverified tag times; keep the video independent of tag sync."""
+    """Cache native playback ranges independently of a full video capture."""
     from app.connectors.hudl_capture import UnsyncedTags, clip_tag_padding, parse_moments
 
     try:
-        moments = parse_moments(clip_tag_padding(payloads, identity, duration), identity, set())
+        moments = parse_moments(
+            clip_tag_padding(payloads, identity, duration), identity, set(), native_playback=True
+        )
     except UnsyncedTags:
         return [], "unsynced"
     return moments, "synced" if moments else "none"
