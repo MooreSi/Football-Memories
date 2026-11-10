@@ -298,8 +298,7 @@ def authenticate(page: Page, credentials: Any) -> None:
         )
         if challenge.count() and challenge.first.is_visible():
             raise CaptureError(
-                "Hudl requires verification. The Hudl window is now shown: complete it there, "
-                "then test again."
+                "Hudl requires verification. Complete it in the browser, then test again."
             )
         heading = page.get_by_role(
             "heading", name=re.compile(r"^(Verify|Enter.*code|Security check|Accept.*terms)", re.I)
@@ -344,6 +343,8 @@ class BrowserConnection:
         self._syncing = False
         self._cancel_sync = threading.Event()
         self._tag_failures: set[str] = set()
+        self._visible_next = False
+        self._visible_session = False
         self._progress: dict[str, Any] | None = None
         self._progress_start = 0.0
         self._steps = 1
@@ -473,38 +474,54 @@ class BrowserConnection:
     def _login(self) -> None:
         if self._playwright is None:
             self._playwright = sync_playwright().start()
+        if self._visible_session and self._signed_in():
+            # The owner completed Hudl's own verification in the visible window.
+            self._visible_session = False
+            return
         self._close()
-        # Owner request (2026-11-10): no visible window. Same real Chrome as before
-        # (headless would announce "HeadlessChrome"; never spoof), minimized at once.
-        # macOS clamps off-screen positions, so minimizing is the reliable way to hide.
-        self._browser = self._playwright.chromium.launch(channel="chrome", headless=False)
+        # Owner choice (D-022): headless, no window. Chrome reports itself as
+        # HeadlessChrome; never disguise it. Any hidden failure falls back to a
+        # visible window on the next attempt, never a hidden retry.
+        visible = self._visible_next
+        self._visible_next = False
+        self._browser = self._playwright.chromium.launch(channel="chrome", headless=not visible)
         self._context = self._browser.new_context()
         self._page = self._context.new_page()
-        with contextlib.suppress(Exception):
-            self._window({"windowState": "minimized"})
         self._page.on("response", self._library_response)
         self.report("login", "Signing into Hudl using this Mac's Keychain.")
         self._page.goto(LOGIN_URL, wait_until="domcontentloaded")
+        if visible:
+            self._page.bring_to_front()
         credentials = self.loader()
         try:
             authenticate(self._page, credentials)
-        except CaptureError:
-            # Verification, CAPTCHA or terms are the owner's to complete, never automated.
-            with contextlib.suppress(Exception):
-                self._reveal()
-            raise
+        except Exception as error:
+            if visible:
+                # Verification, CAPTCHA or terms are the owner's to complete, never automated.
+                self._visible_session = True
+                self._visible_next = True
+                raise CaptureError(
+                    "Hudl asked for verification or terms. The Hudl window is open: complete "
+                    "it there, then select Test again."
+                ) from error
+            self._close()
+            self._visible_next = True
+            raise CaptureError(
+                "Hudl sign-in did not finish in the hidden browser. Select Test again to sign "
+                "in with a visible Hudl window."
+            ) from error
         finally:
             del credentials
 
-    def _window(self, bounds: dict[str, Any]) -> None:
-        session = self._context.new_cdp_session(self._page)
-        window = session.send("Browser.getWindowForTarget")["windowId"]
-        session.send("Browser.setWindowBounds", {"windowId": window, "bounds": bounds})
-
-    def _reveal(self) -> None:
-        """Restore the hidden Hudl window so the owner can see what Hudl asks."""
-        self._window({"windowState": "normal"})
-        self._page.bring_to_front()
+    def _signed_in(self) -> bool:
+        try:
+            address = urlsplit(self._page.url)
+        except Exception:
+            return False
+        return address.hostname in {"www.hudl.com", "app.hudl.com"} and address.path not in {
+            "/login",
+            "/app/users/oidc/callback",
+        }
 
     def _library_response(self, response: Response) -> None:
         from app.connectors.hudl_account import library_matches

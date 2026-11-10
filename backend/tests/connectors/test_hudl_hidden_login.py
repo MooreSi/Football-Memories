@@ -1,8 +1,8 @@
-"""Owner request 2026-11-10: sign in without showing a browser window.
+"""Owner choice 2026-11-10 (D-022): sign in with headless Chrome.
 
-Uses the same real Chrome (no headless fingerprint, no spoofing), minimized
-straight away. A verification, CAPTCHA or terms page is never automated: the window is
-moved on screen for the owner and the operation stops.
+Headless reports itself honestly (no user-agent spoofing). A verification,
+CAPTCHA or terms page, or any failed hidden sign-in, is never retried hidden:
+the browser closes and the next attempt opens a visible window for the owner.
 """
 
 from unittest.mock import MagicMock, patch
@@ -13,61 +13,65 @@ from app.connectors.hudl_browser import BrowserConnection
 from app.connectors.hudl_capture import CaptureError
 
 
-def launched(tmp_path, authenticate_effect=None):
-    playwright = MagicMock()
-    browser = playwright.chromium.launch.return_value
-    page = browser.new_context.return_value.new_page.return_value
-    connection = BrowserConnection(MagicMock(), MagicMock(), tmp_path / "inbox")
+def connection_for(tmp_path):
+    return BrowserConnection(MagicMock(), MagicMock(), tmp_path / "inbox")
+
+
+def login(connection, playwright, authenticate_effect=None):
     with (
         patch("app.connectors.hudl_browser.sync_playwright") as factory,
         patch("app.connectors.hudl_browser.authenticate", side_effect=authenticate_effect),
     ):
         factory.return_value.start.return_value = playwright
-        try:
-            connection._login()
-        finally:
-            connection._executor.shutdown()
-    return playwright, browser, page
+        connection._login()
 
 
-def test_login_minimizes_the_window_before_visiting_hudl(tmp_path):
-    playwright, browser, page = launched(tmp_path)
+def test_login_is_headless_without_disguising_the_browser(tmp_path):
+    connection, playwright = connection_for(tmp_path), MagicMock()
+    login(connection, playwright)
     options = playwright.chromium.launch.call_args.kwargs
-    assert options["channel"] == "chrome"
-    assert options["headless"] is False
-    session = browser.new_context.return_value.new_cdp_session.return_value
-    bounds = [c for c in session.send.call_args_list if c.args[0] == "Browser.setWindowBounds"]
-    assert bounds[0].args[1]["bounds"] == {"windowState": "minimized"}
-    page.bring_to_front.assert_not_called()
-
-
-def test_revealing_restores_the_window(tmp_path):
-    connection = BrowserConnection(MagicMock(), MagicMock(), tmp_path / "inbox")
-    connection._page = MagicMock()
-    connection._context = MagicMock()
-    session = connection._context.new_cdp_session.return_value
-    session.send.side_effect = lambda method, params=None: (
-        {"windowId": 7} if method.endswith("getWindowForTarget") else {}
-    )
-    connection._reveal()
-    bounds = [c for c in session.send.call_args_list if c.args[0] == "Browser.setWindowBounds"]
-    assert bounds and bounds[0].args[1]["windowId"] == 7
-    assert bounds[0].args[1]["bounds"] == {"windowState": "normal"}
-    connection._page.bring_to_front.assert_called_once()
+    assert options == {"channel": "chrome", "headless": True}
+    context_options = playwright.chromium.launch.return_value.new_context.call_args
+    assert "user_agent" not in (context_options.kwargs if context_options else {})
     connection._executor.shutdown()
 
 
-def test_login_reveals_on_verification(tmp_path):
-    connection = BrowserConnection(MagicMock(), MagicMock(), tmp_path / "inbox")
-    with (
-        patch("app.connectors.hudl_browser.sync_playwright"),
-        patch(
-            "app.connectors.hudl_browser.authenticate",
-            side_effect=CaptureError("Hudl requires verification."),
-        ),
-        patch.object(connection, "_reveal") as reveal,
-        pytest.raises(CaptureError),
-    ):
-        connection._login()
-    reveal.assert_called_once()
+@pytest.mark.parametrize(
+    "failure",
+    [CaptureError("Hudl requires verification."), TimeoutError("login page never finished")],
+)
+def test_hidden_failure_closes_and_next_login_is_visible(tmp_path, failure):
+    connection, playwright = connection_for(tmp_path), MagicMock()
+    with pytest.raises(CaptureError, match="visible Hudl window"):
+        login(connection, playwright, failure)
+    playwright.chromium.launch.return_value.close.assert_called()
+    assert connection._context is None
+    login(connection, playwright)
+    assert playwright.chromium.launch.call_args.kwargs == {"channel": "chrome", "headless": False}
+    page = playwright.chromium.launch.return_value.new_context.return_value.new_page.return_value
+    page.bring_to_front.assert_called()
+    login(connection, playwright)
+    assert playwright.chromium.launch.call_args.kwargs["headless"] is True
+    connection._executor.shutdown()
+
+
+def test_visible_login_still_stops_on_verification(tmp_path):
+    connection, playwright = connection_for(tmp_path), MagicMock()
+    connection._visible_next = True
+    with pytest.raises(CaptureError, match="complete it there"):
+        login(connection, playwright, CaptureError("Hudl requires verification."))
+    playwright.chromium.launch.return_value.close.assert_not_called()
+    connection._executor.shutdown()
+
+
+def test_after_owner_verifies_in_the_visible_window_test_reuses_that_session(tmp_path):
+    connection, playwright = connection_for(tmp_path), MagicMock()
+    connection._visible_next = True
+    with pytest.raises(CaptureError):
+        login(connection, playwright, CaptureError("Hudl requires verification."))
+    page = connection._page
+    page.url = "https://www.hudl.com/home"
+    login(connection, playwright, AssertionError("must not sign in again"))
+    assert playwright.chromium.launch.call_count == 1
+    assert connection._page is page
     connection._executor.shutdown()

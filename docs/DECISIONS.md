@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-022 (2026-11-10) Owner chose headless sign-in
+Told that headless Chrome reports `HeadlessChrome` to Hudl, the owner chose it
+over the minimized window (supersedes D-021's sign-in part). No user-agent or
+fingerprint changes. Any hidden sign-in failure (verification, CAPTCHA, terms,
+timeout) closes the browser and the next Test opens a visible window; it is
+never retried hidden. After the owner completes Hudl's verification in that
+window, Test reuses the signed-in session instead of signing in again.
+
 ## D-021 (2026-11-10) Hidden sign-in window, export progress, Clips match picker
 Owner requests. Account sign-in launches the same real Chrome (headed) and
 minimizes it immediately via CDP `Browser.setWindowBounds`. Headless Chrome

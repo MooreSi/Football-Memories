@@ -184,6 +184,9 @@ never call load on an hls.js MediaSource, which would detach it.
   `document.visibilityState == "visible"` working.
 - Headless `channel="chrome"` reports `HeadlessChrome/<version>` in
   `navigator.userAgent`; headed Chrome reports `Chrome/<version>`.
-- After a verification prompt the window is restored, but Test still starts a
-  new browser; completing verification there and reusing that session is not
-  implemented.
+- D-022 (owner choice): sign-in is headless. A hidden failure closes the
+  browser and sets `_visible_next`; the next login is visible. A visible
+  verification keeps the window open (`_visible_session`), and the next Test
+  reuses it if the page is already on a signed-in Hudl route.
+- Unverified: whether Hudl serves playback/tag responses normally to headless
+  Chrome. A playback failure in `_observe` has no automatic visible fallback.
