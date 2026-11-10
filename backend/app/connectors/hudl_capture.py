@@ -40,6 +40,8 @@ class Manifest:
     resources: tuple[str, ...] = field(default=(), repr=False)
     local_playlist: str = ""
     duration_s: float = 0
+    height: int = 0
+    bandwidth: int = 0
 
 
 def clip_tag_padding(
@@ -156,7 +158,7 @@ def parse_manifest(text: str, base_url: str, *, max_height: int) -> Manifest:
             raise CaptureError("This video is encrypted; capture stopped.")
         if line.startswith("#EXT-X-MEDIA:") and "URI=" in line:
             raise CaptureError("Separate audio/video playlists are unsupported.")
-    variants: list[tuple[int, str]] = []
+    variants: list[tuple[int, int, str]] = []
     for index, line in enumerate(lines):
         if line.startswith("#EXT-X-STREAM-INF:"):
             attrs = _attributes(line)
@@ -170,11 +172,12 @@ def parse_manifest(text: str, base_url: str, *, max_height: int) -> Manifest:
             except (ValueError, IndexError, KeyError):
                 raise CaptureError("This video rendition description is unsupported.") from None
             if height <= max_height:
-                variants.append((bandwidth, address))
+                variants.append((height, bandwidth, address))
     if any(line.startswith("#EXT-X-STREAM-INF:") for line in lines):
         if not variants:
             raise CaptureError("No video rendition meets the chosen maximum height.")
-        return Manifest(variant_url=max(variants)[1])
+        height, bandwidth, address = max(variants)
+        return Manifest(variant_url=address, height=height, bandwidth=bandwidth)
     if "#EXT-X-ENDLIST" not in lines:
         raise CaptureError("Only complete recorded matches can be captured.")
     resources: list[str] = []

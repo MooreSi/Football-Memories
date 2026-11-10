@@ -73,3 +73,21 @@ a 5012.2-second match; Download reused the prior capture and offered Import.
 SHA-256 confirmed its MP4/tag CSV were unchanged. The earlier full capture,
 import and offline playback remain verified. The cached count is observed
 content, not a claim that every historical video was enumerated.
+
+## Browse and download connected Hudl videos
+The main **Library → Your Hudl matches** section now includes an age-group
+chooser, cached match thumbnails and Refresh Hudl. Age groups come from video
+titles; mixed/unknown labels remain explicit. Open a match to automatically
+prepare its highest available supported quality and read its tagged ranges.
+Use **Download full match**, or choose a tagged code/player and **Download
+player / code moments**. Check individual ranges for **Download selected
+moments**. Completed files have a download link; full matches also offer Import.
+
+**My Player → Change player → Choose a tagged player** lists actual imported
+codes and codes cached from opened Hudl videos. Explicitly select your player's
+name to build their profile. No player attribution is guessed from overlap.
+Automatic account playback/capture now uses maximum source resolution, then
+bitrate (supersedes the old 720p limit). Existing low-quality copies remain
+untouched; a new highest-quality file is stored alongside them. Moment ZIPs copy
+original encoded streams, so starts can include the preceding keyframe. Their
+exact tagged times and labels accompany the MP4s in moments.json.

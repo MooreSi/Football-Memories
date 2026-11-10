@@ -12,6 +12,8 @@ import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 
+import { HudlLibrary } from "../components/hudl/HudlLibrary";
+
 const PAGE_SIZE = 24;
 
 function useDebounced<T>(value: T, ms: number): T {
@@ -59,12 +61,14 @@ export function LibraryPage() {
 
   if (archiveEmpty) {
     return (
+      <>
+      <HudlLibrary />
       <EmptyState icon={Film} title="No matches yet">
         <p className="mb-4">Put a match video in the import folder, then import it to start your archive.</p>
         <Link to="/import" className="font-medium text-accent hover:underline">
           Import a match
         </Link>
-      </EmptyState>
+      </EmptyState></>
     );
   }
 
@@ -75,6 +79,7 @@ export function LibraryPage() {
         <p>Every game. Every moment. Your football story.</p></div>
         <Link to="/import" className="dashboard-import">+ Import a match</Link>
       </header>
+      <HudlLibrary />
       <aside className="dashboard-overview space-y-5">
         <YourPlayerCard />
         <div className="flex items-baseline justify-between">

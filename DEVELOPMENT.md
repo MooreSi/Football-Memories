@@ -161,3 +161,14 @@ a 5012.2-second match; Download reused the prior capture and offered Import.
 SHA-256 confirmed its MP4/tag CSV were unchanged. The earlier full capture,
 import and offline playback remain verified. The cached count is observed
 content, not a claim that every historical video was enumerated.
+
+## Connected Library implementation (spec 120)
+Companion `/library` serves sanitized metadata, title-derived age groups and
+local thumbnail links; `hudl_metadata.py` owns hashed private image/detail files.
+`/account/action` accepts stream/download and clips with cached moment IDs.
+Automatic flows select maximum resolution then bitrate, with no 720p ceiling.
+Maximum-quality filenames include resolution and bitrate to preserve legacy
+captures. `hudl_exports.py` reads that verified file and stream-copies selected
+ranges to a ZIP. No runtime dependency added. Scoped local `/files/...` links
+serve attachments without buffering the full match in JavaScript; invalid
+scopes and foreign Origins remain denied. Keychain/browser rules are unchanged.

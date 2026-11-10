@@ -65,3 +65,28 @@ A successful 200 speculative manifest response can have an empty body. Ignore
 non-EXTM3U bodies before they become playback evidence; otherwise master
 selection fails before seeing the valid rendition. Regression test watched
 red for this case, then green after the guard.
+
+## Connected Library and highest quality (D-015)
+`GET /library` on the companion joins strict served catalogue identities with
+private detail/image cache. Age labels derive from actual video titles (mixed
+labels remain mixed, absent labels Unclassified). Successful normal library
+responses supply thumbnailUri values; fetch them serially with the ephemeral
+browser, saving only image bytes under hashed filenames. Real run cached all
+100 thumbnails, including 90 U10 videos. Never persist the thumbnail URL.
+
+Opening a connected match reads its Sportscode payload and streams maximum
+served resolution, breaking ties by bitrate. Archived capture filenames map
+back to cached served IDs through their existing stable hash; opening that local
+match uses the connected maximum-quality source when available. New captures
+include selected height/bitrate in the name, leaving older capped copies intact.
+`hudl_exports.py` copies local encoded streams to clips and publishes a ZIP
+exclusively. Boundaries can include the previous keyframe. A full high-quality
+source is captured before exporting ranges; this may take minutes. Scoped local
+file links allow attachment downloads with no Origin header, while foreign
+Origins or incorrect scopes remain blocked.
+
+`/api/players/tagged-codes` exposes actual imported codes. Explicit owner choice
+through `/api/players/from-tag` links only matching category events; overlapping
+events remain unattributed. Remote code selection uses cached ranges and a
+non-secret local preference; no roster is guessed. Currently only opened videos'
+tag metadata is cached, not an automatic scan of every historical video.

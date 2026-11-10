@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, Eye, Heart, Sparkles, Star, Trophy, UserRound } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
+import { useHudlLibrary } from "../api/hudl";
 import { MomentsPerMatch, TagRadar } from "../components/player/Charts";
 import { MemoriesTimeline } from "../components/player/MemoriesTimeline";
 import { MomentsFeed } from "../components/player/MomentsFeed";
@@ -16,11 +17,12 @@ import { Spinner } from "../components/ui/Spinner";
  *  tag radar + per-match bars below, phone-style moments feed right. */
 export function PlayerHubPage() {
   const id = Number(useParams().id);
+  const remote = useHudlLibrary();
   const qc = useQueryClient();
   const profile = useQuery({ queryKey: ["player", id], queryFn: () => api.player(id), enabled: Number.isFinite(id) });
   const feed = useQuery({ queryKey: ["player", id, "feed"], queryFn: () => api.playerMoments(id) });
   const makePrimary = useMutation({
-    mutationFn: () => api.setPrimaryPlayer(id),
+    mutationFn: () => {localStorage.removeItem("fm.hudl.player");return api.setPrimaryPlayer(id);},
     onSuccess: () => void qc.invalidateQueries(),
   });
 
@@ -49,6 +51,7 @@ export function PlayerHubPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/player/choose"><Button variant="ghost">Change player</Button></Link>
+          {remote.data?.some(m=>m.moments?.some(t=>t.category===p.display_name)) && <Link to={`/player/hudl/${encodeURIComponent(p.display_name)}`}><Button variant="primary">Download player moments (highest quality)</Button></Link>}
           {first && <Link to={`/matches/${first.match_id}`}><Button variant="subtle"><CalendarClock size={15} aria-hidden /> First archived game</Button></Link>}
           {latest && <Link to={`/matches/${latest.match_id}`}><Button variant="subtle"><Trophy size={15} aria-hidden /> Latest game</Button></Link>}
           {p.is_primary ? (

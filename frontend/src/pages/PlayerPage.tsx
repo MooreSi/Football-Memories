@@ -7,6 +7,8 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
 
+import { TaggedPlayerPicker } from "../components/player/TaggedPlayerPicker";
+
 /** /player: opens the primary player's hub, or lets the owner choose one. */
 export function PlayerPage({ choose = false }: { choose?: boolean }) {
   const qc = useQueryClient();
@@ -14,7 +16,7 @@ export function PlayerPage({ choose = false }: { choose?: boolean }) {
   const prefs = useQuery({ queryKey: ["preferences"], queryFn: api.preferences });
   const players = useQuery({ queryKey: ["players"], queryFn: api.players });
   const pick = useMutation({
-    mutationFn: (id: number) => api.setPrimaryPlayer(id),
+    mutationFn: (id: number) => { localStorage.removeItem("fm.hudl.player"); return api.setPrimaryPlayer(id); },
     onSuccess: (r) => {
       void qc.invalidateQueries();
       navigate(`/player/${r.primary_player_id}`);
@@ -23,6 +25,8 @@ export function PlayerPage({ choose = false }: { choose?: boolean }) {
 
   if (prefs.isPending || players.isPending) return <Spinner />;
   const primary = prefs.data?.primary_player_id;
+  const remotePlayer = localStorage.getItem("fm.hudl.player");
+  if (remotePlayer && !choose) return <Navigate to={`/player/hudl/${encodeURIComponent(remotePlayer)}`} replace />;
   if (primary && !choose) return <Navigate to={`/player/${primary}`} replace />;
 
   return (
@@ -32,6 +36,7 @@ export function PlayerPage({ choose = false }: { choose?: boolean }) {
         Pick the player whose football journey you want to follow. The app remembers your choice, shows their moments
         first and builds their memories timeline. You can change it at any time.
       </p>
+      <TaggedPlayerPicker />
       {!players.data || players.data.length === 0 ? (
         <EmptyState icon={UserRound} title="No players yet">
           Players appear when you import a match with a tags file that names them.{" "}

@@ -19,6 +19,7 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 | App shell / navigation | 01 | redesigned: labelled desktop tabs, compact phone icons, active pill; screen-specific canvas |
 | Library | 01 | redesigned: charcoal glass, overview / tall footage hero / latest match; single column on phones |
 | Match page | 02 | redesigned: compact navy workstation, 250px tag rail, video/timeline; phone filters precede the moment list |
+| Connected Hudl Library / match | 01 / 02 | age-filtered footage cards; navy player workspace with code rail and real download actions |
 | Import, Connections | 01 styling | done |
 | Player Hub (+ chooser) | 03 | shared charcoal canvas/panels, periwinkle shield and bars, blue radar, dark phone feed (owner consistency request, D-014) |
 | Clip Explorer | 02 | done: event-type rail with counts + solid active row, PLAYLISTS panel with "+", clip bar, queue, moment-frame cards |

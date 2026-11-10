@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/hudl-account-library`**, based on the pushed reference
+- **Current branch: `codex/hudl-library-workflow`**, based on the pushed reference
   redesign branch. Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.
@@ -23,6 +23,18 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **Spec 120:** main Library has connected Hudl age selection and cached footage
+  cards. Live refresh cached all 100 thumbnails (90 U10 videos). Dedicated match
+  screen automatically streams maximum served resolution/bitrate and caches
+  actual Sportscode tags (1,717 verified). Full match, player/code and selected
+  range download controls now live on that screen; local archived match headers
+  link there and switch to connected maximum-quality streams. My Player has an
+  explicit tagged-code picker for existing imported codes and opened Hudl videos.
+  New highest-quality captures leave older files intact. Moment ZIP exports copy
+  encoded streams without resizing; boundaries may include preceding keyframes.
+  Live selected-goal export is currently downloading its full highest-quality
+  source (helper running on 8766); do not restart it until finished. Check safe
+  `/account` status with the local app Origin. Tests/verification below.
 - Authorized capture from `codex/hudl-access-research` remains integrated.
   Authorized browser capture implemented (spec 090, D-012): host companion on
   127.0.0.1:8766, normal incognito Chrome login, HLS capture and Sportscode tag
@@ -56,7 +68,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 238 passed on SQLite and Postgres; frontend 91 passed.
+- Tests: backend 250 passed on SQLite and Postgres; frontend 94 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.
@@ -84,7 +96,8 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
   player-code mapping is covered offline; this live run preserved all labels
   as categories. Saved-account login, discovery, stream and Download reuse now
   verified. Helper remains on 8766 with active ephemeral session and credentials
-  in Mac Keychain. No pending owner action for spec 110. Large-library exhaustive
+  in Mac Keychain. No pending owner action. Spec 120 selected-range download is in progress;
+  keep the helper alive and verify ZIP + dimensions when complete. Large-library exhaustive
   enumeration, native Safari HLS and a fresh full-match download through the
   chooser have not been separately verified (underlying capture was verified).
 

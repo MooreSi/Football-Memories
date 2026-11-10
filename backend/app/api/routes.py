@@ -200,6 +200,15 @@ def stream(media_id: int, db: Db, settings: Cfg) -> FileResponse:
     )
 
 
+@router.get("/media/{media_id}/download")
+def download_media(media_id: int, db: Db, settings: Cfg) -> FileResponse:
+    media = _media_or_404(db, media_id)
+    path = library.media_path(settings.archive_root, media)
+    if not path.is_file():
+        raise HTTPException(status.HTTP_410_GONE, detail="the local file is missing")
+    return FileResponse(path, media_type="video/mp4", filename=media.original_filename)
+
+
 @router.get("/media/{media_id}/thumbnail")
 def thumbnail(media_id: int, db: Db, settings: Cfg) -> FileResponse:
     media = _media_or_404(db, media_id)

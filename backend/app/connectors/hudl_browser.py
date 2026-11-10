@@ -30,6 +30,7 @@ from app.connectors.hudl_capture import (
     parse_moments,
     save_capture,
 )
+from app.connectors.hudl_metadata import MatchCache, capture_key
 
 LOGIN_URL = "https://www.hudl.com/login"
 
@@ -253,7 +254,7 @@ def main() -> int:
     )
     parser.add_argument("--name", help="New filename stem; existing files are never overwritten")
     parser.add_argument(
-        "--max-height", type=int, choices=[360, 480, 540, 720, 1080, 2160], default=720
+        "--max-height", type=int, choices=[360, 480, 540, 720, 1080, 2160, 65536], default=65536
     )
     parser.add_argument(
         "--player-code",
@@ -332,6 +333,8 @@ class BrowserConnection:
         self.loader = loader
         self.catalogue = catalogue
         self.output = output
+        self.details = MatchCache(output.parent / ".hudl-account" / "details")
+        self._thumbnails: dict[str, str] = {}
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="hudl-account")
         self._lock = threading.Lock()
         self._busy = False
@@ -364,15 +367,26 @@ class BrowserConnection:
         with self._lock:
             self._state.update(state=state, message=message)
 
-    def start(self, action: str, identity: str | None = None) -> None:
+    def start(
+        self, action: str, identity: str | None = None, moment_ids: list[str] | None = None
+    ) -> None:
         with self._lock:
             if self._busy:
                 raise CaptureError("A Hudl operation is already running.")
             self._busy = True
-            self._state.update(
-                state="working", message="Opening Hudl…", stream_url=None, filename=None
+            completed = (
+                self._state.get("filename")
+                if action == "stream" and self._state.get("match_id") == identity
+                else None
             )
-        self._executor.submit(self._perform, action, identity)
+            self._state.update(
+                state="working",
+                message="Opening Hudl…",
+                stream_url=None,
+                filename=completed,
+                match_id=identity,
+            )
+        self._executor.submit(self._perform, action, identity, moment_ids)
 
     def close(self) -> None:
         def finish() -> None:
@@ -406,6 +420,7 @@ class BrowserConnection:
         self._assets.clear()
         self._stream_id = ""
         self._observed_matches.clear()
+        self._thumbnails.clear()
         self._library_failure = None
         self._playlist = b""
 
@@ -442,6 +457,12 @@ class BrowserConnection:
             if isinstance(payload, dict):
                 for match in library_matches(payload):
                     self._observed_matches[match["id"]] = match
+                for edge in (payload.get("data") or {}).get("library", {}).get("edges", []):
+                    node = edge.get("node") or {}
+                    if node.get("id") in self._observed_matches and isinstance(
+                        node.get("thumbnailUri"), str
+                    ):
+                        self._thumbnails[node["id"]] = media_url(node["thumbnailUri"])
         except Exception:
             return  # Ignore cancelled speculative response bodies.
 
@@ -506,6 +527,11 @@ class BrowserConnection:
                 "in the Hudl window, then Refresh matches."
             )
         self.catalogue.replace(matches)
+        for item in matches:
+            address = self._thumbnails.get(item["id"])
+            if address and not self.details.path(item["id"], ".image").exists():
+                self.report("discovering", "Caching match thumbnails…")
+                self.details.image(item["id"], fetch_media(self._context, address))
         self.report("ready", f"Connected. Cached {len(matches)} available matches.")
 
     def _observe(self, identity: str, need_tags: bool) -> Observation:
@@ -521,7 +547,9 @@ class BrowserConnection:
                 self._page.wait_for_timeout(500)
                 if observation.failure:
                     raise CaptureError(observation.failure)
-                if observation.manifests and (observation.payloads or not need_tags):
+                if observation.manifests and (
+                    observation.payloads or (not need_tags and time.monotonic() > deadline - 85)
+                ):
                     break
             if not observation.manifests or (need_tags and not observation.payloads):
                 raise CaptureError(
@@ -538,16 +566,36 @@ class BrowserConnection:
         import secrets
 
         observation = self._observe(identity, False)
-        address = observation.master(720)
+        address = observation.master(65536)
         for _ in range(3):
             manifest = parse_manifest(
-                fetch_media(self._context, address).decode(), address, max_height=720
+                fetch_media(self._context, address).decode(), address, max_height=65536
             )
             if manifest.variant_url is None:
                 break
             address = manifest.variant_url
         else:
             raise CaptureError("Unsupported nested stream manifest.")
+        if isinstance(observation.payloads, list) and observation.payloads:
+            duration = self._page.locator("video").first.evaluate("element => element.duration")
+            moments = parse_moments(
+                clip_tag_padding(observation.payloads, identity, duration), identity, set()
+            )
+            self.details.write(
+                identity,
+                {
+                    "duration_s": duration,
+                    "moments": [
+                        {
+                            "id": m.source_event_id,
+                            "time_s": m.time_s,
+                            "duration_s": m.duration_s,
+                            "category": m.category,
+                        }
+                        for m in moments
+                    ],
+                },
+            )
         self._stream_id = secrets.token_urlsafe(24)
         self._assets = {str(index): url for index, url in enumerate(manifest.resources)}
         playlist = manifest.local_playlist
@@ -572,8 +620,11 @@ class BrowserConnection:
             raise CaptureError("Unknown stream resource.")
         return fetch_media(self._context, self._assets[asset]), "application/octet-stream"
 
-    def _download(self, identity: str) -> None:
-        name = f"hudl-{hashlib.sha256(identity.encode()).hexdigest()[:16]}"
+    def _download(self, identity: str) -> Path:
+        observation = self._observe(identity, False)
+        master = observation.master(65536)
+        rendition = parse_manifest(observation.manifests[master], master, max_height=65536)
+        name = f"hudl-{capture_key(identity)}-highest-{rendition.height}p-{rendition.bandwidth}"
         destination = self.output / f"{name}.mp4"
         if destination.exists() and destination.with_suffix(".tags.csv").exists():
             with self._lock:
@@ -581,12 +632,27 @@ class BrowserConnection:
             self.report(
                 "done", "This match is already captured. Use Import to add it to the Library."
             )
-            return
-        observation = self._observe(identity, True)
+            return destination
         video = self._page.locator("video").first
         duration = video.evaluate("element => element.duration")
         payloads = clip_tag_padding(observation.payloads, identity, duration)
         moments = parse_moments(payloads, identity, set())
+        self.details.write(
+            identity,
+            {
+                "duration_s": duration,
+                "quality_height": rendition.height,
+                "moments": [
+                    {
+                        "id": m.source_event_id,
+                        "time_s": m.time_s,
+                        "duration_s": m.duration_s,
+                        "category": m.category,
+                    }
+                    for m in moments
+                ],
+            },
+        )
         self.output.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix=".hudl-download-", dir=self.output) as temp:
 
@@ -596,9 +662,9 @@ class BrowserConnection:
 
             source, length = capture_hls(
                 lambda url: fetch_media(self._context, url),
-                observation.master(720),
+                master,
                 Path(temp),
-                max_height=720,
+                max_height=65536,
                 progress=progress,
             )
             self.report("verifying", "Verifying captured video and moments.")
@@ -609,7 +675,11 @@ class BrowserConnection:
             "done", f"Verified video and {len(moments)} moments saved. Use Import to add the match."
         )
 
-    def _perform(self, action: str, identity: str | None) -> None:
+        return target
+
+    def _perform(
+        self, action: str, identity: str | None, moment_ids: list[str] | None = None
+    ) -> None:
         try:
             if action == "test":
                 self._discover()
@@ -624,6 +694,19 @@ class BrowserConnection:
                 )
             elif action == "stream" and identity:
                 self._prepare_stream(identity)
+            elif action == "clips" and identity:
+                from app.connectors.hudl_exports import export_ranges
+
+                available = self.details.read(identity).get("moments", [])
+                selected = [m for m in available if m["id"] in (moment_ids or [])]
+                if not selected or len(selected) != len(set(moment_ids or [])):
+                    raise CaptureError("Select moments loaded from this match first.")
+                source = self._download(identity)
+                self.report("exporting", "Saving moments at original encoded quality…")
+                target = export_ranges(source, selected, self.output)
+                with self._lock:
+                    self._state["filename"] = target.name
+                self.report("done", "Original-quality moments ZIP ready to download.")
             elif action == "download" and identity:
                 self._download(identity)
             else:

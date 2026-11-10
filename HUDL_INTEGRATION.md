@@ -162,3 +162,22 @@ a 5012.2-second match; Download reused the prior capture and offered Import.
 SHA-256 confirmed its MP4/tag CSV were unchanged. The earlier full capture,
 import and offline playback remain verified. The cached count is observed
 content, not a claim that every historical video was enumerated.
+
+## Library workflow and maximum quality (spec 120, supersedes 720p defaults)
+Use the main Library's cached Hudl cards and age-group selector. Refresh loads
+normal accessible library responses and caches thumbnail bytes locally. Opening
+a card prepares the highest available supported HLS rendition and caches its
+actual Sportscode ranges/codes. My Player's tagged-code picker explicitly names
+the player; existing imported code rows can become player-linked without
+re-importing or inferring overlaps.
+
+Match and code/player downloads are on `/hudl/:id`; local archived match headers
+link there when their stable capture ID is in the connected catalogue. Those
+archived matches also switch to the highest connected stream automatically.
+A new full source copy has selected resolution/bitrate in its filename, so an
+older 540p capture cannot satisfy a highest-quality request. Clips are original
+encoded stream copies in a ZIP, with exact source labels/ranges in moments.json;
+keyframe boundaries can start slightly early. First clip export needs the full
+highest-quality source and may take minutes. Completed captures expose a scoped
+localhost attachment link; full MP4s can then use the existing Import workflow.
+No signed remote address is stored in metadata or sent to the app.

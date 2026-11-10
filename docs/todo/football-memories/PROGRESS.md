@@ -6,6 +6,15 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Connected Library workflow (spec 120)
+
+| Task | Status | Notes |
+|---|---|---|
+| Main Library age groups and cached thumbnails | done | all 100 thumbnails cached live; U10 filter shows 90 videos |
+| My Player tagged-code selection | done | explicit selection links only matching code events; remote code profiles use cached ranges |
+| Highest-quality automatic playback/capture | done | max served resolution then bitrate; separate names preserve capped copies |
+| Discoverable match / player / moment download controls | partial | built; live high-quality full source for selected range export is downloading |
+
 ## Current checkpoint: saved Hudl account and team identity (spec 110)
 
 | Task | Status | Notes |
@@ -99,6 +108,27 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+
+### 2026-11-10 Connected Library checkpoint (codex/hudl-library-workflow)
+- Watched new metadata/age/quality/legacy-reuse tests red, then green. Watched
+  tagged-code endpoints fail before implementation, and Library thumbnail/age
+  UI test fail against its empty component. Untagged full-download request test
+  failed on the old tag-required path before fixing it.
+- Later detail-route/player-link tests got explicit negative controls: removed
+  the no-Origin requirement -> foreign-origin attachment test failed; removed
+  category-to-player linking -> player moment count test failed. Restored both.
+- Frontend selected-range and explicit-player tests were added afterward; their
+  deliberate wrong-ID/wrong-category negative controls failed as expected, then
+  sources restored. Same-match stream resumption also retains completed download
+  links; removing that preservation made its regression test fail.
+- Final backend gates: 250 passed SQLite and 250 PostgreSQL; ruff/format/mypy
+  clean; alembic no drift (no schema changes).
+  Frontend: 94 passed, typecheck/build clean. No existing tests changed.
+- Live refresh: 100 thumbnails cached; U10 filter shows 90 videos. Opened match
+  auto-prepared highest stream and cached 1,717 ranges. Selected-goal ZIP job is
+  downloading its separate maximum-quality full source; keep helper alive.
+- Thumbnail Library proof screenshot in ignored data/hudl-age-library.jpg.
+  No user credentials, real roster fixtures or media added to Git.
 
 ### 2026-11-10 Live saved-account verification and empty-prefetch fix
 - Owner entered credentials in the app and clicked Save/Test. Helper reports

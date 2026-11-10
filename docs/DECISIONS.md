@@ -4,6 +4,31 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-015 (2026-11-10) Connected Library and original-quality downloads
+Owner explicitly requests age groups/thumbnails in Library, tagged-player
+selection, highest-quality streams/offline copies, and discoverable downloads.
+This supersedes D-012/D-014's automatic 720p ceiling: automatic account streaming
+and download choose maximum served resolution, then maximum bitrate at that
+resolution. Manual legacy capture defaults to Highest available; explicit old
+quality choices remain for compatibility. New highest-resolution/bitrate names
+leave existing capped captures unchanged and cannot reuse them as highest.
+
+Age grouping uses age labels actually present in served video titles, retaining
+mixed groups and Unclassified; no guessed team IDs. Cache thumbnail bytes from
+observed library thumbnailUri values, not their signed addresses. Cache scrubbed
+Sportscode range/code metadata after opening a video. The owner explicitly
+selects a code as their player; do not infer ownership from timeline overlap.
+Local code selection links only that code's existing events and retains all
+other tags. Remote selected code is a non-secret local preference.
+
+Moment downloads first cache the highest-quality full source, then copy original
+encoded streams into individually playable MP4s in a ZIP. No downscale or lossy
+re-encode. Stream-copy starts may include the preceding keyframe; original tag
+ranges/labels accompany the ZIP. File attachments use an ephemeral resource
+scope on localhost so browser downloads need not buffer entire matches in JS.
+Foreign Origin requests remain refused. No Hudl credentials or media URLs in
+metadata, browser storage, filenames or logs.
+
 ## D-014 (2026-11-10) Saved local Hudl account, cached matches and consistent styling
 The owner explicitly requests username/password Save/Test, accessible-match
 caching, stream/download selection and real team logos. Credentials stay in

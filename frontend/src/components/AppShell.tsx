@@ -73,7 +73,7 @@ function GlobalSearch() {
 export function AppShell() {
   const { pathname } = useLocation();
   const screen = pathname.startsWith("/player") ? "profile"
-    : pathname.startsWith("/matches/") || pathname.startsWith("/clips") ? "analysis"
+    : (pathname.startsWith("/matches/") || pathname.startsWith("/hudl/")) || pathname.startsWith("/clips") ? "analysis"
     : pathname === "/" ? "dashboard" : "settings";
   return (
     <div className="app-surface min-h-screen" data-screen={screen}>

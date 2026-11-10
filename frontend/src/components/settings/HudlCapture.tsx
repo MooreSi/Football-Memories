@@ -12,7 +12,7 @@ export function HudlCapture() {
   const client = useQueryClient();
   const [url, setUrl] = useState("");
   const [players, setPlayers] = useState("");
-  const [height, setHeight] = useState("720");
+  const [height, setHeight] = useState("65536");
   const [validation, setValidation] = useState("");
   const q = useQuery<Status>({
     queryKey: KEY, retry: false,
@@ -77,6 +77,7 @@ export function HudlCapture() {
             <label className="block text-xs text-fg-muted">
               Maximum quality
               <select aria-label="Maximum quality" value={height} onChange={e => setHeight(e.target.value)} disabled={busy} className={inputClass}>
+                <option value="65536">Highest available (original quality)</option>
                 {[540, 720, 1080, 2160].map(value => <option key={value} value={value}>{value}p</option>)}
               </select>
             </label>

@@ -13,13 +13,14 @@ import uvicorn
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from app.connectors.hudl_account import Catalogue, Credentials
 from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_keychain import Keychain
+from app.connectors.hudl_metadata import MatchCache, age_group, capture_key
 
 ORIGINS = {
     "http://127.0.0.1:8765",
@@ -32,7 +33,7 @@ ORIGINS = {
 class CaptureRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     url: str = Field(max_length=500)
-    max_height: Literal[360, 480, 540, 720, 1080, 2160] = 720
+    max_height: Literal[360, 480, 540, 720, 1080, 2160, 65536] = 65536
     player_codes: list[str] = Field(default_factory=list, max_length=100)
 
     @field_validator("url")
@@ -50,8 +51,9 @@ class AccountCredentials(BaseModel):
 
 class AccountAction(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    action: Literal["test", "refresh", "stream", "download", "disconnect"]
+    action: Literal["test", "refresh", "stream", "download", "disconnect", "clips"]
     match_id: str | None = Field(default=None, max_length=300)
+    moment_ids: list[str] = Field(default_factory=list, max_length=2000)
 
 
 class CaptureBusy(Exception):
@@ -119,11 +121,15 @@ def create_companion(output: Path) -> FastAPI:
     cache = output.parent / ".hudl-account"
     app.state.keychain = Keychain(Path.home() / "Library/Caches/FootballMemories")
     app.state.catalogue = Catalogue(cache)
+    app.state.details = MatchCache(cache / "details")
     app.state.account = BrowserConnection(
         lambda: app.state.keychain.load(), app.state.catalogue, output
     )
     app.state.account_configured = None
     app.state.hudl_gate = threading.Lock()
+    import secrets
+
+    app.state.file_scope = secrets.token_urlsafe(24)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=sorted(ORIGINS),
@@ -137,9 +143,13 @@ def create_companion(output: Path) -> FastAPI:
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         origin = request.headers.get("origin")
-        if (
-            request.headers.get("host") not in {"127.0.0.1:8766", "localhost:8766"}
-            or origin not in ORIGINS
+        if request.headers.get("host") not in {"127.0.0.1:8766", "localhost:8766"} or (
+            origin not in ORIGINS
+            and not (
+                origin is None
+                and request.method == "GET"
+                and request.url.path.startswith(f"/files/{app.state.file_scope}/")
+            )
         ):
             return JSONResponse(
                 {"detail": "Only the local Football Memories app can use this helper."},
@@ -147,7 +157,8 @@ def create_companion(output: Path) -> FastAPI:
             )
         if request.method == "POST" and (
             request.headers.get("content-type") != "application/json"
-            or int(request.headers.get("content-length", "0")) > 8192
+            or int(request.headers.get("content-length", "0"))
+            > (262144 if request.url.path == "/account/action" else 8192)
         ):
             return JSONResponse({"detail": "Invalid capture request."}, status_code=400)
         response = await call_next(request)
@@ -174,7 +185,48 @@ def create_companion(output: Path) -> FastAPI:
         return {
             **request.app.state.account.status(),
             "configured": request.app.state.account_configured,
+            "download_url": (
+                f"http://127.0.0.1:8766/files/{app.state.file_scope}/{request.app.state.account.status()['filename']}"
+                if request.app.state.account.status().get("filename")
+                else None
+            ),
         }
+
+    @app.get("/library")
+    def remote_library(request: Request) -> list[dict[str, object]]:
+        return [
+            {
+                **item,
+                "age_group": age_group(item["title"]),
+                "capture_key": capture_key(item["id"]),
+                "thumbnail_url": f"http://127.0.0.1:8766/account/match/{item['id']}/thumbnail"
+                if request.app.state.details.path(item["id"], ".image").is_file()
+                else None,
+                **request.app.state.details.read(item["id"]),
+            }
+            for item in request.app.state.catalogue.items()
+        ]
+
+    @app.get("/account/match/{identity}/thumbnail")
+    def match_image(identity: str, request: Request) -> FileResponse:
+        request.app.state.catalogue.find(identity)
+        path = request.app.state.details.path(identity, ".image")
+        if not path.is_file():
+            raise CaptureError("Thumbnail is not cached yet. Refresh matches.")
+        return FileResponse(path)
+
+    @app.get("/files/{scope}/{filename}")
+    def captured_file(scope: str, filename: str) -> FileResponse:
+        import re
+
+        if scope != app.state.file_scope:
+            raise CaptureError("This download link has expired.")
+        if not re.fullmatch(r"hudl-[a-zA-Z0-9-]+\.(mp4|zip|csv)", filename):
+            raise CaptureError("Select a completed capture.")
+        path = output / filename
+        if not path.is_file() or path.is_symlink():
+            raise CaptureError("Capture is not available.")
+        return FileResponse(path, filename=filename)
 
     @app.post("/account/credentials")
     def save_credentials(body: AccountCredentials, request: Request) -> dict[str, bool]:
@@ -192,11 +244,14 @@ def create_companion(output: Path) -> FastAPI:
         with request.app.state.hudl_gate:
             if request.app.state.capture.status()["state"] not in {"idle", "done", "error"}:
                 raise CaptureError("A URL capture is already running. Wait for it to finish.")
-            if body.action in {"stream", "download"}:
+            if body.action in {"stream", "download", "clips"}:
                 if not body.match_id:
                     raise CaptureError("Select a cached match first.")
                 request.app.state.catalogue.find(body.match_id)
-            request.app.state.account.start(body.action, body.match_id)
+            if body.action == "clips":
+                request.app.state.account.start(body.action, body.match_id, body.moment_ids)
+            else:
+                request.app.state.account.start(body.action, body.match_id)
         return {"accepted": True}
 
     @app.get("/stream/{stream}/{asset}")

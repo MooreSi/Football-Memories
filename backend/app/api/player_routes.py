@@ -6,11 +6,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
+from sqlalchemy import distinct, func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_settings
 from app.config import Settings
-from app.models import Event, EventMark, Player
+from app.models import Event, EventMark, Player, TagDefinition
 from app.schemas import (
     FavouriteIn,
     MatchCountOut,
@@ -101,6 +103,40 @@ def _profile_out(db: Session, player_id: int) -> PlayerProfileOut:
         first_match_date=p.first_match_date,
         latest_match_date=p.latest_match_date,
     )
+
+
+class TaggedPlayerIn(BaseModel):
+    category: str = Field(min_length=1, max_length=200)
+
+
+@router.get("/players/tagged-codes")
+def tagged_codes(db: Db) -> list[dict[str, object]]:
+    rows = db.execute(
+        select(TagDefinition.name, func.count(Event.id), func.count(distinct(Event.match_id)))
+        .join(Event, Event.tag_id == TagDefinition.id)
+        .group_by(TagDefinition.name)
+        .order_by(TagDefinition.name)
+    ).all()
+    return [{"name": name, "moments": count, "matches": matches} for name, count, matches in rows]
+
+
+@router.post("/players/from-tag")
+def choose_tagged_player(body: TaggedPlayerIn, db: Db) -> dict[str, int]:
+    events = db.scalars(
+        select(Event).join(TagDefinition).where(TagDefinition.name == body.category)
+    ).all()
+    if not events:
+        raise HTTPException(400, "Select a code actually tagged in your videos.")
+    player = db.scalars(select(Player).where(Player.display_name == body.category)).first()
+    if player is None:
+        player = Player(display_name=body.category)
+        db.add(player)
+        db.flush()
+    for event in events:
+        if player not in event.players:
+            event.players.append(player)
+    players.set_primary_player(db, player.id)
+    return {"player_id": player.id}
 
 
 @router.get("/players/{player_id}", response_model=PlayerProfileOut)

@@ -19,7 +19,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
   return data;
 }
 
-function StreamPlayer({ url }: { url: string }) {
+export function StreamPlayer({ url, seek }: { url: string; seek?: {time:number; nonce:number} }) {
   const video = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -45,6 +45,12 @@ function StreamPlayer({ url }: { url: string }) {
     }).catch(() => { if (!disposed) setError("The streaming player could not load. Refresh the app."); });
     return () => { disposed = true; player?.destroy(); };
   }, [url]);
+  useEffect(() => {
+    const element=video.current;if(!element||!seek)return;
+    const play=()=>{element.currentTime=seek.time;void element.play().catch(()=>undefined);};
+    if(element.readyState)play();else element.addEventListener("loadedmetadata",play,{once:true});
+    return ()=>element.removeEventListener("loadedmetadata",play);
+  },[seek]);
   return <div className="space-y-2">
     <video ref={video} crossOrigin="anonymous" controls playsInline preload="none"
       aria-label="Hudl match stream" className="aspect-video w-full rounded-xl bg-black" />

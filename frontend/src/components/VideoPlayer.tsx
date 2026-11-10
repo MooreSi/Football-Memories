@@ -7,6 +7,8 @@ import type { MatchEvent } from "../api/types";
 import { type Buffers, clipWindow, nextEventIndex, previousEventIndex } from "../lib/events";
 import { formatClock } from "../lib/format";
 
+import { useHlsSource } from "../lib/useHlsSource";
+
 export const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 export interface PlayRequest {
@@ -70,6 +72,7 @@ export function VideoPlayer({
   onActiveEvent, onTime,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  useHlsSource(videoRef, src);
   const shellRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<{ start: number; end: number; index: number } | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -237,7 +240,8 @@ export function VideoPlayer({
     <div ref={shellRef} className="group relative overflow-hidden rounded-2xl border border-line bg-black">
       <video
         ref={videoRef}
-        src={src}
+        src={src.includes(".m3u8") ? undefined : src}
+        crossOrigin={src.includes(".m3u8") ? "anonymous" : undefined}
         poster={poster ?? undefined}
         preload="metadata"
         playsInline

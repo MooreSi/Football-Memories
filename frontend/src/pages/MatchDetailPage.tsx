@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, ListVideo, TriangleAlert, X } from "lucide-react";
+import { Download, CalendarDays, ListVideo, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
@@ -16,6 +16,9 @@ import { clipWindow } from "../lib/events";
 import { useClipBuffers } from "../lib/useClipBuffers";
 import { formatBytes, formatClock, formatDate } from "../lib/format";
 import { useMomentFilter } from "../lib/useMomentFilter";
+
+import { useConnectedMatch } from "../components/hudl/useConnectedMatch";
+import { ExportClipButton } from "../components/clips/ExportClipButton";
 
 export function MatchDetailPage() {
   const id = Number(useParams().id);
@@ -43,6 +46,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
   const [momentsOnly, setMomentsOnly] = useState(params.get("moments") === "1");
   const [clock, setClock] = useState({ time: 0, duration: m.media?.duration_s ?? 0 });
   const media = m.media;
+  const connected = useConnectedMatch(media?.original_filename || "");
   const buffers = useClipBuffers();
   const qc = useQueryClient();
   const refresh = () => void qc.invalidateQueries({ queryKey: ["match", m.id] });
@@ -101,6 +105,8 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
             <TeamBadge name={m.opponent} size="sm" tone="away" />
           </div>
           <div className="flex items-center gap-2">
+            {connected.match ? <Link className="inline-flex items-center gap-2 rounded-full border border-accent/40 px-4 py-2 text-sm text-accent" to={`/hudl/${encodeURIComponent(connected.match.id)}`}><Download size={15}/> Download match / player moments</Link>
+              : media?.available && <a className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm" href={`/api/media/${media.id}/download`}><Download size={15}/> Download full match</a>}
             {m.offline ? <Badge tone="ok">Offline copy</Badge> : <Badge tone="danger">File missing</Badge>}
             <button
               type="button"
@@ -118,10 +124,10 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
           </div>
         </div>
 
-        {media?.available ? (
+        {connected.busy && !connected.src ? <Spinner label="Preparing highest-quality Hudl stream" /> : media?.available ? (
           <VideoPlayer
             mediaId={media.id}
-            src={media.stream_url}
+            src={connected.src || media.stream_url}
             poster={media.thumbnail_url}
             fps={media.fps}
             events={filter.filtered}
@@ -140,6 +146,7 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
           </EmptyState>
         )}
 
+        {connected.message && <p className="text-xs text-fg-muted">{connected.message} · Highest available Hudl rendition</p>}
         {/* Clip bar + chips + full-match timeline (reference 2 bottom) */}
         <section aria-label="Moment timeline" className="analysis-timeline panel space-y-3 p-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 font-mono text-xs text-fg-muted">
@@ -185,9 +192,10 @@ function MatchWorkspace({ match: m }: { match: MatchDetail }) {
           <p className="panel !rounded-2xl p-4 text-sm text-fg-muted">
             No tagged moments for this match. Add a <code className="text-fg">.tags.csv</code> file next to the video when importing.
           </p>
-        ) : (
+        ) : (<>
+          {active && !connected.match && <ExportClipButton moment={{event_id:active.id,category:active.category,opponent:m.opponent,time_s:active.time_s,offline:m.offline}} />}
           <MomentList events={filter.filtered} activeEventId={activeEventId} onSelect={play} onFavourite={(e, fav) => favourite.mutate({ e, fav })} />
-        )}
+        </>)}
 
         {media && (
           <dl className="panel grid grid-cols-2 gap-4 !rounded-2xl p-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
