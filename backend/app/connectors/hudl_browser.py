@@ -339,7 +339,10 @@ class BrowserConnection:
         self._teams: dict[str, dict[str, str]] = {}
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="hudl-account")
         self._lock = threading.Lock()
-        self._busy = False
+        self._pending = 0
+        self._syncing = False
+        self._cancel_sync = threading.Event()
+        self._tag_failures: set[str] = set()
         self._browser: Any = None
         self._playwright: Any = None
         self._context: Any = None
@@ -360,7 +363,8 @@ class BrowserConnection:
         with self._lock:
             return {
                 **self._state,
-                "busy": self._busy,
+                "busy": self._pending > 0,
+                "syncing": self._syncing,
                 "matches": self.catalogue.items(),
                 "session_active": self._context is not None,
             }
@@ -370,12 +374,28 @@ class BrowserConnection:
             self._state.update(state=state, message=message)
 
     def start(
-        self, action: str, identity: str | None = None, moment_ids: list[str] | None = None
+        self,
+        action: str,
+        identity: str | None = None,
+        moment_ids: list[str] | None = None,
+        *,
+        combined: bool = False,
     ) -> None:
         with self._lock:
-            if self._busy:
+            # A background tag sync yields to one user action; nothing else queues.
+            if self._pending and not (
+                self._syncing and self._pending == 1 and action != "sync_tags"
+            ):
                 raise CaptureError("A Hudl operation is already running.")
-            self._busy = True
+            if self._syncing:
+                self._cancel_sync.set()
+            self._pending += 1
+            if action == "sync_tags":
+                self._syncing = True
+                self._cancel_sync.clear()
+                self._state.update(state="syncing", message="Indexing tags for your matches…")
+                self._executor.submit(self._perform, action, identity, moment_ids, combined)
+                return
             completed = (
                 self._state.get("filename")
                 if action == "stream" and self._state.get("match_id") == identity
@@ -388,7 +408,7 @@ class BrowserConnection:
                 filename=completed,
                 match_id=identity,
             )
-        self._executor.submit(self._perform, action, identity, moment_ids)
+        self._executor.submit(self._perform, action, identity, moment_ids, combined)
 
     def close(self) -> None:
         def finish() -> None:
@@ -742,14 +762,92 @@ class BrowserConnection:
 
         return target
 
+    def _cache_tags(self, identity: str) -> int:
+        """Record one match's tag metadata from its normal playback page; never the video."""
+        observation = self._observe(identity, False)
+        duration = self._page.locator("video").first.evaluate("element => element.duration")
+        moments, tag_status = (
+            optional_moments(observation.payloads, identity, duration)
+            if observation.payloads
+            else ([], "none")
+        )
+        self.details.write(
+            identity,
+            {
+                **self.details.read(identity),
+                "duration_s": duration,
+                "tag_status": tag_status,
+                "moments": [
+                    {
+                        "id": m.source_event_id,
+                        "time_s": m.time_s,
+                        "duration_s": m.duration_s,
+                        "category": m.category,
+                    }
+                    for m in moments
+                ],
+            },
+        )
+        return len(moments)
+
+    def _queue_sync(self) -> None:
+        """New matches get their tag metadata recorded automatically after discovery."""
+        with self._lock:
+            self._pending += 1
+            self._syncing = True
+            self._cancel_sync.clear()
+        self._executor.submit(self._perform, "sync_tags", None)
+
+    def _sync_tags(self) -> None:
+        """Sequential, paced sweep of matches whose tags were never recorded.
+
+        Pacing is the provisional owner decision 007: one match at a time with a
+        pause between pages, stopping on repeated failures (golden rule 3).
+        """
+        pending = [
+            item["id"]
+            for item in self.catalogue.items()
+            if "tag_status" not in self.details.read(item["id"])
+            and item["id"] not in self._tag_failures
+        ]
+        failures = done = 0
+        for identity in pending:
+            if self._cancel_sync.is_set():
+                self.report("ready", f"Tag indexing paused; {len(pending) - done} matches left.")
+                return
+            self.report("syncing", f"Indexing tags: match {done + 1} of {len(pending)}…")
+            try:
+                self._cache_tags(identity)
+                failures = 0
+            except CaptureError:
+                self._tag_failures.add(identity)
+                failures += 1
+                if failures >= 2:
+                    self.report(
+                        "error",
+                        "Tag indexing stopped after Hudl pages failed to load twice. "
+                        "Cached tags are kept; Refresh Hudl to continue.",
+                    )
+                    return
+            done += 1
+            if self._page is not None:
+                self._page.wait_for_timeout(2500)
+        skipped = f" {len(self._tag_failures)} could not be read." if self._tag_failures else ""
+        self.report("ready", f"Tag indexing complete for {len(pending)} new matches.{skipped}")
+
     def _perform(
-        self, action: str, identity: str | None, moment_ids: list[str] | None = None
+        self,
+        action: str,
+        identity: str | None,
+        moment_ids: list[str] | None = None,
+        combined: bool = False,
     ) -> None:
         try:
-            if action == "test":
-                self._discover()
-            elif action == "refresh":
-                self._discover(refresh=True)
+            if action == "sync_tags":
+                self._sync_tags()
+            elif action in {"test", "refresh"}:
+                self._discover(refresh=action == "refresh")
+                self._queue_sync()
             elif action == "disconnect":
                 self._close()
                 with self._lock:
@@ -768,10 +866,15 @@ class BrowserConnection:
                     raise CaptureError("Select moments loaded from this match first.")
                 source = self._download(identity)
                 self.report("exporting", "Saving moments at original encoded quality…")
-                target = export_ranges(source, selected, self.output)
+                target = export_ranges(source, selected, self.output, combined=combined)
                 with self._lock:
                     self._state["filename"] = target.name
-                self.report("done", "Original-quality moments ZIP ready to download.")
+                self.report(
+                    "done",
+                    "Combined moments video ready to download."
+                    if combined
+                    else "Moments ZIP (one video per moment) ready to download.",
+                )
             elif action == "download" and identity:
                 self._download(identity)
             else:
@@ -786,4 +889,6 @@ class BrowserConnection:
             )
         finally:
             with self._lock:
-                self._busy = False
+                self._pending -= 1
+                if action == "sync_tags":
+                    self._syncing = False

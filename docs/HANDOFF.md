@@ -13,8 +13,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/hudl-stream-tags`**, based on the pushed reference
-  redesign branch. Spec 110 adds username/password Save/Test through macOS
+- **Current branch: `main`**, consolidating every existing local and remote
+  branch through `codex/hudl-stream-tags` (owner requested all-branch merge).
+  Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.
   Shared TeamBadge now caches real club crests (Aston Villa/Stoke verified in
@@ -23,6 +24,19 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **D-020 (2026-11-10, owner request):** match page "Play Tagged" plays the
+  chosen player's/selected moments back to back; moment download asks for
+  separate files (ZIP) or one combined MP4, both re-encoded H.264 at source
+  resolution. Player page lists every cached match where the player is tagged;
+  tag metadata for all matches is indexed after each Hudl Test/Refresh (or
+  "Index remaining matches"), pacing per owner decision 003 (open). Hudl-tagged
+  names open a real Player Hub (photo/details). Library hero shows the newest
+  Hudl match for the selected age group with prev/next arrows. Settings >
+  Storage chooses the helper's download folder and moves files to the Trash.
+  Verified in the browser: hero (U11 Stoke, then West Brom) and Storage list.
+  **Not live-verified:** the first tag sweep against real Hudl, Play Tagged on a
+  real stream, combined/separate export of a real match, Finder folder picker,
+  Trash move on real files. These need the owner (each is read-only on Hudl).
 - **Spec 160:** native Sportscode tags now cache independently of full video
   capture (D-019 supersedes the false-sync omission for observed native views).
   U11 Stoke: 2,191 tags / 66 codes; U11 West Brom: 1,927 / 65, streamed without
@@ -85,8 +99,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Captured 83m32s at 960×540 with H.264/AAC and 1,717 moments across 60 codes.
   Existing `highlight-reels` commits are integrated here because the running
   database already uses that schema; no database downgrade was performed.
-- `main` predates the Hudl/reel and screen redesign branches. Continue from the
-  current branch to retain these features until they are merged.
+- `main` now contains all existing feature branches, including Hudl/reels and
+  the screen redesign. Historical branch names remain available; none deleted.
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
   inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
   Match page with player, event markers, filters (AND/OR), "play moments only".
@@ -109,7 +123,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 273 passed on SQLite and Postgres; frontend 101 passed.
+- Tests: backend 290 passed on SQLite and Postgres; frontend 118 (see D-020 note on the one updated match-page test).
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

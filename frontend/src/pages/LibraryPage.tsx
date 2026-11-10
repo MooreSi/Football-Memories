@@ -13,6 +13,8 @@ import { Spinner } from "../components/ui/Spinner";
 
 import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
+import { HudlHero } from "../components/library/HudlHero";
+import { clubName, latestFirst } from "../lib/hudlFixture";
 
 const PAGE_SIZE = 24;
 
@@ -63,6 +65,8 @@ export function LibraryPage() {
   const filtering = Boolean(q || teamId || seasonId);
   const s = stats.data;
   const featured = latest.data?.items ?? [];
+  const heroMatches = latestFirst((remote.data ?? []).filter(m => !ageGroup || hudlAgeGroups(m).includes(ageGroup)));
+  const club = clubName(featured[0]?.team_name);
   const maxTag = Math.max(1, ...(s?.top_tags.map((t) => t.count) ?? [1]));
 
 
@@ -115,7 +119,8 @@ export function LibraryPage() {
 
       {/* Centre: featured hero + all matches */}
       <div className="dashboard-centre min-w-0 space-y-6">
-        {featured.length > 0 && <FeaturedHero matches={featured} />}
+        {heroMatches.length > 0 ? <HudlHero key={ageGroup} matches={heroMatches} club={club} age={ageGroup} />
+          : featured.length > 0 && <FeaturedHero matches={featured} />}
 
         <section aria-label="All matches" className="match-collection panel p-5">
           <div className="mb-4 flex flex-wrap items-center gap-3">

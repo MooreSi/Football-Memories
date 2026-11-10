@@ -16,9 +16,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
+from app.connectors import hudl_downloads
 from app.connectors.hudl_account import Catalogue, Credentials
 from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
+from app.connectors.hudl_downloads import DownloadFolder
 from app.connectors.hudl_keychain import Keychain
 from app.connectors.hudl_metadata import MatchCache, age_group, capture_key, season_label
 
@@ -51,9 +53,20 @@ class AccountCredentials(BaseModel):
 
 class AccountAction(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    action: Literal["test", "refresh", "stream", "download", "disconnect", "clips"]
+    action: Literal["test", "refresh", "stream", "download", "disconnect", "clips", "sync_tags"]
     match_id: str | None = Field(default=None, max_length=300)
     moment_ids: list[str] = Field(default_factory=list, max_length=2000)
+    combined: bool = False
+
+
+class FolderAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    action: Literal["choose", "reset"]
+
+
+class DeleteDownload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    name: str = Field(min_length=1, max_length=255)
 
 
 class CaptureBusy(Exception):
@@ -125,6 +138,8 @@ def create_companion(output: Path) -> FastAPI:
     app.state.account = BrowserConnection(
         lambda: app.state.keychain.load(), app.state.catalogue, output
     )
+    app.state.downloads = DownloadFolder(output, cache / "downloads.json")
+    app.state.account.output = app.state.capture.output = app.state.downloads.folder
     app.state.account_configured = None
     app.state.hudl_gate = threading.Lock()
     import secrets
@@ -216,15 +231,49 @@ def create_companion(output: Path) -> FastAPI:
             raise CaptureError("Thumbnail is not cached yet. Refresh matches.")
         return FileResponse(path)
 
+    def idle_for_files(request: Request) -> None:
+        account = request.app.state.account.status()
+        if (account["busy"] and not account.get("syncing")) or request.app.state.capture.status()[
+            "state"
+        ] not in {"idle", "done", "error"}:
+            raise CaptureError("Wait for the active download or export to finish first.")
+
+    @app.get("/downloads")
+    def downloads(request: Request) -> dict[str, object]:
+        return dict(request.app.state.downloads.describe())
+
+    @app.post("/downloads/folder")
+    def download_folder(body: FolderAction, request: Request) -> dict[str, object]:
+        with request.app.state.hudl_gate:
+            idle_for_files(request)
+            folders: DownloadFolder = request.app.state.downloads
+            if body.action == "reset":
+                folders.set(None)
+            else:
+                chosen = hudl_downloads.choose_folder(folders.folder)
+                if chosen is None:
+                    raise CaptureError("No folder chosen. Downloads still go to the same place.")
+                folders.set(chosen)
+            request.app.state.account.output = folders.folder
+            request.app.state.capture.output = folders.folder
+            return dict(folders.describe())
+
+    @app.post("/downloads/delete")
+    def delete_download(body: DeleteDownload, request: Request) -> dict[str, object]:
+        with request.app.state.hudl_gate:
+            idle_for_files(request)
+            moved = request.app.state.downloads.trash_file(body.name)
+            return {**request.app.state.downloads.describe(), "trashed_as": moved}
+
     @app.get("/files/{scope}/{filename}")
-    def captured_file(scope: str, filename: str) -> FileResponse:
+    def captured_file(scope: str, filename: str, request: Request) -> FileResponse:
         import re
 
         if scope != app.state.file_scope:
             raise CaptureError("This download link has expired.")
         if not re.fullmatch(r"hudl-[a-zA-Z0-9-]+\.(mp4|zip|csv)", filename):
             raise CaptureError("Select a completed capture.")
-        path = output / filename
+        path = request.app.state.downloads.folder / filename
         if not path.is_file() or path.is_symlink():
             raise CaptureError("Capture is not available.")
         return FileResponse(path, filename=filename)
@@ -250,7 +299,9 @@ def create_companion(output: Path) -> FastAPI:
                     raise CaptureError("Select a cached match first.")
                 request.app.state.catalogue.find(body.match_id)
             if body.action == "clips":
-                request.app.state.account.start(body.action, body.match_id, body.moment_ids)
+                request.app.state.account.start(
+                    body.action, body.match_id, body.moment_ids, combined=body.combined
+                )
             else:
                 request.app.state.account.start(body.action, body.match_id)
         return {"accepted": True}

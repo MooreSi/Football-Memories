@@ -139,6 +139,29 @@ def choose_tagged_player(body: TaggedPlayerIn, db: Db) -> dict[str, int]:
     return {"player_id": player.id}
 
 
+@router.post("/players/from-hudl-tag")
+def choose_hudl_tagged_player(body: TaggedPlayerIn, db: Db) -> dict[str, int]:
+    """The owner picked this name from cached Hudl video tags (helper-side cache).
+
+    Unlike /from-tag there may be no imported events yet; the player still gets a
+    hub for photo and details, and any imported moments with that code are linked.
+    """
+    name = body.category.strip()
+    if not name:
+        raise HTTPException(400, "Select a tagged player name.")
+    player = db.scalars(select(Player).where(Player.display_name == name)).first()
+    if player is None:
+        player = Player(display_name=name)
+        db.add(player)
+        db.flush()
+    events = db.scalars(select(Event).join(TagDefinition).where(TagDefinition.name == name)).all()
+    for event in events:
+        if player not in event.players:
+            event.players.append(player)
+    players.set_primary_player(db, player.id)
+    return {"player_id": player.id}
+
+
 @router.get("/players/{player_id}", response_model=PlayerProfileOut)
 def get_player(player_id: int, db: Db) -> PlayerProfileOut:
     try:

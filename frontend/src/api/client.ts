@@ -51,6 +51,9 @@ export const api = {
       body: JSON.stringify({ player_id: playerId }),
     }),
   players: () => request<PlayerListItem[]>("/api/players"),
+  /** A name the owner picked from Hudl video tags becomes a real player with a hub. */
+  playerFromHudlTag: (category: string) =>
+    request<{ player_id: number }>("/api/players/from-hudl-tag", { method: "POST", body: JSON.stringify({ category }) }),
   player: (id: number) => request<PlayerProfile>(`/api/players/${id}`),
   updatePlayer: (id: number, body: Partial<Pick<PlayerProfile, "display_name" | "shirt_number" | "position">>) =>
     request<PlayerProfile>(`/api/players/${id}`, { method: "PATCH", body: JSON.stringify(body) }),

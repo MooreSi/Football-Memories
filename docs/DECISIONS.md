@@ -4,6 +4,23 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-020 (2026-11-10) Player tags indexed for every match; downloads re-encoded; download folder
+Owner requests. (1) After Test/Refresh the helper visits each match whose tags
+were never recorded and stores only tag metadata (no video); pacing is
+provisional owner decision 003. A user action pauses the sweep; status exposes
+`syncing` so the UI does not treat it as blocking. (2) Moment downloads offer
+separate files (ZIP) or one combined MP4. Both are re-encoded H.264/AAC at the
+source resolution with frame-accurate cuts, because stream copy started on the
+preceding keyframe and HEVC sources do not play everywhere. This supersedes the
+stream-copy note in spec 120. (3) The helper's download folder is selectable
+(native Finder picker) and persisted in `.hudl-account/downloads.json`; the
+default stays the inbox (golden rule 5). Delete moves one named file to the
+macOS Trash, never replaces a Trash item, and refuses links, hidden files,
+paths and active operations. (4) A Hudl-tagged name can become a real player
+(`POST /api/players/from-hudl-tag`) so its hub accepts photo and details even
+before any match is imported. (5) Library hero uses the newest Hudl match for
+the selected age group (date from the title prefix).
+
 ## D-019 (2026-11-10) Cache native playback tags without full-media capture
 Native Sportscode playback responses can report `isSyncedToVideo=false` while
 Hudl displays and seeks their video-relative millisecond ranges. Live native UI

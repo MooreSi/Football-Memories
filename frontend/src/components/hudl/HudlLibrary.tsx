@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Film, RefreshCw } from "lucide-react";
-import { hudlAgeGroups, hudlRequest, useHudlLibrary, useHudlStatus } from "../../api/hudl";
+import { hudlAgeGroups, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from "../../api/hudl";
 import { Button } from "../ui/Button";
 
 export type HudlFilters = { age: string; season: string; search: string; offlineOnly?: boolean };
@@ -50,7 +50,7 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
           <option value="">All seasons</option>{seasons.map(s => <option key={s}>{s}</option>)}
         </select></label>
       </>}
-      <Button disabled={status.data?.busy || refresh.isPending || library.isError} onClick={() => refresh.mutate()}>
+      <Button disabled={hudlBlocked(status.data) || refresh.isPending || library.isError} onClick={() => refresh.mutate()}>
         <RefreshCw size={14} /> Refresh Hudl
       </Button>
     </div>

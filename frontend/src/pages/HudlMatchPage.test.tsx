@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -11,7 +11,8 @@ it('opens the connected stream automatically and downloads only the chosen playe
  await screen.findByRole('option',{name:'Sam Example'});
  await userEvent.setup().selectOptions(screen.getByLabelText('Tagged code / player'),'Sam Example');
  await userEvent.setup().click(screen.getByRole('button',{name:'Download player / code moments'}));
+ await userEvent.setup().click(within(screen.getByRole('dialog')).getByRole('button',{name:/Separate files/}));
  const bodies=vi.mocked(fetch).mock.calls.filter(c=>String(c[0]).endsWith('/account/action')).map(c=>JSON.parse(String(c[1]?.body)));
  expect(bodies).toContainEqual({action:'stream',match_id:'synthetic-a'});
- expect(bodies).toContainEqual({action:'clips',match_id:'synthetic-a',moment_ids:['m1']});
+ expect(bodies).toContainEqual({action:'clips',match_id:'synthetic-a',moment_ids:['m1'],combined:false});
 });

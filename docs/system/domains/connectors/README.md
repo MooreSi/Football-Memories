@@ -157,3 +157,22 @@ cached 2,191/66 and 1,927/65 ranges/codes with no new MP4/CSV. Both caches survi
 helper restart with no browser session active. All ten inbox files unchanged.
 Native HLS preload=none needs load/play when the first user action is a tag seek;
 never call load on an hls.js MediaSource, which would detach it.
+
+## Tag index, moment exports and download folder (D-020)
+
+- After Test/Refresh, `_queue_sync` records tag metadata for each match with no
+  `tag_status` in its details cache, one page at a time (owner decision 003).
+  `status.syncing` marks the sweep; `start()` lets exactly one user action
+  pre-empt it (sets `_cancel_sync`). Playwright is single-threaded, so stream
+  segment fetches queue behind the sweep: never resume a sweep under a stream.
+- Matches whose page fails during a sweep are remembered in memory only and
+  skipped until restart; two consecutive failures stop the sweep.
+- `export_ranges(..., combined=)` re-encodes each range (libx264 CRF 18,
+  yuv420p, AAC 48 kHz stereo) so every part shares one encoder configuration;
+  combining then uses the concat demuxer with stream copy. Output keeps the
+  source width/height and is verified as H.264 before exclusive publication.
+- `DownloadFolder` persists the chosen folder beside the catalogue cache, not
+  inside the chosen folder. The details/catalogue cache stays at the original
+  `--output` parent. Import still reads only the configured inbox.
+- Trash is `~/.Trash` via same-volume `os.rename`; a different volume fails
+  safely with nothing removed.

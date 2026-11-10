@@ -38,6 +38,9 @@ export function PlayerHubPage() {
   const first = p.per_match[0];
   const latest = p.per_match[p.per_match.length - 1];
   const recentMatches = [...p.per_match].reverse().slice(0, 6);
+  const hudlMatches = (remote.data ?? [])
+    .map((m) => ({ id: m.id, title: m.title, count: m.moments?.filter((t) => t.category === p.display_name).length ?? 0 }))
+    .filter((m) => m.count > 0);
 
   return (
     <div className="player-profile space-y-6">
@@ -51,7 +54,7 @@ export function PlayerHubPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/player/choose"><Button variant="ghost">Change player</Button></Link>
-          {remote.data?.some(m=>m.moments?.some(t=>t.category===p.display_name)) && <Link to={`/player/hudl/${encodeURIComponent(p.display_name)}`}><Button variant="primary">Download player moments (highest quality)</Button></Link>}
+          {hudlMatches.length > 0 && <Link to={`/player/hudl/${encodeURIComponent(p.display_name)}`}><Button variant="primary">Download player moments (highest quality)</Button></Link>}
           {first && <Link to={`/matches/${first.match_id}`}><Button variant="subtle"><CalendarClock size={15} aria-hidden /> First archived game</Button></Link>}
           {latest && <Link to={`/matches/${latest.match_id}`}><Button variant="subtle"><Trophy size={15} aria-hidden /> Latest game</Button></Link>}
           {p.is_primary ? (
@@ -105,6 +108,25 @@ export function PlayerHubPage() {
           {feed.isPending ? <Spinner label="Loading moments" /> : <MomentsFeed moments={feed.data?.items ?? []} shirt={p.shirt_number} />}
         </aside>
       </div>
+
+      {hudlMatches.length > 0 && (
+        <section aria-label="Tagged in Hudl matches" className="panel space-y-3 p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold">Tagged in Hudl matches</h2>
+            <span className="text-xs text-fg-subtle">{hudlMatches.length} {hudlMatches.length === 1 ? "match" : "matches"} · tag metadata only, no download needed</span>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {hudlMatches.map((m) => (
+              <li key={m.id}>
+                <Link to={`/hudl/${encodeURIComponent(m.id)}?player=${encodeURIComponent(p.display_name)}`} className="tile flex items-center justify-between gap-3 p-3 hover:border-accent/60">
+                  <span className="min-w-0 truncate text-sm">{m.title}</span>
+                  <span className="shrink-0 text-xs text-pin">{m.count} moments</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <MemoriesTimeline playerId={p.id} categories={p.categories.map((c) => c.name)} />
     </div>

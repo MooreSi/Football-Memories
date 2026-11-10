@@ -6,6 +6,7 @@ import type { FolderHealth } from "../../api/types";
 import { formatBytes, formatDate } from "../../lib/format";
 import { Badge } from "../ui/Badge";
 import { ArchiveTools } from "./ArchiveTools";
+import { DownloadFolderSettings } from "./DownloadFolder";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
 
@@ -89,6 +90,8 @@ export function StorageSettings() {
       <div className="grid gap-5 lg:grid-cols-2">
         {folders.map((f) => <FolderCard key={f.role} f={f} />)}
       </div>
+
+      <DownloadFolderSettings />
 
       <ArchiveTools />
 
