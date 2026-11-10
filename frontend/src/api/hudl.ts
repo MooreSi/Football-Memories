@@ -25,3 +25,19 @@ export function hudlBlocked(status?: HudlStatus): boolean {
 export type DownloadFile = {name:string; size:number; modified:number};
 export type DownloadFolderInfo = {folder:string; default_folder:string; is_default:boolean; free_bytes:number|null; files:DownloadFile[]};
 export function useDownloadFolder(){return useQuery<DownloadFolderInfo>({queryKey:['hudl-downloads'],queryFn:()=>hudlRequest('/downloads'),retry:false});}
+
+/** Spec 190: one completed download recorded by the helper. */
+export type DownloadEntry = {kind:"match"|"moments"|"reel"; match_id:string|null; matches:string[]; title:string|null; file:string; url:string;
+ moment_count:number; codes:string[]; combined:boolean; created:number; size:number; modified:number};
+export function useDownloadIndex(){return useQuery<DownloadEntry[]>({queryKey:['hudl-download-index'],queryFn:()=>hudlRequest('/downloads/index'),retry:false,refetchInterval:30000});}
+export type DownloadState = {match:boolean; moments:boolean};
+/** Per match: is the full match downloaded, are any of its moments. */
+export function downloadState(entries: DownloadEntry[] | undefined): Map<string, DownloadState> {
+ const state = new Map<string, DownloadState>();
+ for (const e of entries ?? []) for (const id of e.matches?.length ? e.matches : e.match_id ? [e.match_id] : []) {
+  const s = state.get(id) ?? {match:false, moments:false};
+  if (e.kind === "match") s.match = true; else s.moments = true;
+  state.set(id, s);
+ }
+ return state;
+}

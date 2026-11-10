@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Film, RefreshCw } from "lucide-react";
-import { hudlAgeGroups, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from "../../api/hudl";
+import { CircleDashed, Film, FolderArchive, RefreshCw } from "lucide-react";
+import { downloadState, hudlAgeGroups, hudlBlocked, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../../api/hudl";
 import { Button } from "../ui/Button";
 
 export type HudlFilters = { age: string; season: string; search: string; offlineOnly?: boolean };
@@ -11,6 +11,7 @@ export type HudlFilters = { age: string; season: string; search: string; offline
 export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
   const library = useHudlLibrary();
   const status = useHudlStatus();
+  const saved = downloadState(useDownloadIndex().data);
   const qc = useQueryClient();
   const [savedAge, setSavedAge] = useState(() => localStorage.getItem("fm.hudl.age") || "");
   const [savedSeason, setSavedSeason] = useState("");
@@ -68,6 +69,7 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
           {m.thumbnail_url ? <img crossOrigin="anonymous" src={m.thumbnail_url} alt={m.title} loading="lazy" className="size-full object-cover" />
             : <div className="grid h-full place-items-center text-fg-subtle"><Film size={28} /><span className="text-xs">Thumbnail pending refresh</span></div>}
           <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{hudlAgeGroups(m).join(" / ")} · Hudl</span>
+          <DownloadBadges state={saved.get(m.id)} />
         </div>
         <div className="space-y-2 p-4"><h3 className="text-sm font-semibold leading-snug">{m.title}</h3>
           <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
@@ -76,4 +78,14 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
     </article>)}</div>
     {shown < matches.length && <div className="flex justify-center"><Button onClick={() => setShown(n => n + 12)}>Show more Hudl matches ({matches.length - shown})</Button></div>}
   </section>;
+}
+
+/** Spec 190: which parts of a match are already on this computer. */
+function DownloadBadges({ state }: { state?: { match: boolean; moments: boolean } }) {
+  const chip = "grid size-7 place-items-center rounded-full ring-1 backdrop-blur";
+  return <span className="absolute top-2.5 right-2.5 flex gap-1.5">
+    {state?.match && <span role="img" aria-label="Full match downloaded" title="Full match downloaded" className={`${chip} bg-ok/90 text-ink-950 ring-white/30`}><Film size={14} aria-hidden /></span>}
+    {state?.moments && <span role="img" aria-label="Moments downloaded" title="Moments downloaded" className={`${chip} bg-pin/90 text-ink-950 ring-white/30`}><FolderArchive size={14} aria-hidden /></span>}
+    {!state && <span role="img" aria-label="Not downloaded yet" title="Not downloaded yet" className={`${chip} bg-ink-950/70 text-fg-subtle ring-white/15`}><CircleDashed size={14} aria-hidden /></span>}
+  </span>;
 }

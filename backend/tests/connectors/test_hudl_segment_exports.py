@@ -130,6 +130,6 @@ def test_clips_use_the_open_stream_and_keep_it_playing(tmp_path, hls):
             time.sleep(0.05)
     status = connection.status()
     assert status["state"] == "done", status["message"]
-    assert status["filename"].startswith("hudl-moments-")
+    assert status["filename"].startswith("moments/hudl-moments-")  # spec 190 folder
     assert status["stream_url"].endswith("/stream/s1/playlist.m3u8")
     connection._executor.shutdown()

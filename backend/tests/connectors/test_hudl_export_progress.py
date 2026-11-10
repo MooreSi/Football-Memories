@@ -57,5 +57,5 @@ def test_status_shows_fraction_and_time_left_while_exporting(tmp_path):
     assert progress["eta_s"] == 10.0
     assert "encoding" in progress["label"]
     assert connection.status()["progress"] is None
-    assert connection.status()["filename"] == "hudl-moments-x.mp4"
+    assert connection.status()["filename"] == "moments/hudl-moments-x.mp4"  # spec 190 folder
     connection._executor.shutdown()

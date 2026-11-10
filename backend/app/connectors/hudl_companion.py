@@ -204,7 +204,7 @@ def create_companion(output: Path) -> FastAPI:
         except OSError:
             checked = None
         current = request.app.state.account.status()
-        filename = quote(str(current.get("filename") or ""), safe="")
+        filename = quote(str(current.get("filename") or ""), safe="/")
         return {
             **current,
             "catalogue_checked_at": checked,
@@ -274,25 +274,56 @@ def create_companion(output: Path) -> FastAPI:
             moved = request.app.state.downloads.trash_file(body.name)
             return {**request.app.state.downloads.describe(), "trashed_as": moved}
 
-    @app.get("/files/{scope}/{filename}")
+    @app.get("/downloads/index")
+    def download_index(request: Request) -> list[dict[str, object]]:
+        """Spec 190: completed downloads that still exist, with scoped links."""
+        root = request.app.state.downloads.folder
+        entries = request.app.state.account.index.entries(
+            root, catalogue=request.app.state.catalogue.items()
+        )
+        return [
+            {
+                **entry,
+                "url": f"http://127.0.0.1:8766/files/{app.state.file_scope}/"
+                + quote(str(entry["file"]), safe="/"),
+            }
+            for entry in entries
+        ]
+
+    @app.get("/files/{scope}/{filename:path}")
     def captured_file(scope: str, filename: str, request: Request) -> FileResponse:
         import re
 
         if scope != app.state.file_scope:
             raise CaptureError("This download link has expired.")
         status = request.app.state.account.status()
-        if not re.fullmatch(r"hudl-[a-zA-Z0-9-]+\.(mp4|zip|csv)", filename) and not (
-            filename == status.get("filename")
-            and Path(filename).name == filename
-            and Path(filename).suffix in {".mp4", ".zip", ".csv"}
+        root = request.app.state.downloads.folder
+        parts = filename.split("/")
+        if len(parts) == 2 and parts[0] == "moments":
+            # Moment exports are served only when the index or the finished export names them.
+            if (
+                Path(parts[1]).name != parts[1]
+                or parts[1].startswith(".")
+                or not (
+                    filename == status.get("filename")
+                    or request.app.state.account.index.contains(root, filename)
+                )
+            ):
+                raise CaptureError("Select a completed download.")
+        elif len(parts) != 1 or (
+            not re.fullmatch(r"hudl-[a-zA-Z0-9-]+\.(mp4|zip|csv)", filename)
+            and not (
+                filename == status.get("filename")
+                and Path(filename).name == filename
+                and Path(filename).suffix in {".mp4", ".zip", ".csv"}
+            )
         ):
             raise CaptureError("Select a completed capture.")
-        path = request.app.state.downloads.folder / filename
-        if not path.is_file() or path.is_symlink():
+        path = root.joinpath(*parts)
+        if not path.is_file() or path.is_symlink() or path.parent.is_symlink():
             raise CaptureError("Capture is not available.")
-        status = request.app.state.account.status()
         attachment = status.get("download_name") if status.get("filename") == filename else None
-        return FileResponse(path, filename=attachment or filename)
+        return FileResponse(path, filename=attachment or parts[-1])
 
     @app.post("/account/credentials")
     def save_credentials(body: AccountCredentials, request: Request) -> dict[str, bool]:

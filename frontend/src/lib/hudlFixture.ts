@@ -54,3 +54,8 @@ export function clubName(team: string | undefined): string | null {
   if (!team) return null;
   return team.replace(/\b(?:u\s*\d{1,2}s?|under[ -]?\d{1,2})\b/gi, "").replace(/\s+/g, " ").trim() || null;
 }
+
+/** UK long date, e.g. "8 November 2026" (spec 190). */
+export function ukDate(date: Date): string {
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}

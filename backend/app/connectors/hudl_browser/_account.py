@@ -25,6 +25,7 @@ from app.connectors.hudl_capture import (
     parse_manifest,
     save_capture,
 )
+from app.connectors.hudl_index import DownloadIndex
 from app.connectors.hudl_metadata import MatchCache, capture_key, optional_moments
 
 from ._capture import (
@@ -50,6 +51,7 @@ class BrowserConnection:
         self.catalogue = catalogue
         self.output = output
         self.details = MatchCache(output.parent / ".hudl-account" / "details")
+        self.index = DownloadIndex(output.parent / ".hudl-account" / "downloads-index.json")
         self._thumbnails: dict[str, str] = {}
         self._libraries: set[str] = set()
         self._teams: dict[str, dict[str, str]] = {}
@@ -518,6 +520,7 @@ class BrowserConnection:
         if destination.exists() and destination.with_suffix(".tags.csv").exists():
             with self._lock:
                 self._state["filename"] = destination.name
+            self._index_match(identity, title, destination)
             self.report(
                 "done", "This match is already captured. Use Import to add it to the Library."
             )
@@ -565,11 +568,22 @@ class BrowserConnection:
             target = save_capture(source, self.output, name, moments, length)
         with self._lock:
             self._state["filename"] = target.name
+        self._index_match(identity, title, target)
         self.report(
             "done", f"Verified video and {len(moments)} moments saved. Use Import to add the match."
         )
 
         return target
+
+    def _index_match(self, identity: str, title: Any, target: Path) -> None:
+        self.index.record(
+            "match",
+            identity,
+            title if isinstance(title, str) else None,
+            target,
+            self.output,
+            self.details.read(identity).get("moments", []),
+        )
 
     def _cache_tags(self, identity: str) -> int:
         """Record one match's tag metadata from its normal playback page; never the video."""
@@ -749,20 +763,33 @@ class BrowserConnection:
 
         try:
             self.report("exporting", "Fetching and encoding the selected moments…")
-            title = self.catalogue.find(self._stream_match).get("title")
+            identity = self._stream_match
+            title = self.catalogue.find(identity).get("title")
+            # Spec 190: moment exports are kept apart from full matches.
+            folder = self.output / "moments"
+            folder.mkdir(parents=True, exist_ok=True)
             target = export_from_segments(
                 playlist,
                 lambda index: self.resource(stream, str(index))[0],
                 selected,
-                self.output,
+                folder,
                 combined=combined,
                 **({"match_title": title} if isinstance(title, str) else {}),
                 progress=lambda done, total: self._set_progress(
                     "Fetching and encoding the selected moments", 1, done, total
                 ),
             )
+            self.index.record(
+                "moments",
+                identity,
+                title if isinstance(title, str) else None,
+                target,
+                self.output,
+                selected,
+                combined=combined,
+            )
             with self._lock:
-                self._state["filename"] = target.name
+                self._state["filename"] = f"moments/{target.name}"
                 self._state["download_name"] = target.name
                 self._state["download_kind"] = "moments"
             self.report(

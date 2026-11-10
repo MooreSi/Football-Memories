@@ -1,5 +1,5 @@
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
-import { Clapperboard, Film, FolderInput, Library, Search, Settings, UserRound } from "lucide-react";
+import { Clapperboard, Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 const NAV = [
   { to: "/", label: "Library", icon: Library, end: true },
   { to: "/clips", label: "Clips", icon: Film, end: false },
+  { to: "/downloaded", label: "Downloaded", icon: HardDriveDownload, end: false },
   { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },
   { to: "/settings", label: "Settings", icon: Settings, end: false },
