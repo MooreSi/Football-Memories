@@ -24,7 +24,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   frontend 171. **Not live-verified against Hudl:** batch export, reel
   recording and render, poster grab, update apply; installers were not
   executed (they install software). Migration b190c1ab0001 adds two
-  player columns.
+  player columns. Deployed: Docker rebuilt (migration applied), helper
+  restarted on the new code (PID 64788, log `data/helper.log`, ends the old
+  in-memory Hudl session). Live: update check via git (up to date), download
+  index found the 2 existing full captures, Downloaded tab and Library badges
+  render on real data. Liverpool shows initials: single-word club names are
+  rejected by the crest lookup as ambiguous (team_logos.py), a known gap.
 - **Current branch: `main`**, including every local and remote feature branch
   through `codex/library-clips-polish` (owner requested all-branch merge).
   Spec 110 adds username/password Save/Test through macOS
