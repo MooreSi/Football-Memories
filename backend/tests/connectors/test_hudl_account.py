@@ -96,7 +96,7 @@ def test_stream_rejects_expired_resource_scope_before_fetch(tmp_path: Path) -> N
     connection = BrowserConnection(MagicMock(), MagicMock(), tmp_path)
     connection._stream_id = "current-stream"
     connection._assets = {"0": "https://video.hudl.com/synthetic?token=FAKE_SECRET"}
-    with patch("app.connectors.hudl_browser.fetch_media") as fetch:
+    with patch("app.connectors.hudl_browser._account.fetch_media") as fetch:
         with pytest.raises(CaptureError, match="expired") as error:
             connection._resource("previous-stream", "0")
         fetch.assert_not_called()
@@ -151,7 +151,7 @@ def test_prepared_stream_playlist_contains_only_local_opaque_resources(tmp_path:
     media = b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\npart.ts\n#EXT-X-ENDLIST\n"
     with (
         patch.object(connection, "_observe", return_value=observation),
-        patch("app.connectors.hudl_browser.fetch_media", side_effect=[master, media]),
+        patch("app.connectors.hudl_browser._account.fetch_media", side_effect=[master, media]),
     ):
         connection._prepare_stream("synthetic-a")
     playlist, kind = connection._resource(connection._stream_id, "playlist.m3u8")

@@ -80,7 +80,7 @@ def test_null_unrelated_graphql_data_is_not_a_capture_failure() -> None:
 def test_media_transfer_has_no_redirect_or_auth_retry(
     status: int, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("app.connectors.hudl_browser.time.sleep", lambda delay: None)
+    monkeypatch.setattr("app.connectors.hudl_browser._capture.time.sleep", lambda delay: None)
     context = create_autospec(BrowserContext, instance=True)
     response = context.request.get.return_value
     response.status = status
@@ -95,7 +95,7 @@ def test_media_transfer_has_no_redirect_or_auth_retry(
 
 
 def test_truncated_segment_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.connectors.hudl_browser.time.sleep", lambda delay: None)
+    monkeypatch.setattr("app.connectors.hudl_browser._capture.time.sleep", lambda delay: None)
     context = create_autospec(BrowserContext, instance=True)
     response = context.request.get.return_value
     response.status = 200
@@ -109,7 +109,7 @@ def test_truncated_segment_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_browser_transport_exception_does_not_expose_remote_url(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("app.connectors.hudl_browser.time.sleep", lambda delay: None)
+    monkeypatch.setattr("app.connectors.hudl_browser._capture.time.sleep", lambda delay: None)
     context = create_autospec(BrowserContext, instance=True)
     context.request.get.side_effect = RuntimeError("token=FAKE_SECRET")
     with pytest.raises(CaptureError) as err:

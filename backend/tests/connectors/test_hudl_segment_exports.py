@@ -116,7 +116,7 @@ def test_clips_use_the_open_stream_and_keep_it_playing(tmp_path, hls):
     with (
         patch.object(connection, "_download", side_effect=AssertionError("no full download")),
         patch(
-            "app.connectors.hudl_browser.fetch_media",
+            "app.connectors.hudl_browser._account.fetch_media",
             side_effect=lambda context, url: segments[int(re.search(r"/(\d+)\.ts", url)[1])],
         ),
     ):

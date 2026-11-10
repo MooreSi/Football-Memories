@@ -26,7 +26,10 @@ def test_unsynced_tags_do_not_block_preparing_video_stream(tmp_path):
     connection._page.locator.return_value.first.evaluate.return_value = 4.0
     with (
         patch.object(connection, "_observe", return_value=observation()),
-        patch("app.connectors.hudl_browser.fetch_media", side_effect=[MASTER_BODY.encode(), MEDIA]),
+        patch(
+            "app.connectors.hudl_browser._account.fetch_media",
+            side_effect=[MASTER_BODY.encode(), MEDIA],
+        ),
     ):
         connection._prepare_stream(VIDEO)
     assert connection.status()["stream_url"].startswith("http://127.0.0.1:8766/stream/")
@@ -41,7 +44,7 @@ def test_unsynced_tags_do_not_block_verified_full_video_copy(tmp_path, tiny_vide
     connection._page.locator.return_value.first.evaluate.return_value = 4.0
     with (
         patch.object(connection, "_observe", return_value=observation()),
-        patch("app.connectors.hudl_browser.capture_hls", return_value=(tiny_video, 4.0)),
+        patch("app.connectors.hudl_browser._account.capture_hls", return_value=(tiny_video, 4.0)),
     ):
         saved = connection._download(VIDEO)
     assert (
@@ -63,7 +66,10 @@ def test_tag_graphql_errors_still_stop_video_preparation(tmp_path):
     observed.payloads = [{"errors": [{"message": "synthetic access failure"}]}]
     with (
         patch.object(connection, "_observe", return_value=observed),
-        patch("app.connectors.hudl_browser.fetch_media", side_effect=[MASTER_BODY.encode(), MEDIA]),
+        patch(
+            "app.connectors.hudl_browser._account.fetch_media",
+            side_effect=[MASTER_BODY.encode(), MEDIA],
+        ),
         pytest.raises(CaptureError, match="could not return the tag data"),
     ):
         connection._prepare_stream(VIDEO)

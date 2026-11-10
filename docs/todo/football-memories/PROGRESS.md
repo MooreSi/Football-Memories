@@ -6,6 +6,14 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Library/Clips polish (spec 180)
+
+Package split checkpoint: hudl_browser public API preserved, implementation
+moved verbatim under _capture/_account; only existing mock targets relocated
+(and wrapped). Backend 308 passed SQLite/Postgres; frontend 140 passed;
+ruff/format/mypy/schema/types/build clean. No behavior change or live Hudl
+operation. Feature work and app restart are next.
+
 ## Streaming tag cache (spec 160)
 
 | Task | Status | Notes |

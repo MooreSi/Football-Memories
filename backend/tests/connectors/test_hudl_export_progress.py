@@ -42,7 +42,9 @@ def test_status_shows_fraction_and_time_left_while_exporting(tmp_path):
     with (
         patch.object(connection, "_download", side_effect=AssertionError("no full download")),
         patch("app.connectors.hudl_exports.export_from_segments", side_effect=fake_export),
-        patch("app.connectors.hudl_browser.time.monotonic", side_effect=lambda: next(clock)),
+        patch(
+            "app.connectors.hudl_browser._account.time.monotonic", side_effect=lambda: next(clock)
+        ),
     ):
         connection.start("clips", "match", ["a", "b"], combined=True)
         for _ in range(200):

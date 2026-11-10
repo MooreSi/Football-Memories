@@ -64,13 +64,16 @@ def test_stream_caches_all_labels_and_ranges_without_a_video_download(tmp_path):
     observed.payloads = [playback_payload(start=1000, end=2000)]
     with (
         patch.object(connection, "_observe", return_value=observed),
-        patch("app.connectors.hudl_browser.fetch_media", side_effect=[MASTER_BODY.encode(), MEDIA]),
         patch(
-            "app.connectors.hudl_browser.capture_hls",
+            "app.connectors.hudl_browser._account.fetch_media",
+            side_effect=[MASTER_BODY.encode(), MEDIA],
+        ),
+        patch(
+            "app.connectors.hudl_browser._account.capture_hls",
             side_effect=AssertionError("must not download"),
         ),
         patch(
-            "app.connectors.hudl_browser.save_capture",
+            "app.connectors.hudl_browser._account.save_capture",
             side_effect=AssertionError("must not publish footage"),
         ),
     ):
@@ -109,8 +112,10 @@ def test_observation_waits_for_later_tag_responses_before_caching(tmp_path):
 
     connection._page.wait_for_timeout.side_effect = deliver
     with (
-        patch("app.connectors.hudl_browser.Observation", return_value=observed),
-        patch("app.connectors.hudl_browser.time.monotonic", side_effect=lambda: next(ticks)),
+        patch("app.connectors.hudl_browser._account.Observation", return_value=observed),
+        patch(
+            "app.connectors.hudl_browser._account.time.monotonic", side_effect=lambda: next(ticks)
+        ),
     ):
         result = connection._observe(VIDEO, False)
     assert len(optional_moments(result.payloads, VIDEO, 4)[0]) == 2

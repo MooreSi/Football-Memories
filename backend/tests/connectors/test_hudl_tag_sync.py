@@ -29,8 +29,12 @@ def test_sync_records_tags_for_uncached_matches_without_downloading(tmp_path):
     connection.details.write("cached-match", {"tag_status": "none", "moments": []})
     with (
         patch.object(connection, "_observe", return_value=tagged()) as observe,
-        patch("app.connectors.hudl_browser.capture_hls", side_effect=AssertionError("video")),
-        patch("app.connectors.hudl_browser.save_capture", side_effect=AssertionError("video")),
+        patch(
+            "app.connectors.hudl_browser._account.capture_hls", side_effect=AssertionError("video")
+        ),
+        patch(
+            "app.connectors.hudl_browser._account.save_capture", side_effect=AssertionError("video")
+        ),
     ):
         connection._sync_tags()
     assert [c.args[0] for c in observe.call_args_list] == [VIDEO]

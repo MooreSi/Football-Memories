@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `main`**, consolidating every existing local and remote
+- **Current branch: `codex/library-clips-polish`**, based on `main`, which consolidates every local and remote
   branch through `codex/hudl-stream-tags` (owner requested all-branch merge).
   Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
@@ -24,6 +24,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **Spec 180 in progress:** owner requests Clips/timeline cleanup, persistent
+  filters, selected-age-only indexing and readable download names. First
+  checkpoint is behavior-preserving hudl_browser package split (old file 1,036
+  lines). Public imports unchanged; test edits only relocate mock targets.
+  Feature implementation and restart remain pending.
 - **D-024 (2026-11-10, owner report):** tag sweep no longer stops on
   unreadable videos (saved as unavailable with reason, retried weekly) and
   reports overall progress. 28 of 286 matches indexed before this fix. Check

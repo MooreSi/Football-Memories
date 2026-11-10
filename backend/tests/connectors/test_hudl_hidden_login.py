@@ -19,8 +19,8 @@ def connection_for(tmp_path):
 
 def login(connection, playwright, authenticate_effect=None):
     with (
-        patch("app.connectors.hudl_browser.sync_playwright") as factory,
-        patch("app.connectors.hudl_browser.authenticate", side_effect=authenticate_effect),
+        patch("app.connectors.hudl_browser._account.sync_playwright") as factory,
+        patch("app.connectors.hudl_browser._account.authenticate", side_effect=authenticate_effect),
     ):
         factory.return_value.start.return_value = playwright
         connection._login()
