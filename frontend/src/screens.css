@@ -196,3 +196,11 @@
 .theme-neon { background: linear-gradient(#07020f, #1d0a35); box-shadow: inset 0 0 0 1px #e879f966, inset 0 -18px 30px -12px #c026d388; }
 .theme-matchday { background: linear-gradient(90deg, #0b1020 55%, transparent 55%), linear-gradient(-60deg, #0b1020 20%, #2563eb 20% 40%, #f43f5e 40% 60%, #facc15 60% 72%, #0b1020 72%); }
 .theme-minimal { background: linear-gradient(135deg, #15171c, #262a31); }
+
+/* Spec 190: header "Update available" flash. */
+.update-badge { color: #0b1020; background: linear-gradient(90deg, #facc15, #fde68a, #facc15); background-size: 200% 100%;
+  box-shadow: 0 0 0 0 #facc1599; animation: update-pulse 2s ease-in-out infinite, update-shine 3s linear infinite; }
+@keyframes update-pulse { 0%, 100% { box-shadow: 0 0 0 0 #facc1580; } 50% { box-shadow: 0 0 0 8px #facc1500; } }
+@keyframes update-shine { to { background-position: -200% 0; } }
+@media (max-width: 760px) { .update-label { display: none; } .update-badge { padding: 0 10px; } }
+@media (prefers-reduced-motion: reduce) { .update-badge { animation: none; } }

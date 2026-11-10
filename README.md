@@ -22,6 +22,12 @@ Setup and limitations: [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md).
 
 ## Quick start
 
+Double-click `Install Football Memories.command` (Mac) or
+`Install Football Memories.bat` (Windows). It installs Docker and everything
+else, starts the app and opens it. Details: [INSTALL.md](INSTALL.md).
+
+By hand:
+
 ```bash
 cp .env.example .env            # set FM_DB_PASSWORD and your folders
 docker compose up -d --build

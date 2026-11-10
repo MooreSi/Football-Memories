@@ -11,6 +11,25 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Spec 190 owner request batch (2026-11-10)
+
+| Item | Status |
+|---|---|
+| Moments into `moments/` folder | done (tests; not run against real Hudl) |
+| Downloaded tab with metadata | done (tests) |
+| Library thumbnail download badges | done (tests) |
+| Full-resolution snapshots | done (tests with synthetic HLS; real poster grab not yet observed) |
+| Both crests on Library hero | done (browser-checked, dev data) |
+| Make Highlight Reel + Clips tidy-up | done (tests, browser-checked studio) |
+| Player "Plays for" crest + card styles | done (tests, browser-checked gold) |
+| Logo, wordmark, full-width banner | done (browser-checked) |
+| Batch download moments | done (tests with fakes; not run against real Hudl) |
+| Animated reel cards, auto match details, UK date | done (browser-checked previews; recording + real render not run) |
+| Player card Moments / Games | done (tests, browser-checked) |
+| Installers `.command` / `.bat` | written; `bash -n` passes; not executed (would install software) |
+| Settings > Update + header flash | done (tests with fake git; real update not run) |
+| Settings: no player/match list, Hudl beside Import | done (tests) |
+
 ## Spec 180 completed
 - Selected-age indexing, manifest duration fallback, persistent age/season,
   no Team filter, compact Clips/timeline and readable append-only download names.

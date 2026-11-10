@@ -7,6 +7,7 @@ import { ReelStudioPage } from "./pages/ReelStudioPage";
 import { BackupSettings } from "./components/settings/BackupSettings";
 import { PlaybackSettings } from "./components/settings/PlaybackSettings";
 import { StorageSettings } from "./components/settings/StorageSettings";
+import { UpdateSettings } from "./components/settings/UpdateSettings";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { SettingsLayout } from "./pages/SettingsPage";
 import { ImportPage } from "./pages/ImportPage";
@@ -42,6 +43,7 @@ export function App() {
           <Route path="storage" element={<StorageSettings />} />
           <Route path="backups" element={<BackupSettings />} />
           <Route path="connections" element={<ConnectionsPage embedded />} />
+          <Route path="update" element={<UpdateSettings />} />
         </Route>
         <Route path="*" element={<EmptyState icon={Compass} title="Page not found" />} />
       </Route>

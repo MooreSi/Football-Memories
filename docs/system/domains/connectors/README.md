@@ -237,3 +237,23 @@ encode filename path components so # and spaces cannot corrupt attachment URLs.
 Explicit download_kind keeps moment exports separate from full-match Import.
 Live 26-second goal ZIP verified at 1080p H.264; downloaded attachment SHA-256
 matched helper output. Prior archive files unchanged; no new full match capture.
+
+## Spec 190 helper additions (2026-11-10)
+- Hudl library thumbnails are 320x240 4:3 JPEGs. A full-resolution poster
+  (`<details>/<key>.poster`) is grabbed from one stream segment about a fifth
+  of the way in when a stream is prepared, or during the tag sweep; `/library`
+  then serves it as both `poster_url` and `thumbnail_url`.
+- Moment exports go to `<download folder>/moments/`, reels to `reels/`.
+  `downloads-index.json` in the helper cache lists completed downloads; only
+  files still in the folder are reported. Old `hudl-<key>-highest-*.mp4`
+  captures are recognised by name. `/files/<scope>/moments|reels/<name>` only
+  serves indexed (or just finished) files.
+- `/account/batch` runs inside the single account worker, so it fetches
+  segments with `_resource` directly. Calling `resource()` from the worker
+  would deadlock (it submits to the same one-thread executor and waits).
+- Title cards are recorded in the browser (MediaRecorder WebM/MP4) because the
+  Mac's ffmpeg has no text renderer; `assemble_reel` normalises every part to
+  the largest clip's size, fps and AAC stereo, then joins with `-c copy`.
+- Settings > Update uses `git fetch` on the owner's checkout: the GitHub repo
+  is private, so the public API returns 404. Apply is `git pull --ff-only`,
+  then `docker compose up -d --build`, then the helper re-execs itself.

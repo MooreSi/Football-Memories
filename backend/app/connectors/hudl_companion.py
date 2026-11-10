@@ -176,6 +176,9 @@ def create_companion(output: Path) -> FastAPI:
     import secrets
 
     app.state.file_scope = secrets.token_urlsafe(24)
+    from app.connectors.app_updater import Updater
+
+    app.state.updater = Updater(Path(__file__).resolve().parents[3])
     app.add_middleware(
         CORSMiddleware,
         allow_origins=sorted(ORIGINS),
@@ -433,6 +436,23 @@ def create_companion(output: Path) -> FastAPI:
                 combined=body.combined,
                 reel=body.reel.model_dump() if body.reel else None,
             )
+        return {"accepted": True}
+
+    @app.get("/update/check")
+    def update_check(request: Request, force: bool = False) -> dict[str, object]:
+        """Spec 190: is GitHub main ahead of this checkout?"""
+        return dict(request.app.state.updater.check(force=force))
+
+    @app.get("/update/status")
+    def update_status(request: Request) -> dict[str, object]:
+        return dict(request.app.state.updater.status())
+
+    @app.post("/update/apply", status_code=202)
+    def update_apply(request: Request) -> dict[str, bool]:
+        account = request.app.state.account.status()
+        if account["busy"] and not account.get("syncing"):
+            raise CaptureError("Wait for the active download or export to finish first.")
+        request.app.state.updater.apply()
         return {"accepted": True}
 
     @app.get("/stream/{stream}/{asset}")

@@ -13,6 +13,18 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
+- **Spec 190 (owner batch of 16 requests) on `main`:** see
+  [190-owner-requests-nov10.md](todo/football-memories/190-owner-requests-nov10.md)
+  and PROGRESS. Player card styles, club crest and Moments/Games; Library hero
+  crests and download badges; Downloaded tab; moments/ and reels/ folders with
+  a download index; full-resolution snapshots; new logo and banner; reel studio
+  with six animated card themes and auto-filled match cards; batch download;
+  Settings > Update (helper-side git, fast-forward only) with header flash;
+  Mac/Windows installers (INSTALL.md). Backend 341 (SQLite and Postgres),
+  frontend 171. **Not live-verified against Hudl:** batch export, reel
+  recording and render, poster grab, update apply; installers were not
+  executed (they install software). Migration b190c1ab0001 adds two
+  player columns.
 - **Current branch: `main`**, including every local and remote feature branch
   through `codex/library-clips-polish` (owner requested all-branch merge).
   Spec 110 adds username/password Save/Test through macOS
@@ -161,7 +173,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 318 passed on SQLite and Postgres; frontend 146 (see D-020 note on the one updated match-page test).
+- Tests: backend 341 passed on SQLite and Postgres; frontend 171 (see D-020 note on the one updated match-page test).
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

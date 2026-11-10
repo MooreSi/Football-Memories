@@ -4,6 +4,25 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-026 (2026-11-10) Spec 190 owner request batch
+Sixteen owner requests (spec 190). Decisions made while building:
+- Moment exports move to `moments/` under the download folder (owner asked);
+  existing files are not moved. Two existing tests that asserted the old
+  location were updated to the new folder; their real checks are unchanged.
+- Snapshot quality: posters come from one stream segment per match, also
+  during the paced tag sweep (one extra segment request per unindexed match).
+  This is normal playback traffic; no new request pattern beyond what the
+  player itself loads.
+- Reel cards are animated canvases recorded in the browser and encoded by the
+  helper, since the Mac's ffmpeg cannot draw text. Six themes.
+- Batch export reuses the stream path one match at a time with a 2.5 s pause,
+  stopping on any Hudl refusal (golden rule 3).
+- Update check runs in the helper with the owner's git credentials (private
+  repository); updates are fast-forward only and never reset or force.
+- Installers download Docker Desktop from docker.com (Mac) or via winget
+  (Windows) and leave licence prompts to the user; Homebrew is installed
+  only after the user answers Y. The Hudl helper remains Mac-only.
+
 ## D-025 (2026-11-10) Selected-age indexing and consistent archive presentation
 Owner requests selected-age-only metadata indexing, persistent age/season,
 no Library team control, tidier Clips and memories, and readable download names.

@@ -1,4 +1,4 @@
-import { HardDrive, PlugZap, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { ArrowUpCircle, HardDrive, PlugZap, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const TABS = [
@@ -6,6 +6,7 @@ const TABS = [
   { to: "/settings/storage", label: "Storage", icon: HardDrive, end: false },
   { to: "/settings/backups", label: "Backups", icon: ShieldCheck, end: false },
   { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false },
+  { to: "/settings/update", label: "Update", icon: ArrowUpCircle, end: false },
 ];
 
 export function SettingsLayout() {
