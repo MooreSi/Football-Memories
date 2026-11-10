@@ -13,8 +13,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/library-clips-polish`**, based on `main`, which consolidates every local and remote
-  branch through `codex/hudl-stream-tags` (owner requested all-branch merge).
+- **Current branch: `main`**, including every local and remote feature branch
+  through `codex/library-clips-polish` (owner requested all-branch merge).
   Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.

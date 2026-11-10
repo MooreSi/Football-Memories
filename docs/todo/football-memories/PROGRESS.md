@@ -6,6 +6,11 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+Consolidation checkpoint: `main` fast-forwarded through e2af610, including the
+separate package split and complete spec 180. Every local/remote branch tip is
+an ancestor; no branches deleted. Docs-only handoff update after the green suites;
+no additional code or live capture needed. App/helper run the verified source.
+
 ## Spec 180 completed
 - Selected-age indexing, manifest duration fallback, persistent age/season,
   no Team filter, compact Clips/timeline and readable append-only download names.
