@@ -90,3 +90,18 @@ through `/api/players/from-tag` links only matching category events; overlapping
 events remain unattributed. Remote code selection uses cached ranges and a
 non-secret local preference; no roster is guessed. Currently only opened videos'
 tag metadata is cached, not an automatic scan of every historical video.
+
+## Refresh provenance (spec 130)
+Refreshing while the helper remained on playback once replaced the 100-video
+catalogue with the player's Tags navigation link. The saved U10 filter then
+hid that unclassified entry. Keep previously served team-library URLs only in
+ephemeral memory, return there on refresh, and accept DOM video links only while
+actually on a verified library page. Fresh normal-library VideoItem responses
+remain authoritative. If a redirect leaves only playback navigation, fail before
+catalogue replacement and preserve the previous cache. Clear remembered URLs
+with the browser context so they cannot leak across accounts.
+
+`/library` derives season labels from valid YYMMDD title prefixes, with July as
+the season boundary (matching Import). Invalid/undated titles are Unclassified.
+Local metadata polling does not trigger Hudl discovery; external refresh remains
+an explicit action with the existing serial scroll bounds and stop conditions.

@@ -152,16 +152,3 @@
   .profile-heading > div:last-child button { font-size: 11px; padding: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .screen-link { transition: none; } }
-
-/* Connected catalogue follows the heading; archived dashboard keeps its columns. */
-.library-dashboard:has([aria-label="Hudl match library"]) .dashboard-overview { grid-row: 3; }
-.library-dashboard:has([aria-label="Hudl match library"]) .dashboard-centre { grid-row: 3; }
-.library-dashboard:has([aria-label="Hudl match library"]) .dashboard-latest { grid-row: 3; }
-@media (min-width: 701px) and (max-width: 1250px) {
-  .library-dashboard:has([aria-label="Hudl match library"]) .dashboard-overview { grid-row: 3 / span 2; }
-  .library-dashboard:has([aria-label="Hudl match library"]) .dashboard-latest { grid-row: 4; }
-}
-@media (max-width: 700px) {
-  .library-dashboard:has([aria-label="Hudl match library"]) .dashboard-overview { grid-row: 4; }
-  .library-dashboard:has([aria-label="Hudl match library"]) .dashboard-latest { grid-row: 5; }
-}

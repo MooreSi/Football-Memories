@@ -70,3 +70,14 @@ def test_resuming_same_match_stream_keeps_completed_download_available(tmp_path)
         connection.start("stream", "synthetic-a")
     assert connection.status()["filename"] == "hudl-moments-synthetic.zip"
     connection._executor.shutdown()
+
+
+def test_season_comes_from_valid_video_date_and_july_boundary():
+    from app.connectors import hudl_metadata
+
+    season = getattr(hudl_metadata, "season_label", lambda title: "Unclassified")
+    assert season("261108 U10 vs Rovers") == "2026/27"
+    assert season("260630 U10 vs City") == "2025/26"
+    assert season("260701 U10 vs City") == "2026/27"
+    assert season("260231 U10 vs City") == "Unclassified"
+    assert season("Undated training") == "Unclassified"

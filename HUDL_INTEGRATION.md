@@ -164,7 +164,9 @@ import and offline playback remain verified. The cached count is observed
 content, not a claim that every historical video was enumerated.
 
 ## Library workflow and maximum quality (spec 120, supersedes 720p defaults)
-Use the main Library's cached Hudl cards and age-group selector. Refresh loads
+Use **Library → All matches** for cached Hudl cards with shared age-group,
+season and search filters (spec 130). The original dashboard stays above them.
+Refresh loads
 normal accessible library responses and caches thumbnail bytes locally. Opening
 a card prepares the highest available supported HLS rendition and caches its
 actual Sportscode ranges/codes. My Player's tagged-code picker explicitly names
@@ -189,3 +191,8 @@ Clip resolution/codec preserved; prior MP4/CSV checksums unchanged. Full-match
 attachment/reuse and Keychain login after helper restart verified. 375px Library
 has no horizontal overflow. Maximum-quality capture never invents a higher
 rendition than Hudl serves.
+
+Spec 130 fixes refresh from playback: only verified library-page links or fresh
+normal-library metadata may replace the catalogue; a Tags navigation anchor is
+not discovery evidence. Failure keeps the previous cache. Helper unavailability
+is shown explicitly with retry, rather than silently hiding the section.

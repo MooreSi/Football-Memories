@@ -26,6 +26,7 @@ def list_matches(
     season_id: int | None,
     page: int,
     page_size: int,
+    age_group: str | None = None,
 ) -> tuple[int, list[MatchRow]]:
     filters = []
     if q:
@@ -37,6 +38,8 @@ def list_matches(
                 func.lower(func.coalesce(Match.competition, "")).like(like),
             )
         )
+    if age_group is not None:
+        filters.append(Match.age_group == age_group)
     if team_id is not None:
         filters.append(Match.team_id == team_id)
     if season_id is not None:

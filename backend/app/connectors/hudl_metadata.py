@@ -8,6 +8,7 @@ import math
 import os
 import re
 import tempfile
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,18 @@ def age_group(title: str) -> str:
     if not match:
         return "Unclassified"
     return f"U{int(match[1])}" + (f"/U{int(match[2])}" if match[2] else "")
+
+
+def season_label(title: str) -> str:
+    prefix = re.match(r"^(\d{2})(\d{2})(\d{2})(?:\s|$)", title.strip())
+    if not prefix:
+        return "Unclassified"
+    try:
+        played = date(2000 + int(prefix[1]), int(prefix[2]), int(prefix[3]))
+    except ValueError:
+        return "Unclassified"
+    start = played.year if played.month >= 7 else played.year - 1
+    return f"{start}/{(start + 1) % 100:02d}"
 
 
 def capture_key(identity: str) -> str:

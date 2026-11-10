@@ -22,6 +22,7 @@ export interface MatchQuery {
   q?: string;
   teamId?: number;
   seasonId?: number;
+  ageGroup?: string;
   page: number;
   pageSize?: number;
 }
@@ -31,6 +32,7 @@ export const api = {
     const p = new URLSearchParams({ page: String(query.page), page_size: String(query.pageSize ?? 24) });
     if (query.q) p.set("q", query.q);
     if (query.teamId) p.set("team_id", String(query.teamId));
+    if (query.ageGroup) p.set("age_group", query.ageGroup);
     if (query.seasonId) p.set("season_id", String(query.seasonId));
     return request(`/api/matches?${p}`);
   },

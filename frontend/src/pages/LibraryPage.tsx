@@ -9,9 +9,9 @@ import { StatTile } from "../components/library/StatTile";
 import { YourPlayerCard } from "../components/library/YourPlayerCard";
 import { MatchCard } from "../components/MatchCard";
 import { Button } from "../components/ui/Button";
-import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 
+import { useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
 
 const PAGE_SIZE = 24;
@@ -35,7 +35,9 @@ export function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
   const [teamId, setTeamId] = useState<number | undefined>();
-  const [seasonId, setSeasonId] = useState<number | undefined>();
+  const [seasonLabel, setSeasonLabel] = useState("");
+  const [ageGroup, setAgeGroup] = useState(() => localStorage.getItem("fm.hudl.age") || "");
+  const remote = useHudlLibrary();
   const q = useDebounced(search.trim(), 250);
 
   useEffect(() => setSearch(params.get("q") ?? ""), [params]);
@@ -44,33 +46,25 @@ export function LibraryPage() {
   const teams = useQuery({ queryKey: ["teams"], queryFn: api.teams });
   const seasons = useQuery({ queryKey: ["seasons"], queryFn: api.seasons });
   const latest = useQuery({ queryKey: ["matches", "latest"], queryFn: () => api.matches({ page: 1, pageSize: 5 }) });
+  const seasonId = seasons.data?.find(s => s.name === seasonLabel)?.id;
   const matches = useInfiniteQuery({
-    queryKey: ["matches", q, teamId, seasonId],
-    queryFn: ({ pageParam }) => api.matches({ q, teamId, seasonId, page: pageParam, pageSize: PAGE_SIZE }),
+    queryKey: ["matches", q, teamId, seasonId, ageGroup],
+    queryFn: ({ pageParam }) => api.matches({ q, teamId, seasonId, ageGroup, page: pageParam, pageSize: PAGE_SIZE }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
   });
 
-  const items = matches.data?.pages.flatMap((p) => p.items) ?? [];
-  const total = matches.data?.pages[0]?.total ?? 0;
+  const items = (matches.data?.pages.flatMap((p) => p.items) ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel);
+  const ageGroups = [...new Set([...(remote.data ?? []).map(m => m.age_group), ...items.map(m => m.age_group), ...(latest.data?.items ?? []).map(m => m.age_group)].filter((a): a is string => Boolean(a)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const seasonLabels = [...new Set([...(seasons.data ?? []).map(s => s.name), ...(remote.data ?? []).map(m => m.season_label || "Unclassified")])].sort().reverse();
+  useEffect(() => { if (ageGroup && ageGroups.length && !ageGroups.includes(ageGroup)) {setAgeGroup("");localStorage.removeItem("fm.hudl.age");} }, [remote.data, latest.data, ageGroup]);
+  const total = seasonLabel && seasonId === undefined ? 0 : matches.data?.pages[0]?.total ?? 0;
+  const remoteCount = (remote.data ?? []).filter(m => !teamId && (!ageGroup || m.age_group === ageGroup) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase()))).length;
   const filtering = Boolean(q || teamId || seasonId);
   const s = stats.data;
   const featured = latest.data?.items ?? [];
-  const archiveEmpty = latest.data?.total === 0;
   const maxTag = Math.max(1, ...(s?.top_tags.map((t) => t.count) ?? [1]));
 
-  if (archiveEmpty) {
-    return (
-      <>
-      <HudlLibrary />
-      <EmptyState icon={Film} title="No matches yet">
-        <p className="mb-4">Put a match video in the import folder, then import it to start your archive.</p>
-        <Link to="/import" className="font-medium text-accent hover:underline">
-          Import a match
-        </Link>
-      </EmptyState></>
-    );
-  }
 
   return (
     <div className="library-dashboard">
@@ -79,7 +73,6 @@ export function LibraryPage() {
         <p>Every game. Every moment. Your football story.</p></div>
         <Link to="/import" className="dashboard-import">+ Import a match</Link>
       </header>
-      <HudlLibrary />
       <aside className="dashboard-overview space-y-5">
         <YourPlayerCard />
         <div className="flex items-baseline justify-between">
@@ -149,14 +142,15 @@ export function LibraryPage() {
             </label>
             <label>
               <span className="sr-only">Season</span>
-              <select className="field w-auto rounded-full" value={seasonId ?? ""} onChange={(e) => setSeasonId(e.target.value ? Number(e.target.value) : undefined)}>
+              <select className="field w-auto rounded-full" value={seasonLabel} onChange={(e) => setSeasonLabel(e.target.value)}>
                 <option value="">All seasons</option>
-                {seasons.data?.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                {seasonLabels.map(label => <option key={label} value={label}>{label}</option>)}
               </select>
             </label>
+            <label><span className="sr-only">Age group</span><select className="field w-auto rounded-full" aria-label="Age group" value={ageGroup} onChange={e=>{setAgeGroup(e.target.value);localStorage.setItem("fm.hudl.age",e.target.value);}}><option value="">All age groups</option>{ageGroups.map(age=><option key={age}>{age}</option>)}</select></label>
             {!matches.isPending && (
               <span className="text-xs text-fg-muted">
-                {total} {total === 1 ? "match" : "matches"}
+                {total} offline · {remoteCount} Hudl
               </span>
             )}
           </div>
@@ -166,7 +160,7 @@ export function LibraryPage() {
           ) : matches.isError ? (
             <p className="text-sm text-danger">Could not load the library: {(matches.error as Error).message}</p>
           ) : items.length === 0 ? (
-            <p className="py-10 text-center text-sm text-fg-muted">{filtering ? "No matches found for these filters." : "No matches yet."}</p>
+            <p className="py-10 text-center text-sm text-fg-muted">{remote.data?.length ? "No offline matches match these filters." : filtering ? "No matches found for these filters." : "No matches yet."}</p>
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -181,6 +175,7 @@ export function LibraryPage() {
               )}
             </>
           )}
+          <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q,offlineOnly:Boolean(teamId)}} /></div>
         </section>
       </div>
     </div>

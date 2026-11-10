@@ -4,6 +4,22 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-016 (2026-11-10) One All matches collection and verified refresh provenance
+The owner requests connected matches inside All matches with age and season
+filters, superseding spec 120's top-of-dashboard catalogue. Keep the original
+three-column dashboard and consistent card styling. Share filters across local
+and connected sources; a local-team selection restricts results to the archive
+because remote team identities have not been mapped. Seasons derive only from
+valid dated title prefixes with the existing July boundary; retain Unclassified
+for missing dates. Show helper errors and retry rather than hiding the section.
+
+Observed failure: refresh on a playback page accepted its Tags anchor as the
+entire catalogue. Remember only actually served library URLs in ephemeral
+memory; revisit those routes, or use fresh normal login discovery after restart.
+Accept DOM video links only on verified library pages and preserve cached
+metadata when discovery fails. Credentials, request limits and download quality
+remain governed by D-014/D-015. No footage operation is part of this repair.
+
 ## D-015 (2026-11-10) Connected Library and original-quality downloads
 Owner explicitly requests age groups/thumbnails in Library, tagged-player
 selection, highest-quality streams/offline copies, and discoverable downloads.

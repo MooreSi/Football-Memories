@@ -75,9 +75,10 @@ import and offline playback remain verified. The cached count is observed
 content, not a claim that every historical video was enumerated.
 
 ## Browse and download connected Hudl videos
-The main **Library → Your Hudl matches** section now includes an age-group
-chooser, cached match thumbnails and Refresh Hudl. Age groups come from video
-titles; mixed/unknown labels remain explicit. Open a match to automatically
+The **Library → All matches** section includes offline and connected Hudl
+footage, shared age-group/season/search filters, cached thumbnails and Refresh
+Hudl. Age groups come from video titles; seasons use valid dated title prefixes
+with a July boundary. Mixed/unknown labels remain explicit. Open a match to automatically
 prepare its highest available supported quality and read its tagged ranges.
 Use **Download full match**, or choose a tagged code/player and **Download
 player / code moments**. Check individual ranges for **Download selected

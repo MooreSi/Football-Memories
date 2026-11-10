@@ -125,11 +125,18 @@ def matches(
     q: str | None = Query(default=None, max_length=200),
     team_id: int | None = None,
     season_id: int | None = None,
+    age_group: str | None = Query(default=None, max_length=40),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=24, ge=1, le=100),
 ) -> MatchPage:
     total, rows = library.list_matches(
-        db, q=q, team_id=team_id, season_id=season_id, page=page, page_size=page_size
+        db,
+        q=q,
+        team_id=team_id,
+        season_id=season_id,
+        age_group=age_group,
+        page=page,
+        page_size=page_size,
     )
     return MatchPage(
         total=total,

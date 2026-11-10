@@ -335,6 +335,7 @@ class BrowserConnection:
         self.output = output
         self.details = MatchCache(output.parent / ".hudl-account" / "details")
         self._thumbnails: dict[str, str] = {}
+        self._libraries: set[str] = set()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="hudl-account")
         self._lock = threading.Lock()
         self._busy = False
@@ -421,6 +422,7 @@ class BrowserConnection:
         self._stream_id = ""
         self._observed_matches.clear()
         self._thumbnails.clear()
+        self._libraries.clear()
         self._library_failure = None
         self._playlist = b""
 
@@ -478,13 +480,19 @@ class BrowserConnection:
     def _discover(self, refresh: bool = False) -> None:
         from app.connectors.hudl_account import extract_matches
 
-        if not refresh or self._context is None:
+        if not refresh or self._context is None or not self._libraries:
             self._login()
         self.report("discovering", "Reading accessible matches from your Hudl library.")
         self._page.wait_for_timeout(1500)
         links = self._links()
+        self._observed_matches.clear()
+        self._thumbnails.clear()
+        library_pattern = r"https://(?:app|www)\.hudl\.com/watch/team/[0-9]+/analyze/?"
+        if re.fullmatch(library_pattern, self._page.url):
+            self._libraries.add(self._page.url)
         libraries = sorted(
-            {
+            self._libraries
+            | {
                 item["href"]
                 for item in links
                 if re.fullmatch(
@@ -492,12 +500,15 @@ class BrowserConnection:
                 )
             }
         )[:20]
+        if not re.fullmatch(library_pattern, self._page.url):
+            links = []
         if not libraries:
             library = self._page.get_by_role("link", name=re.compile(r"^(Video|Library)$", re.I))
             if library.count():
                 library.first.click()
                 self._page.wait_for_timeout(1500)
-                links.extend(self._links())
+                if re.fullmatch(library_pattern, self._page.url):
+                    links.extend(self._links())
         addresses: list[str | None] = list(libraries) if libraries else [None]
         for address in addresses:
             if address:
@@ -508,7 +519,8 @@ class BrowserConnection:
                 self._page.wait_for_timeout(800)
                 if self._library_failure:
                     raise CaptureError(self._library_failure)
-                links.extend(self._links())
+                if re.fullmatch(library_pattern, self._page.url):
+                    links.extend(self._links())
                 count = len(extract_matches(links)) + len(self._observed_matches)
                 unchanged = unchanged + 1 if count == previous else 0
                 previous = count
@@ -520,7 +532,10 @@ class BrowserConnection:
         metadata = [
             {"href": item["url"], "text": item["title"]} for item in self._observed_matches.values()
         ]
-        matches = extract_matches(metadata + links)
+        on_library = re.fullmatch(library_pattern, self._page.url) is not None
+        if on_library:
+            self._libraries.add(self._page.url)
+        matches = extract_matches(metadata + (links if on_library else []))
         if not matches:
             raise CaptureError(
                 "Login completed, but no match links were found. Open your Video library "

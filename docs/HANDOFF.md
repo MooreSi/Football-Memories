@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-10)
 
-- **Current branch: `codex/hudl-library-workflow`**, based on the pushed reference
+- **Current branch: `codex/unified-match-library`**, based on the pushed reference
   redesign branch. Spec 110 adds username/password Save/Test through macOS
   Keychain, normal-login accessible match cache, in-app Stream and verified
   Download → Import. Owner approved hls.js. Server background sync remains off.
@@ -23,6 +23,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Sam Example. Owner Save/Test cached 100 accessible videos; Keychain login
   after helper restart and in-app 720p streaming verified. Download reused the
   captured match and offered Import; MP4 and CSV checksums unchanged.
+- **Spec 130:** connected Hudl cards now live inside All matches, with shared
+  search/age/season filters and the original overview/hero/latest layout restored.
+  Refresh previously mistook a playback Tags anchor for the entire catalogue;
+  discovery now revisits actually served library routes, only accepts library
+  links/fresh metadata, and preserves cache on failure. Helper errors show retry.
+  Live Keychain refresh restored 100 videos/100 thumbnails; opened a match and
+  refreshed again without losing entries. Shared U10 + 2025/26 yields 61 videos.
+  Desktop and 375px checked, no phone overflow. Seasons use valid dated title
+  prefixes with July boundary; undated videos remain Unclassified. Helper on
+  8766 is running the final source with an active ephemeral session. No footage
+  downloaded, deleted or overwritten in this repair.
 - **Spec 120:** main Library has connected Hudl age selection and cached footage
   cards. Live refresh cached all 100 thumbnails (90 U10 videos). Dedicated match
   screen automatically streams maximum served resolution/bitrate and caches
@@ -69,7 +80,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - Highlight reels (`/clips/reels`): queue -> reel -> per-clip trims, opening and
   closing cards drawn in the browser, background render to one MP4 with progress,
   crash recovery; download.
-- Tests: backend 250 passed on SQLite and Postgres; frontend 94 passed.
+- Tests: backend 256 passed on SQLite and Postgres; frontend 97 passed.
   Lint, types, build, schema drift and Docker health checks green.
 - **Owner's Mac disk is 99% full (about 16 GB free of 926 GB on 2026-11-09).** Full
   matches are several GB each; the Storage tab warns about this.

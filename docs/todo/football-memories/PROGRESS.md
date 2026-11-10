@@ -6,6 +6,14 @@ the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 Status values: `done` (built + tested), `partial` (some of it, says what),
 `todo`, `blocked` (says on what).
 
+## Unified All matches repair (spec 130)
+
+| Task | Status | Notes |
+|---|---|---|
+| Restore dashboard and place connected cards inside All matches | done | shared age/season/search filters; consistent cards, Show more; desktop and 375px checked |
+| Repair disappearing catalogue on refresh from playback | done | verified library routes/metadata only; cache preserved on failure; 100 videos/thumbnails recovered live |
+| Visible helper failure and stale-filter recovery | done | retry message, local metadata refetch, invalid saved age cleared |
+
 ## Connected Library workflow (spec 120)
 
 | Task | Status | Notes |
@@ -107,6 +115,28 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-10 Unified All matches repair (codex/unified-match-library)
+- Backend `uv run pytest -q`: 256 passed SQLite, then 256 PostgreSQL with
+  TEST_DATABASE_URL. Network-block and scrub checks included. Ruff check/format,
+  mypy and alembic check green. Existing tests unchanged.
+- Frontend `npm test`: 97 passed; typecheck/build green. Docker rebuilt, health OK.
+- Playback-cache/season/placement regressions watched red first. Later redirect
+  and API age-count tests failed with intentionally removed guards, then passed
+  after restoration. Additional cross-page link contamination watched red/green.
+  Positive remembered-route test added afterward, then failed with traversal
+  deliberately disabled and passed after restoration.
+- Live authorized read-only helper restart/login/refresh recovered 100 cached
+  videos, 100 thumbnails, zero Tags navigation entries. Opened one match and
+  refreshed from playback: catalogue still 100. U10 + 2025/26 gives 61 videos.
+- Desktop dashboard restored; All matches contains Hudl cards and common filters.
+  375px DOM width 375, no overflow. Local proof: data/unified-all-matches.png.
+- Staged secret-word scan: one context-only hit describing the existing Save/Test
+  form; no secret values or media staged. Local Markdown links resolve.
+- No new footage download or file replacement. No credential/session persistence
+  changes. Large-library exhaustive enumeration and native Safari HLS remain
+  unverified; no CI workflow exists.
+
 
 
 ### 2026-11-10 Connected Library live completion

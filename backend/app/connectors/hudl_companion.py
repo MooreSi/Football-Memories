@@ -20,7 +20,7 @@ from app.connectors.hudl_account import Catalogue, Credentials
 from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_keychain import Keychain
-from app.connectors.hudl_metadata import MatchCache, age_group, capture_key
+from app.connectors.hudl_metadata import MatchCache, age_group, capture_key, season_label
 
 ORIGINS = {
     "http://127.0.0.1:8765",
@@ -198,6 +198,7 @@ def create_companion(output: Path) -> FastAPI:
             {
                 **item,
                 "age_group": age_group(item["title"]),
+                "season_label": season_label(item["title"]),
                 "capture_key": capture_key(item["id"]),
                 "thumbnail_url": f"http://127.0.0.1:8766/account/match/{item['id']}/thumbnail"
                 if request.app.state.details.path(item["id"], ".image").is_file()
