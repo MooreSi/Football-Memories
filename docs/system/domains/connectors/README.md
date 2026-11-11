@@ -248,6 +248,11 @@ matched helper output. Prior archive files unchanged; no new full match capture.
   files still in the folder are reported. Old `hudl-<key>-highest-*.mp4`
   captures are recognised by name. `/files/<scope>/moments|reels/<name>` only
   serves indexed (or just finished) files.
+- Spec 200: `reel.per_match` makes one reel per match instead of one for the batch:
+  each is `[match card] + moments + [closing card]` (no opening card), assembled and
+  verified right after that match is fetched, named `<reel> - <match title> (<hex>).mp4`
+  and indexed as a `reel` with that match's id. Cards are reused across files and
+  discarded once at the end; a later failure keeps the reels already saved.
 - `/account/batch` runs inside the single account worker, so it fetches
   segments with `_resource` directly. Calling `resource()` from the worker
   would deadlock (it submits to the same one-thread executor and waits).

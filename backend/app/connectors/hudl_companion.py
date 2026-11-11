@@ -80,6 +80,8 @@ class ReelSpec(BaseModel):
     name: str = Field(default="Highlight reel", max_length=120)
     opening_card: str | None = Field(default=None, max_length=64)
     closing_card: str | None = Field(default=None, max_length=64)
+    # Spec 200: one reel file per match instead of one for the whole batch.
+    per_match: bool = False
 
 
 class BatchRequest(BaseModel):

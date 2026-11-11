@@ -34,7 +34,7 @@ def start_batch(
         if connection._syncing:
             connection._cancel_sync.set()
         connection._pending += 1
-        connection._steps = max(1, len(items)) + (1 if reel else 0)
+        connection._steps = max(1, len(items)) + (1 if _joined(reel) else 0)
         connection._progress = None
         connection._state.update(
             state="working",
@@ -45,6 +45,15 @@ def start_batch(
             match_id=None,
         )
     connection._executor.submit(connection._run_batch, items, combined, reel)
+
+
+def _joined(reel: dict[str, Any] | None) -> bool:
+    """A reel that joins every match into one file (spec 190), not one per match (spec 200)."""
+    return bool(reel) and not (reel or {}).get("per_match")
+
+
+def _clean(text: object) -> str:
+    return re.sub(r"[^\w .,()&'-]", "", str(text or "")).strip()[:80]
 
 
 def _pause(connection: BrowserConnection) -> None:
@@ -86,14 +95,22 @@ def _run_batch(
         if not plans:
             raise CaptureError("None of the chosen matches has those tagged moments cached.")
         with connection._lock:
-            connection._steps = len(plans) + (1 if reel else 0)
+            connection._steps = len(plans) + (1 if _joined(reel) else 0)
+        per_match = bool(reel) and not _joined(reel)
+        name = _clean(reel.get("name")) if reel else ""
+        closing = (
+            connection.cards.path(reel["closing_card"])
+            if per_match and reel and reel.get("closing_card")
+            else None
+        )
+        saved = 0
         folder = connection.output / ("reels" if reel else "moments")
         folder.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix=".batch-", dir=folder) as scratch_name:
             scratch = Path(scratch_name)
             parts: list[Path] = []
             cards: list[Path] = []
-            if reel and reel.get("opening_card"):
+            if _joined(reel) and reel and reel.get("opening_card"):
                 cards.append(connection.cards.path(reel["opening_card"]))
                 parts.append(cards[-1])
             for number, (identity, chosen, card_id) in enumerate(plans, start=1):
@@ -114,7 +131,31 @@ def _run_batch(
                     match_title=title if isinstance(title, str) else None,
                     progress=connection._reporter(label, number),
                 )
-                if reel:
+                if per_match:
+                    card = connection.cards.path(card_id) if card_id else None
+                    match_name = _clean(title) or identity
+                    output = folder / (
+                        f"{name or 'Highlight reel'} - {match_name} ({secrets.token_hex(4)}).mp4"
+                    )
+                    step = f"Match {number} of {len(plans)}: assembling its reel"
+                    connection.report("exporting", f"{step}…")
+                    assemble_reel(
+                        [p for p in (card, target, closing) if p is not None],
+                        output,
+                        cards=[p for p in (card, closing) if p is not None],
+                        progress=connection._reporter(step, number),
+                    )
+                    connection.index.record(
+                        "reel",
+                        identity,
+                        f"{name or 'Highlight reel'} - {match_name}",
+                        output,
+                        connection.output,
+                        chosen,
+                        combined=True,
+                    )
+                    saved += 1
+                elif reel:
                     if card_id:
                         cards.append(connection.cards.path(card_id))
                         parts.append(cards[-1])
@@ -129,6 +170,13 @@ def _run_batch(
                         chosen,
                         combined=combined,
                     )
+            if per_match:
+                connection.report(
+                    "done",
+                    f"{saved} highlight {'reel' if saved == 1 else 'reels'} saved"
+                    " in the reels folder.",
+                )
+                return
             if not reel:
                 connection.report(
                     "done",
@@ -138,7 +186,6 @@ def _run_batch(
             if reel.get("closing_card"):
                 cards.append(connection.cards.path(reel["closing_card"]))
                 parts.append(cards[-1])
-            name = re.sub(r"[^\w .,()&'-]", "", str(reel.get("name") or "")).strip()[:80]
             output = folder / f"{name or 'Highlight reel'} ({secrets.token_hex(4)}).mp4"
             connection.report("exporting", "Assembling the highlight reel…")
             assemble_reel(

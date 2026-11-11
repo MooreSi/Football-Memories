@@ -48,3 +48,15 @@ it("sends the selection to the highlight reel studio", async () => {
   expect(state).toEqual({ name: "Sam Example highlights", items: [
     { match_id: "stoke", codes: ["Sam Example"] }, { match_id: "wba", codes: ["Sam Example"] }] });
 });
+
+it("can send the selection to the studio as one reel per match", async () => {
+  renderPanel();
+  const user = userEvent.setup();
+  await user.selectOptions(screen.getByRole("combobox", { name: "Player or code" }), "Sam Example");
+  await user.click(within(screen.getByRole("list", { name: "Matches to include" })).getByRole("checkbox", { name: /West Bromwich Albion/ }));
+  await user.click(screen.getByRole("radio", { name: /One reel per match/ }));
+  await user.click(screen.getByRole("button", { name: /Create 2 highlight reels/ }));
+  const state = JSON.parse(screen.getByTestId("state").textContent!);
+  expect(state).toEqual({ name: "Sam Example highlights", per_match: true, items: [
+    { match_id: "stoke", codes: ["Sam Example"] }, { match_id: "wba", codes: ["Sam Example"] }] });
+});

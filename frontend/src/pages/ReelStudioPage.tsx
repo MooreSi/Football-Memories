@@ -15,7 +15,7 @@ import { timeLeft } from "../lib/taggedPlayback";
 import { useHomeClub } from "../lib/useHomeClub";
 
 export type ReelItem = { match_id: string; moment_ids?: string[]; codes?: string[] };
-export type ReelSelection = { items: ReelItem[]; name?: string };
+export type ReelSelection = { items: ReelItem[]; name?: string; per_match?: boolean };
 const KEY = "fm.reel.selection";
 
 function storedSelection(): ReelSelection | null {
@@ -90,7 +90,10 @@ function Studio({ selection }: { selection: ReelSelection }) {
   const [edited, setName] = useState<string | null>(null);
   // Derived until edited, so the club and library can load first.
   const name = edited ?? (selection.name || (rows.length === 1 && rows[0].match ? fixtureLabel(rows[0].match.title, club, "") : "Highlights"));
-  const [opening, setOpening] = useState(true);
+  // Spec 200: one file per match, each opened by its match card (no opening card).
+  const [separate, setSeparate] = useState(Boolean(selection.per_match));
+  const [openingOn, setOpening] = useState(true);
+  const opening = openingOn && !separate;
   const [openingTitle, setOpeningTitle] = useState<string | null>(null);
   const [subtitle, setSubtitle] = useState<string | null>(null);
   const [openingTheme, setOpeningTheme] = useState<ThemeId>("floodlights");
@@ -140,7 +143,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
       await hudlRequest("/account/batch", {
         items: selection.items.map((item, i) => ({ ...item, ...(ids[i] ? { card_id: ids[i] } : {}) })),
         combined: true,
-        reel: { name, opening_card: openingId, closing_card: closingId },
+        reel: { name, opening_card: openingId, closing_card: closingId, ...(separate ? { per_match: true } : {}) },
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["hudl-account"] }),
@@ -149,6 +152,8 @@ function Studio({ selection }: { selection: ReelSelection }) {
 
   const progress = status.data?.progress;
   const finished = status.data?.state === "done" && status.data.download_kind === "reel" && status.data.download_url;
+  const savedMany = separate && make.isSuccess && status.data?.state === "done" && !status.data.busy && !status.data.match_id;
+  const makeLabel = separate ? `Make ${rows.length} highlight ${rows.length === 1 ? "reel" : "reels"}` : "Make highlight reel";
 
   return (
     <div className="space-y-6">
@@ -159,17 +164,17 @@ function Studio({ selection }: { selection: ReelSelection }) {
           <input aria-label="Reel name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)}
             className="mt-1 block w-full max-w-2xl bg-transparent text-3xl font-semibold tracking-tight outline-none focus:ring-1 focus:ring-accent/50" />
           <p className="mt-1 text-sm text-fg-muted">{totalMoments} moments from {rows.length} {rows.length === 1 ? "match" : "matches"} · encoded at the best source quality</p>
-          {totalMoments > 150 && <p className="mt-1 text-sm text-warn">That is a long reel. Pick a player or code, or tick the moments you want, for a shorter one.</p>}
+          {totalMoments > 150 && !separate && <p className="mt-1 text-sm text-warn">That is a long reel. Pick a player or code, or tick the moments you want, for a shorter one.</p>}
         </div>
         <Button variant="primary" disabled={make.isPending || hudlBlocked(status.data) || totalMoments === 0} onClick={() => make.mutate()}>
-          <Sparkles size={16} aria-hidden /> Make highlight reel
+          <Sparkles size={16} aria-hidden /> {makeLabel}
         </Button>
       </header>
 
-      {(make.isPending || phase || progress || finished || make.isError) && (
+      {(make.isPending || phase || progress || finished || savedMany || make.isError) && (
         <section aria-label="Reel progress" className="panel space-y-2 p-4">
           {make.isError && <p role="alert" className="text-sm text-danger">{make.error.message}</p>}
-          {phase && !progress && !finished && <p role="status" className="text-sm">{phase}</p>}
+          {phase && !progress && !finished && !savedMany && <p role="status" className="text-sm">{phase}</p>}
           {progress && <>
             <div className="flex flex-wrap justify-between gap-2 text-sm"><span>Step {progress.step} of {progress.steps}: {progress.label}</span><span className="text-fg-muted">{Math.round(progress.fraction * 100)}% · {timeLeft(progress.eta_s)}</span></div>
             <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-ok to-accent transition-[width]" style={{ width: `${Math.max(2, progress.fraction * 100)}%` }} /></div>
@@ -178,6 +183,8 @@ function Studio({ selection }: { selection: ReelSelection }) {
           {finished && <div className="flex flex-wrap items-center gap-3"><p className="text-sm text-ok">{status.data!.message}</p>
             <a href={status.data!.download_url} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#2563eb] to-accent-strong px-4 text-sm font-semibold text-white"><Download size={14} aria-hidden /> Save reel</a>
             <Link to="/downloaded" className="text-sm text-accent underline">All downloads</Link></div>}
+          {savedMany && !finished && <div className="flex flex-wrap items-center gap-3"><p role="status" className="text-sm text-ok">{status.data!.message}</p>
+            <Link to="/downloaded" className="text-sm text-accent underline">See them in Downloaded</Link></div>}
         </section>
       )}
 
@@ -205,7 +212,21 @@ function Studio({ selection }: { selection: ReelSelection }) {
         </section>
 
         <aside className="space-y-4">
-          <div className="tile space-y-3 p-4">
+          <fieldset className="tile space-y-2 p-4">
+            <legend className="sr-only">Save as</legend>
+            <p className="text-sm font-semibold">Save as</p>
+            <div className="grid grid-cols-2 gap-2">
+              {([[false, "One reel", "Every match in one file"], [true, "One reel per match", "A file for each match"]] as const).map(([value, label, hint]) => (
+                <label key={label} className={`cursor-pointer rounded-xl border p-2.5 text-xs ${separate === value ? "border-accent ring-1 ring-accent/60" : "border-white/10 hover:border-white/30"}`}>
+                  <input type="radio" name="reel-output" className="sr-only" checked={separate === value} onChange={() => { setSeparate(value); setPreview(0); }} aria-label={label} />
+                  <span className="block font-semibold text-fg">{label}</span>
+                  <span className="block text-[11px] text-fg-muted">{hint}</span>
+                </label>
+              ))}
+            </div>
+            {separate && <p className="text-xs text-fg-muted">Each file starts with its match card and ends with the closing card.</p>}
+          </fieldset>
+          {!separate && <div className="tile space-y-3 p-4">
             <label className="flex items-center justify-between text-sm font-semibold">Opening card
               <input type="checkbox" checked={opening} onChange={(e) => setOpening(e.target.checked)} aria-label="Opening card" /></label>
             {opening && <>
@@ -213,7 +234,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
               <input className="field" aria-label="Opening subtitle" value={subtitle ?? defaultSubtitle} onChange={(e) => setSubtitle(e.target.value)} maxLength={120} />
               <ThemePicker label="Opening style" value={openingTheme} onChange={(t) => { setOpeningTheme(t); setPreview(0); }} />
             </>}
-          </div>
+          </div>}
           <div className="tile space-y-3 p-4">
             <label className="flex items-center justify-between text-sm font-semibold">Title card before each match
               <input type="checkbox" checked={perMatch} onChange={(e) => setPerMatch(e.target.checked)} aria-label="Title card before each match" /></label>

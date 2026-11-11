@@ -218,6 +218,67 @@ def test_batch_reel_adds_cards_and_records_one_reel(tmp_path, tiny_video):
     assert leftovers == []
 
 
+def test_batch_per_match_reels_saves_one_verified_reel_per_match(tmp_path, tiny_video):
+    connection = _connection(tmp_path)
+    cards = CardStore(tmp_path / "cards")
+    connection.cards = cards
+    m1_card = cards.save(_card(tmp_path / "m1.mp4").read_bytes())
+    m2_card = cards.save(_card(tmp_path / "m2.mp4").read_bytes())
+    closing = cards.save(_card(tmp_path / "c.mp4").read_bytes())
+    existing = tmp_path / "inbox" / "reels" / "keep me.mp4"
+    existing.parent.mkdir(parents=True)
+    existing.write_bytes(b"owner's file")
+
+    def prepare(identity):
+        connection._stream_id, connection._stream_match = f"s-{identity}", identity
+        connection._stream_playlist = "#EXTM3U\n"
+
+    def fake_export(playlist, fetch, selected, output, *, combined, match_title, progress):
+        assert combined is True
+        target = output / f"{selected[0]['id']}.mp4"
+        shutil.copyfile(tiny_video, target)
+        return target
+
+    with (
+        patch.object(connection, "_prepare_stream", side_effect=prepare),
+        patch.object(connection, "_pause", lambda: None),
+        patch("app.connectors.hudl_exports.export_from_segments", side_effect=fake_export),
+    ):
+        connection.start_batch(
+            [
+                {"match_id": "m1", "moment_ids": ["a"], "card_id": m1_card},
+                {"match_id": "m2", "codes": ["Sam Example"], "card_id": m2_card},
+            ],
+            combined=True,
+            reel={
+                "name": "Sam's season",
+                "opening_card": None,
+                "closing_card": closing,
+                "per_match": True,
+            },
+        )
+        _wait(connection)
+    connection._executor.shutdown()
+    status = connection.status()
+    assert status["state"] == "done", status["message"]
+    assert "2 highlight reels" in status["message"]
+    folder = tmp_path / "inbox" / "reels"
+    reels = sorted(p for p in folder.iterdir() if p.suffix == ".mp4" and p != existing)
+    assert len(reels) == 2
+    assert reels[0].name.startswith("Sam's season - 261110 U11 v Club m1")
+    assert reels[1].name.startswith("Sam's season - 261120 U11 v Club m2")
+    for reel in reels:
+        assert 5 < probe(reel).duration_s < 7  # match card 1 + clip 4 + closing card 1
+    assert existing.read_bytes() == b"owner's file"
+    entries = sorted(connection.index.entries(tmp_path / "inbox"), key=lambda e: e["file"])
+    assert [(e["kind"], e["match_id"], e["matches"]) for e in entries] == [
+        ("reel", "m1", ["m1"]),
+        ("reel", "m2", ["m2"]),
+    ]
+    assert all(not cards.path(c).exists() for c in (m1_card, m2_card, closing))
+    assert [p for p in folder.iterdir() if p.name.startswith(".")] == []
+
+
 def test_card_upload_and_batch_routes(tmp_path):
     app = create_companion(tmp_path / "inbox")
     app.state.catalogue.replace(
@@ -290,3 +351,31 @@ def test_reel_accepts_browser_recorded_cards_without_a_duration(tiny_video, tmp_
     info = probe(output)
     assert (info.width, info.height) == (320, 240)
     assert 5.5 < info.duration_s < 7.5
+
+
+def test_batch_route_forwards_per_match_reels(tmp_path):
+    app = create_companion(tmp_path / "inbox")
+    app.state.catalogue.replace(
+        [{"id": "m1", "title": "U11 v A", "url": "https://www.hudl.com/watch/video/m1"}]
+    )
+    with TestClient(app, base_url="http://127.0.0.1:8766") as client:
+        with patch.object(app.state.account, "start_batch") as start:
+            ok = client.post(
+                "/account/batch",
+                json={
+                    "items": [{"match_id": "m1", "codes": ["X"]}],
+                    "combined": True,
+                    "reel": {"name": "R", "per_match": True},
+                },
+                headers=ORIGIN,
+            )
+            assert ok.status_code == 202, ok.text
+            assert start.call_args.kwargs["reel"]["per_match"] is True
+            plain = client.post(
+                "/account/batch",
+                json={"items": [{"match_id": "m1", "codes": ["X"]}], "reel": {"name": "R"}},
+                headers=ORIGIN,
+            )
+            assert plain.status_code == 202
+            assert start.call_args.kwargs["reel"]["per_match"] is False
+    app.state.account._executor.shutdown()

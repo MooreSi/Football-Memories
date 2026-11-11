@@ -79,3 +79,31 @@ it("asks for moments when opened without a selection", async () => {
   renderStudio(null);
   expect(await screen.findByText(/Choose moments first/)).toBeInTheDocument();
 });
+
+it("makes one reel per match with each match's card and the closing card, and no opening card", async () => {
+  renderStudio({ items: [{ match_id: "stoke", codes: ["Sam Example"] }, { match_id: "wba", codes: ["Sam Example"] }], name: "Sam Example highlights", per_match: true });
+  await screen.findByRole("list", { name: "Matches in this reel" });
+  expect(screen.getByRole("radio", { name: /One reel per match/ })).toBeChecked();
+  expect(screen.queryByRole("checkbox", { name: "Opening card" })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /Make 2 highlight reels/ }));
+  await vi.waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u]) => String(u) === `${H}/account/batch`)).toBe(true));
+  const uploads = vi.mocked(fetch).mock.calls.filter(([u]) => String(u) === `${H}/reel/cards`);
+  expect(uploads).toHaveLength(3); // two match cards, closing
+  const batch = vi.mocked(fetch).mock.calls.find(([u]) => String(u) === `${H}/account/batch`)!;
+  const body = JSON.parse(String(batch[1]?.body));
+  expect(body.reel).toEqual({ name: "Sam Example highlights", opening_card: null, closing_card: "card-3-xxxxxxxxxxxxxx", per_match: true });
+  expect(body.items).toEqual([
+    { match_id: "stoke", codes: ["Sam Example"], card_id: "card-1-xxxxxxxxxxxxxx" },
+    { match_id: "wba", codes: ["Sam Example"], card_id: "card-2-xxxxxxxxxxxxxx" },
+  ]);
+});
+
+it("switches from one reel to one per match in the studio", async () => {
+  renderStudio({ items: [{ match_id: "stoke", codes: ["Sam Example"] }, { match_id: "wba", codes: ["Sam Example"] }] });
+  await screen.findByRole("list", { name: "Matches in this reel" });
+  expect(screen.getByRole("radio", { name: /One reel$/ })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Opening card" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("radio", { name: /One reel per match/ }));
+  expect(screen.queryByRole("checkbox", { name: "Opening card" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Make 2 highlight reels/ })).toBeInTheDocument();
+});

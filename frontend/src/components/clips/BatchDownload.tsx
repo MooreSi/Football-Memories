@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Film, FolderArchive, Layers } from "lucide-react";
+import { Clapperboard, Files, Film, FolderArchive, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type HudlMatch, downloadState, hudlBlocked, hudlRequest, useDownloadIndex, useHudlStatus } from "../../api/hudl";
@@ -8,11 +8,12 @@ import { looksLikePlayer } from "../../lib/hudlPlayer";
 import { timeLeft } from "../../lib/taggedPlayback";
 import { Button } from "../ui/Button";
 
-type Output = "zip" | "mp4" | "reel";
+type Output = "zip" | "mp4" | "reel" | "reels";
 const OUTPUTS: { id: Output; label: string; hint: string; icon: typeof Film }[] = [
   { id: "zip", label: "ZIP per match", hint: "One video per moment, grouped by match", icon: FolderArchive },
   { id: "mp4", label: "One video per match", hint: "Each match's moments back to back", icon: Film },
   { id: "reel", label: "One highlight reel", hint: "Every match, with an animated title card before each", icon: Clapperboard },
+  { id: "reels", label: "One reel per match", hint: "Each match in its own file, with its animated title card", icon: Files },
 ];
 
 /** Spec 190: one player's (or code's) moments from many matches in one go. The helper
@@ -109,10 +110,10 @@ export function BatchDownload({ matches }: { matches: HudlMatch[] }) {
                 </label>
               ))}
             </fieldset>
-            {output === "reel" ? (
+            {output === "reel" || output === "reels" ? (
               <Button variant="primary" className="w-full" disabled={!picked.length}
-                onClick={() => navigate("/clips/reel/new", { state: { name: `${code} highlights`, items } })}>
-                <Clapperboard size={15} aria-hidden /> Create highlight reel
+                onClick={() => navigate("/clips/reel/new", { state: { name: `${code} highlights`, ...(output === "reels" ? { per_match: true } : {}), items } })}>
+                <Clapperboard size={15} aria-hidden /> {output === "reels" ? `Create ${picked.length} highlight ${picked.length === 1 ? "reel" : "reels"}` : "Create highlight reel"}
               </Button>
             ) : (
               <Button variant="primary" className="w-full" disabled={!picked.length || start.isPending || hudlBlocked(status.data)} onClick={() => start.mutate()}>

@@ -32,6 +32,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Library Match Profile radar replaces Most tagged, follows the hero (D-029) | done (tests, browser-checked on real data, 2026-11-11) |
 | Match Profile split into our team v opposition; hub feed and date strip removed; timeline crests; full name on Your player (D-030) | done (tests, browser-checked on real data, 2026-11-11) |
 | Settings: no player/match list, Hudl beside Import | done (tests) |
+| One highlight reel per match (spec 200): batch tile + studio Save as switch, `reel.per_match` | done (tests; studio browser-checked on real library, nothing made; not run against real Hudl) |
 
 ## Spec 180 completed
 - Selected-age indexing, manifest duration fallback, persistent age/season,
@@ -186,6 +187,20 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-11 One reel per match (spec 200, main)
+
+- Backend `uv run pytest`: 367 passed on SQLite and 367 on Postgres (sequential);
+  ruff check, mypy, alembic check clean. `ruff format --check` flags only
+  `tests/test_installers.py`, which this change did not touch (it was flagged before too).
+- Frontend: 197 passed; typecheck and build OK (existing chunk-size warning).
+- New tests seen red first: per-match batch (made one reel), route (400 on
+  `per_match`), BatchDownload tile and two studio tests (controls missing).
+- Browser: batch tile shows, opens studio in per-match mode with the first
+  match card, no opening card, "Make N highlight reels"; switching back restores
+  the opening card. Long-reel warning hidden in per-match mode. Make was not
+  pressed: the running helper (port 8766) still has the old code and needs a
+  restart before it accepts `per_match`. No Hudl access.
 
 ### 2026-11-11 GitHub social preview (codex/github-social-preview)
 

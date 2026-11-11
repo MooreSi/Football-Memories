@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **One reel per match (spec 200, `main`):** batch download has a fourth tile,
+  and the Reel Studio has a Save as switch (One reel / One reel per match).
+  Per-match mode drops the opening card. Each match is fetched in turn, then
+  saved as its own verified reel in `reels/`
+  (`POST /account/batch` with `reel.per_match`). Tests and a browser check pass. **The
+  running helper must be restarted** onto this code before it accepts
+  `per_match`. Not run against the real account.
+
 - **`.env` fix:** `.gitignore`'s `.env.*` also ignored `.env.example`, so every
   GitHub copy lacked the template; the installers' `cp`/`copy` failed silently,
   no `.env` was written and compose stopped on `FM_DB_PASSWORD`. Template now
