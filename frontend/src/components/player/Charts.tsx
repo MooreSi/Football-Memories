@@ -51,17 +51,24 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
         {last.map((s, i) => (
           <li key={s.match_id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
             <span className="text-sm font-semibold tabular-nums">{s.moments}</span>
-            <Link
-              to={s.href ?? `/matches/${s.match_id}`}
-              title={`vs ${s.opponent}, ${s.match_date}`}
-              aria-label={`${s.moments} moments vs ${s.opponent}`}
-              className={`w-full max-w-10 rounded-md border transition hover:brightness-125 ${
-                i >= half ? "border-accent/60 bg-accent/35" : "border-white/15 bg-white/15"
-              }`}
-              style={{ height: `${Math.max(6, (s.moments / max) * 100)}%` }}
-            />
-            <span className="w-full truncate text-center text-[10px] text-fg-subtle">
-              {new Date(`${s.match_date}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+            <div className="flex min-h-0 w-full flex-1 items-end justify-center">
+              <Link
+                to={s.href ?? `/matches/${s.match_id}`}
+                title={`vs ${s.opponent}, ${s.match_date}`}
+                aria-label={`${s.moments} moments vs ${s.opponent}`}
+                className={`w-full max-w-10 rounded-md border transition hover:brightness-125 ${
+                  i >= half ? "border-accent/60 bg-accent/35" : "border-white/15 bg-white/15"
+                }`}
+                style={{ height: `${Math.max(6, (s.moments / max) * 100)}%` }}
+              />
+            </div>
+            {/* Game name reads bottom-to-top in a fixed strip, so long names never widen or grow the chart. */}
+            <span data-bar-label title={s.opponent}
+              className="h-16 shrink-0 truncate rotate-180 text-left text-[10px] leading-none text-fg-muted [writing-mode:vertical-rl]">
+              {s.opponent}
+            </span>
+            <span className="h-10 shrink-0 rotate-180 text-left text-[10px] leading-none whitespace-nowrap text-fg-subtle [writing-mode:vertical-rl]">
+              {new Date(`${s.match_date}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
             </span>
           </li>
         ))}
