@@ -664,6 +664,25 @@ class BrowserConnection:
                 target,
             )
 
+    def _try_poster(self, identity: str, observation: Observation) -> None:
+        """Make a poster if missing; a failure is remembered so it is retried weekly."""
+        if self.details.path(identity, ".poster").is_file():
+            return
+        with contextlib.suppress(Exception):
+            self._poster(identity, self._media_manifest(observation))
+        if not self.details.path(identity, ".poster").is_file():
+            self.details.write(
+                identity, {**self.details.read(identity), "poster_checked_at": time.time()}
+            )
+
+    def _needs_poster(self, identity: str, now: float) -> bool:
+        saved = self.details.read(identity)
+        if self.details.path(identity, ".poster").is_file() or "tag_status" not in saved:
+            return False
+        if saved.get("tag_status") == "unavailable":
+            return False
+        return now - float(saved.get("poster_checked_at", 0)) > UNAVAILABLE_RETRY_S
+
     def resource(self, stream: str, asset: str) -> tuple[bytes, str]:
         return self._executor.submit(self._resource, stream, asset).result(timeout=90)
 
@@ -766,9 +785,7 @@ class BrowserConnection:
             self._page.locator("video").first.evaluate("element => element.duration"),
             lambda address: fetch_media(self._context, address),
         )
-        if not self.details.path(identity, ".poster").is_file():
-            with contextlib.suppress(Exception):
-                self._poster(identity, self._media_manifest(observation))
+        self._try_poster(identity, observation)
         moments, tag_status = (
             optional_moments(observation.payloads, identity, duration)
             if observation.payloads
@@ -862,6 +879,25 @@ class BrowserConnection:
                         "load. Cached tags are kept; Refresh Hudl to continue.",
                     )
                     return
+            if self._page is not None:
+                self._page.wait_for_timeout(2500)
+        # Owner report 2026-11-11: matches indexed before posters existed kept Hudl's
+        # 320x240 thumbnail. Same pacing and stop rules as the tag sweep above.
+        posters = [item["id"] for item in items if self._needs_poster(item["id"], time.time())]
+        for done, identity in enumerate(posters):
+            if self._cancel_sync.is_set() or age != self._tag_age:
+                self.report("ready", f"Snapshots paused at {done} of {len(posters)}.")
+                return
+            self.report("syncing", f"Making full-quality snapshots: {done + 1} of {len(posters)}…")
+            try:
+                self._try_poster(identity, self._observe(identity, False))
+            except HudlBlocked as error:
+                self.report("error", f"Snapshots stopped: {error} Saved snapshots are kept.")
+                return
+            except CaptureError:
+                self.details.write(
+                    identity, {**self.details.read(identity), "poster_checked_at": time.time()}
+                )
             if self._page is not None:
                 self._page.wait_for_timeout(2500)
         skipped = f" {unreadable} videos had no readable tags." if unreadable else ""

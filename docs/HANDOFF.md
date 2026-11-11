@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Snapshot backfill:** only 4 of 286 matches had full-quality posters (they
+  were made only on stream or first tag index). The paced sweep now also makes
+  posters for indexed matches in the selected age group, one Hudl page at a
+  time with a 2.5 s pause; failures are retried weekly (`poster_checked_at`).
+  App open starts it automatically. Not yet observed running live.
+
 - **D-027 follow-ups on `main`:** reel assembly accepts browser-recorded
   cards (the "A reel part could not be read" failure); one-word clubs get
   crests (Liverpool, Arsenal verified live); Library Recent moments / Most

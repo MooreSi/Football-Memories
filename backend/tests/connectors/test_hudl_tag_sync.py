@@ -37,7 +37,9 @@ def test_sync_records_tags_for_uncached_matches_without_downloading(tmp_path):
         ),
     ):
         connection._sync_tags()
-    assert [c.args[0] for c in observe.call_args_list] == [VIDEO]
+    # Owner report 2026-11-11: the cached match is reopened once, only for its
+    # full-quality snapshot; its cached tags are left exactly as they were.
+    assert [c.args[0] for c in observe.call_args_list] == [VIDEO, "cached-match"]
     saved = connection.details.read(VIDEO)
     assert saved["tag_status"] == "synced"
     assert saved["moments"][0]["category"] == "SAM EXAMPLE"
