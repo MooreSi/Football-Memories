@@ -1,4 +1,8 @@
-"""macOS Keychain only: no credential files, environment variables or secret argv."""
+"""OS secret stores only: no credential files, environment variables or secret argv.
+
+macOS uses the Keychain. Windows (owner decision 2026-11-11) uses Credential
+Manager, which encrypts the entry to the signed-in Windows user (DPAPI).
+"""
 
 from __future__ import annotations
 
@@ -7,12 +11,15 @@ import json
 import platform
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from app.connectors.hudl_account import Credentials
 from app.connectors.hudl_capture import CaptureError
 
 
 class Keychain:
+    label = "macOS Keychain"
+
     def __init__(self, directory: Path) -> None:
         self.directory = directory
 
@@ -82,3 +89,126 @@ class Keychain:
             return True
         except CaptureError:
             return False
+
+
+class _Advapi32:
+    """Windows Credential Manager through advapi32 (ctypes, no extra package)."""
+
+    CRED_TYPE_GENERIC = 1
+    CRED_PERSIST_LOCAL_MACHINE = 2
+
+    def __init__(self) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        class FILETIME(ctypes.Structure):
+            _fields_ = [("low", wintypes.DWORD), ("high", wintypes.DWORD)]
+
+        class CREDENTIAL(ctypes.Structure):
+            _fields_ = [
+                ("Flags", wintypes.DWORD),
+                ("Type", wintypes.DWORD),
+                ("TargetName", wintypes.LPWSTR),
+                ("Comment", wintypes.LPWSTR),
+                ("LastWritten", FILETIME),
+                ("CredentialBlobSize", wintypes.DWORD),
+                ("CredentialBlob", ctypes.POINTER(ctypes.c_ubyte)),
+                ("Persist", wintypes.DWORD),
+                ("AttributeCount", wintypes.DWORD),
+                ("Attributes", ctypes.c_void_p),
+                ("TargetAlias", wintypes.LPWSTR),
+                ("UserName", wintypes.LPWSTR),
+            ]
+
+        self.ctypes = ctypes
+        self.CREDENTIAL = CREDENTIAL
+        self.api = ctypes.WinDLL("advapi32", use_last_error=True)  # type: ignore[attr-defined]
+        self.api.CredWriteW.argtypes = [ctypes.POINTER(CREDENTIAL), wintypes.DWORD]
+        self.api.CredWriteW.restype = wintypes.BOOL
+        self.api.CredReadW.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            ctypes.POINTER(ctypes.POINTER(CREDENTIAL)),
+        ]
+        self.api.CredReadW.restype = wintypes.BOOL
+        self.api.CredFree.argtypes = [ctypes.c_void_p]
+
+    def write(self, target: str, user: str, blob: bytes) -> None:
+        ctypes = self.ctypes
+        buffer = (ctypes.c_ubyte * len(blob)).from_buffer_copy(blob)
+        credential = self.CREDENTIAL()
+        credential.Type = self.CRED_TYPE_GENERIC
+        credential.TargetName = target
+        credential.UserName = user
+        credential.CredentialBlobSize = len(blob)
+        credential.CredentialBlob = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
+        credential.Persist = self.CRED_PERSIST_LOCAL_MACHINE
+        if not self.api.CredWriteW(ctypes.byref(credential), 0):
+            raise OSError(ctypes.get_last_error(), "CredWriteW failed")
+
+    def read(self, target: str) -> tuple[str, bytes] | None:
+        ctypes = self.ctypes
+        pointer = ctypes.POINTER(self.CREDENTIAL)()
+        if not self.api.CredReadW(target, self.CRED_TYPE_GENERIC, 0, ctypes.byref(pointer)):
+            if ctypes.get_last_error() == 1168:  # ERROR_NOT_FOUND
+                return None
+            raise OSError(ctypes.get_last_error(), "CredReadW failed")
+        try:
+            entry = pointer.contents
+            blob = ctypes.string_at(entry.CredentialBlob, entry.CredentialBlobSize)
+            return str(entry.UserName or ""), bytes(blob)
+        finally:
+            self.api.CredFree(pointer)
+
+
+class WindowsCredentialStore:
+    """Same interface as Keychain; one generic credential, password only in its blob."""
+
+    label = "Windows Credential Manager"
+    TARGET = "FootballMemories/Hudl"
+    MAX_BLOB = 2560  # CRED_MAX_CREDENTIAL_BLOB_SIZE
+
+    def __init__(self, api: Any) -> None:
+        self.api = api
+
+    def __repr__(self) -> str:
+        return "WindowsCredentialStore()"
+
+    def save(self, credentials: Credentials) -> None:
+        blob = json.dumps(
+            {"username": credentials.username, "password": credentials.password.get_secret_value()}
+        ).encode("utf-8")
+        if len(blob) > self.MAX_BLOB:
+            raise CaptureError("That username and password are too long for Credential Manager.")
+        try:
+            self.api.write(self.TARGET, credentials.username, blob)
+        except Exception:
+            raise CaptureError(
+                "Windows Credential Manager could not save the Hudl account."
+            ) from None
+
+    def load(self) -> Credentials:
+        try:
+            found = self.api.read(self.TARGET)
+            if found is None:
+                raise LookupError
+            data = json.loads(found[1].decode("utf-8"))
+            return Credentials(data["username"], data["password"])
+        except Exception:
+            raise CaptureError(
+                "No Hudl account is saved in Windows Credential Manager, or it could not be read."
+            ) from None
+
+    def configured(self) -> bool:
+        try:
+            return self.api.read(self.TARGET) is not None
+        except Exception:
+            return False
+
+
+def secret_store(directory: Path) -> Keychain | WindowsCredentialStore:
+    """The operating system's own secret store for the saved Hudl account."""
+    if platform.system() == "Windows":
+        return WindowsCredentialStore(_Advapi32())
+    return Keychain(directory)

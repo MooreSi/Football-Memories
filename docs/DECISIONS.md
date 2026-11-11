@@ -4,6 +4,22 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-027 (2026-11-11) Hudl helper on Windows; one-word club crests
+Owner asked for the Hudl connection on Windows and chose Windows Credential
+Manager for the saved password (asked first, per the credential-storage rule).
+`WindowsCredentialStore` writes one generic credential `FootballMemories/Hudl`
+through advapi32 (ctypes, no new dependency); the password is only in its
+blob, never in a file, argv or log. Folder choice uses a PowerShell
+FolderBrowserDialog and delete uses the Recycle Bin, with paths passed in
+environment variables, never inside the script text. The Windows installer
+adds uv, ffmpeg and Chrome via winget and starts the helper minimized.
+The ctypes adapter could not be exercised on the Mac: only a fake
+Credential Manager is tested.
+
+Crests: every team is a football club (owner), so one-word names are tried
+as "<name> F.C.", "<name> A.F.C.", then as written; SVG lead images count as
+crests, photos never do. Supersedes the single-word ambiguity guard.
+
 ## D-026 (2026-11-10) Spec 190 owner request batch
 Sixteen owner requests (spec 190). Decisions made while building:
 - Moment exports move to `moments/` under the download folder (owner asked);

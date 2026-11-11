@@ -257,3 +257,12 @@ matched helper output. Prior archive files unchanged; no new full match capture.
 - Settings > Update uses `git fetch` on the owner's checkout: the GitHub repo
   is private, so the public API returns 404. Apply is `git pull --ff-only`,
   then `docker compose up -d --build`, then the helper re-execs itself.
+
+## Windows helper (D-027, 2026-11-11)
+- `secret_store()` picks the macOS Keychain or Windows Credential Manager; the
+  helper reports `secret_store` and `platform` on `/account` so the UI names
+  the right store, folder picker and Trash/Recycle Bin.
+- Chrome's MediaRecorder WebM has no duration header, so `probe()` (which
+  needs one) rejects it; reel cards are read with `_card_info` (streams only).
+- Wikipedia crest files are often plain SVG names (`Liverpool_FC.svg`), so the
+  old "crest/logo/badge" keyword filter missed them; `.svg` counts as a crest.

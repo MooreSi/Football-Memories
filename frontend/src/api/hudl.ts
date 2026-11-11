@@ -4,7 +4,7 @@ export const HUDL = 'http://127.0.0.1:8766';
 export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number};
 export type HudlMatch = {id:string; title:string; age_group:string; age_groups?:string[]; capture_key:string; season_label?:string; tag_status?:"synced"|"unsynced"|"none"|"unavailable"; tag_error?:string; thumbnail_url?:string|null; poster_url?:string|null; moments?:HudlMoment[]; duration_s?:number};
 export type HudlProgress = {label:string; step:number; steps:number; done:number; total:number; fraction:number; eta_s:number|null};
-export type HudlStatus = {state:string; message:string; busy:boolean; syncing?:boolean; tag_age_group?:string|null; progress?:HudlProgress|null; catalogue_checked_at?:number|null; configured:boolean; match_id?:string; filename?:string; download_url?:string; download_kind?:"match"|"moments"|"reel"; stream_url?:string};
+export type HudlStatus = {state:string; message:string; busy:boolean; syncing?:boolean; tag_age_group?:string|null; progress?:HudlProgress|null; catalogue_checked_at?:number|null; configured:boolean; secret_store?:string; platform?:"mac"|"windows"; match_id?:string; filename?:string; download_url?:string; download_kind?:"match"|"moments"|"reel"; stream_url?:string};
 export async function hudlRequest<T>(path:string,body?:unknown):Promise<T> {
  const response=await fetch(HUDL+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path==='/account/action'?scopedHudlAction(body):body)});
  const data=await response.json(); if(!response.ok)throw new Error(data.detail||'Hudl helper unavailable');return data;

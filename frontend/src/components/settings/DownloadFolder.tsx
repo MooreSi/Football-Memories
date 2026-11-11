@@ -2,7 +2,7 @@ import { Overlay } from "../ui/Overlay";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, FolderInput, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { type DownloadFolderInfo, hudlRequest, useDownloadFolder } from "../../api/hudl";
+import { type DownloadFolderInfo, hudlRequest, useDownloadFolder, useHudlStatus } from "../../api/hudl";
 import { formatBytes } from "../../lib/format";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
@@ -10,6 +10,7 @@ import { Spinner } from "../ui/Spinner";
 /** Owner request 2026-11-10: choose where downloads are saved, and delete them (to the Trash). */
 export function DownloadFolderSettings() {
   const q = useDownloadFolder();
+  const windows = useHudlStatus().data?.platform === "windows";
   const qc = useQueryClient();
   const [confirm, setConfirm] = useState<string>();
   const save = (data: DownloadFolderInfo) => qc.setQueryData(["hudl-downloads"], data);
@@ -29,7 +30,7 @@ export function DownloadFolderSettings() {
         <span className="grid size-11 place-items-center rounded-xl bg-ink-800 text-accent"><Download size={20} aria-hidden /></span>
         <div className="mr-auto min-w-0">
           <h2 className="font-semibold">Downloaded files</h2>
-          <p className="text-sm text-fg-muted">Where full matches and moment downloads from Hudl are saved on this Mac. Files you have already downloaded stay where they are.</p>
+          <p className="text-sm text-fg-muted">Where full matches and moment downloads from Hudl are saved on this computer. Files you have already downloaded stay where they are.</p>
         </div>
       </div>
       {q.isPending ? <Spinner label="Checking download folder" /> : q.isError ? (
@@ -44,7 +45,7 @@ export function DownloadFolderSettings() {
                 {q.data.free_bytes != null && ` · ${formatBytes(q.data.free_bytes)} free`}
               </p>
             </div>
-            <Button disabled={folder.isPending} onClick={() => folder.mutate("choose")}><FolderInput size={14} aria-hidden /> {folder.isPending ? "Choose in Finder…" : "Change folder"}</Button>
+            <Button disabled={folder.isPending} onClick={() => folder.mutate("choose")}><FolderInput size={14} aria-hidden /> {folder.isPending ? (windows ? "Choose in File Explorer…" : "Choose in Finder…") : "Change folder"}</Button>
             {!q.data.is_default && <Button variant="ghost" disabled={folder.isPending} onClick={() => folder.mutate("reset")}><RotateCcw size={14} aria-hidden /> Use default folder</Button>}
           </div>
           {error && <p role="alert" className="text-sm text-danger">{error.message}</p>}
@@ -65,10 +66,10 @@ export function DownloadFolderSettings() {
       {confirm && (
         <Overlay label={`Delete ${confirm}?`} onClose={() => setConfirm(undefined)}>
             <h2 className="text-lg font-semibold break-all">Delete {confirm}?</h2>
-            <p className="text-sm text-fg-muted">The file moves to the Mac's Trash, so you can put it back from Finder until the Trash is emptied. Matches already imported into the Library keep their own copy. If you have not imported it, this may be your only copy.</p>
+            <p className="text-sm text-fg-muted">{windows ? "The file moves to the Recycle Bin, so you can restore it until the Recycle Bin is emptied." : "The file moves to the Mac's Trash, so you can put it back from Finder until the Trash is emptied."} Matches already imported into the Library keep their own copy. If you have not imported it, this may be your only copy.</p>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setConfirm(undefined)}>Cancel</Button>
-              <Button variant="primary" onClick={() => { remove.mutate(confirm); setConfirm(undefined); }}><Trash2 size={14} aria-hidden /> Move to Trash</Button>
+              <Button variant="primary" onClick={() => { remove.mutate(confirm); setConfirm(undefined); }}><Trash2 size={14} aria-hidden /> {windows ? "Move to Recycle Bin" : "Move to Trash"}</Button>
             </div>
         </Overlay>
       )}

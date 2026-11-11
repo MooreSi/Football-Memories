@@ -35,4 +35,14 @@ describe("HudlAccount", () => {
     expect(screen.queryByRole("list", { name: "Available Hudl matches" })).toBeNull();
     expect(screen.queryByLabelText("Hudl match stream")).toBeNull();
   });
+  it("names Windows Credential Manager when the helper runs on Windows", async () => {
+    stubFetch({ [`${BASE}/account`]: { ...status, secret_store: "Windows Credential Manager", platform: "windows" }, [`${BASE}/account/credentials`]: { saved: true } });
+    const user = userEvent.setup();
+    renderWithProviders(<HudlAccount />);
+    await user.type(await screen.findByLabelText("Hudl username"), "parent@example.test");
+    await user.type(screen.getByLabelText("Hudl password"), "FAKE_SECRET");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText(/Saved in Windows Credential Manager/)).toBeInTheDocument();
+    expect(screen.queryByText(/Keychain/)).toBeNull();
+  });
 });

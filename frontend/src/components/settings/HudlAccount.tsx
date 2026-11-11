@@ -9,7 +9,7 @@ import { Button } from "../ui/Button";
 const BASE = "http://127.0.0.1:8766";
 const KEY = ["hudl-account"];
 type Match = { id: string; title: string; url: string };
-type Status = { session_active?: boolean; configured: boolean; busy: boolean; state: string; message: string;
+type Status = { session_active?: boolean; configured: boolean; busy: boolean; state: string; message: string; secret_store?: string;
   matches: Match[]; stream_url?: string | null; filename?: string | null };
 async function request<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${BASE}${path}`, body === undefined ? {} : {
@@ -99,6 +99,9 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
   if (q.isError) return null; // The existing capture section provides desktop-helper setup.
   if (q.isPending) return <p className="text-xs text-fg-muted">Checking saved Hudl connection…</p>;
   const busy = q.data.busy || save.isPending || action.isPending;
+  // The helper names its OS secret store: macOS Keychain or Windows Credential Manager.
+  const windows = q.data.secret_store === "Windows Credential Manager";
+  const where = windows ? "Windows Credential Manager" : "this Mac’s Keychain";
   function submit(event: FormEvent) { event.preventDefault(); setSaved(false); save.mutate(); }
   return <section aria-label="Hudl account connection" className="space-y-4 border-t border-line pt-4">
     <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck size={17} /> Your Hudl account</div>
@@ -109,8 +112,8 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
       <label className="block space-y-1 text-sm"><span>Hudl password</span>
         <input aria-label="Hudl password" type="password" autoComplete="off" required disabled={busy}
           className="field" value={password} onChange={e => setPassword(e.target.value)}
-          placeholder={q.data.configured ? "Saved in Keychain — enter to replace" : "Password"} /></label>
-      <p className="text-xs text-fg-subtle">Saved only in this Mac’s Keychain. Test signs in and refreshes available matches. Complete any verification in the Hudl browser.</p>
+          placeholder={q.data.configured ? `Saved in ${windows ? "Credential Manager" : "Keychain"} — enter to replace` : "Password"} /></label>
+      <p className="text-xs text-fg-subtle">Saved only in {where}. Test signs in and refreshes available matches. Complete any verification in the Hudl browser.</p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="primary" disabled={busy}>{save.isPending ? "Saving…" : "Save"}</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate({ action: "test" })}>Test</Button>
@@ -118,7 +121,7 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
         {q.data.session_active && <Button type="button" disabled={busy} onClick={() => action.mutate({ action: "disconnect" })}>Disconnect</Button>}
       </div>
     </form>
-    {saved && <p className="text-xs text-ok" role="status">Saved in this Mac’s Keychain. Select Test to connect.</p>}
+    {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Test to connect.</p>}
     <p role="status" className={`text-xs ${q.data.state === "error" ? "text-danger" : "text-fg-muted"}`}>{q.data.message}</p>
     {(save.isError || action.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error)?.message}</p>}
     {q.data.filename && <Link to="/import" className="inline-flex text-sm font-semibold text-accent underline">Import downloaded match</Link>}

@@ -11,7 +11,15 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-10)
+## Current state (2026-11-11)
+
+- **D-027 follow-ups on `main`:** reel assembly accepts browser-recorded
+  cards (the "A reel part could not be read" failure); one-word clubs get
+  crests (Liverpool, Arsenal verified live); Library Recent moments / Most
+  tagged follow the hero match and Overview counts the selected age/season;
+  Hudl helper runs on Windows with Windows Credential Manager (ctypes adapter
+  untested on real Windows; installer not executed). Helper restarted on the
+  new code.
 
 - **Spec 190 (owner batch of 16 requests) on `main`:** see
   [190-owner-requests-nov10.md](todo/football-memories/190-owner-requests-nov10.md)

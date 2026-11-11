@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -23,8 +24,41 @@ _SHOWN = {".mp4", ".mov", ".m4v", ".mkv", ".zip", ".csv"}
 _NAME = re.compile(r"[^/\\\x00]{1,255}")
 
 
+_PICK_WINDOWS = (
+    "Add-Type -AssemblyName System.Windows.Forms; "
+    "$d = New-Object System.Windows.Forms.FolderBrowserDialog; "
+    "$d.Description = 'Choose where Football Memories saves downloads'; "
+    "$d.SelectedPath = $env:FM_CURRENT_FOLDER; "
+    "if ($d.ShowDialog() -eq 'OK') { $d.SelectedPath }"
+)
+_RECYCLE_WINDOWS = (
+    "Add-Type -AssemblyName Microsoft.VisualBasic; "
+    "[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile("
+    "$env:FM_RECYCLE_PATH, 'OnlyErrorDialogs', 'SendToRecycleBin')"
+)
+
+
+def _powershell(script: str, **env: str) -> subprocess.CompletedProcess[str]:
+    # Paths travel in environment variables, never inside the script text.
+    return subprocess.run(
+        ["powershell", "-NoProfile", "-NonInteractive", "-STA", "-Command", script],
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+        env={**os.environ, **env},
+    )
+
+
 def choose_folder(current: Path) -> Path | None:
-    """Native Finder folder picker on the owner's Mac; None when cancelled."""
+    """Native folder picker (Finder on a Mac, Explorer on Windows); None when cancelled."""
+    if platform.system() == "Windows":
+        try:
+            result = _powershell(_PICK_WINDOWS, FM_CURRENT_FOLDER=str(current))
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        chosen = result.stdout.strip()
+        return Path(chosen) if result.returncode == 0 and chosen else None
     script = (
         'POSIX path of (choose folder with prompt "Choose where Football Memories saves downloads"'
         f' default location POSIX file "{current}")'
@@ -105,6 +139,18 @@ class DownloadFolder:
             raise CaptureError("That file is not in the download folder.")
         if path.suffix.lower() not in _SHOWN:
             raise CaptureError("Choose a file shown in the download folder.")
+        if platform.system() == "Windows":
+            # Owner decision 2026-11-11: the Recycle Bin is Windows' Trash; restorable.
+            try:
+                result = _powershell(_RECYCLE_WINDOWS, FM_RECYCLE_PATH=str(path))
+            except (OSError, subprocess.TimeoutExpired):
+                result = None
+            if result is None or result.returncode != 0 or path.exists():
+                raise CaptureError(
+                    "Could not move the file to the Recycle Bin. Nothing was deleted; "
+                    "remove it in File Explorer instead."
+                )
+            return name
         self.trash.mkdir(exist_ok=True)
         destination = self.trash / name
         number = 1

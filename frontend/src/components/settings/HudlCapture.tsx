@@ -57,7 +57,7 @@ export function HudlCapture() {
       </p>
       {q.isError ? (
         <div className="space-y-2 text-xs text-fg-muted">
-          <p>Start the desktop helper on this Mac, then check again.</p>
+          <p>Start the desktop helper on this computer, then check again.</p>
           <details>
             <summary className="cursor-pointer text-accent">Desktop helper setup</summary>
             <p className="mt-2">From the project’s backend folder, with Chrome and ffmpeg installed:</p>

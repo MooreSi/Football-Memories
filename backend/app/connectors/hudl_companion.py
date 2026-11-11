@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import threading
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -22,7 +23,7 @@ from app.connectors.hudl_account import Catalogue, Credentials
 from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_downloads import DownloadFolder
-from app.connectors.hudl_keychain import Keychain
+from app.connectors.hudl_keychain import secret_store
 from app.connectors.hudl_metadata import MatchCache, age_group, capture_key, season_label
 
 ORIGINS = {
@@ -163,7 +164,7 @@ def create_companion(output: Path) -> FastAPI:
     output = output.expanduser().resolve()
     app.state.capture = CaptureManager(output)
     cache = output.parent / ".hudl-account"
-    app.state.keychain = Keychain(Path.home() / "Library/Caches/FootballMemories")
+    app.state.keychain = secret_store(Path.home() / "Library/Caches/FootballMemories")
     app.state.catalogue = Catalogue(cache)
     app.state.details = MatchCache(cache / "details")
     app.state.account = BrowserConnection(
@@ -245,6 +246,8 @@ def create_companion(output: Path) -> FastAPI:
             **current,
             "catalogue_checked_at": checked,
             "configured": request.app.state.account_configured,
+            "secret_store": getattr(request.app.state.keychain, "label", "secret store"),
+            "platform": "windows" if os.name == "nt" else "mac",
             "download_url": (
                 f"http://127.0.0.1:8766/files/{app.state.file_scope}/{filename}"
                 if filename
