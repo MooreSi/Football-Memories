@@ -17,9 +17,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Football-Clip-Recorder; GitHub redirects the old URL) and the local folder
   is `/Users/simon/Football Memories`. Release **v0.1** published; About and
   topics set; README rewritten for users with synthetic-data screenshots in
-  `docs/screenshots/`. The 18 old branches are all fully merged into `main`
-  (0 unique commits each); deleting them was blocked in the agent session and
-  is left for the owner.
+  `docs/screenshots/`. The 18 old feature branches (all fully merged, 0 unique
+  commits each) were deleted on the owner's go-ahead; `main` is the only branch.
 
 - **Latest polish:** Recent moments read from kick-off (times are true video
   time; matches run about 1h23m); every crest sits on the same white disc with
