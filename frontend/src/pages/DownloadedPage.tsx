@@ -1,7 +1,10 @@
-import { Clapperboard, Download, Film, FolderArchive, HardDriveDownload } from "lucide-react";
+import { Clapperboard, Download, Film, FolderArchive, HardDriveDownload, Play } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Overlay } from "../components/ui/Overlay";
+import { Button } from "../components/ui/Button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { type DownloadEntry, hudlAgeGroups, useDownloadIndex, useHudlLibrary } from "../api/hudl";
+import { type DownloadEntry, hudlAgeGroups, hudlRequest, useDownloadIndex, useHudlLibrary } from "../api/hudl";
 import { TeamBadge } from "../components/TeamBadge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
@@ -29,6 +32,7 @@ export function DownloadedPage() {
   const library = useHudlLibrary();
   const club = useHomeClub();
   const [filter, setFilter] = useState<Filter>("all");
+  const [playing, setPlaying] = useState<DownloadEntry | null>(null);
   const entries = (index.data ?? []).filter((e) => filter === "all" || (filter === "match" ? e.kind === "match" : e.kind !== "match"));
   const groups = new Map<string, DownloadEntry[]>();
   for (const e of entries) {
@@ -100,9 +104,15 @@ export function DownloadedPage() {
                           {e.codes.length > 0 && <p className="truncate text-xs text-pin">{e.codes.slice(0, 6).join(", ")}{e.codes.length > 6 ? ` +${e.codes.length - 6}` : ""}</p>}
                           <p className="truncate font-mono text-[11px] text-fg-subtle">{e.file}</p>
                         </div>
-                        <a href={e.url} aria-label={`Save ${name}`} className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 text-sm hover:bg-white/10">
-                          <Download size={14} aria-hidden /> Save
-                        </a>
+                        <div className="flex flex-col items-stretch gap-1.5">
+                          <button type="button" onClick={() => setPlaying(e)} aria-label={`Play ${name}`}
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#2563eb] to-accent-strong px-3.5 text-sm font-semibold text-white hover:brightness-110">
+                            <Play size={14} aria-hidden /> Play
+                          </button>
+                          <a href={e.url} aria-label={`Save ${name}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 text-sm hover:bg-white/10">
+                            <Download size={14} aria-hidden /> Save
+                          </a>
+                        </div>
                       </li>
                     );
                   })}
@@ -112,6 +122,49 @@ export function DownloadedPage() {
           })}
         </div>
       )}
+      {playing && <PlayDialog entry={playing} onClose={() => setPlaying(null)} />}
     </div>
+  );
+}
+
+/** Owner request 2026-11-11: play the downloaded file itself. A reel is one MP4 with its
+ *  animated opening, match and closing cards built in; a moments ZIP plays clip by clip. */
+function PlayDialog({ entry, onClose }: { entry: DownloadEntry; onClose: () => void }) {
+  const zip = entry.file.toLowerCase().endsWith(".zip");
+  const members = useQuery({
+    queryKey: ["download-members", entry.file],
+    queryFn: () => hudlRequest<{ name: string; url: string }[]>(`/downloads/members?file=${encodeURIComponent(entry.file)}`),
+    enabled: zip,
+  });
+  const [index, setIndex] = useState(0);
+  const clips = zip ? members.data ?? [] : [{ name: entry.file.split("/").pop()!, url: entry.url }];
+  const clip = clips[Math.min(index, clips.length - 1)];
+  const name = entry.file.split("/").pop()!;
+  return (
+    <Overlay label={`Play ${name}`} onClose={onClose} className="max-w-5xl">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold">{KIND[entry.kind].label}: {entry.title ?? name}</h2>
+          <p className="truncate text-xs text-fg-muted">{clip ? (zip ? `${index + 1} of ${clips.length} · ${clip.name}` : name) : "Loading…"}</p>
+        </div>
+        <Button variant="ghost" onClick={onClose}>Close</Button>
+      </div>
+      {members.isError && <p role="alert" className="text-sm text-danger">{members.error.message}</p>}
+      {clip && (
+        <video key={clip.url} src={clip.url} controls autoPlay playsInline
+          onEnded={() => setIndex((i) => (i + 1 < clips.length ? i + 1 : i))}
+          className="aspect-video w-full rounded-xl bg-black" />
+      )}
+      {zip && clips.length > 1 && (
+        <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+          {clips.map((c, i) => (
+            <button key={c.url} type="button" onClick={() => setIndex(i)} aria-current={i === index ? true : undefined}
+              className={`rounded-full px-3 py-1 text-xs ${i === index ? "bg-accent/20 text-fg ring-1 ring-accent/50" : "bg-white/5 text-fg-muted hover:text-fg"}`}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
+    </Overlay>
   );
 }

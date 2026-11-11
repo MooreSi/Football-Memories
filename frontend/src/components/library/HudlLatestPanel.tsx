@@ -14,7 +14,8 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
   const date = fixtureDate(match.title);
   const home = club || "Home";
   const moments = match.moments ?? [];
-  const recent = [...moments].sort((a, b) => b.time_s - a.time_s).slice(0, 8);
+  // Owner request 2026-11-11: read the game from kick-off (times are video time, H:MM:SS).
+  const recent = [...moments].sort((a, b) => a.time_s - b.time_s).slice(0, 8);
   const link = `/hudl/${encodeURIComponent(match.id)}`;
   return (
     <div className="space-y-5">
@@ -47,7 +48,7 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
 
       <section aria-label="Recent moments" className="panel p-5">
         <h2 className="mb-1 text-lg font-semibold">Recent moments</h2>
-        <p className="mb-3 text-xs text-fg-subtle">Latest tagged moments in this match</p>
+        <p className="mb-3 text-xs text-fg-subtle">From kick-off · {moments.length} tagged in this match</p>
         {recent.length === 0 ? (
           <p className="text-sm text-fg-muted">Moments appear here once this match's tags are indexed. Open the match or Refresh Hudl.</p>
         ) : (
@@ -61,6 +62,9 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
               </li>
             ))}
           </ul>
+        )}
+        {moments.length > recent.length && (
+          <Link to={link} className="mt-3 block text-center text-sm text-accent hover:underline">See all {moments.length} moments</Link>
         )}
       </section>
     </div>

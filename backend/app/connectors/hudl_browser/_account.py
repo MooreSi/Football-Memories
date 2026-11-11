@@ -30,9 +30,9 @@ from app.connectors.hudl_capture import (
 from app.connectors.hudl_index import DownloadIndex
 from app.connectors.hudl_metadata import MatchCache, capture_key, optional_moments
 
+from . import _batch, _tags
 from ._capture import (
     LOGIN_URL,
-    MAX_FAILURES_IN_A_ROW,
     UNAVAILABLE_RETRY_S,
     HudlBlocked,
     Observation,
@@ -166,6 +166,9 @@ class BrowserConnection:
             )
         self._executor.submit(self._perform, action, identity, moment_ids, combined)
 
+    # Batch exports and reels live in _batch.py, the paced sweep in _tags.py (split at
+    # the 800-line ceiling, rule 70). These stay as methods so callers, the worker and
+    # tests keep using the connection as before.
     def start_batch(
         self,
         items: list[dict[str, Any]],
@@ -173,150 +176,27 @@ class BrowserConnection:
         combined: bool = False,
         reel: dict[str, Any] | None = None,
     ) -> None:
-        """Spec 190: export moments from several matches in turn, or one reel from them."""
-        with self._lock:
-            if self._pending and not (self._syncing and self._pending == 1):
-                raise CaptureError("A Hudl operation is already running.")
-            if self._syncing:
-                self._cancel_sync.set()
-            self._pending += 1
-            self._steps = max(1, len(items)) + (1 if reel else 0)
-            self._progress = None
-            self._state.update(
-                state="working",
-                message="Preparing the batch…",
-                filename=None,
-                download_name=None,
-                download_kind=None,
-                match_id=None,
-            )
-        self._executor.submit(self._run_batch, items, combined, reel)
+        _batch.start_batch(self, items, combined=combined, reel=reel)
 
     def _pause(self) -> None:
-        """Golden rule 3: a normal person's pause between Hudl match pages."""
-        if self._page is not None:
-            self._page.wait_for_timeout(2500)
-        else:
-            time.sleep(2.5)
+        _batch._pause(self)
 
     def _fetcher(self, stream: str) -> Callable[[int], bytes]:
-        return lambda index: self._resource(stream, str(index))[0]
+        return _batch._fetcher(self, stream)
 
     def _reporter(self, label: str, step: int) -> Callable[[int, int], None]:
-        return lambda done, total: self._set_progress(label, step, done, total)
+        return _batch._reporter(self, label, step)
 
     def _run_batch(
         self, items: list[dict[str, Any]], combined: bool, reel: dict[str, Any] | None
     ) -> None:
-        from app.connectors import hudl_exports
-        from app.connectors.hudl_batch import assemble_reel
+        _batch._run_batch(self, items, combined, reel)
 
-        card_ids = [i.get("card_id") for i in items] + (
-            [reel.get("opening_card"), reel.get("closing_card")] if reel else []
-        )
-        try:
-            plans = []
-            for item in items:
-                available = self.details.read(item["match_id"]).get("moments", [])
-                ids, codes = set(item.get("moment_ids") or []), set(item.get("codes") or [])
-                chosen = [
-                    m for m in available if (m["id"] in ids if ids else m["category"] in codes)
-                ]
-                if chosen:
-                    plans.append((item["match_id"], chosen, item.get("card_id")))
-            if not plans:
-                raise CaptureError("None of the chosen matches has those tagged moments cached.")
-            with self._lock:
-                self._steps = len(plans) + (1 if reel else 0)
-            folder = self.output / ("reels" if reel else "moments")
-            folder.mkdir(parents=True, exist_ok=True)
-            with tempfile.TemporaryDirectory(prefix=".batch-", dir=folder) as scratch_name:
-                scratch = Path(scratch_name)
-                parts: list[Path] = []
-                cards: list[Path] = []
-                if reel and reel.get("opening_card"):
-                    cards.append(self.cards.path(reel["opening_card"]))
-                    parts.append(cards[-1])
-                for number, (identity, chosen, card_id) in enumerate(plans, start=1):
-                    if number > 1:
-                        self._pause()
-                    title = self.catalogue.find(identity).get("title")
-                    label = f"Match {number} of {len(plans)}: fetching and encoding moments"
-                    self.report("exporting", f"{label}…")
-                    if self._stream_match != identity or not self._stream_id:
-                        self._prepare_stream(identity)
-                    stream = self._stream_id
-                    target = hudl_exports.export_from_segments(
-                        self._stream_playlist,
-                        self._fetcher(stream),
-                        chosen,
-                        scratch if reel else folder,
-                        combined=True if reel else combined,
-                        match_title=title if isinstance(title, str) else None,
-                        progress=self._reporter(label, number),
-                    )
-                    if reel:
-                        if card_id:
-                            cards.append(self.cards.path(card_id))
-                            parts.append(cards[-1])
-                        parts.append(target)
-                    else:
-                        self.index.record(
-                            "moments",
-                            identity,
-                            title if isinstance(title, str) else None,
-                            target,
-                            self.output,
-                            chosen,
-                            combined=combined,
-                        )
-                if not reel:
-                    self.report(
-                        "done",
-                        f"Moments from {len(plans)} matches saved in the moments folder.",
-                    )
-                    return
-                if reel.get("closing_card"):
-                    cards.append(self.cards.path(reel["closing_card"]))
-                    parts.append(cards[-1])
-                name = re.sub(r"[^\w .,()&'-]", "", str(reel.get("name") or "")).strip()[:80]
-                output = folder / f"{name or 'Highlight reel'} ({secrets.token_hex(4)}).mp4"
-                self.report("exporting", "Assembling the highlight reel…")
-                assemble_reel(
-                    parts,
-                    output,
-                    cards=cards,
-                    progress=lambda done, total: self._set_progress(
-                        "Assembling the highlight reel", len(plans) + 1, done, total
-                    ),
-                )
-            moments = [m for _, chosen, _ in plans for m in chosen]
-            self.index.record(
-                "reel",
-                None,
-                str(reel.get("name") or "Highlight reel"),
-                output,
-                self.output,
-                moments,
-                combined=True,
-                matches=[identity for identity, _, _ in plans],
-            )
-            with self._lock:
-                self._state["filename"] = f"reels/{output.name}"
-                self._state["download_name"] = output.name
-                self._state["download_kind"] = "reel"
-            self.report(
-                "done", f"Highlight reel ready: {len(moments)} moments from {len(plans)} matches."
-            )
-        except CaptureError as error:
-            self.report("error", str(error))
-        except Exception:
-            self.report("error", "The batch stopped. Files already saved are kept.")
-        finally:
-            self.cards.discard(card_ids)
-            with self._lock:
-                self._pending -= 1
-                self._progress = None
+    def _queue_sync(self) -> None:
+        _tags._queue_sync(self)
+
+    def _sync_tags(self) -> None:
+        _tags._sync_tags(self)
 
     def close(self) -> None:
         def finish() -> None:
@@ -596,7 +476,6 @@ class BrowserConnection:
             self._page.remove_listener("response", observation.response)
 
     def _prepare_stream(self, identity: str) -> None:
-        import secrets
 
         observation = self._observe(identity, False)
         manifest = self._media_manifest(observation)
@@ -810,99 +689,6 @@ class BrowserConnection:
         )
         return len(moments)
 
-    def _queue_sync(self) -> None:
-        """New matches get their tag metadata recorded automatically after discovery."""
-        with self._lock:
-            self._pending += 1
-            self._syncing = True
-            self._cancel_sync.clear()
-        self._executor.submit(self._perform, "sync_tags", None)
-
-    def _sync_tags(self) -> None:
-        """Sequential, paced sweep of matches whose tags were never recorded.
-
-        Pacing is provisional owner decision 003: one match at a time with a pause
-        between pages (golden rule 3). A video Hudl cannot show (no player, no tag
-        data) is recorded as unavailable with its reason and skipped for a week, so
-        the sweep resumes past it. Account-level refusals stop at once.
-        """
-        age = self._tag_age
-        items = [
-            m
-            for m in self.catalogue.items()
-            if age is None or (age and age in (m.get("age_groups") or [m.get("age_group")]))
-        ]
-        now = time.time()
-
-        def due(identity: str) -> bool:
-            saved = self.details.read(identity)
-            if saved.get("tag_error") == "The player has not reported a recorded video duration.":
-                return (
-                    True  # Retry this now-fixed metadata readiness failure within the chosen age.
-                )
-            if saved.get("tag_status") == "unavailable":
-                return now - float(saved.get("checked_at", 0)) > UNAVAILABLE_RETRY_S
-            return "tag_status" not in saved
-
-        pending = [item["id"] for item in items if due(item["id"])]
-        known = len(items) - len(pending)
-        failures = unreadable = 0
-        for done, identity in enumerate(pending):
-            if self._cancel_sync.is_set() or age != self._tag_age:
-                self.report(
-                    "ready", f"Tag indexing paused at {known + done} of {len(items)} matches."
-                )
-                return
-            self.report("syncing", f"Indexing tags: {known + done + 1} of {len(items)} matches…")
-            try:
-                self._cache_tags(identity)
-                failures = 0
-            except HudlBlocked as error:
-                self.report("error", f"Tag indexing stopped: {error} Cached tags are kept.")
-                return
-            except CaptureError as error:
-                self.details.write(
-                    identity,
-                    {
-                        **self.details.read(identity),
-                        "tag_status": "unavailable",
-                        "tag_error": str(error),
-                        "checked_at": time.time(),
-                    },
-                )
-                unreadable += 1
-                failures += 1
-                if failures >= MAX_FAILURES_IN_A_ROW:
-                    self.report(
-                        "error",
-                        f"Tag indexing stopped after {failures} Hudl pages in a row failed to "
-                        "load. Cached tags are kept; Refresh Hudl to continue.",
-                    )
-                    return
-            if self._page is not None:
-                self._page.wait_for_timeout(2500)
-        # Owner report 2026-11-11: matches indexed before posters existed kept Hudl's
-        # 320x240 thumbnail. Same pacing and stop rules as the tag sweep above.
-        posters = [item["id"] for item in items if self._needs_poster(item["id"], time.time())]
-        for done, identity in enumerate(posters):
-            if self._cancel_sync.is_set() or age != self._tag_age:
-                self.report("ready", f"Snapshots paused at {done} of {len(posters)}.")
-                return
-            self.report("syncing", f"Making full-quality snapshots: {done + 1} of {len(posters)}…")
-            try:
-                self._try_poster(identity, self._observe(identity, False))
-            except HudlBlocked as error:
-                self.report("error", f"Snapshots stopped: {error} Saved snapshots are kept.")
-                return
-            except CaptureError:
-                self.details.write(
-                    identity, {**self.details.read(identity), "poster_checked_at": time.time()}
-                )
-            if self._page is not None:
-                self._page.wait_for_timeout(2500)
-        skipped = f" {unreadable} videos had no readable tags." if unreadable else ""
-        self.report("ready", f"Tags indexed for {len(items)} matches.{skipped}")
-
     def _perform(
         self,
         action: str,
@@ -970,51 +756,4 @@ class BrowserConnection:
     def _export_worker(
         self, stream: str, playlist: str, selected: list[dict[str, Any]], combined: bool
     ) -> None:
-        """Fetch only the stream segments covering the moments, then encode them."""
-        from app.connectors.hudl_exports import export_from_segments
-
-        try:
-            self.report("exporting", "Fetching and encoding the selected moments…")
-            identity = self._stream_match
-            title = self.catalogue.find(identity).get("title")
-            # Spec 190: moment exports are kept apart from full matches.
-            folder = self.output / "moments"
-            folder.mkdir(parents=True, exist_ok=True)
-            target = export_from_segments(
-                playlist,
-                lambda index: self.resource(stream, str(index))[0],
-                selected,
-                folder,
-                combined=combined,
-                **({"match_title": title} if isinstance(title, str) else {}),
-                progress=lambda done, total: self._set_progress(
-                    "Fetching and encoding the selected moments", 1, done, total
-                ),
-            )
-            self.index.record(
-                "moments",
-                identity,
-                title if isinstance(title, str) else None,
-                target,
-                self.output,
-                selected,
-                combined=combined,
-            )
-            with self._lock:
-                self._state["filename"] = f"moments/{target.name}"
-                self._state["download_name"] = target.name
-                self._state["download_kind"] = "moments"
-            self.report(
-                "done",
-                "Combined moments video ready to download."
-                if combined
-                else "Moments ZIP (one video per moment) ready to download.",
-            )
-        except CaptureError as error:
-            self.report("error", str(error))
-        except Exception:
-            self.report("error", "Moment export stopped. The stream and your files are unchanged.")
-        finally:
-            with self._lock:
-                self._pending -= 1
-                self._progress = None
+        _batch._export_worker(self, stream, playlist, selected, combined)

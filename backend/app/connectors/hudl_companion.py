@@ -343,8 +343,58 @@ def create_companion(output: Path) -> FastAPI:
             for entry in entries
         ]
 
+    def _zip_member(bundle: Path, member: str) -> Path:
+        """Owner request 2026-11-11: play a moments ZIP clip by clip. The member is
+        copied once into the helper's preview cache; the ZIP itself is only read."""
+        import hashlib
+        import tempfile
+        import time
+        import zipfile
+
+        try:
+            with zipfile.ZipFile(bundle) as archive:
+                names = {i.filename: i for i in archive.infolist()}
+                info = names.get(member)
+                if info is None or not member.lower().endswith(".mp4") or "/" in member:
+                    raise CaptureError("Choose a video from this download.")
+                folder = cache / "previews"
+                folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+                stamp = f"{bundle}|{bundle.stat().st_mtime_ns}|{member}".encode()
+                target = folder / f"{hashlib.sha256(stamp).hexdigest()[:32]}.mp4"
+                if not target.is_file():
+                    for old in folder.glob("*.mp4"):  # previews older than a day
+                        if time.time() - old.stat().st_mtime > 86400:
+                            old.unlink(missing_ok=True)
+                    fd, temporary = tempfile.mkstemp(dir=folder, suffix=".part")
+                    try:
+                        with os.fdopen(fd, "wb") as out, archive.open(info) as source:
+                            while chunk := source.read(1 << 20):
+                                out.write(chunk)
+                        os.replace(temporary, target)
+                    finally:
+                        Path(temporary).unlink(missing_ok=True)
+                return target
+        except zipfile.BadZipFile as error:
+            raise CaptureError("This download could not be opened.") from error
+
+    @app.get("/downloads/members")
+    def download_members(file: str, request: Request) -> list[dict[str, str]]:
+        import zipfile
+
+        root = request.app.state.downloads.folder
+        if not file.lower().endswith(".zip") or not request.app.state.account.index.contains(
+            root, file
+        ):
+            raise CaptureError("Select a completed moments download.")
+        with zipfile.ZipFile(root / file) as archive:
+            names = [n for n in archive.namelist() if n.lower().endswith(".mp4") and "/" not in n]
+        base = f"http://127.0.0.1:8766/files/{app.state.file_scope}/{quote(file, safe='/')}"
+        return [{"name": n, "url": f"{base}?member={quote(n, safe='')}"} for n in names]
+
     @app.get("/files/{scope}/{filename:path}")
-    def captured_file(scope: str, filename: str, request: Request) -> FileResponse:
+    def captured_file(
+        scope: str, filename: str, request: Request, member: str | None = None
+    ) -> FileResponse:
         import re
 
         if scope != app.state.file_scope:
@@ -375,6 +425,10 @@ def create_companion(output: Path) -> FastAPI:
         path = root.joinpath(*parts)
         if not path.is_file() or path.is_symlink() or path.parent.is_symlink():
             raise CaptureError("Capture is not available.")
+        if member is not None:
+            if path.suffix.lower() != ".zip":
+                raise CaptureError("Choose a video from this download.")
+            return FileResponse(_zip_member(path, member), media_type="video/mp4")
         attachment = status.get("download_name") if status.get("filename") == filename else None
         return FileResponse(path, filename=attachment or parts[-1])
 

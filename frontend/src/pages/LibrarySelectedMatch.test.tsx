@@ -54,6 +54,14 @@ it("follows the hero when stepping to another match", async () => {
   expect(within(tags).getByText("2")).toBeInTheDocument();
 });
 
+it("lists the first moments from kick-off and links to the rest", async () => {
+  render();
+  await within(await screen.findByRole("region", { name: "Featured match" })).findByRole("heading", { name: /Stoke City/ });
+  const recent = screen.getByRole("region", { name: "Recent moments" });
+  const times = within(recent).getAllByRole("link").filter((a) => a.getAttribute("href")?.includes("moment=")).map((a) => a.textContent);
+  expect(times).toEqual(["0:30Save", "10:00Goal", "15:00Sam Example"]);
+});
+
 it("overview counts only the selected age group and season", async () => {
   render();
   const overview = await screen.findByRole("region", { name: "Overview" });

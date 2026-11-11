@@ -10,17 +10,21 @@ const SIZES = { sm: "size-9 text-xs", md: "size-14 text-base", lg: "size-20 text
 
 function TeamIdentity({ name, size = "md", tone = "home" }: { name: string; size?: keyof typeof SIZES; tone?: "home" | "away" }) {
   const [failed, setFailed] = useState(false);
-  const bg =
+  // Owner request 2026-11-11: every real crest sits on the same plain disc with the
+  // same inset, so tall, wide and round crests all fit inside the circle alike.
+  // Only the initials fallback is coloured by home/away.
+  const fallback =
     tone === "home"
-      ? "from-accent/90 to-[#3b82f6] text-ink-950"
-      : "from-[#e8eef8] to-[#93a1bd] text-ink-950";
+      ? "bg-gradient-to-br from-accent/90 to-[#3b82f6] text-ink-950"
+      : "bg-gradient-to-br from-[#e8eef8] to-[#93a1bd] text-ink-950";
   return (
     <span
       aria-hidden
-      className={`grid shrink-0 place-items-center rounded-full bg-gradient-to-br font-bold shadow-[0_8px_24px_-8px_rgb(0_0_0/0.8)] ring-2 ring-white/10 ${bg} ${SIZES[size]}`}
+      data-crest
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full font-bold shadow-[0_8px_24px_-8px_rgb(0_0_0/0.8)] ring-2 ring-white/15 ${failed ? fallback : "bg-[radial-gradient(circle_at_35%_30%,#ffffff,#e6e9f0)]"} ${SIZES[size]}`}
     >
       {!failed ? <img src={`/api/team-logo?name=${encodeURIComponent(name)}`} alt=""
-        onError={() => setFailed(true)} className="size-full object-contain p-1" /> : initials(name)}
+        onError={() => setFailed(true)} className="absolute inset-[16%] size-[68%] object-contain" /> : initials(name)}
     </span>
   );
 }

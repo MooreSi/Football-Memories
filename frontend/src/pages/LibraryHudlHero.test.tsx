@@ -74,11 +74,13 @@ it("lists moments from the latest match for the selected age group", async () =>
   localStorage.setItem("fm.hudl.age", "U11");
   remote[2] = { ...remote[2], moments: [{ id: "g1", category: "Goal", time_s: 600, duration_s: 5 }, { id: "s1", category: "Save", time_s: 30, duration_s: 5 }] };
   render();
-  await screen.findByText(/Latest tagged moments in this match/);
+  // Owner request 2026-11-11: moments read from kick-off, not from the end of the video.
+  await screen.findByText(/From kick-off/);
   const recent = screen.getByRole("region", { name: "Recent moments" });
   const links = within(recent).getAllByRole("link");
-  expect(links[0]).toHaveAttribute("href", "/hudl/stoke?moment=g1");
-  expect(links[0]).toHaveTextContent("10:00");
-  expect(links[0]).toHaveTextContent("Goal");
+  expect(links[0]).toHaveAttribute("href", "/hudl/stoke?moment=s1");
+  expect(links[0]).toHaveTextContent("0:30");
+  expect(links[1]).toHaveTextContent("10:00");
+  expect(links[1]).toHaveTextContent("Goal");
   expect(links).toHaveLength(2);
 });

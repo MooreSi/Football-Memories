@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Latest polish:** Recent moments read from kick-off (times are true video
+  time; matches run about 1h23m); every crest sits on the same white disc with
+  the same inset; overview tiles keep one number size with the unit below and
+  scale to the tile; Downloaded has Play (full match, combined video, reel as
+  one MP4 with its cards; a moments ZIP plays clip by clip via
+  `/downloads/members`). `_account.py` split into `_batch.py` and `_tags.py`
+  to stay under 800 lines.
+
 - **Snapshot backfill:** only 4 of 286 matches had full-quality posters (they
   were made only on stream or first tag index). The paced sweep now also makes
   posters for indexed matches in the selected age group, one Hudl page at a

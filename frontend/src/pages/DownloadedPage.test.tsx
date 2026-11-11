@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders, stubFetch } from "../test/render";
 import { DownloadedPage } from "./DownloadedPage";
 import { downloadState } from "../api/hudl";
+import { fireEvent } from "@testing-library/react";
 
 afterEach(() => vi.unstubAllGlobals());
 const H = "http://127.0.0.1:8766";
@@ -52,4 +53,30 @@ it("summarises what each match has downloaded for the Library badges", () => {
   expect(state.get("stoke")).toEqual({ match: true, moments: true });
   expect(state.get("wba")).toEqual({ match: false, moments: true });
   expect(state.get("other")).toBeUndefined();
+});
+
+it("plays a downloaded match, reel or combined video in place", async () => {
+  stubFetch({ [`${H}/downloads/index`]: entries, [`${H}/library`]: library });
+  renderWithProviders(<DownloadedPage />);
+  const wba = await screen.findByRole("article", { name: /West Bromwich Albion/ });
+  await userEvent.click(within(wba).getByRole("button", { name: /Play WBA.mp4/ }));
+  const dialog = screen.getByRole("dialog", { name: /Play/ });
+  expect(dialog.querySelector("video")).toHaveAttribute("src", `${H}/files/s/moments/WBA.mp4`);
+});
+
+it("plays a moments ZIP clip after clip from the downloaded file", async () => {
+  stubFetch({ [`${H}/downloads/index`]: entries, [`${H}/library`]: library,
+    [`${H}/downloads/members`]: [{ name: "Stoke - Goal - 001.mp4", url: `${H}/files/s/moments/Stoke%20Sam.zip?member=1` },
+      { name: "Stoke - Save - 002.mp4", url: `${H}/files/s/moments/Stoke%20Sam.zip?member=2` }] });
+  renderWithProviders(<DownloadedPage />);
+  const stoke = await screen.findByRole("article", { name: /Stoke City/ });
+  await userEvent.click(within(stoke).getByRole("button", { name: /Play Stoke Sam.zip/ }));
+  const dialog = await screen.findByRole("dialog", { name: /Play/ });
+  const video = await vi.waitFor(() => { const v = dialog.querySelector("video"); if (!v?.getAttribute("src")) throw new Error("no clip"); return v; });
+  expect(video).toHaveAttribute("src", `${H}/files/s/moments/Stoke%20Sam.zip?member=1`);
+  expect(within(dialog).getByText(/1 of 2/)).toBeInTheDocument();
+  fireEvent.ended(video);
+  expect(dialog.querySelector("video")).toHaveAttribute("src", `${H}/files/s/moments/Stoke%20Sam.zip?member=2`);
+  const asked = vi.mocked(fetch).mock.calls.map(([u]) => String(u)).find((u) => u.includes("/downloads/members"));
+  expect(asked).toContain("file=moments%2FStoke%20Sam.zip");
 });

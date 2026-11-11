@@ -266,3 +266,11 @@ matched helper output. Prior archive files unchanged; no new full match capture.
   needs one) rejects it; reel cards are read with `_card_info` (streams only).
 - Wikipedia crest files are often plain SVG names (`Liverpool_FC.svg`), so the
   old "crest/logo/badge" keyword filter missed them; `.svg` counts as a crest.
+
+## hudl_browser package layout (2026-11-11)
+`_account.py` passed the 800-line ceiling and was split (rule 70): batch and
+single-match moment exports and reels live in `_batch.py`, the paced tag and
+snapshot sweep in `_tags.py`. They are module functions taking the connection;
+`BrowserConnection` keeps one-line delegating methods, so callers, the worker
+and tests that patch instance methods are unchanged. Anything that calls
+`fetch_media` stays in `_account.py`, because tests patch it there.
