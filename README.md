@@ -1,101 +1,98 @@
 # Football Memories
 
-A private, local-first archive for football match footage: import matches,
-index tagged moments, watch whole matches or only the moments that matter, and
-(coming next) follow one player's journey across seasons.
+A private, local-first archive of a young player's football: every match,
+every tagged moment and every highlight, kept safely on your own computer.
 
-Runs on your Mac with Docker. Nothing is uploaded anywhere.
+Connect your Hudl account (with your own permission to automate and download),
+stream matches at the best available quality, jump straight to tagged moments,
+download the ones that matter and turn them into shareable highlight reels with
+animated title cards. Nothing is uploaded anywhere.
 
-## Status
+![Match Library](docs/screenshots/library.png)
 
-Phase 1-2 vertical slice works: **import a match → index → thumbnail → play →
-tagged moments** (filter by event type and player, play moments only, event
-markers, speeds, frame stepping, keyboard shortcuts). See
-[docs/HANDOFF.md](docs/HANDOFF.md) and
-[PROGRESS.md](docs/todo/football-memories/PROGRESS.md).
+## What it does
 
-**About Hudl:** authorized users can capture an accessible match and its
-Sportscode moments through normal browser sign-in, using the desktop helper
-under Settings → Connections. Passwords are entered only into Hudl. The owner
-has attested permission for this use; other users need their own permission.
-Setup and limitations: [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md).
+- **Match Library**: every match with both clubs' crests, the newest first. Icons show
+  which matches and moments you have already downloaded. Overview stats follow the
+  age group and season you pick.
+- **Match page**: watch the whole game or only the tagged moments, filter by
+  moment type or player, and play tagged moments back to back.
+- **Clips**: pick a match, choose a player or code, and download their moments as
+  separate clips, one video, or straight into a highlight reel. **Batch download**
+  does the same across many matches in one go.
+- **Highlight reels**: six animated card styles (Floodlights, Kick-off, Trophy
+  gold, Neon, Matchday poster, Clean). Each match gets its own opening card,
+  filled in automatically with both crests, the opponent and the date.
+- **Downloaded**: every full match, moment set and reel on this computer, with
+  Play and Save buttons.
+- **My Player**: a player card in seven finishes (gold, silver, bronze and more)
+  showing the club crest, moments and games, plus a memories timeline.
+- **Phones and tablets**: open the app from any device on your home Wi-Fi.
+- **Updates**: Settings > Update checks GitHub and updates in one click.
 
-## Quick start
-
-Double-click `Install Football Memories.command` (Mac) or
-`Install Football Memories.bat` (Windows). It installs Docker and everything
-else, starts the app and opens it. Details: [INSTALL.md](INSTALL.md).
-
-By hand:
-
-```bash
-cp .env.example .env            # set FM_DB_PASSWORD and your folders
-docker compose up -d --build
-open http://127.0.0.1:8765
-```
-
-Put videos in the inbox folder (`FM_HOST_INBOX`), then use **Import**.
-
-## Documentation
-
-| | |
+| Match page | Player hub |
 |---|---|
-| [DEVELOPMENT.md](DEVELOPMENT.md) | install, run, migrations, backup, troubleshooting |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | components, data model, storage layout, API |
-| [TESTING.md](TESTING.md) | how to run and what the tests guarantee |
-| [SECURITY.md](SECURITY.md) | privacy and security measures |
-| [HUDL_INTEGRATION.md](HUDL_INTEGRATION.md) | what Hudl allows and the import workflow |
-| [docs/BRIEF.md](docs/BRIEF.md) | the full product brief |
-| [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) | rules for anyone (human or AI) changing the code |
+| ![Match page](docs/screenshots/match.png) | ![Player hub](docs/screenshots/player.png) |
 
-Only import footage you are entitled to keep, and follow Hudl's terms of service.
+| Clips | On a phone |
+|---|---|
+| ![Clips](docs/screenshots/clips.png) | <img src="docs/screenshots/phone.png" alt="On a phone" width="260"> |
 
-## Saved Hudl connection (macOS desktop helper)
-Run the helper outside Docker from `backend/`:
-```bash
-uv run python -m app.connectors.hudl_companion --output ../data/inbox
-```
-Chrome, ffmpeg and Apple's Swift command-line tools are required. The helper
-compiles its Keychain bridge into `~/Library/Caches/FootballMemories` on first
-use. Settings → Connections now has Hudl username/password, Save, Test and
-Refresh matches. Save stores credentials only in this Mac's Keychain; Test
-opens a visible normal Hudl login and caches available match metadata. Complete
-any Hudl verification yourself. No authentication bypass or persistent cookies.
+Screenshots use the built-in sample data, not real players.
 
-Choose Stream to play in the app (Safari native HLS, Chrome/Edge hls.js), or
-Download to produce a verified MP4/tag CSV in the helper inbox, then Import.
-Only complete unencrypted muxed HLS is supported. Download defaults to the
-existing 720p ceiling. Existing captured files are reused, never overwritten.
-The cache contains only match IDs/titles/watch links. Signed media URLs stay in
-memory; restarting the helper requires another Test. Discovery is bounded and
-may need you to open the correct library in the helper browser, then Refresh.
-Disconnect releases the account browser for the manual URL capture fallback.
-This is a local desktop feature; server background connector flags stay false.
-Each user needs permission for automation and archiving. The owner attests that
-permission for this installation. Live verification (2026-11-10): owner saved credentials and Test logged in,
-caching 100 accessible videos. After restarting the helper, Keychain login
-worked without re-entry. In-app playback reached 16 seconds at 1280×720 over
-a 5012.2-second match; Download reused the prior capture and offered Import.
-SHA-256 confirmed its MP4/tag CSV were unchanged. The earlier full capture,
-import and offline playback remain verified. The cached count is observed
-content, not a claim that every historical video was enumerated.
+## Installing
 
-## Browse and download connected Hudl videos
-The **Library → All matches** section includes offline and connected Hudl
-footage, shared age-group/season/search filters, cached thumbnails and Refresh
-Hudl. Age groups come from the actual accessible Hudl team libraries; seasons
-use valid dated title prefixes with a July boundary. Legacy unknown labels remain
-explicit until refreshed. Open a match to automatically
-prepare its highest available supported quality and read its tagged ranges.
-Use **Download full match**, or choose a tagged code/player and **Download
-player / code moments**. Check individual ranges for **Download selected
-moments**. Completed files have a download link; full matches also offer Import.
+Football Memories runs on **Mac** and **Windows**. It needs
+**[Docker Desktop](https://www.docker.com/products/docker-desktop/)**, and
+the installer sets that up for you if it is missing.
 
-**My Player → Change player → Choose a tagged player** lists actual imported
-codes and codes cached from opened Hudl videos. Explicitly select your player's
-name to build their profile. No player attribution is guessed from overlap.
-Automatic account playback/capture now uses maximum source resolution, then
-bitrate (supersedes the old 720p limit). Existing low-quality copies remain
-untouched; a new highest-quality file is stored alongside them. Moment ZIPs copy
-original encoded streams, so starts can include the preceding keyframe. Their
-exact tagged times and labels accompany the MP4s in moments.json.
+1. Download this repository (green **Code** button > **Download ZIP**, or clone
+   it with git so the app can update itself later).
+2. Open the folder and double-click the installer for your computer:
+
+   | Computer | Double-click |
+   |---|---|
+   | Mac | `Install Football Memories.command` |
+   | Windows 10 / 11 | `Install Football Memories.bat` |
+
+3. Follow any prompts. The installer:
+   - installs **Docker Desktop** if needed and starts it (the first time, accept
+     Docker's terms in its window; Windows may ask to set up WSL and restart)
+   - installs what the Hudl connection needs: ffmpeg, the uv Python runner and
+     Google Chrome (on a Mac it asks before installing Homebrew)
+   - creates your settings with a random database password
+   - builds and starts the app, starts the Hudl helper, and opens
+     **http://127.0.0.1:8765** in your browser
+   - prints the address to use on your phone, for example
+     `http://YourComputer.local:8765`
+
+The first run takes several minutes while Docker builds the app. After that,
+double-click the same installer any time to start the app or update it. It
+never deletes or overwrites your matches, downloads, settings or database.
+
+If your Mac says the file is from an unidentified developer, right-click it and
+choose **Open**. On Windows, if SmartScreen appears, choose **More info > Run anyway**.
+
+### Connecting Hudl
+
+In the app, open **Settings > Connections**, enter your Hudl email and password,
+press **Save**, then **Test**. The password is kept only in the macOS Keychain
+or Windows Credential Manager, never in a file. Keep the helper running (on
+Windows it is the minimised "Football Memories Hudl helper" window) while you use Hudl.
+
+Hudl's terms forbid automated access without permission. Use this only for an
+account and footage you have permission to automate and download.
+
+## Good to know
+
+- **Privacy**: everything stays on your computer. On your home network the app
+  has no password, so anyone on the same Wi-Fi can open it. To keep it to this
+  computer only, set `FM_BIND=127.0.0.1` in the `.env` file and run the
+  installer again.
+- **Disk space**: full matches are several GB each. Settings > Storage shows free
+  space and lets you move downloads to the Trash or Recycle Bin.
+- **Backups**: Settings > Backups makes a daily backup of your library database.
+
+## Licence
+
+[MIT](LICENSE). Developer notes live in [docs/](docs/).
