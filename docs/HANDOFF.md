@@ -13,6 +13,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Social preview on `codex/github-social-preview`:** upload-ready
+  [JPEG](design/social-preview.jpg) and [instructions](design/social-preview.md).
+  Verified 1280 × 640, 214,610 bytes; visually checked after resizing.
+  Asset/docs only; no app suites rerun or GitHub setting changed.
+
 - **Renamed:** GitHub repo is now `MooreSi/Football-Memories` (was
   Football-Clip-Recorder; GitHub redirects the old URL) and the local folder
   is `/Users/simon/Football Memories`. Release **v0.1** published; About and

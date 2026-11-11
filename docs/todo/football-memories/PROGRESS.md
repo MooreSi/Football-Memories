@@ -184,6 +184,16 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-11 GitHub social preview (codex/github-social-preview)
+
+- Added synthetic artwork and upload instructions in `docs/design/`.
+- `sips -g pixelWidth -g pixelHeight -g format docs/design/social-preview.jpg`:
+  1280 × 640, JPEG. `stat -f '%z bytes'`: 214610 bytes, below 1 MB.
+- Visually inspected the resized image; title and tagline are readable with
+  no cropping. Verified new local documentation links and identical Downloads copy.
+- Asset/docs only: app suites not rerun; no Hudl access or GitHub setting changes.
+
+
 ### 2026-11-10 Streaming tag cache (codex/hudl-stream-tags)
 - Backend: 273 passed SQLite and 273 Postgres; ruff check/format, mypy and
   Alembic drift clean. Frontend: 101 passed; typecheck/build passed. Docker
