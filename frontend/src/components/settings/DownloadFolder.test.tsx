@@ -6,7 +6,7 @@ import { DownloadFolderSettings } from "./DownloadFolder";
 
 afterEach(() => vi.unstubAllGlobals());
 const info = {
-  folder: "/Users/owner/Football Clip Recorder/data/inbox", default_folder: "/Users/owner/Football Clip Recorder/data/inbox",
+  folder: "/Users/owner/Football Memories/data/inbox", default_folder: "/Users/owner/Football Memories/data/inbox",
   is_default: true, free_bytes: 16 * 2 ** 30,
   files: [{ name: "hudl-abc-highest-1080p-1.mp4", size: 3.5 * 2 ** 30, modified: 1762780000 }],
 };

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**Football Memories** (repo: Football-Clip-Recorder) is a local-first web app
+**Football Memories** (repo: Football-Memories, renamed from Football-Clip-Recorder on 2026-11-11) is a local-first web app
 that archives the owner's football match footage, indexes tagged moments and
 builds a player's memories timeline. Brief: [docs/BRIEF.md](docs/BRIEF.md).
 

@@ -1,6 +1,6 @@
 ---
 name: test
-description: Write and review test cases for Football Clip Recorder. Use when creating new tests, reviewing existing tests for correctness, or improving coverage. Enforces rules that stop AI-generated tests from being written to pass rather than to verify. Read alongside docs/system/rules/40-testing.md.
+description: Write and review test cases for Football Memories. Use when creating new tests, reviewing existing tests for correctness, or improving coverage. Enforces rules that stop AI-generated tests from being written to pass rather than to verify. Read alongside docs/system/rules/40-testing.md.
 ---
 
 # /test: write and review test cases

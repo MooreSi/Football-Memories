@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Run every check before committing Football Clip Recorder work. Use before any commit, and whenever asked "is this ready", "is it green", "can I commit", or "run the checks".
+description: Run every check before committing Football Memories work. Use before any commit, and whenever asked "is this ready", "is it green", "can I commit", or "run the checks".
 ---
 
 # Verify

@@ -1,6 +1,6 @@
 ---
 name: coverage-gap
-description: Find untested code in Football Clip Recorder and fill the gaps that matter. Use when asked about test coverage, "what isn't tested", "add tests", or before splitting/refactoring a file that may have none.
+description: Find untested code in Football Memories and fill the gaps that matter. Use when asked about test coverage, "what isn't tested", "add tests", or before splitting/refactoring a file that may have none.
 ---
 
 # Finding and filling coverage gaps
