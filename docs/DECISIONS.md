@@ -4,6 +4,19 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-030 (2026-11-11) Match Profile per team; player hub de-duplicated
+The Match Profile draws our team (cyan #22d3ee, solid) and the opposition
+(orange #fb923c, dashed), each 22% opaque so the overlap reads as a third tone.
+Codes `OPPOSITION X`/`OPP X` are theirs; a prefix P is ours when `P X` pairs with
+an opposition X and P names our club (full name, a word, initials, initials+FC)
+or P pairs with two or more opposition codes. The rest are listed as "Neither
+side". Each axis is scaled to the bigger side, so possession does not squash the
+other situations; the key keeps the real counts. Known gap: one-word player-name
+codes (a first name alone) cannot be told from codes like QCC or POFTB, so they
+can appear under "Neither side". The player hub drops its moments feed and its
+match-date strip (both repeated the timeline and bars); timeline cards show the
+opposition crest; Your player shows the full name, with the new count on the label row.
+
 ## D-029 (2026-11-11) Tag profile moves to the Library as the Match Profile
 Owner request: the radar replaces "Most tagged" on the Library and follows the
 match on the hero. It counts that match's own codes, leaving out player-name

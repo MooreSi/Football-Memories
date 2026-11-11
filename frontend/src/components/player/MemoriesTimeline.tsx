@@ -7,6 +7,7 @@ import { formatClock, formatDate } from '../../lib/format';
 import type { HudlPlayerMatch } from '../../lib/hudlPlayer';
 import { watchedHudlMoments } from '../../lib/hudlWatched';
 import { groupTimeline } from '../../lib/player';
+import { TeamBadge } from '../TeamBadge';
 import { Spinner } from '../ui/Spinner';
 
 type Memory = {id:string; href:string; time:number; label:string; viewed:boolean; favourite?:boolean};
@@ -21,6 +22,7 @@ function MemoryMatch({match:m}:{match:Match}) {
     {m.thumbnail?<img src={m.thumbnail} crossOrigin={m.remote?'anonymous':undefined} alt="" loading="lazy" className="size-full object-cover"/>:<Images size={22} className="text-fg-subtle"/>}
    </Link>
    <div className="min-w-0 flex-1"><h5 className="truncate font-semibold">vs {m.opponent}</h5><p className="mt-1 text-xs text-fg-muted">{m.date?formatDate(m.date):'Date unknown'} · {m.subtitle}</p><p className="mt-2 text-xs text-fg-subtle">{m.moments.length} moments · {m.moments.filter(x=>!x.viewed).length} unwatched</p></div>
+   <TeamBadge name={m.opponent} size="sm" tone="away"/>
   </div>
   <ul aria-label={`Moments vs ${m.opponent}`} className="grid gap-2 sm:grid-cols-2">
    {visible.map(x=><li key={x.id}><Link to={x.href} aria-label={`${formatClock(x.time)} ${x.label}`} className="flex min-w-0 items-center gap-2 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-xs hover:border-accent/50">

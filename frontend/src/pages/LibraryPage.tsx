@@ -5,7 +5,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { FeaturedHero } from "../components/library/FeaturedHero";
 import { LatestMatchPanel } from "../components/library/LatestMatchPanel";
-import { MatchProfile, matchProfile } from "../components/library/MatchProfile";
+import { MatchProfile } from "../components/library/MatchProfile";
+import { matchProfile, teamProfile } from "../lib/matchProfile";
 import { StatTile } from "../components/library/StatTile";
 import { YourPlayerCard } from "../components/library/YourPlayerCard";
 import { MatchCard } from "../components/MatchCard";
@@ -16,7 +17,7 @@ import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
 import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
-import { clubName, fixtureLabel, latestFirst } from "../lib/hudlFixture";
+import { clubName, fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
 import { looksLikePlayer } from "../lib/hudlPlayer";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
@@ -75,6 +76,8 @@ export function LibraryPage() {
   useEffect(() => setHeroIndex(0), [ageGroup, seasonLabel]);
   const shown = heroMatches[Math.min(heroIndex, heroMatches.length - 1)];
   const profileKinds = shown ? matchProfile(shown.moments ?? []) : s?.top_tags ?? [];
+  const profileTeams = shown ? teamProfile(shown.moments ?? [], club) : null;
+  const opponent = shown ? fixtureParts(shown.title)?.opponent ?? "Opposition" : "Opposition";
   const scoped = Boolean(remote.data?.length);
   const scopedMoments = heroMatches.reduce((n, m) => n + (m.moments?.length ?? 0), 0) + items.reduce((n, m) => n + m.event_count, 0);
   const scopedSeconds = heroMatches.reduce((n, m) => n + (m.duration_s ?? 0), 0) + items.reduce((n, m) => n + (m.duration_s ?? 0), 0);
@@ -107,7 +110,7 @@ export function LibraryPage() {
           <StatTile label="Players" icon={Users} value={String(overview?.players ?? "-")} unit="tagged" />
         </div>
         </section>
-        <MatchProfile kinds={profileKinds} scope={shown ? fixtureLabel(shown.title, club, ageGroup || hudlAgeGroups(shown)[0]) : "All matches"} />
+        <MatchProfile kinds={profileKinds} team={profileTeams} ours={club || "Home"} theirs={opponent} scope={shown ? fixtureLabel(shown.title, club, ageGroup || hudlAgeGroups(shown)[0]) : "All matches"} />
       </aside>
 
       {/* Right: latest match + recent moments (reference 1 right column) */}

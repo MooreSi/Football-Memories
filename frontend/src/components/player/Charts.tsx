@@ -33,13 +33,13 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
                 style={{ height: `${Math.max(6, (s.moments / max) * 100)}%` }}
               />
             </div>
-            {/* Game name reads bottom-to-top in a fixed strip, so long names never widen or grow the chart. */}
-            <span data-bar-label title={s.opponent}
-              className="h-24 shrink-0 truncate rotate-180 text-left text-xs leading-none text-fg-muted [writing-mode:vertical-rl]">
-              {s.opponent}
-            </span>
             <span className="w-full truncate text-center text-[10px] text-fg-subtle tabular-nums">
               {new Date(`${s.match_date}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </span>
+            {/* Date sits directly under the bar; the game name below it reads bottom-to-top from the date in a fixed strip, so long names never widen or grow the chart. */}
+            <span data-bar-label title={s.opponent}
+              className="h-24 shrink-0 truncate rotate-180 text-right text-xs leading-none text-fg-muted [writing-mode:vertical-rl]">
+              {s.opponent}
             </span>
           </li>
         ))}

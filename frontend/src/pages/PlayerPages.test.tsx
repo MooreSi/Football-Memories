@@ -63,6 +63,15 @@ describe("PlayerHubPage", () => {
     expect(within(timeline).getByRole("link", { name: /1:04 Save/ })).toHaveAttribute("href", "/matches/2?moment=11");
   });
 
+  it("leaves out the duplicate moments feed and match-date strip", async () => {
+    stubFetch({ "/api/players/5": profile, "/api/players/5/moments": { total: 1, items: [moment] } });
+    renderHub();
+    await screen.findByRole("region", { name: "Memories timeline" });
+    expect(screen.queryByRole("region", { name: "Moments feed" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Latest Hudl moments" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Recent matches" })).toBeNull();
+  });
+
   it("offers to make this the primary player and sends the request", async () => {
     const calls = stubFetch({
       "/api/players/5": profile, "/api/players/5/moments": { total: 1, items: [moment] },

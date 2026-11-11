@@ -38,16 +38,17 @@ export function YourPlayerCard() {
       aria-label={`Your player ${p.display_name}`}
       className="relative block overflow-hidden rounded-[1.25rem] border border-white/10 bg-gradient-to-br from-[#1e3a8a]/60 via-ink-800 to-violet/30 p-4 hover:ring-1 hover:ring-accent/40"
     >
-      <p className="text-sm text-fg-muted">Your player</p>
+      {/* The new-moments count sits on the label row, so the name has the full width beside
+          the photo and wraps between words instead of being cut off (owner request 2026-11-11). */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-fg-muted">Your player</p>
+        <p className="rounded-full bg-ink-950/60 px-2.5 py-0.5 text-xs text-fg-muted"><span className="font-semibold text-accent tabular-nums">{unwatched}</span> new</p>
+      </div>
       <div className="mt-2 flex items-center gap-3">
         <PlayerAvatar name={p.display_name} photoUrl={p.photo_url} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-lg font-semibold">{p.display_name}</p>
-          <p className="text-xs text-fg-muted">{[p.position, p.teams[0]?.team_name].filter(Boolean).join(" · ") || "Player hub"}</p>
-        </div>
-        <div className="rounded-xl bg-ink-950/60 px-3 py-1.5 text-center">
-          <p className="text-[10px] text-fg-muted">New</p>
-          <p className="text-xl font-semibold text-accent">{unwatched}</p>
+          <p className="text-base leading-tight font-semibold break-words">{p.display_name}</p>
+          <p className="mt-0.5 text-xs text-fg-muted">{[p.position, p.teams[0]?.team_name].filter(Boolean).join(" · ") || "Player hub"}</p>
         </div>
       </div>
       <p className="mt-3 text-xs text-fg-subtle">{p.totals.moments + hudlMoments} moments in {p.totals.matches + hudl.length} matches</p>

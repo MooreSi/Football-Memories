@@ -26,3 +26,13 @@ it('reveals a long match history progressively without dropping older matches',a
  await userEvent.click(more);
  expect(within(region).getAllByRole('article')).toHaveLength(25);
 });
+
+it('shows the opposition crest at the top right of each match card',async()=>{
+ stubFetch({'/api/players/1/moments':{total:0,items:[]}});
+ renderWithProviders(<MemoriesTimeline playerId={1} categories={[]} hudl={[{id:'m',title:'261108 U11 v Stoke (A)',opponent:'Stoke City',date:'2026-11-08',season:'2026/27',age:'U11',moments:[{id:'1',category:'Sam Example',time_s:1,duration_s:2}]}]}/>);
+ const card=await within(screen.getByRole('region',{name:'Memories timeline'})).findByRole('article');
+ const header=card.firstElementChild as HTMLElement;
+ const crest=header.lastElementChild as HTMLElement;
+ expect(crest).toHaveAttribute('data-crest');
+ expect(crest.querySelector('img')).toHaveAttribute('src','/api/team-logo?name=Stoke%20City');
+});

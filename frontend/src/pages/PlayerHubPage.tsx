@@ -3,12 +3,10 @@ import { CalendarClock, Eye, Heart, Sparkles, Star, Trophy, UserRound } from "lu
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useHudlLibrary } from "../api/hudl";
-import { HudlMomentsList } from "../components/player/HudlMomentsList";
 import { hudlPerMatch, hudlPlayerMatches } from "../lib/hudlPlayer";
 import { watchedHudlMoments } from "../lib/hudlWatched";
 import { MomentsPerMatch } from "../components/player/Charts";
 import { MemoriesTimeline } from "../components/player/MemoriesTimeline";
-import { MomentsFeed } from "../components/player/MomentsFeed";
 import { PlayerCard } from "../components/player/PlayerCard";
 import { ProfilePanel } from "../components/player/ProfilePanel";
 import { StatTile } from "../components/library/StatTile";
@@ -16,14 +14,13 @@ import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 
-/** Layout follows reference 03: card left, teams/numbers/teammates centre, dates column,
- *  per-match bars below (the tag radar moved to the Library as the Match Profile, 2026-11-11), phone-style moments feed right. */
+/** Layout follows reference 03: card left, teams/numbers/teammates beside it (dates column and moments feed removed as duplicates, 2026-11-11),
+ *  per-match bars below (the tag radar moved to the Library as the Match Profile, 2026-11-11) */
 export function PlayerHubPage() {
   const id = Number(useParams().id);
   const remote = useHudlLibrary();
   const qc = useQueryClient();
   const profile = useQuery({ queryKey: ["player", id], queryFn: () => api.player(id), enabled: Number.isFinite(id) });
-  const feed = useQuery({ queryKey: ["player", id, "feed"], queryFn: () => api.playerMoments(id) });
   const makePrimary = useMutation({
     mutationFn: () => {localStorage.removeItem("fm.hudl.player");return api.setPrimaryPlayer(id);},
     onSuccess: () => void qc.invalidateQueries(),
@@ -48,7 +45,6 @@ export function PlayerHubPage() {
   const href = (m: (typeof perMatch)[number]) => m.href ?? `/matches/${m.match_id}`;
   const first = perMatch[0];
   const latest = perMatch[perMatch.length - 1];
-  const recentMatches = [...perMatch].reverse().slice(0, 6);
   const hudlMatches = hudl.map((m) => ({ id: m.id, title: m.title, count: m.moments.length })).reverse();
   const since = [p.first_match_date, first?.match_date].filter(Boolean).sort()[0];
 
@@ -84,14 +80,6 @@ export function PlayerHubPage() {
           <div className="profile-top">
             <PlayerCard player={p} moments={p.totals.moments + hudlMoments.length} games={p.totals.matches + hudl.length} />
             <ProfilePanel key={`${p.id}-${p.display_name}-${p.shirt_number}-${p.position}-${p.club_name}-${p.card_style}`} player={p} />
-            <nav aria-label="Recent matches" className="profile-dates panel flex gap-2 overflow-x-auto p-2">
-              {recentMatches.map((m) => (
-                <Link key={m.match_id} to={href(m)} title={`vs ${m.opponent}`}
-                  className="tile shrink-0 px-3 py-2.5 text-center text-xs text-fg-muted hover:text-fg">
-                  {new Date(`${m.match_date}T00:00:00`).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "2-digit" })}
-                </Link>
-              ))}
-            </nav>
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -107,11 +95,6 @@ export function PlayerHubPage() {
           </section>
         </div>
 
-        <aside className="profile-feed">
-          {feed.isPending ? <Spinner label="Loading moments" /> : !feed.data?.items.length && hudlMoments.length ? (
-            <HudlMomentsList matches={hudl} />
-          ) : <MomentsFeed moments={feed.data?.items ?? []} shirt={p.shirt_number} />}
-        </aside>
       </div>
 
       {hudlMatches.length > 0 && (

@@ -84,10 +84,8 @@
 .profile-heading { padding: 0 0 10px; }
 .profile-heading > div:first-child > p:first-child { color: var(--color-accent); }
 .profile-heading h1 { font-size: 30px; }
-.profile-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 30px; align-items: start; }
-.profile-top { display: grid; grid-template-columns: 265px minmax(0, 1fr) 85px; gap: 20px; align-items: start; }
-.profile-dates { flex-direction: column; }
-.profile-feed { position: sticky; top: 110px; }
+.profile-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: start; }
+.profile-top { display: grid; grid-template-columns: 265px minmax(0, 1fr); gap: 20px; align-items: start; }
 /* Player card finishes (spec 190). Edge = metallic gradient, face = deep tone of the
    same metal, sheen = one sharp diagonal highlight. Text colours are set per finish
    so contrast holds on every style. */
@@ -123,7 +121,6 @@
 .profile-details svg polygon[fill="none"] { stroke: #ffffff20; }
 .profile-details svg polygon:not([fill="none"]) { fill: #8998f548; stroke: #a6b1ff; }
 .profile-details section[aria-label="Moments per match"] ol a { background: #7d8ee66b; border-color: #a6b1ff; }
-.phone-feed { --color-ink-950: #0a0c0e; --color-fg: #ffffff; --color-fg-muted: #c5c9cf; --color-fg-subtle: #abb3bb; --color-accent: #dcf59c; --color-pin: #d4ee8f; color: #fff; border-color: #202328; box-shadow: 0 16px 40px #1c221a35; }
 [data-screen="profile"] :focus-visible { outline-color: var(--color-accent); }
 @media (min-width: 1600px) { .library-dashboard { grid-template-columns: 300px minmax(0, 1fr) 330px; gap: 28px; } .hero-stage { min-height: 600px; } }
 @media (max-width: 1250px) {
@@ -135,13 +132,10 @@
   .dashboard-overview { grid-row: 2 / span 2; }
   .hero-stage { min-height: 460px; }
   .profile-top { grid-template-columns: 230px minmax(0, 1fr); }
-  .profile-dates { grid-column: 1 / -1; flex-direction: row; }
-  .profile-workspace { grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; }
+  .profile-workspace { gap: 22px; }
 }
 @media (max-width: 1000px) {
   .brand-wordmark { display: none; }
-  .profile-workspace { grid-template-columns: minmax(0, 1fr); }
-  .profile-feed { position: static; }
   .profile-top { grid-template-columns: 260px minmax(0, 1fr); }
   .analysis-workspace { grid-template-columns: 210px minmax(0, 1fr); gap: 12px; }
   .analysis-match-heading > div:first-child { order: -1; width: 100%; }
@@ -181,7 +175,6 @@
   .moments-rail { position: static; max-height: 430px; }
   [data-screen="analysis"] .app-main { padding: 12px; }
   .profile-top { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .profile-dates { grid-column: 1; }
   .player-shield { max-width: 280px; }
   .profile-heading > div:last-child { gap: 6px; }
   .profile-heading > div:last-child button { font-size: 11px; padding: 8px; }

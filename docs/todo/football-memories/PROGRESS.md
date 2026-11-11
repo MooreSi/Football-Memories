@@ -30,6 +30,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Settings > Update + header flash | done (tests with fake git; real update not run) |
 | My Player recent-match bars name the game (vertical text-xs opponent, horizontal date) | done (tests, browser-checked on real data, 2026-11-11) |
 | Library Match Profile radar replaces Most tagged, follows the hero (D-029) | done (tests, browser-checked on real data, 2026-11-11) |
+| Match Profile split into our team v opposition; hub feed and date strip removed; timeline crests; full name on Your player (D-030) | done (tests, browser-checked on real data, 2026-11-11) |
 | Settings: no player/match list, Hudl beside Import | done (tests) |
 
 ## Spec 180 completed
