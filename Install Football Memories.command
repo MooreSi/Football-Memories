@@ -100,14 +100,12 @@ fi
 
 # ---------- 5. Settings ----------
 bold "5/7 Settings"
-if [ ! -f .env ]; then
-  cp .env.example .env
-  PASSWORD="$(openssl rand -hex 24)"
-  sed -i '' "s/^FM_DB_PASSWORD=.*/FM_DB_PASSWORD=$PASSWORD/" .env
-  ok "Created .env with a random database password"
-else
-  ok "Using your existing .env"
-fi
+# shellcheck source=scripts/mac/ensure-env.sh
+. "$APP_DIR/scripts/mac/ensure-env.sh" || fail "This copy is missing scripts/mac/ensure-env.sh. Download it again from GitHub."
+ensure_env || fail "Could not write the settings file .env in $APP_DIR."
+if [ "$ENV_CREATED" = 1 ]; then ok "Created .env with a random database password"
+elif [ "$ENV_REPAIRED" = 1 ]; then ok "Added a random database password to your .env"
+else ok "Using your existing .env"; fi
 env_value() { grep -E "^$1=" .env | tail -n 1 | cut -d= -f2-; }
 PORT="$(env_value FM_PORT)"; PORT="${PORT:-8765}"
 INBOX="$(env_value FM_HOST_INBOX)"; INBOX="${INBOX:-./data/inbox}"

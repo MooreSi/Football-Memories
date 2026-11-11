@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **`.env` fix:** `.gitignore`'s `.env.*` also ignored `.env.example`, so every
+  GitHub copy lacked the template; the installers' `cp`/`copy` failed silently,
+  no `.env` was written and compose stopped on `FM_DB_PASSWORD`. Template now
+  tracked (`!.env.example`); the settings step moved to
+  `scripts/mac/ensure-env.sh` (tested in `backend/tests/test_installers.py`) and
+  `scripts/windows/ensure-env.ps1`, which fill in a missing/blank password and
+  never change an existing one. Fresh-checkout compose config verified on Mac.
+
 - **Installer fixes (owner report from a new Mac and a Windows PC):**
   Windows installer now checks WSL 2 + Virtual Machine Platform first (no
   admin), and if missing runs `scripts/windows/setup-wsl.ps1` elevated (one

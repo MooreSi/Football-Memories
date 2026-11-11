@@ -35,7 +35,7 @@ The installer also unblocks its own folder's scripts on every run.
 | Homebrew + ffmpeg | the Hudl helper cuts moments and builds reels | asks before installing Homebrew, then `brew install ffmpeg` | `winget install Gyan.FFmpeg` |
 | uv (Python 3.12 runner) | runs the Hudl helper | astral.sh installer | `winget install astral-sh.uv` |
 | Google Chrome | the Hudl helper's sign-in browser | `playwright install chrome` | `winget install Google.Chrome` |
-| `.env` | database password and folders | created from `.env.example` with a random password | same |
+| `.env` | database password and folders | [ensure-env.sh](scripts/mac/ensure-env.sh): created from `.env.example` with a random password; a missing or blank `FM_DB_PASSWORD` in an existing `.env` is filled in, any other value is kept | [ensure-env.ps1](scripts/windows/ensure-env.ps1), same rules |
 
 Then it runs `docker compose up -d --build`, starts the Hudl helper on
 127.0.0.1:8766, waits for http://127.0.0.1:8765/api/health and opens the app.
@@ -61,6 +61,11 @@ Deleting a download in Settings moves it to the Trash (Mac) or Recycle Bin
   `wsl --install` in an administrator PowerShell and restart.
 - **Windows: WSL setup warns that virtualization is off.** Turn on Intel VT-x or
   AMD-V/SVM in the PC's BIOS/UEFI settings; Windows cannot do that itself.
+
+- **"required variable FM_DB_PASSWORD is missing a value".** Fixed
+  2026-11-11: `.env.example` was missing from GitHub copies, so no `.env` was
+  made. Update the folder (or download it again) and run the installer: it
+  now writes the password even when the template is missing.
 
 ## Updating
 

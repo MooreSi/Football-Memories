@@ -106,13 +106,8 @@ if exist ".git" (
 
 echo.
 echo  5/7 Settings
-if not exist ".env" (
-  copy /y ".env.example" ".env" >nul
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[guid]::NewGuid().ToString('N')+[guid]::NewGuid().ToString('N').Substring(0,16); (Get-Content '.env') -replace '^FM_DB_PASSWORD=.*', ('FM_DB_PASSWORD='+$p) | Set-Content -Encoding ASCII '.env'"
-  echo   Created .env with a random database password.
-) else (
-  echo   Using your existing .env.
-)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%CD%\scripts\windows\ensure-env.ps1"
+if errorlevel 1 goto :fail_env
 set "FM_PORT=8765"
 for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"FM_PORT=" ".env"') do set "FM_PORT=%%b"
 if not exist "data\inbox" mkdir "data\inbox"
@@ -210,6 +205,9 @@ echo   Stopped: Docker Desktop is not installed. Install it from docker.com, the
 goto :end_fail
 :fail_docker_start
 echo   Stopped: Docker did not start. Open Docker Desktop, wait until it is running, then run this again.
+goto :end_fail
+:fail_env
+echo   Stopped: the settings file .env could not be written in this folder.
 goto :end_fail
 :fail_compose
 echo   Stopped: Docker could not start the app. See the messages above.

@@ -1,6 +1,7 @@
 # Secrets and session state: never committed (golden rule 1)
 .env
 .env.*
+!.env.example
 *.cookies
 cookies*.json
 storage_state*.json
