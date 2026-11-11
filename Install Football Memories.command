@@ -132,5 +132,9 @@ for _ in $(seq 1 90); do curl -fs -o /dev/null "http://127.0.0.1:$PORT/api/healt
 curl -fs -o /dev/null "http://127.0.0.1:$PORT/api/health" || fail "The app did not answer on port $PORT."
 open "http://127.0.0.1:$PORT"
 ok "Ready at http://127.0.0.1:$PORT"
+if [ "$(env_value FM_BIND)" = "0.0.0.0" ]; then
+  LAN_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)"
+  ok "On a phone or tablet on this Wi-Fi: http://$(scutil --get LocalHostName 2>/dev/null).local:$PORT${LAN_IP:+  (or http://$LAN_IP:$PORT)}"
+fi
 echo
 echo "You can close this window. Double-click this installer any time to start or update the app."

@@ -127,6 +127,7 @@ echo   Hudl helper started in a minimized window. Keep that window open while yo
 start "" "http://127.0.0.1:%FM_PORT%"
 echo.
 echo  Ready at http://127.0.0.1:%FM_PORT%
+echo  On a phone or tablet on this Wi-Fi: http://%COMPUTERNAME%:%FM_PORT%
 echo  Double-click this installer any time to start or update the app.
 echo.
 pause

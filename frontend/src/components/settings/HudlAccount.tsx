@@ -1,3 +1,4 @@
+import { HUDL } from "../../api/hudl";
 import { scopedHudlAction } from "../../lib/archiveFilters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type Hls from "hls.js";
@@ -6,7 +7,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 
-const BASE = "http://127.0.0.1:8766";
+const BASE = HUDL;
 const KEY = ["hudl-account"];
 type Match = { id: string; title: string; url: string };
 type Status = { session_active?: boolean; configured: boolean; busy: boolean; state: string; message: string; secret_store?: string;

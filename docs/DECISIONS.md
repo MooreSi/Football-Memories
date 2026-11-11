@@ -4,6 +4,18 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-028 (2026-11-11) App open on the local network, no password
+Owner request: reach the app from a phone on the same Wi-Fi, explicitly with no
+password. `FM_BIND=0.0.0.0` (owner's .env and .env.example; compose still
+defaults to 127.0.0.1) publishes port 8765 on the LAN. The desktop helper
+keeps listening on 127.0.0.1 only; nginx forwards `/helper/` and `/stream/`
+to it with the local app's Host/Origin, and the page uses that route whenever
+it is not opened on the Mac itself, rewriting the helper's 127.0.0.1:8766
+links. Consequence the owner accepted: anyone on the same network can watch,
+download, delete downloads, start Hudl actions and change the saved Hudl
+account (it cannot read the password). Supersedes D-008 for this install.
+JSON is gzipped (the match list is ~29 MB, ~3 MB compressed).
+
 ## D-027 (2026-11-11) Hudl helper on Windows; one-word club crests
 Owner asked for the Hudl connection on Windows and chose Windows Credential
 Manager for the saved password (asked first, per the credential-storage rule).

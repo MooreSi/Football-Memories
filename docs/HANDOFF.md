@@ -167,7 +167,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - **Working vertical slice:** import a video (+ optional `.tags.csv`) from the
   inbox → copy, SHA-256 verify, thumbnail → index in Postgres → Library page →
   Match page with player, event markers, filters (AND/OR), "play moments only".
-- Runs in Docker Compose at http://127.0.0.1:8765 (localhost only, D-008).
+- Runs in Docker Compose at http://127.0.0.1:8765, and on the LAN at
+  http://MacMini.local:8765 with no password (owner choice, D-028).
 - Hudl: scoped desktop capture authorized by owner decision 002; each user needs
   their own permission. Server background sync remains unavailable. Setup and
   current verification: [HUDL_INTEGRATION.md](../HUDL_INTEGRATION.md).

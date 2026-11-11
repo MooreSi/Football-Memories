@@ -1,5 +1,6 @@
 # Football Memories. See DEVELOPMENT.md / README.md.
-# Ports are bound to 127.0.0.1 until LAN authentication exists (docs/DECISIONS.md D-008).
+# FM_BIND=0.0.0.0 opens the app to the local network with no password (owner, D-028);
+# without it the app answers on this computer only (D-008).
 name: football-memories
 
 services:
@@ -35,7 +36,9 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "127.0.0.1:${FM_PORT:-8765}:80"
+      - "${FM_BIND:-127.0.0.1}:${FM_PORT:-8765}:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - backend
     restart: unless-stopped

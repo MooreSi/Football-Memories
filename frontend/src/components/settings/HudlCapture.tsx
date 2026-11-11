@@ -1,9 +1,10 @@
+import { HUDL } from "../../api/hudl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 
-const BASE = "http://127.0.0.1:8766";
+const BASE = HUDL;
 const KEY = ["hudl-desktop-helper"];
 type Status = { state: string; message: string; filename: string | null };
 const active = (state?: string) => !!state && !["idle", "done", "error"].includes(state);
