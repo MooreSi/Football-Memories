@@ -2,7 +2,7 @@ import { Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { MatchSummary, RecentMoment } from "../../api/types";
 import { formatClock, formatDate } from "../../lib/format";
-import { TeamBadge } from "../TeamBadge";
+import { FixtureCrests } from "../FixtureCrests";
 
 /** Reference 1's right column ("Live Matches" + standings), with real archive data. */
 export function LatestMatchPanel({ match, moments }: { match: MatchSummary | undefined; moments: RecentMoment[] }) {
@@ -14,19 +14,11 @@ export function LatestMatchPanel({ match, moments }: { match: MatchSummary | und
           <p className="mt-3 text-center text-sm text-fg-muted">
             {[match.competition, match.season_label].filter(Boolean).join(" · ")}
           </p>
-          <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <TeamBadge name={match.team_name} size="lg" />
-              <span className="text-sm font-medium">{match.team_name}</span>
-            </div>
-            <div>
+          <div className="mt-4">
+            <FixtureCrests home={match.team_name} away={match.opponent} middle={<>
               <p className="text-2xl font-semibold text-fg-muted">vs</p>
-              <p className="mt-1 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] text-ok">{formatDate(match.match_date)}</p>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <TeamBadge name={match.opponent} size="lg" tone="away" />
-              <span className="text-sm font-medium">{match.opponent}</span>
-            </div>
+              <p className="mt-1 whitespace-nowrap rounded-full bg-ok/15 px-2 py-0.5 text-[11px] text-ok">{formatDate(match.match_date)}</p>
+            </>} />
           </div>
           <p className="mt-4 text-center text-xs text-fg-muted">{match.event_count} tagged moments</p>
           <Link

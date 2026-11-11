@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import type { MatchDetail } from "../../api/types";
 import { formatDate } from "../../lib/format";
 import type { MomentFilter } from "../../lib/useMomentFilter";
-import { TeamBadge } from "../TeamBadge";
+import { FixtureCrests } from "../FixtureCrests";
 
 function count<T>(items: T[], key: (t: T) => string[]): [string, number][] {
   const m = new Map<string, number>();
@@ -36,20 +36,12 @@ export function MomentsRail({ match, filter }: { match: MatchDetail; filter: Mom
       </div>
 
       <div className="border-b border-white/5 bg-ink-950/40 p-4 ring-1 ring-accent/30 ring-inset">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center">
-          <div className="flex flex-col items-center gap-1.5">
-            <TeamBadge name={match.team_name} />
-            <span className="text-xs leading-tight">{match.team_name}</span>
-          </div>
+        <FixtureCrests home={match.team_name} away={match.opponent} size="md" nameClass="text-xs" middle={
           <div className="text-[11px] text-fg-muted">
-            <p>{formatDate(match.match_date)}</p>
+            <p className="whitespace-nowrap">{formatDate(match.match_date)}</p>
             <p className="text-lg font-semibold text-fg">vs</p>
           </div>
-          <div className="flex flex-col items-center gap-1.5">
-            <TeamBadge name={match.opponent} tone="away" />
-            <span className="text-xs leading-tight">{match.opponent}</span>
-          </div>
-        </div>
+        } />
         <p className="mt-2 text-center text-[11px] text-fg-subtle">
           {[match.competition, match.season_label, match.age_group].filter(Boolean).join(" · ")}
         </p>

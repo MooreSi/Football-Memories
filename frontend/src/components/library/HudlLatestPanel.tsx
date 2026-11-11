@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
 import { formatClock } from "../../lib/format";
 import { fixtureDate, fixtureParts } from "../../lib/hudlFixture";
-import { TeamBadge } from "../TeamBadge";
+import { FixtureCrests } from "../FixtureCrests";
 
 /** Reference 1's right column, fed by the newest Hudl match for the selected age
  *  group. The Hudl library query refetches, so a newly uploaded match replaces it. */
@@ -25,19 +25,11 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
           {[age || match.age_group, match.season_label !== "Unclassified" ? match.season_label : null, parts?.venue].filter(Boolean).join(" · ")}
         </p>
         {parts ? (
-          <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <TeamBadge name={home} size="lg" />
-              <span className="text-sm font-medium">{home}</span>
-            </div>
-            <div>
+          <div className="mt-4">
+            <FixtureCrests home={home} away={parts.opponent} middle={<>
               <p className="text-2xl font-semibold text-fg-muted">vs</p>
-              {date && <p className="mt-1 rounded-full bg-ok/15 px-2 py-0.5 text-[11px] text-ok">{date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</p>}
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <TeamBadge name={parts.opponent} size="lg" tone="away" />
-              <span className="text-sm font-medium">{parts.opponent}</span>
-            </div>
+              {date && <p className="mt-1 whitespace-nowrap rounded-full bg-ok/15 px-2 py-0.5 text-[11px] text-ok">{date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</p>}
+            </>} />
           </div>
         ) : <p className="mt-4 text-center font-medium">{match.title}</p>}
         <p className="mt-4 text-center text-xs text-fg-muted">{moments.length ? `${moments.length} tagged moments` : "Tags not indexed yet"}</p>
