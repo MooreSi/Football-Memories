@@ -17,9 +17,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   and the Reel Studio has a Save as switch (One reel / One reel per match).
   Per-match mode drops the opening card. Each match is fetched in turn, then
   saved as its own verified reel in `reels/`
-  (`POST /account/batch` with `reel.per_match`). Tests and a browser check pass. **The
-  running helper must be restarted** onto this code before it accepts
-  `per_match`. Not run against the real account.
+  (`POST /account/batch` with `reel.per_match`). Tests and a browser check pass. Deployed:
+  frontend image rebuilt (`docker compose up -d --build frontend`; a plain
+  restart reuses the old bundle) and helper restarted on the new code (log
+  `data/helper.log`). Not run against the real account.
 
 - **`.env` fix:** `.gitignore`'s `.env.*` also ignored `.env.example`, so every
   GitHub copy lacked the template; the installers' `cp`/`copy` failed silently,
