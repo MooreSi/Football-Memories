@@ -16,6 +16,7 @@ import { HudlLibrary } from "../components/hudl/HudlLibrary";
 import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
 import { clubName, latestFirst } from "../lib/hudlFixture";
+import { looksLikePlayer } from "../lib/hudlPlayer";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
 
@@ -67,10 +68,24 @@ export function LibraryPage() {
   const featured = latest.data?.items ?? [];
   const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
   const club = clubName(featured[0]?.team_name);
-  const prefs = useQuery({ queryKey: ["preferences"], queryFn: api.preferences });
-  const players = useQuery({ queryKey: ["players"], queryFn: api.players });
-  const primaryName = players.data?.find(p => p.id === prefs.data?.primary_player_id)?.display_name;
-  const maxTag = Math.max(1, ...(s?.top_tags.map((t) => t.count) ?? [1]));
+  // Owner request 2026-11-11: the right panel and "Most tagged" follow the match shown
+  // in the hero; the overview counts the selected age group and season.
+  const [heroIndex, setHeroIndex] = useState(0);
+  useEffect(() => setHeroIndex(0), [ageGroup, seasonLabel]);
+  const shown = heroMatches[Math.min(heroIndex, heroMatches.length - 1)];
+  const tagCounts = new Map<string, number>();
+  for (const m of shown?.moments ?? []) tagCounts.set(m.category, (tagCounts.get(m.category) ?? 0) + 1);
+  const topTags = shown ? [...tagCounts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 6) : s?.top_tags ?? [];
+  const maxTag = Math.max(1, ...topTags.map((t) => t.count));
+  const scoped = Boolean(remote.data?.length);
+  const scopedMoments = heroMatches.reduce((n, m) => n + (m.moments?.length ?? 0), 0) + items.reduce((n, m) => n + m.event_count, 0);
+  const scopedSeconds = heroMatches.reduce((n, m) => n + (m.duration_s ?? 0), 0) + items.reduce((n, m) => n + (m.duration_s ?? 0), 0);
+  const scopedPlayers = new Set(heroMatches.flatMap((m) => (m.moments ?? []).map((t) => t.category)).filter(looksLikePlayer)).size;
+  const overview = scoped
+    ? { matches: heroMatches.length + items.length, moments: scopedMoments, seconds: scopedSeconds, players: scopedPlayers,
+        teams: new Set(items.map((m) => m.team_name)).size + (heroMatches.length ? 1 : 0) }
+    : s && { matches: s.matches, moments: s.moments, seconds: s.footage_seconds, players: s.players, teams: s.teams };
+  const scopeLabel = scoped ? `${ageGroup || "All ages"} · ${seasonLabel || "All seasons"}` : "All time";
 
 
   return (
@@ -82,24 +97,26 @@ export function LibraryPage() {
       </header>
       <aside className="dashboard-overview space-y-5">
         <YourPlayerCard />
+        <section aria-label="Overview" className="space-y-5">
         <div className="flex items-baseline justify-between">
           <h2 className="text-xl font-semibold">Overview</h2>
-          <span className="text-sm text-fg-subtle">All time</span>
+          <span className="text-sm text-fg-subtle">{scopeLabel}</span>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Matches" icon={Film} value={String(s?.matches ?? "-")} unit="saved" hint={s ? `${s.teams} ${s.teams === 1 ? "team" : "teams"}` : undefined} />
-          <StatTile label="Moments" icon={Sparkles} value={String(s?.moments ?? "-")} unit="tagged" />
-          <StatTile label="Footage" icon={Clock3} value={s ? hours(s.footage_seconds) : "-"} unit="hours" />
-          <StatTile label="Players" icon={Users} value={String(s?.players ?? "-")} unit="tagged" />
+          <StatTile label="Matches" icon={Film} value={String(overview?.matches ?? "-")} unit={scoped ? "matches" : "saved"} hint={overview ? `${overview.teams} ${overview.teams === 1 ? "team" : "teams"}` : undefined} />
+          <StatTile label="Moments" icon={Sparkles} value={String(overview?.moments ?? "-")} unit="tagged" />
+          <StatTile label="Footage" icon={Clock3} value={overview ? hours(overview.seconds) : "-"} unit="hours" />
+          <StatTile label="Players" icon={Users} value={String(overview?.players ?? "-")} unit="tagged" />
         </div>
+        </section>
         <section aria-label="Top tags" className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold">Most tagged</h2>
+            <h2 className="font-semibold">Most tagged{shown ? <span className="ml-2 text-xs font-normal text-fg-subtle">this match</span> : null}</h2>
             <Tags size={16} className="text-fg-subtle" aria-hidden />
           </div>
-          {s && s.top_tags.length > 0 ? (
+          {topTags.length > 0 ? (
             <ul className="space-y-3">
-              {s.top_tags.map((t) => (
+              {topTags.map((t) => (
                 <li key={t.name} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1">
                   <span className="truncate text-sm">{t.name}</span>
                   <span className="text-sm text-fg-muted tabular-nums">{t.count}</span>
@@ -117,13 +134,13 @@ export function LibraryPage() {
 
       {/* Right: latest match + recent moments (reference 1 right column) */}
       <div className="dashboard-latest">
-        {heroMatches[0] ? <HudlLatestPanel match={heroMatches[0]} club={club} age={ageGroup} player={primaryName} />
+        {shown ? <HudlLatestPanel match={shown} club={club} age={ageGroup} latest={heroIndex === 0} />
           : <LatestMatchPanel match={featured[0]} moments={s?.recent_moments ?? []} />}
       </div>
 
       {/* Centre: featured hero + all matches */}
       <div className="dashboard-centre min-w-0 space-y-6">
-        {heroMatches.length > 0 ? <HudlHero key={ageGroup} matches={heroMatches} club={club} age={ageGroup} />
+        {heroMatches.length > 0 ? <HudlHero key={ageGroup} matches={heroMatches} club={club} age={ageGroup} index={Math.min(heroIndex, heroMatches.length - 1)} onIndex={setHeroIndex} />
           : featured.length > 0 && <FeaturedHero matches={featured} />}
 
         <section aria-label="All matches" className="match-collection panel p-5">

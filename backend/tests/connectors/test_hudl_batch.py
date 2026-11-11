@@ -14,7 +14,7 @@ from app.connectors.hudl_batch import CardStore, assemble_reel
 from app.connectors.hudl_browser import BrowserConnection
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_companion import create_companion
-from app.services.media import probe
+from app.services.media import MediaError, probe
 
 ORIGIN = {"Origin": "http://127.0.0.1:8765"}
 
@@ -249,3 +249,44 @@ def test_card_upload_and_batch_routes(tmp_path):
             assert ok.status_code == 202
             start.assert_called_once()
     app.state.account._executor.shutdown()
+
+
+def _live_card(path, seconds=1):
+    """Like Chrome's MediaRecorder output: a stream written live, with no duration header."""
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=navy:size=640x360:rate=30",
+            "-t",
+            str(seconds),
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-f",
+            "matroska",
+            "-live",
+            "1",
+            str(path),
+        ],
+        check=True,
+    )
+    return path
+
+
+def test_reel_accepts_browser_recorded_cards_without_a_duration(tiny_video, tmp_path):
+    card = _live_card(tmp_path / "card.webm")
+    with pytest.raises(MediaError):
+        probe(card)  # the cause of "A reel part could not be read" (owner report 2026-11-11)
+    output = tmp_path / "reel.mp4"
+    assemble_reel([card, tiny_video, card], output, cards={card})
+    info = probe(output)
+    assert (info.width, info.height) == (320, 240)
+    assert 5.5 < info.duration_s < 7.5

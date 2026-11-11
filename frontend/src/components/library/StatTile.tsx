@@ -4,7 +4,7 @@ export function StatTile({ label, icon: Icon, value, unit, hint }: {
   label: string; icon: LucideIcon; value: string; unit?: string; hint?: string;
 }) {
   return (
-    <div className="tile flex min-h-[132px] flex-col justify-between p-4">
+    <div role="group" aria-label={label} className="tile flex min-h-[132px] flex-col justify-between p-4">
       <div className="flex items-start justify-between gap-2">
         <span className="text-sm text-fg-muted">{label}</span>
         <Icon size={17} className="text-fg-subtle" aria-hidden />

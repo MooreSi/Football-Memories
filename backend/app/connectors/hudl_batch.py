@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from app.connectors.hudl_capture import CaptureError
-from app.services.media import MediaError, probe
+from app.services.media import MediaError, MediaInfo, probe
 
 _VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]
 _AUDIO = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
@@ -79,6 +79,37 @@ def _ffmpeg(arguments: list[str]) -> bool:
     return done.returncode == 0
 
 
+def _card_info(path: Path) -> MediaInfo:
+    import json
+
+    try:
+        done = subprocess.run(
+            ["ffprobe", "-v", "error", "-print_format", "json", "-show_streams", str(path)],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise MediaError("ffprobe failed") from error
+    streams = json.loads(done.stdout or "{}").get("streams", []) if done.returncode == 0 else []
+    video = next((s for s in streams if s.get("codec_type") == "video"), None)
+    audio = next((s for s in streams if s.get("codec_type") == "audio"), None)
+    if video is None:
+        raise MediaError(f"no video stream found in {path.name}")
+    return MediaInfo(
+        duration_s=0.0,
+        size_bytes=path.stat().st_size,
+        width=video.get("width"),
+        height=video.get("height"),
+        fps=None,
+        video_codec=video.get("codec_name"),
+        audio_codec=audio.get("codec_name") if audio else None,
+        bitrate=None,
+        container=None,
+    )
+
+
 def assemble_reel(
     parts: list[Path],
     output: Path,
@@ -91,7 +122,9 @@ def assemble_reel(
         raise CaptureError("Nothing to put in the reel.")
     card_set = {Path(c) for c in cards}
     try:
-        infos = [probe(p) for p in parts]
+        # Browser-recorded cards (MediaRecorder WebM) carry no duration header, so
+        # they are read by their streams only; encoding them below writes one.
+        infos = [_card_info(p) if p in card_set else probe(p) for p in parts]
     except MediaError as error:
         raise CaptureError("A reel part could not be read; nothing was saved.") from error
     clips = [i for p, i in zip(parts, infos, strict=True) if p not in card_set] or infos

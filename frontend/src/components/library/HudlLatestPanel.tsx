@@ -7,18 +7,19 @@ import { TeamBadge } from "../TeamBadge";
 
 /** Reference 1's right column, fed by the newest Hudl match for the selected age
  *  group. The Hudl library query refetches, so a newly uploaded match replaces it. */
-export function HudlLatestPanel({ match, club, age, player }: { match: HudlMatch; club: string | null; age: string; player?: string }) {
+/** Spec 190 follow-up (owner request 2026-11-11): the panel and its moments follow the
+ *  match shown in the hero, and list every tagged moment of that game. */
+export function HudlLatestPanel({ match, club, age, latest = true }: { match: HudlMatch; club: string | null; age: string; latest?: boolean }) {
   const parts = fixtureParts(match.title);
   const date = fixtureDate(match.title);
   const home = club || "Home";
   const moments = match.moments ?? [];
-  const mine = player ? moments.filter((m) => m.category === player) : [];
-  const recent = [...(mine.length ? mine : moments)].sort((a, b) => b.time_s - a.time_s).slice(0, 8);
+  const recent = [...moments].sort((a, b) => b.time_s - a.time_s).slice(0, 8);
   const link = `/hudl/${encodeURIComponent(match.id)}`;
   return (
     <div className="space-y-5">
-      <section aria-label="Latest match" className="latest-match-panel panel p-5">
-        <h2 className="text-lg font-semibold">Latest match</h2>
+      <section aria-label={latest ? "Latest match" : "Selected match"} className="latest-match-panel panel p-5">
+        <h2 className="text-lg font-semibold">{latest ? "Latest match" : "Selected match"}</h2>
         <p className="mt-3 text-center text-sm text-fg-muted">
           {[age || match.age_group, match.season_label !== "Unclassified" ? match.season_label : null, parts?.venue].filter(Boolean).join(" · ")}
         </p>
@@ -46,7 +47,7 @@ export function HudlLatestPanel({ match, club, age, player }: { match: HudlMatch
 
       <section aria-label="Recent moments" className="panel p-5">
         <h2 className="mb-1 text-lg font-semibold">Recent moments</h2>
-        <p className="mb-3 text-xs text-fg-subtle">{mine.length ? `${player} in this match` : "Latest tagged moments in this match"}</p>
+        <p className="mb-3 text-xs text-fg-subtle">Latest tagged moments in this match</p>
         {recent.length === 0 ? (
           <p className="text-sm text-fg-muted">Moments appear here once this match's tags are indexed. Open the match or Refresh Hudl.</p>
         ) : (

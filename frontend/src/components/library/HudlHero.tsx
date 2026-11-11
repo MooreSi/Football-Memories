@@ -8,8 +8,11 @@ import { Badge } from "../ui/Badge";
 
 /** Reference 1's centre hero, fed by the connected Hudl library: newest first,
  *  right arrow steps to the next (older) match, left arrow back towards the latest. */
-export function HudlHero({ matches, club, age }: { matches: HudlMatch[]; club: string | null; age: string }) {
-  const [i, setI] = useState(0);
+export function HudlHero({ matches, club, age, index, onIndex }: { matches: HudlMatch[]; club: string | null; age: string; index?: number; onIndex?: (i: number) => void }) {
+  const [own, setOwn] = useState(0);
+  // Controlled by the Library page so the side panels follow the match on show.
+  const i = index ?? own;
+  const setI = (next: (x: number) => number) => { const v = next(i); setOwn(v); onIndex?.(v); };
   const m = matches[Math.min(i, matches.length - 1)];
   if (!m) return null;
   const group = age || hudlAgeGroups(m)[0];

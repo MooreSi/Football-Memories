@@ -53,6 +53,38 @@ def _fetch(url: str) -> bytes:
     return bytes(data)
 
 
+def _is_crest(image: str, url: str) -> bool:
+    """Club crests on Wikipedia are SVG logos (Liverpool_FC.svg) or named crest/logo/badge.
+    Photos (stadiums, players) are JPEGs without those words and are never used."""
+    lowered = f"{image} {url}".lower()
+    return ".svg" in lowered or any(w in lowered for w in ("crest", "logo", "badge"))
+
+
+def _wikipedia_crest(identity: str) -> str | None:
+    """Owner decision 2026-11-11: every team is a football club, so a one-word name
+    such as "Liverpool" is looked up as "Liverpool F.C.", then "A.F.C.", then as written."""
+    title = identity.title()
+    for candidate in (f"{title} F.C.", f"{title} A.F.C.", title):
+        query = urlencode(
+            {
+                "action": "query",
+                "format": "json",
+                "prop": "pageimages",
+                "piprop": "thumbnail|name",
+                "pithumbsize": 250,
+                "pilicense": "any",
+                "redirects": 1,
+                "titles": candidate,
+            }
+        )
+        data = json.loads(_fetch(f"https://en.wikipedia.org/w/api.php?{query}"))
+        for page in data.get("query", {}).get("pages", {}).values():
+            source = page.get("thumbnail", {}).get("source")
+            if "missing" not in page and source and _is_crest(page.get("pageimage", ""), source):
+                return str(source)
+    return None
+
+
 def cached_crest(name: str, directory: Path) -> Path | None:
     identity = club_name(name)
     key = hashlib.sha256(identity.encode()).hexdigest()
@@ -63,34 +95,9 @@ def cached_crest(name: str, directory: Path) -> Path | None:
         if _MISSES.get(key, 0) > time.monotonic():
             return None
         try:
-            url = logo_candidate(name)
+            url = logo_candidate(name) or _wikipedia_crest(identity)
             if not url:
-                if len(identity.split()) < 2:
-                    raise ValueError("Ambiguous team identity")
-                title = identity.title() + " F.C."
-                query = urlencode(
-                    {
-                        "action": "query",
-                        "format": "json",
-                        "prop": "pageimages",
-                        "piprop": "thumbnail",
-                        "pithumbsize": 160,
-                        "pilicense": "any",
-                        "titles": title,
-                    }
-                )
-                data = json.loads(_fetch(f"https://en.wikipedia.org/w/api.php?{query}"))
-                pages = data.get("query", {}).get("pages", {})
-                url = next(
-                    (
-                        page.get("thumbnail", {}).get("source")
-                        for page in pages.values()
-                        if "missing" not in page
-                    ),
-                    None,
-                )
-                if not url or not any(word in url.lower() for word in ("crest", "logo", "badge")):
-                    raise ValueError("No unambiguous club crest")
+                raise ValueError("No club crest found")
             image = _fetch(url)
             if not image.startswith(b"\x89PNG\r\n\x1a\n"):
                 raise ValueError("Expected PNG crest")
