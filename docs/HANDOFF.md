@@ -13,6 +13,20 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Installer fixes (owner report from a new Mac and a Windows PC):**
+  Windows installer now checks WSL 2 + Virtual Machine Platform first (no
+  admin), and if missing runs `scripts/windows/setup-wsl.ps1` elevated (one
+  UAC prompt): enables both features, `wsl --install --no-distribution`,
+  offers a restart and re-runs itself once via HKCU RunOnce. Smart App Control
+  blocks browser-downloaded `.bat` files (Mark of the Web, no override), so
+  `install-windows.ps1` is a one-line `irm | iex` bootstrap that fetches the app
+  with git (or the ZIP via PowerShell) and runs the installer; the `.bat` also
+  unblocks its own scripts. **Not executed on real Windows** (no Windows here);
+  PowerShell parsed in a container only. Mac `forkpty: Resource temporarily
+  unavailable` is Terminal failing before the installer starts (process limit
+  reached); no installer cause found, troubleshooting added to INSTALL.md,
+  owner asked for `ps` output if it recurs.
+
 - **Social preview on `codex/github-social-preview`:** upload-ready
   [JPEG](design/social-preview.jpg) and [instructions](design/social-preview.md).
   Verified 1280 × 640, 214,610 bytes; visually checked after resizing.

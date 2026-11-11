@@ -2,12 +2,14 @@
 rem Football Memories: install, update and open (Windows). Double-click in Explorer.
 rem Spec 190 (owner request 2026-11-10). Safe to run again at any time: it never
 rem deletes or overwrites your matches, downloads, settings or database.
-rem   1. Docker Desktop: installs it if missing (winget, else docker.com), then starts it.
-rem   2. Git (for updates), via winget when available.
-rem   3. Updates this folder from GitHub (fast-forward only; local changes are kept).
-rem   4. Creates .env with a random database password the first time.
-rem   5. Builds and starts the app in Docker, then opens it in your browser.
-rem   6. Hudl helper: uv, ffmpeg and Google Chrome via winget, then starts the helper.
+rem   1. WSL 2 and Virtual Machine Platform (Docker needs them): turned on after one
+rem      Windows permission prompt if missing; asks to restart when Windows needs it.
+rem   2. Docker Desktop: installs it if missing (winget, else docker.com), then starts it.
+rem   3. Git (for updates), via winget when available.
+rem   4. Updates this folder from GitHub (fast-forward only; local changes are kept).
+rem   5. Creates .env with a random database password the first time.
+rem   6. Builds and starts the app in Docker, then opens it in your browser.
+rem   7. Hudl helper: uv, ffmpeg and Google Chrome via winget, then starts the helper.
 rem      The saved Hudl password lives in Windows Credential Manager (owner decision
 rem      2026-11-11), never in a file.
 setlocal EnableExtensions EnableDelayedExpansion
@@ -17,9 +19,33 @@ echo.
 echo  Football Memories installer
 echo  Folder: %CD%
 set "PATH=%ProgramFiles%\Docker\Docker\resources\bin;%ProgramFiles%\Git\cmd;%PATH%"
+rem Clear the "downloaded from the internet" mark from this folder's scripts so
+rem Smart App Control and SmartScreen do not block them on later runs.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -LiteralPath . -File | Unblock-File -ErrorAction SilentlyContinue; if (Test-Path scripts) { Get-ChildItem -LiteralPath scripts -Recurse -File | Unblock-File -ErrorAction SilentlyContinue }" >nul 2>nul
 
 echo.
-echo  1/6 Docker Desktop
+echo  1/7 WSL 2 for Docker
+call :check_wsl
+if defined WSL_READY (
+  echo   WSL 2 ready.
+  goto :wsl_done
+)
+echo   Docker needs WSL 2 and Virtual Machine Platform. Turning them on now.
+echo   Windows will ask "Do you want to allow this app to make changes?": choose Yes.
+set "FM_WSL_SCRIPT=%CD%\scripts\windows\setup-wsl.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $p = Start-Process powershell -Verb RunAs -Wait -PassThru -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File ' + [char]34 + $env:FM_WSL_SCRIPT + [char]34); exit $p.ExitCode } catch { exit 1223 }"
+set "WSL_RESULT=!errorlevel!"
+if "!WSL_RESULT!"=="0" (
+  echo   WSL 2 ready.
+  goto :wsl_done
+)
+if "!WSL_RESULT!"=="3010" goto :wsl_restart
+if "!WSL_RESULT!"=="1223" goto :fail_wsl_declined
+goto :fail_wsl
+:wsl_done
+
+echo.
+echo  2/7 Docker Desktop
 where docker >nul 2>nul
 if errorlevel 1 (
   where winget >nul 2>nul
@@ -29,7 +55,15 @@ if errorlevel 1 (
   ) else (
     echo   Downloading Docker Desktop from docker.com...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -UseBasicParsing -Uri 'https://desktop.docker.com/win/main/amd64/Docker%%20Desktop%%20Installer.exe' -OutFile \"$env:TEMP\DockerDesktopInstaller.exe\""
-    if errorlevel 1 goto :fail_docker_download
+    if errorlevel 1 goto :fail_wsl_declined
+echo   Stopped: WSL 2 was not turned on because the Windows permission prompt was declined.
+echo   Run this installer again and choose Yes, or run "wsl --install" in an administrator PowerShell.
+goto :end_fail
+:fail_wsl
+echo   Stopped: WSL 2 could not be turned on. See the messages in the other window.
+echo   You can also run "wsl --install" in an administrator PowerShell, restart, then run this again.
+goto :end_fail
+:fail_docker_download
     start /wait "" "%TEMP%\DockerDesktopInstaller.exe" install
   )
 )
@@ -41,7 +75,6 @@ echo   Docker Desktop found.
 docker info >nul 2>nul
 if errorlevel 1 (
   echo   Starting Docker Desktop. The first time, accept Docker's terms in its window.
-  echo   If Windows asks to install WSL or restart, do that, then run this installer again.
   if exist "%ProgramFiles%\Docker\Docker\Docker Desktop.exe" start "" "%ProgramFiles%\Docker\Docker\Docker Desktop.exe"
   for /l %%i in (1,1,120) do (
     docker info >nul 2>nul && goto :docker_ready
@@ -53,7 +86,7 @@ if errorlevel 1 (
 echo   Docker is running.
 
 echo.
-echo  2/6 Git
+echo  3/7 Git
 where git >nul 2>nul
 if errorlevel 1 (
   where winget >nul 2>nul && winget install -e --id Git.Git
@@ -61,7 +94,7 @@ if errorlevel 1 (
 where git >nul 2>nul && (echo   Git ready.) || (echo   Git not installed: updates from GitHub will be skipped.)
 
 echo.
-echo  3/6 Latest version from GitHub
+echo  4/7 Latest version from GitHub
 if exist ".git" (
   where git >nul 2>nul
   if not errorlevel 1 (
@@ -72,7 +105,7 @@ if exist ".git" (
 )
 
 echo.
-echo  4/6 Settings
+echo  5/7 Settings
 if not exist ".env" (
   copy /y ".env.example" ".env" >nul
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[guid]::NewGuid().ToString('N')+[guid]::NewGuid().ToString('N').Substring(0,16); (Get-Content '.env') -replace '^FM_DB_PASSWORD=.*', ('FM_DB_PASSWORD='+$p) | Set-Content -Encoding ASCII '.env'"
@@ -86,7 +119,7 @@ if not exist "data\inbox" mkdir "data\inbox"
 if not exist "data\archive" mkdir "data\archive"
 
 echo.
-echo  5/6 Building and starting the app (first time: several minutes)
+echo  6/7 Building and starting the app (first time: several minutes)
 docker compose up -d --build
 if errorlevel 1 goto :fail_compose
 echo   Waiting for the app...
@@ -94,12 +127,35 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "for($i=0;$i -lt 90;$i++)
 if errorlevel 1 goto :fail_health
 
 echo.
-echo  6/6 Hudl helper (uv, ffmpeg, Google Chrome)
+echo  7/7 Hudl helper (uv, ffmpeg, Google Chrome)
 where winget >nul 2>nul
 if errorlevel 1 goto :helper_no_winget
 where uv >nul 2>nul || winget install -e --id astral-sh.uv
 where ffmpeg >nul 2>nul || winget install -e --id Gyan.FFmpeg
-call :find_chrome
+call :check_wsl
+rem Ready = wsl.exe works and Virtual Machine Platform is on. Both checks run
+rem without administrator rights; if the feature query itself fails, wsl.exe decides.
+set "WSL_READY="
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& wsl.exe --status *> $null; if ($LASTEXITCODE -ne 0) { exit 1 }; try { $f = Get-CimInstance Win32_OptionalFeature -ErrorAction Stop | Where-Object Name -eq 'VirtualMachinePlatform'; if ($f -and $f.InstallState -ne 1) { exit 1 } } catch { }; exit 0" >nul 2>nul
+if not errorlevel 1 set "WSL_READY=1"
+exit /b 0
+
+:wsl_restart
+rem Run this installer once more automatically after the restart (current user only).
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v FootballMemoriesInstall /t REG_SZ /d "\"%~f0\"" /f >nul 2>nul
+echo.
+echo   WSL 2 is turned on. Windows must restart to finish setting it up.
+echo   After the restart this installer opens again by itself and carries on.
+choice /c YN /m "  Restart Windows now"
+if errorlevel 2 (
+  echo   Restart when you are ready; the installer will carry on after it.
+  pause
+  exit /b 0
+)
+shutdown /r /t 5 /c "Football Memories: finishing WSL 2 setup"
+exit /b 0
+
+:find_chrome
 if not defined CHROME_FOUND winget install -e --id Google.Chrome
 :helper_no_winget
 call :refresh_path

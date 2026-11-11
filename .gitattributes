@@ -1,3 +1,4 @@
 # Spec 190 installers: Windows batch files need CRLF, the macOS script LF.
 *.bat text eol=crlf
 *.command text eol=lf
+*.ps1 text eol=crlf
