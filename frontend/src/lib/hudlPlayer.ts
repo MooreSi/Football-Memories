@@ -40,29 +40,9 @@ const SITUATION = new Set(
     "transition build regain turnover compactness regrouping managing contested opposition final def gk keeper " +
     "distribution claim block clearance header dribble switch recovery duel aerial won lost restart sub").split(" "),
 );
-const NOISE = new Set(["BALL OUT OF PLAY"]);
 
 /** A code of two or three plain words with no football vocabulary is taken to be a player. */
 export function looksLikePlayer(code: string): boolean {
   const words = code.toLowerCase().split(/\s+/).filter(Boolean);
   return words.length >= 2 && words.length <= 3 && words.every((w) => /^[a-z'-]+$/.test(w) && !SITUATION.has(w));
-}
-
-/** Situations whose Hudl ranges overlap the player's own tagged ranges, most frequent first.
- *  These describe what was happening around the player; they are not credited to them. */
-export function hudlTagProfile(library: HudlMatch[] | undefined, name: string): { name: string; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const match of library ?? []) {
-    const all = match.moments ?? [];
-    for (const mine of all.filter((t) => t.category === name)) {
-      const end = mine.time_s + mine.duration_s;
-      for (const other of all) {
-        if (other.category === name || NOISE.has(other.category) || looksLikePlayer(other.category)) continue;
-        if (other.time_s < end && other.time_s + other.duration_s > mine.time_s) {
-          counts.set(other.category, (counts.get(other.category) ?? 0) + 1);
-        }
-      }
-    }
-  }
-  return [...counts].map(([n, count]) => ({ name: n, count })).sort((a, b) => b.count - a.count).slice(0, 8);
 }

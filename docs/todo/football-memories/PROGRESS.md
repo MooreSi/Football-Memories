@@ -28,7 +28,8 @@ no additional code or live capture needed. App/helper run the verified source.
 | Player card Moments / Games | done (tests, browser-checked) |
 | Installers `.command` / `.bat` | written; `bash -n` passes; not executed (would install software) |
 | Settings > Update + header flash | done (tests with fake git; real update not run) |
-| My Player recent-match bars name the game (vertical label + vertical date, same chart height) | done (test, browser-checked on real data, 2026-11-11) |
+| My Player recent-match bars name the game (vertical text-xs opponent, horizontal date) | done (tests, browser-checked on real data, 2026-11-11) |
+| Library Match Profile radar replaces Most tagged, follows the hero (D-029) | done (tests, browser-checked on real data, 2026-11-11) |
 | Settings: no player/match list, Hudl beside Import | done (tests) |
 
 ## Spec 180 completed

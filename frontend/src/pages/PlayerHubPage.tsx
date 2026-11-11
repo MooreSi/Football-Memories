@@ -4,9 +4,9 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useHudlLibrary } from "../api/hudl";
 import { HudlMomentsList } from "../components/player/HudlMomentsList";
-import { hudlPerMatch, hudlPlayerMatches, hudlTagProfile } from "../lib/hudlPlayer";
+import { hudlPerMatch, hudlPlayerMatches } from "../lib/hudlPlayer";
 import { watchedHudlMoments } from "../lib/hudlWatched";
-import { MomentsPerMatch, TagRadar } from "../components/player/Charts";
+import { MomentsPerMatch } from "../components/player/Charts";
 import { MemoriesTimeline } from "../components/player/MemoriesTimeline";
 import { MomentsFeed } from "../components/player/MomentsFeed";
 import { PlayerCard } from "../components/player/PlayerCard";
@@ -17,7 +17,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 
 /** Layout follows reference 03: card left, teams/numbers/teammates centre, dates column,
- *  tag radar + per-match bars below, phone-style moments feed right. */
+ *  per-match bars below (the tag radar moved to the Library as the Match Profile, 2026-11-11), phone-style moments feed right. */
 export function PlayerHubPage() {
   const id = Number(useParams().id);
   const remote = useHudlLibrary();
@@ -45,8 +45,6 @@ export function PlayerHubPage() {
   const perMatch = [...p.per_match, ...hudlPerMatch(hudl, p.display_name)]
     .filter((m) => m.match_date)
     .sort((a, b) => a.match_date.localeCompare(b.match_date));
-  const categories = p.categories.length >= 3 ? p.categories : hudlTagProfile(remote.data, p.display_name);
-  const fromHudl = categories !== p.categories;
   const href = (m: (typeof perMatch)[number]) => m.href ?? `/matches/${m.match_id}`;
   const first = perMatch[0];
   const latest = perMatch[perMatch.length - 1];
@@ -103,21 +101,10 @@ export function PlayerHubPage() {
             <StatTile label="Favourites" icon={Heart} value={String(p.totals.favourites)} unit="saved" />
           </div>
 
-          <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
-            <section aria-label="Tag profile" className="panel min-w-0 overflow-hidden p-5">
-              <h2 className="text-lg font-semibold">Tag profile</h2>
-              <p className="mb-2 text-xs text-fg-subtle">
-                {fromHudl
-                  ? `What was happening during ${p.display_name}'s Hudl moments (overlapping codes, not credited to the player).`
-                  : "How often each kind of moment was tagged. Tagging can be incomplete."}
-              </p>
-              <TagRadar categories={categories} />
-            </section>
-            <section aria-label="Moments per match" className="panel min-w-0 p-5">
-              <h2 className="mb-3 text-lg font-semibold">Recent matches</h2>
-              <MomentsPerMatch series={perMatch} />
-            </section>
-          </div>
+          <section aria-label="Moments per match" className="panel min-w-0 p-5">
+            <h2 className="mb-3 text-lg font-semibold">Recent matches</h2>
+            <MomentsPerMatch series={perMatch} />
+          </section>
         </div>
 
         <aside className="profile-feed">

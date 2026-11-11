@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-029 (2026-11-11) Tag profile moves to the Library as the Match Profile
+Owner request: the radar replaces "Most tagged" on the Library and follows the
+match on the hero. It counts that match's own codes, leaving out player-name
+codes (heuristic `looksLikePlayer`) and BALL OUT OF PLAY; under three kinds it
+falls back to the bar list. Points are numbered with a key below, because the
+left column is too narrow for full code names. My Player loses the radar, and
+the overlap-based `hudlTagProfile` and its test are removed (no other caller).
+My Player's bars name the opponent vertically (text-xs) with a horizontal date.
+
 ## D-028 (2026-11-11) App open on the local network, no password
 Owner request: reach the app from a phone on the same Wi-Fi, explicitly with no
 password. `FM_BIND=0.0.0.0` (owner's .env and .env.example; compose still
@@ -97,9 +106,9 @@ Hudl match list when it is over 6 hours old (then indexes new matches' tags),
 otherwise indexes any match still lacking tags (owner decision 003). The hub,
 Your player card and timeline count Hudl-tagged matches/moments; Hudl
 "watched" state is per browser (localStorage). When imported data has fewer
-than three kinds, the tag profile shows codes overlapping the player's ranges,
-labelled as context and excluding codes that look like other players' names;
-they are never credited to the player (PlayerCard keeps imported counts only).
+than three kinds, the tag profile showed codes overlapping the player's ranges
+(superseded by D-029: the radar is now the Library's Match Profile). Hudl codes
+are never credited to the player (PlayerCard keeps imported counts only).
 Clips keeps the full explorer (filters, playlists, highlight reels) under the
 match picker. Every photo opens the crop popup; portrait photos start top-aligned.
 

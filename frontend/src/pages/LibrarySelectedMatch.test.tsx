@@ -27,16 +27,18 @@ function render() {
   renderWithProviders(<LibraryPage />);
 }
 
-it("shows the displayed match's own moments and tags, not just the selected player", async () => {
+it("shows the displayed match's own moments and situations, not just the selected player", async () => {
   render();
   await within(await screen.findByRole("region", { name: "Featured match" })).findByRole("heading", { name: /Stoke City/ });
   const recent = screen.getByRole("region", { name: "Recent moments" });
   expect(within(recent).getByText("Goal")).toBeInTheDocument();
   expect(within(recent).getByText("Save")).toBeInTheDocument();
   expect(within(recent).getByText("Sam Example")).toBeInTheDocument();
-  const tags = screen.getByRole("region", { name: "Top tags" });
+  const tags = screen.getByRole("region", { name: "Match profile" });
   expect(within(tags).getByText("Goal")).toBeInTheDocument();
   expect(within(tags).queryByText("All-time tag")).toBeNull();
+  // Player codes belong on My Player, not in the match's situation profile.
+  expect(within(tags).queryByText("Sam Example")).toBeNull();
 });
 
 it("follows the hero when stepping to another match", async () => {
@@ -49,7 +51,7 @@ it("follows the hero when stepping to another match", async () => {
   const recent = screen.getByRole("region", { name: "Recent moments" });
   expect(within(recent).getAllByText("Corner")).toHaveLength(2);
   expect(within(recent).queryByText("Goal")).toBeNull();
-  const tags = screen.getByRole("region", { name: "Top tags" });
+  const tags = screen.getByRole("region", { name: "Match profile" });
   expect(within(tags).getByText("Corner")).toBeInTheDocument();
   expect(within(tags).getByText("2")).toBeInTheDocument();
 });

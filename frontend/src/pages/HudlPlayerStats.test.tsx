@@ -3,7 +3,6 @@ import { Route, Routes } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { PlayerProfile } from '../api/types';
 import { YourPlayerCard } from '../components/library/YourPlayerCard';
-import { hudlTagProfile } from '../lib/hudlPlayer';
 import { renderWithProviders, stubFetch } from '../test/render';
 import { PlayerHubPage } from './PlayerHubPage';
 
@@ -19,13 +18,6 @@ const library=[
 const profile:PlayerProfile={id:9,display_name:NAME,shirt_number:'1',position:'Goalkeeper',photo_url:null,is_primary:true,totals:{matches:0,moments:0,unwatched:0,favourites:0},categories:[],teams:[],per_match:[],teammates:[],first_match_date:null,latest_match_date:null};
 const routes={'http://127.0.0.1:8766/library':library,'http://127.0.0.1:8766/account':{configured:true,state:'ready',busy:false},'/api/players/9':profile,'/api/players/9/moments':{total:0,items:[]},'/api/preferences':{primary_player_id:9}};
 
-it('derives situations around the player from overlapping codes, not other players',()=>{
- const kinds=hudlTagProfile(library as never,NAME).map(c=>c.name);
- expect(kinds).toEqual(expect.arrayContaining(['OPPOSITION CHANCE','GK SAVE','PRESSING']));
- expect(kinds).not.toContain('ALEX SAMPLE');
- expect(kinds).not.toContain('BALL OUT OF PLAY');
-});
-
 it('counts Hudl-tagged matches and moments on the hub',async()=>{
  localStorage.setItem('fm.hudl.watched',JSON.stringify(['1']));
  stubFetch(routes);
@@ -40,7 +32,6 @@ it('counts Hudl-tagged matches and moments on the hub',async()=>{
  const timeline=screen.getByRole('region',{name:'Memories timeline'});
  expect(await within(timeline).findByText('Season 2026/27')).toBeInTheDocument();
  expect(within(timeline).getByRole('link',{name:/1:00 SAM EXAMPLE/})).toHaveAttribute('href','/hudl/a?moment=1');
- expect(screen.queryByText('The tag profile appears once there are at least three kinds of moments.')).toBeNull();
 });
 
 it('shows Hudl totals on the Your player card',async()=>{

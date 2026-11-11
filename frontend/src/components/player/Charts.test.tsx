@@ -17,5 +17,14 @@ it('names the game under each bar, written vertically so the chart keeps its siz
     expect(label).toHaveAttribute('title');
     expect(label?.className).toContain('[writing-mode:vertical-rl]');
   }
-  expect(screen.getByRole('list', { name: 'Moments per match, oldest to newest' }).className).toContain('h-44');
+  // A fixed strip: long names truncate instead of growing the chart.
+  for (const label of labels) expect(label?.className).toContain('h-24');
+});
+
+it('keeps the date horizontal under the vertical opposition name, which is large enough to read', () => {
+  render(<MemoryRouter><MomentsPerMatch series={series} /></MemoryRouter>);
+  const bar = within(screen.getByRole('list', { name: 'Moments per match, oldest to newest' })).getAllByRole('listitem')[1];
+  const date = within(bar).getByText('8 Nov');
+  expect(date.className).not.toContain('writing-mode');
+  expect(bar.querySelector('[data-bar-label]')?.className).toContain('text-xs');
 });

@@ -1,36 +1,7 @@
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { PlayerProfile } from "../../api/types";
-import { radarPoints, trend } from "../../lib/player";
-
-/** Reference 03's "Skills profile" radar, built from tag counts. */
-export function TagRadar({ categories }: { categories: PlayerProfile["categories"] }) {
-  const axes = categories.slice(0, 6);
-  if (axes.length < 3) {
-    return <p className="p-6 text-center text-sm text-fg-muted">The tag profile appears once there are at least three kinds of moments.</p>;
-  }
-  const max = Math.max(...axes.map((a) => a.count));
-  const size = 300;
-  const c = size / 2;
-  const r = 92;
-  const ring = (f: number) => radarPoints(axes.map(() => max * f), max, r, c, c).map((p) => p.join(",")).join(" ");
-  const shape = radarPoints(axes.map((a) => a.count), max, r, c, c);
-  const labels = radarPoints(axes.map(() => max), max, r + 30, c, c);
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Tag profile: ${axes.map((a) => `${a.name} ${a.count}`).join(", ")}`} className="mx-auto w-full max-w-[340px]">
-      {[1, 0.66, 0.33].map((f) => (
-        <polygon key={f} points={ring(f)} fill="none" stroke="rgb(255 255 255 / 0.12)" />
-      ))}
-      <polygon points={shape.map((p) => p.join(",")).join(" ")} fill="rgb(34 211 238 / 0.28)" stroke="#22d3ee" strokeWidth={2} />
-      {labels.map(([x, y], i) => (
-        <g key={axes[i].name}><title>{axes[i].name}</title>
-          <text x={x} y={y - 4} textAnchor="middle" className="fill-fg text-[11px] font-medium">{axes[i].name.length>16?axes[i].name.slice(0,15)+"…":axes[i].name}</text>
-          <text x={x} y={y + 10} textAnchor="middle" className="fill-accent text-[12px] font-semibold">{axes[i].count}</text>
-        </g>
-      ))}
-    </svg>
-  );
-}
+import { trend } from "../../lib/player";
 
 /** Reference 03's "Dynamics" bar chart: moments per match, last 10 matches. */
 export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"] }) {
@@ -47,7 +18,7 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
         Moments per match
         <span className="sr-only">trend {t}</span>
       </p>
-      <ol className="flex h-44 items-end gap-2" aria-label="Moments per match, oldest to newest">
+      <ol className="flex h-56 items-end gap-2" aria-label="Moments per match, oldest to newest">
         {last.map((s, i) => (
           <li key={s.match_id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
             <span className="text-sm font-semibold tabular-nums">{s.moments}</span>
@@ -64,10 +35,10 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
             </div>
             {/* Game name reads bottom-to-top in a fixed strip, so long names never widen or grow the chart. */}
             <span data-bar-label title={s.opponent}
-              className="h-16 shrink-0 truncate rotate-180 text-left text-[10px] leading-none text-fg-muted [writing-mode:vertical-rl]">
+              className="h-24 shrink-0 truncate rotate-180 text-left text-xs leading-none text-fg-muted [writing-mode:vertical-rl]">
               {s.opponent}
             </span>
-            <span className="h-10 shrink-0 rotate-180 text-left text-[10px] leading-none whitespace-nowrap text-fg-subtle [writing-mode:vertical-rl]">
+            <span className="w-full truncate text-center text-[10px] text-fg-subtle tabular-nums">
               {new Date(`${s.match_date}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
             </span>
           </li>
