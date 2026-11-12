@@ -22,7 +22,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   the message (it can hold signed URLs; tested with a planted fake). **Cause of
   the owner's failure still unknown:** needs the owner to retry. The 17 reels
   that were in `data/inbox/reels` are in the Mac's Trash (seen through Finder),
-  not deleted by this app as far as the code shows; owner asked.
+  moved there by the owner (confirmed 2026-11-12), not by the app.
 
 - **Media player details (spec 220, 2026-11-12, owner request):** new downloads
   carry MP4 tags (title, date, description, player...), and an opt-in
