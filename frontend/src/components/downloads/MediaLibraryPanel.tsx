@@ -70,7 +70,7 @@ export function MediaLibraryPanel({ entries }: { entries: DownloadEntry[] }) {
         )}
         {failed > 0 && (
           <p role="alert" className="text-xs text-warn">
-            {failed} {failed === 1 ? "download could not be added" : "downloads could not be added"}. The drive may not support linked files (exFAT or FAT); your downloads are unchanged.
+            {failed} {failed === 1 ? "download could not be added" : "downloads could not be added"}. The media library needs linked files, which network shares (SMB, such as a NAS) and exFAT or FAT drives do not support; your downloads are unchanged.
           </p>
         )}
         {update.error && <p role="alert" className="text-xs text-danger">{update.error.message}</p>}

@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Saving to a NAS share (2026-11-12, owner report):** the owner's download
+  folder is `/Volumes/SMB_Share/Football` (SMB, TrueNAS). Reel Studio stopped with
+  `OSError in hudl_exports.py:293`: the share has no hard links (`ENOTSUP`). All
+  publishes now use `app.services.publish.publish_new` (no-replace fallback);
+  export + reel verified on the real share in a throwaway folder. The media
+  library cannot link there and says so. Helper restarted on the new code.
+
 - **"The batch stopped" now names its cause (2026-11-12, owner report):** a Reel
   Studio batch failed with the generic message right after the helper was
   restarted for spec 220. An offline replay (real titles, cached moments and

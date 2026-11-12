@@ -10,7 +10,6 @@ source is HEVC. The source file is only read.
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import tempfile
 import uuid
@@ -23,6 +22,7 @@ from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_media import MediaDetails, current_details
 from app.connectors.hudl_names import download_name
 from app.services.media import probe
+from app.services.publish import publish_new
 
 # Near-transparent quality at the source resolution; yuv420p for universal playback.
 _VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]
@@ -140,7 +140,7 @@ def export_ranges(
             clips.append(clip)
             report(index + 1, total)
         _publish(scratch, clips, ordered, combined, report, total, match_title, details)
-        os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
+        publish_new(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target
 
 
@@ -290,5 +290,5 @@ def export_from_segments(
             clips.append(clip)
             report(len(needed) + number, total)
         _publish(scratch, clips, ordered, combined, report, total, match_title, details)
-        os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
+        publish_new(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target

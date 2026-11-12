@@ -15,7 +15,10 @@ choose?
 
 If a media player is pointed at the whole download folder it will see each video
 twice (the original and its media library link). Hard links only work on the
-same drive and not on exFAT/FAT drives.
+same drive and not on exFAT/FAT drives or SMB network shares (the owner's
+download folder is an SMB share on a TrueNAS/Proxmox NAS as of 2026-11-12, so the
+media library cannot work there; it would need a copy, or a folder made on the NAS
+itself).
 
 ## Provisional default in use
 

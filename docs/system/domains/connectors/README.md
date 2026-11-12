@@ -361,3 +361,15 @@ changes), folder names never change, and Delete (Downloaded or Settings)
 moves the download's folder to the Trash with it. The club, player, label and
 score come from the page (`MediaContext`), because the helper cannot see the
 app database or the score corrections.
+
+## Download folders on a network share (2026-11-12, owner report)
+
+macOS SMB mounts (the owner's TrueNAS share) refuse hard links with `ENOTSUP`;
+`O_EXCL` create and rename work. Every publish (`save_capture`, moment exports,
+reels, media library sidecars) goes through `app.services.publish.publish_new`:
+hard link when possible, otherwise claim the name with an empty `O_EXCL`
+placeholder and `os.replace` the finished file onto it. An existing file is never
+replaced either way. The media library's link to the original video has no
+fallback (it would move the download), so it reports the download as failed.
+Before this, a moment export or reel on the share failed after encoding with a
+bare `OSError` at the link. Verified on the real share with a throwaway folder.

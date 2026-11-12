@@ -32,6 +32,7 @@ from typing import Any
 
 from app.connectors.hudl_metadata import age_group, season_label
 from app.services.paths import sanitize_component
+from app.services.publish import publish_new
 
 FOLDER = "Media library"
 MANIFEST = ".football-memories.json"
@@ -385,7 +386,7 @@ class MediaLibrary:
                         with os.fdopen(descriptor, "wb") as out, archive.open(info) as data:
                             while chunk := data.read(1 << 20):
                                 out.write(chunk)
-                        os.link(temporary, target)  # exclusive: never replaces a file
+                        publish_new(Path(temporary), target)  # never replaces a file
                     finally:
                         Path(temporary).unlink(missing_ok=True)
                     ours.append(name)
@@ -436,7 +437,7 @@ def _publish(target: Path, content: bytes) -> None:
     try:
         with os.fdopen(descriptor, "wb") as stream:
             stream.write(content)
-        os.link(temporary, target)
+        publish_new(Path(temporary), target)
     finally:
         Path(temporary).unlink(missing_ok=True)
 

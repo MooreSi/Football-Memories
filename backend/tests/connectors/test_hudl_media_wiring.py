@@ -258,3 +258,24 @@ def test_settings_delete_also_moves_the_media_folder_of_a_full_match(tmp_path, t
     assert not folder.exists()
     assert (tmp_path / "Trash" / folder.name).is_dir()
     assert app.state.account.media.folder_for(root, match.name) is None
+
+
+def test_moment_exports_and_reels_save_to_a_drive_without_hard_links(
+    tmp_path, tiny_video, monkeypatch
+):
+    import errno
+
+    from app.services import publish as publish_module
+
+    def no_links(*args, **kwargs):
+        raise OSError(errno.ENOTSUP, "Operation not supported")
+
+    monkeypatch.setattr(publish_module.os, "link", no_links)
+    out = tmp_path / "out"
+    out.mkdir()
+    moments = export_ranges(tiny_video, MOMENTS, out, combined=True, match_title=TITLE)
+    zipped = export_ranges(tiny_video, MOMENTS, out, match_title=TITLE)
+    reel = tmp_path / "reel.mp4"
+    assemble_reel([tiny_video], reel)
+    assert moments.is_file() and zipped.is_file() and reel.is_file()
+    assert sorted(p.name for p in out.iterdir()) == sorted([moments.name, zipped.name])

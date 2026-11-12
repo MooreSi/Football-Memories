@@ -9,7 +9,6 @@ reel is linked into place only after it probes as valid H.264/AAC.
 
 from __future__ import annotations
 
-import os
 import re
 import secrets
 import subprocess
@@ -19,6 +18,7 @@ from pathlib import Path
 
 from app.connectors.hudl_capture import CaptureError
 from app.services.media import MediaError, MediaInfo, probe
+from app.services.publish import publish_new
 
 _VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]
 _AUDIO = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
@@ -195,5 +195,5 @@ def assemble_reel(
             )
         ):
             raise CaptureError("The reel could not be verified; nothing was saved.")
-        os.link(joined, output)
+        publish_new(joined, output)
         report(total, total)

@@ -6,7 +6,6 @@ import copy
 import csv
 import hashlib
 import math
-import os
 import re
 import shutil
 import subprocess
@@ -19,6 +18,7 @@ from urllib.parse import urljoin, urlsplit
 
 from app.services.media import MediaError, probe
 from app.services.paths import sanitize_component
+from app.services.publish import publish_new
 
 
 class CaptureError(ValueError):
@@ -290,9 +290,9 @@ def save_capture(
             )
         created: list[Path] = []
         try:
-            os.link(temp_tags, sidecar)
+            publish_new(temp_tags, sidecar)
             created.append(sidecar)
-            os.link(temp_video, target)
+            publish_new(temp_video, target)
         except FileExistsError:
             for path in created:
                 path.unlink()
