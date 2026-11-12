@@ -6,6 +6,7 @@ Runs on the connection's single account worker, so segment fetches use
 
 from __future__ import annotations
 
+import logging
 import re
 import secrets
 import tempfile
@@ -55,6 +56,19 @@ def _joined(reel: dict[str, Any] | None) -> bool:
 
 def _clean(text: object) -> str:
     return re.sub(r"[^\w .,()&'-]", "", str(text or "")).strip()[:80]
+
+
+def _cause(error: BaseException) -> str:
+    """Owner report 2026-11-12: name an unexpected error's type and where it was raised,
+    in the status and the helper log. Never its message: Playwright and HTTP errors can
+    carry signed Hudl URLs (golden rule 1)."""
+    frame = error.__traceback__
+    while frame is not None and frame.tb_next is not None:
+        frame = frame.tb_next
+    where = f" in {Path(frame.tb_frame.f_code.co_filename).name}:{frame.tb_lineno}" if frame else ""
+    cause = f"{type(error).__name__}{where}"
+    logging.getLogger(__name__).warning("Batch or export stopped: %s", cause)
+    return cause
 
 
 def _pause(connection: BrowserConnection) -> None:
@@ -241,8 +255,10 @@ def _run_batch(
         )
     except CaptureError as error:
         connection.report("error", str(error))
-    except Exception:
-        connection.report("error", "The batch stopped. Files already saved are kept.")
+    except Exception as error:
+        connection.report(
+            "error", f"The batch stopped ({_cause(error)}). Files already saved are kept."
+        )
     finally:
         connection.cards.discard(card_ids)
         with connection._lock:
@@ -303,9 +319,10 @@ def _export_worker(
         )
     except CaptureError as error:
         connection.report("error", str(error))
-    except Exception:
+    except Exception as error:
         connection.report(
-            "error", "Moment export stopped. The stream and your files are unchanged."
+            "error",
+            f"Moment export stopped ({_cause(error)}). The stream and your files are unchanged.",
         )
     finally:
         with connection._lock:

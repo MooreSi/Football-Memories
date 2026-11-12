@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **"The batch stopped" now names its cause (2026-11-12, owner report):** a Reel
+  Studio batch failed with the generic message right after the helper was
+  restarted for spec 220. An offline replay (real titles, cached moments and
+  cards, fake stream) completed both reel modes with correct tags, so the
+  failure was in the live Hudl part; its exception was swallowed. Unexpected
+  batch/export errors now show and log the exception type and file:line, never
+  the message (it can hold signed URLs; tested with a planted fake). **Cause of
+  the owner's failure still unknown:** needs the owner to retry. The 17 reels
+  that were in `data/inbox/reels` are in the Mac's Trash (seen through Finder),
+  not deleted by this app as far as the code shows; owner asked.
+
 - **Media player details (spec 220, 2026-11-12, owner request):** new downloads
   carry MP4 tags (title, date, description, player...), and an opt-in
   Downloaded > Media library switch builds `<download folder>/Media library/`:
