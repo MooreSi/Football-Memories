@@ -387,5 +387,15 @@ remuxed (`-c copy`, no re-encode) with the app's current details and rewritten
 when they change (`tagged` and `copy` in the manifest; copies made before that
 was recorded are recognised as the folder-named video with one link and an inode
 other than the original's). A hard link is never rewritten: it is the original.
+
+Plex release dates (2026-11-12): from the `date` tag Plex dated 15 reels correctly
+but gave the two `2026-07-12` reels the refresh day. Inferred, not confirmed
+(Plex's API needs the owner's token): every date that also reads as a future day
+when month and day are swapped (07-12 -> 7 December) was rejected; 09-06, 11-01
+and 11-08 swap to past days and were accepted. Files now also carry
+`creation_time=<day>T12:00:00Z` (binary mvhd time), and media library copies get
+the match day as their file date (`os.utime`, copies only). Plex's database can be
+read safely from a copy: `pct exec 102`, copy `com.plexapp.plugins.library.db`
+to /tmp, open with `Plex SQLite -readonly`.
 Before this, a moment export or reel on the share failed after encoding with a
 bare `OSError` at the link. Verified on the real share with a throwaway folder.

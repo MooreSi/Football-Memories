@@ -105,3 +105,6 @@ Plex Personal Media agent, Local Media Assets on) and Jellyfin.
   media library copies carry and follow the app's details. One test's
   byte-identical assertion for copies became a frame-by-frame comparison, with the
   owner's approval. Backend 443 (SQLite and Postgres). All 17 NAS copies retagged.
+- 2026-11-12 follow-up (Plex order wrong: the two 12 July reels dated today):
+  `creation_time` tag added and copies dated on the match day. Backend 445
+  (SQLite and Postgres). Not yet confirmed in Plex.

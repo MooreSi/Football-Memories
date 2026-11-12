@@ -15,6 +15,7 @@ Owner request 2026-11-12. Two things, both local and both additive:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -28,7 +29,7 @@ from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
 
@@ -97,6 +98,9 @@ class MediaDetails:
         values = {
             "title": self.title,
             "date": self.played.isoformat() if self.played else None,
+            # Binary recording time: Plex misread the text date "2026-07-12" (it also
+            # reads as 7 December, still ahead) and used today instead.
+            "creation_time": f"{self.played.isoformat()}T12:00:00Z" if self.played else None,
             "description": self.plot.split("\n", 1)[0],
             "synopsis": self.plot,
             "comment": "Saved by Football Memories",
@@ -440,6 +444,7 @@ class MediaLibrary:
                 Path(temporary).unlink(missing_ok=True)
             record["copy"] = target.name
             record["tagged"] = details.ffmpeg_args()
+            _match_day(target, details)
         ours.append(target.name)
         return 1, copied
 
@@ -505,7 +510,18 @@ def _retag(source: Path, folder: Path, record: dict[str, Any], details: MediaDet
         Path(temporary).unlink(missing_ok=True)
     record["copy"] = name
     record["tagged"] = details.ffmpeg_args()
+    _match_day(copy, details)
     return True
+
+
+def _match_day(copy: Path, details: MediaDetails) -> None:
+    """Date this app's own copy on the match day (players sort by file date too).
+    Only ever called on a copy, never on a hard link to the original."""
+    if details.played is None:
+        return
+    moment = datetime.combine(details.played, time(12)).timestamp()
+    with contextlib.suppress(OSError):
+        os.utime(copy, (moment, moment))
 
 
 def _clip_number(name: str) -> tuple[int, str]:

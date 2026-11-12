@@ -25,7 +25,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   192.168.3.225; Football mounted read-only at `/mnt/Football`) showed Hudl-style
   titles and two junk collections from the "/" in "2026/27": copies now carry the
   app's details (rewritten in place, frames identical) and seasons are written
-  2026-27 in file tags. The owner must refresh metadata in Plex.
+  2026-27 in file tags. The owner must refresh metadata in Plex. The two
+  12 July reels got today's date in Plex; files now also carry a binary
+  recording time and copies are file-dated on the match day (not yet confirmed
+  in Plex: needs the owner's refresh).
 
 - **"The batch stopped" now names its cause (2026-11-12, owner report):** a Reel
   Studio batch failed with the generic message right after the helper was

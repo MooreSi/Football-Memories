@@ -406,3 +406,45 @@ def test_copies_made_before_retagging_existed_are_recognised(tmp_path, tiny_vide
     assert tags(folder / f"{folder.name}.mp4")["title"].startswith("Aston Villa vs.")
     assert summary["updated"] >= 1
     assert snapshot(root) == before
+
+
+def test_the_match_day_is_also_the_recording_time(tmp_path, tiny_video):
+    """Plex gave the two 2026-07-12 reels today's date (that text also reads as
+    7 December, still ahead). The binary recording time cannot be misread."""
+    media = MediaLibrary(tmp_path)
+    d = media.details(entry("match", "hudl-x.mp4"), TITLES)
+    assert "creation_time=2026-07-12T12:00:00Z" in d.ffmpeg_args()
+    out = tmp_path / "dated.mp4"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-loglevel",
+            "error",
+            "-i",
+            str(tiny_video),
+            "-c",
+            "copy",
+            *d.ffmpeg_args(),
+            str(out),
+        ],
+        check=True,
+    )
+    assert tags(out)["creation_time"].startswith("2026-07-12T12:00:00")
+
+
+def test_a_copy_is_dated_on_the_match_day_and_the_original_keeps_its_date(
+    tmp_path, tiny_video, monkeypatch
+):
+    import datetime as dt
+
+    root, entries, poster = _root(tmp_path, tiny_video)
+    before = snapshot(root)
+    media = MediaLibrary(tmp_path / "cache")
+    media.configure(enabled=True, context=CONTEXT)
+    _no_links(monkeypatch)
+    media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    folder = media.folder_for(root, entries[0]["file"])
+    assert folder is not None
+    copy = folder / f"{folder.name}.mp4"
+    assert dt.date.fromtimestamp(copy.stat().st_mtime).isoformat() == "2026-07-12"
+    assert snapshot(root) == before  # the original's mtime is unchanged
