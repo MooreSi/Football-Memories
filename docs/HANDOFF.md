@@ -13,6 +13,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **New-folder install could not reach its database (2026-11-12, owner report):**
+  a second ZIP in a new folder got a new `.env` password, but the shared
+  `football-memories` database volume kept the first one; backend crash-looped
+  and the installer said "did not answer on port 8765". Installers now sync the
+  db role password from `.env` before starting the backend
+  (`scripts/mac/sync-db-password.sh`, tested; `scripts/windows/sync-db-password.ps1`,
+  not run on Windows), use curl/HTTP timeouts, and print the backend's last log
+  lines on failure. Reproduced and fixed end to end with scratch Docker projects.
+
 - **ZIP copies update themselves (2026-11-12, owner report from a second Mac):**
   `backend/app/connectors/git_adopt.py` links a folder unzipped from GitHub to
   the exact `main` commit it came from (new `.git`, index only, no file

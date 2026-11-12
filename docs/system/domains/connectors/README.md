@@ -305,3 +305,19 @@ restart sit in one parenthesised block that cmd reads before running it.
 `backend/tests/test_installer_scripts.py` checks the `.bat` label structure as
 text, since nothing here runs Windows; it caught a `.bat` broken since 46034aa
 (labels spliced into the Docker block, `:check_wsl` missing).
+
+## One database per computer, whichever folder (2026-11-12)
+
+`docker-compose.yml` fixes `name: football-memories`, so every copy of the app
+on a computer shares the `football-memories_db-data` volume. Postgres only reads
+`POSTGRES_PASSWORD` when it first initialises a volume, so a second folder (new
+ZIP) with a new random `FM_DB_PASSWORD` made `alembic upgrade head` fail with
+"password authentication failed" and the backend restart forever. Installers now
+start `db` alone (`up -d --wait db`), run `scripts/{mac,windows}/sync-db-password`
+(`ALTER ROLE` over psql's local socket inside the db container, which the
+official image trusts; statement on stdin, not argv), then start the rest and
+restart a backend that is not running. Reproduced and verified with the real
+images under a scratch `COMPOSE_PROJECT_NAME` (`COMPOSE_PROJECT_NAME` overrides
+`name:`): old flow restarted forever, new flow answered `/api/health` in under
+5 s. Loopback TCP inside the db container is also trusted, so a password check
+must connect from another container to mean anything.

@@ -141,9 +141,19 @@ case "$INBOX" in /*) ;; *) INBOX="$APP_DIR/${INBOX#./}" ;; esac
 
 # ---------- 6. Start ----------
 bold "6/7 Building and starting the app (first time: several minutes)"
+# Database first, then make it accept this folder's password: every copy on this
+# computer shares one database, which keeps the password it was first set up with.
+docker compose up -d --wait db || fail "Docker could not start the database. See the messages above."
+# shellcheck source=scripts/mac/sync-db-password.sh
+. "$APP_DIR/scripts/mac/sync-db-password.sh" || fail "This copy is missing scripts/mac/sync-db-password.sh. Download it again from GitHub."
+sync_db_password || fail "Could not set the database password from .env."
+ok "Database ready"
 docker compose up -d --build || fail "Docker could not start the app. See the messages above."
+# A backend that kept failing before the password was fixed may be waiting to
+# restart; start it now rather than after Docker's back-off.
+[ -n "$(docker compose ps -q --status running backend 2>/dev/null)" ] || docker compose restart backend >/dev/null 2>&1
 ok "App containers running"
-if curl -fs -o /dev/null http://127.0.0.1:8766/account -H "Origin: http://127.0.0.1:$PORT"; then
+if curl -fs --max-time 5 -o /dev/null http://127.0.0.1:8766/account -H "Origin: http://127.0.0.1:$PORT"; then
   ok "Hudl helper already running"
 elif command -v uv >/dev/null 2>&1; then
   (cd backend && nohup uv run python -m app.connectors.hudl_companion --output "$INBOX" >>"$LOG_DIR/helper.log" 2>&1 &)
@@ -152,8 +162,13 @@ fi
 
 # ---------- 7. Open ----------
 bold "7/7 Opening Football Memories"
-for _ in $(seq 1 90); do curl -fs -o /dev/null "http://127.0.0.1:$PORT/api/health" && break; sleep 2; done
-curl -fs -o /dev/null "http://127.0.0.1:$PORT/api/health" || fail "The app did not answer on port $PORT."
+echo "  Waiting for the app to answer (up to 3 minutes)…"
+for _ in $(seq 1 90); do curl -fs --max-time 5 -o /dev/null "http://127.0.0.1:$PORT/api/health" && break; sleep 2; done
+if ! curl -fs --max-time 5 -o /dev/null "http://127.0.0.1:$PORT/api/health"; then
+  echo "  Last messages from the app:"
+  docker compose logs --tail 15 backend 2>&1 | grep -viE 'password|secret|token' | sed 's/^/    /'
+  fail "The app did not answer on port $PORT."
+fi
 open "http://127.0.0.1:$PORT"
 ok "Ready at http://127.0.0.1:$PORT"
 if [ "$(env_value FM_BIND)" = "0.0.0.0" ]; then

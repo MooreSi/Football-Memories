@@ -142,10 +142,21 @@ if not exist "data\archive" mkdir "data\archive"
 
 echo.
 echo  6/7 Building and starting the app (first time: several minutes)
+rem Database first, then make it accept this folder's password: every copy on this
+rem computer shares one database, which keeps the password it was first set up with.
+docker compose up -d --wait db
+if errorlevel 1 goto :fail_compose
+powershell -NoProfile -ExecutionPolicy Bypass -File "%CD%\scripts\windows\sync-db-password.ps1"
+if errorlevel 1 goto :fail_db_password
+echo   Database ready.
 docker compose up -d --build
 if errorlevel 1 goto :fail_compose
+rem A backend that kept failing before the password was fixed may be waiting to restart.
+set "FM_BACKEND_UP="
+for /f %%c in ('docker compose ps -q --status running backend 2^>nul') do set "FM_BACKEND_UP=1"
+if not defined FM_BACKEND_UP docker compose restart backend >nul 2>nul
 echo   Waiting for the app...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "for($i=0;$i -lt 90;$i++){try{Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 'http://127.0.0.1:%FM_PORT%/api/health' | Out-Null; exit 0}catch{Start-Sleep 2}}; exit 1"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "for($i=0;$i -lt 90;$i++){try{Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 'http://127.0.0.1:%FM_PORT%/api/health' | Out-Null; exit 0}catch{Start-Sleep 2}}; exit 1"
 if errorlevel 1 goto :fail_health
 
 echo.
@@ -243,10 +254,15 @@ goto :end_fail
 :fail_env
 echo   Stopped: the settings file .env could not be written in this folder.
 goto :end_fail
+:fail_db_password
+echo   Stopped: could not set the database password from .env.
+goto :end_fail
 :fail_compose
 echo   Stopped: Docker could not start the app. See the messages above.
 goto :end_fail
 :fail_health
+echo   Last messages from the app:
+docker compose logs --tail 15 backend 2>&1 | findstr /v /i "password secret token"
 echo   Stopped: the app did not answer on port %FM_PORT%.
 :end_fail
 echo.

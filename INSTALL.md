@@ -67,6 +67,14 @@ Deleting a download in Settings moves it to the Trash (Mac) or Recycle Bin
   made. Update the folder (or download it again) and run the installer: it
   now writes the password even when the template is missing.
 
+- **"The app did not answer on port 8765" after unzipping a new copy.** Fixed
+  2026-11-12. Every copy on a computer shares one database, which keeps the
+  password it was first set up with; a new folder got a new password in its
+  `.env`, so the app could not log in to its own database and kept restarting.
+  The installer now sets the database password from `.env` before starting the
+  app (only the password; no data changes). Run the latest installer again.
+  If it still stops, it now prints the app's last messages: send those.
+
 ## Updating
 
 - **In the app (Mac and Windows):** Settings → Update shows the running and latest
