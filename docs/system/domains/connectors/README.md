@@ -321,3 +321,19 @@ images under a scratch `COMPOSE_PROJECT_NAME` (`COMPOSE_PROJECT_NAME` overrides
 `name:`): old flow restarted forever, new flow answered `/api/health` in under
 5 s. Loopback TCP inside the db container is also trusted, so a password check
 must connect from another container to mean anything.
+
+## Update now restarts everything and reloads the page (2026-11-12)
+
+`apply_now`: pull, `docker compose up -d --build` (recreates the app
+containers), `uv sync`, then `restart_helper`. Mac `os.execv`s in place (same
+PID and log; Python sockets are close-on-exec so 8766 frees). Windows has no
+in-place exec (os.execv spawns and exits, closing the helper's console), so it
+starts a new helper in its own console with `FM_HELPER_WAIT_FOR_PORT=1` (main
+waits for 8766 to free) and `os._exit(0)`. The new window lacks the installer's
+"keep this window open" title. The restarted helper has no memory of the
+update (status reads idle), so the page decides completion itself: it polls
+`/update/status` (error stops), `/update/version` (local `git rev-parse HEAD`)
+and `/api/health`, and reloads once the commit changed and the app answers;
+failed polls while the helper restarts mean keep waiting; gives up after 30 min
+with a message. A copy runs the new behaviour from the update after the one
+that installs it (the old page and helper perform that update).

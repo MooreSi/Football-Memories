@@ -13,6 +13,7 @@ itself so its own code is current too. Nothing is reset, forced or deleted.
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -38,11 +39,57 @@ def _run(
         return subprocess.CompletedProcess(command, 1, "", str(error))
 
 
-def _restart() -> None:
-    """Start the helper again from the updated code, with the same arguments."""
-    os.chdir(Path(__file__).resolve().parents[2])
+# subprocess.CREATE_NEW_CONSOLE exists only on Windows; same value.
+CREATE_NEW_CONSOLE = 0x00000010
+
+
+def restart_helper(
+    os_name: str = os.name,
+    execv: Callable[[str, list[str]], object] = os.execv,
+    popen: Callable[..., object] = subprocess.Popen,
+    exit_: Callable[[int], object] = os._exit,
+) -> None:
+    """Start the helper again from the updated code, with the same arguments.
+
+    Mac: replace this process in place (same PID, same log redirection; Python's
+    listening socket is close-on-exec, so port 8766 is free for the new code).
+    Windows has no in-place exec: os.execv starts a new process and ends this one,
+    which closes the helper's console window. So start a fresh helper in its own
+    window, told to wait until this process has released port 8766, then exit.
+    """
+    backend = Path(__file__).resolve().parents[2]
+    os.chdir(backend)
     arguments = [sys.executable, "-m", "app.connectors.hudl_companion", *sys.argv[1:]]
-    os.execv(sys.executable, arguments)  # noqa: S606 (fixed interpreter and module)
+    if os_name == "nt":
+        popen(
+            arguments,
+            cwd=backend,
+            env={**os.environ, "FM_HELPER_WAIT_FOR_PORT": "1"},
+            creationflags=CREATE_NEW_CONSOLE,
+        )
+        exit_(0)
+        return
+    execv(sys.executable, arguments)
+
+
+def wait_for_free_port(port: int, timeout_s: float = 60) -> bool:
+    """True once nothing listens on 127.0.0.1:port (the old helper has exited)."""
+    deadline = time.monotonic() + timeout_s
+    while True:
+        probe = socket.socket()
+        try:
+            probe.bind(("127.0.0.1", port))
+            return True
+        except OSError:
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.2)
+        finally:
+            probe.close()
+
+
+def _restart() -> None:
+    restart_helper()
 
 
 class Updater:
@@ -106,6 +153,12 @@ class Updater:
             self._checked = (time.monotonic(), result)
         return result
 
+    def version(self) -> dict[str, str]:
+        """The commit this copy runs, read locally (no GitHub fetch). The page polls
+        it during an update to see when the restarted helper runs the new code."""
+        self._require_checkout()
+        return {"current": self._git("rev-parse", "HEAD")}
+
     def status(self) -> dict[str, Any]:
         with self._lock:
             return dict(self._status)
@@ -145,5 +198,5 @@ class Updater:
             return
         with self._lock:
             self._checked = None
-        self._report("done", "Updated. Reload the page in a moment.")
+        self._report("done", "Updated. Restarting the app…")
         self.restart()

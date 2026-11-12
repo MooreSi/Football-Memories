@@ -502,6 +502,10 @@ def create_companion(output: Path) -> FastAPI:
         """Spec 190: is GitHub main ahead of this checkout?"""
         return dict(request.app.state.updater.check(force=force))
 
+    @app.get("/update/version")
+    def update_version(request: Request) -> dict[str, str]:
+        return dict(request.app.state.updater.version())
+
     @app.get("/update/status")
     def update_status(request: Request) -> dict[str, object]:
         return dict(request.app.state.updater.status())
@@ -553,6 +557,11 @@ def main() -> None:
         "--output", required=True, type=Path, help="Host folder mounted as the app inbox"
     )
     args = parser.parse_args()
+    if os.environ.pop("FM_HELPER_WAIT_FOR_PORT", None):
+        # Restarted after an update on Windows: the old helper is still exiting.
+        from app.connectors.app_updater import wait_for_free_port
+
+        wait_for_free_port(8766)
     uvicorn.run(create_companion(args.output), host="127.0.0.1", port=8766, access_log=False)
 
 

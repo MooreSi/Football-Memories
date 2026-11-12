@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Update now restarts and reloads (2026-11-12, owner request):** after a
+  successful update the helper restarts (Mac in place; Windows in a new console
+  window that waits for port 8766) and Settings reloads the page once
+  `/update/version` shows the new commit and `/api/health` answers. Tests with
+  fakes and real sockets; **not run as a real update** (this checkout is on
+  latest) and not on Windows.
+
 - **Library names our side from Plays for (2026-11-12, owner report):** the hero,
   Latest match panel and Match Profile used only the newest imported team, so a
   fresh install showed "Home vs. Stoke City". LibraryPage now uses `useHomeClub`
