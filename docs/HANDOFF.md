@@ -17,8 +17,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   folder is `/Volumes/SMB_Share/Football` (SMB, TrueNAS). Reel Studio stopped with
   `OSError in hudl_exports.py:293`: the share has no hard links (`ENOTSUP`). All
   publishes now use `app.services.publish.publish_new` (no-replace fallback);
-  export + reel verified on the real share in a throwaway folder. The media
-  library cannot link there and says so. Helper restarted on the new code.
+  export + reel verified on the real share in a throwaway folder. Helper
+  restarted on the new code. The media library now copies videos on a drive
+  without hard links (symlinks and clones were probed on the share and do not
+  help) and the panel says how much: the owner's library was built on the NAS,
+  17 reels, 6.2 GB of copies. Not yet tried in Plex.
 
 - **"The batch stopped" now names its cause (2026-11-12, owner report):** a Reel
   Studio batch failed with the generic message right after the helper was

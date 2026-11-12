@@ -369,7 +369,13 @@ macOS SMB mounts (the owner's TrueNAS share) refuse hard links with `ENOTSUP`;
 reels, media library sidecars) goes through `app.services.publish.publish_new`:
 hard link when possible, otherwise claim the name with an empty `O_EXCL`
 placeholder and `os.replace` the finished file onto it. An existing file is never
-replaced either way. The media library's link to the original video has no
-fallback (it would move the download), so it reports the download as failed.
+replaced either way. The media library's video cannot use that fallback (it would
+move the download), so on a drive with no hard links it copies the video
+(`shutil.copyfile` into a `.part`, then `publish_new`) and reports `copied` and
+`copied_bytes`; the panel says so. Probed on the share 2026-11-12: `ln -s` makes a
+1067-byte Minshall-French "XSym" stub file that only the Mac's SMB client follows
+(Plex on the NAS would see a text file), and `cp -c` (clonefile) silently does a
+full copy over the network (330 MB in, 318 MB out for 300 MB), so neither avoids
+the extra space. Owner's library: 17 reels, 6.2 GB copied, byte-identical.
 Before this, a moment export or reel on the share failed after encoding with a
 bare `OSError` at the link. Verified on the real share with a throwaway folder.

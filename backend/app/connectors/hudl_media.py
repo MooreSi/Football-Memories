@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import tempfile
 import threading
 import xml.etree.ElementTree as ET
@@ -32,7 +33,7 @@ from typing import Any
 
 from app.connectors.hudl_metadata import age_group, season_label
 from app.services.paths import sanitize_component
-from app.services.publish import publish_new
+from app.services.publish import links_unsupported, publish_new
 
 FOLDER = "Media library"
 MANIFEST = ".football-memories.json"
@@ -311,7 +312,7 @@ class MediaLibrary:
         poster: Callable[[str], Path | None],
     ) -> dict[str, Any]:
         library = root / FOLDER
-        created = updated = 0
+        created = updated = copied = copied_bytes = 0
         failed: list[str] = []
         with self._lock:
             library.mkdir(exist_ok=True)
@@ -331,7 +332,7 @@ class MediaLibrary:
                 assert record is not None
                 ours: list[str] = record.setdefault("files", [])
                 try:
-                    videos = self._videos(source, folder, ours)
+                    videos, extra = self._videos(source, folder, ours)
                 except OSError:
                     failed.append(relative)
                     if not ours:
@@ -339,6 +340,9 @@ class MediaLibrary:
                         _remove_if_empty(folder)
                     continue
                 created += videos
+                if extra:
+                    copied += 1
+                    copied_bytes += extra
                 match_ids = [str(m) for m in entry.get("matches") or []]
                 image = poster(match_ids[-1]) if match_ids else None
                 target = folder / "poster.jpg"
@@ -367,10 +371,19 @@ class MediaLibrary:
                         _write_atomic(nfo, text.encode())
                         updated += 1
             _write_atomic(library / MANIFEST, json.dumps(manifest).encode())
-        return {"folder": str(library), "created": created, "updated": updated, "failed": failed}
+        return {
+            "folder": str(library),
+            "created": created,
+            "updated": updated,
+            "failed": failed,
+            "copied": copied,
+            "copied_bytes": copied_bytes,
+        }
 
     @staticmethod
-    def _videos(source: Path, folder: Path, ours: list[str]) -> int:
+    def _videos(source: Path, folder: Path, ours: list[str]) -> tuple[int, int]:
+        """Put ``source``'s video(s) in ``folder``. Returns (files made, bytes copied
+        because the drive cannot link; 0 when linked or unpacked from a ZIP)."""
         made = 0
         if source.suffix.lower() == ".zip":
             with zipfile.ZipFile(source) as archive:
@@ -391,13 +404,28 @@ class MediaLibrary:
                         Path(temporary).unlink(missing_ok=True)
                     ours.append(name)
                     made += 1
-            return made
+            return made, 0
         target = folder / f"{folder.name}{source.suffix.lower()}"
         if target.name in ours or target.exists() or target.is_symlink():
-            return 0
-        os.link(source, target)
+            return 0, 0
+        try:
+            os.link(source, target)  # no extra space; the original is never moved
+            copied = 0
+        except OSError as error:
+            if not links_unsupported(error):
+                raise
+            # SMB shares (the owner's NAS), exFAT and FAT have no hard links: copy.
+            # The original is only read; the copy is published without replacing.
+            descriptor, temporary = tempfile.mkstemp(dir=folder, prefix=".", suffix=".part")
+            os.close(descriptor)
+            try:
+                shutil.copyfile(source, temporary)
+                copied = Path(temporary).stat().st_size
+                publish_new(Path(temporary), target)
+            finally:
+                Path(temporary).unlink(missing_ok=True)
         ours.append(target.name)
-        return 1
+        return 1, copied
 
 
 def _clip_number(name: str) -> tuple[int, str]:

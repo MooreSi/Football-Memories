@@ -20,6 +20,11 @@ from pathlib import Path
 _NO_LINKS = {errno.ENOTSUP, errno.EOPNOTSUPP, errno.EPERM, errno.EMLINK}
 
 
+def links_unsupported(error: OSError) -> bool:
+    """True when ``error`` means the drive cannot hold hard links at all."""
+    return error.errno in _NO_LINKS
+
+
 def publish_new(source: Path, target: Path) -> None:
     """Hard link ``source`` to ``target`` (``source`` is kept), or on a drive without
     hard links move it there (``source`` is gone). Raises FileExistsError if

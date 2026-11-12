@@ -5,10 +5,11 @@ import { api } from "../../api/client";
 import { type DownloadEntry, hudlAgeGroups, hudlRequest, useHudlLibrary } from "../../api/hudl";
 import { fixtureLabel } from "../../lib/hudlFixture";
 import { matchScore, useScoreCorrections } from "../../lib/matchScore";
+import { formatBytes } from "../../lib/format";
 import { Button } from "../ui/Button";
 
 type MediaStatus = { enabled: boolean; folder: string };
-type MediaResult = MediaStatus & { created: number; updated: number; failed: string[] };
+type MediaResult = MediaStatus & { created: number; updated: number; failed: string[]; copied?: number; copied_bytes?: number };
 type MatchContext = { label: string; ours?: number; theirs?: number };
 export type MediaContext = { club: string | null; player: string | null; matches: Record<string, MatchContext> };
 
@@ -50,6 +51,7 @@ export function MediaLibraryPanel({ entries }: { entries: DownloadEntry[] }) {
   if (!status.data) return null;
   const on = status.data.enabled;
   const failed = result?.failed.length ?? 0;
+  const copied = result?.copied ?? 0;
   return (
     <section aria-label="Media library" className="panel flex flex-wrap items-center gap-4 p-4">
       <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-ink-800 text-accent"><MonitorPlay size={20} aria-hidden /></span>
@@ -62,15 +64,20 @@ export function MediaLibraryPanel({ entries }: { entries: DownloadEntry[] }) {
           </p>
         ) : (
           <p className="text-xs text-fg-muted">
-            Adds a folder with a readable name, poster and details file for each download. It uses no extra disk space and your downloads are not changed.
+            Adds a folder with a readable name, poster and details file for each download. Your downloads are not changed. It uses no extra disk space, except on network shares and exFAT or FAT drives, where it keeps a copy of each video.
           </p>
         )}
         {result && failed === 0 && (
           <p className="text-xs text-fg-subtle">{result.created === 0 && result.updated === 0 ? "Up to date." : `${result.created} files added, ${result.updated} details updated.`}</p>
         )}
+        {copied > 0 && (
+          <p className="text-xs text-fg-subtle">
+            This drive cannot link files (network shares such as a NAS, exFAT and FAT drives), so {copied} {copied === 1 ? "video was" : "videos were"} copied ({formatBytes(result?.copied_bytes ?? 0)}).
+          </p>
+        )}
         {failed > 0 && (
           <p role="alert" className="text-xs text-warn">
-            {failed} {failed === 1 ? "download could not be added" : "downloads could not be added"}. The media library needs linked files, which network shares (SMB, such as a NAS) and exFAT or FAT drives do not support; your downloads are unchanged.
+            {failed} {failed === 1 ? "download could not be added" : "downloads could not be added"}; your downloads are unchanged. Check the drive has free space, then press Update.
           </p>
         )}
         {update.error && <p role="alert" className="text-xs text-danger">{update.error.message}</p>}

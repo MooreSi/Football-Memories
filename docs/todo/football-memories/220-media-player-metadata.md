@@ -95,3 +95,8 @@ Plex Personal Media agent, Local Media Assets on) and Jellyfin.
 - Five existing tests' fakes copy `export_from_segments`'s exact signature, so
   details reach it through a context variable instead of a new keyword; no test
   was edited.
+- 2026-11-12 follow-up (owner report: 17 downloads could not be added on the NAS
+  share): on a drive without hard links the media library copies the video
+  instead and the panel shows the count and size. Suite: backend 439 (SQLite and
+  Postgres), frontend 219. Built on the owner's share: 17 folders, 17 copies
+  (6.2 GB, byte-identical), 17 posters, 17 `.nfo`; originals untouched.

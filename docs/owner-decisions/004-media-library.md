@@ -16,9 +16,13 @@ choose?
 If a media player is pointed at the whole download folder it will see each video
 twice (the original and its media library link). Hard links only work on the
 same drive and not on exFAT/FAT drives or SMB network shares (the owner's
-download folder is an SMB share on a TrueNAS/Proxmox NAS as of 2026-11-12, so the
-media library cannot work there; it would need a copy, or a folder made on the NAS
-itself).
+download folder is an SMB share on a TrueNAS/Proxmox NAS as of 2026-11-12). On
+such a drive the media library now keeps a copy of each video, and the panel says
+how much space that took (6.2 GB for the 17 reels on 2026-11-12, at the owner's
+request to make it work). Symlinks and clone copies were tested on the share and
+neither avoids the extra space. Alternative: point Plex at the download folder
+itself and use only the details embedded in new files (no copies, but older files
+keep their Hudl names).
 
 ## Provisional default in use
 

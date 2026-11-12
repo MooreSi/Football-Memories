@@ -262,3 +262,41 @@ def test_folder_for_names_only_folders_this_app_made(tmp_path, tiny_video):
     assert media.folder_for(root, "reels/other.mp4") is None
     media.forget(root, entries[0]["file"])
     assert media.folder_for(root, entries[0]["file"]) is None
+
+
+def test_a_drive_without_hard_links_gets_a_copy_and_says_so(tmp_path, tiny_video, monkeypatch):
+    """The owner's NAS share (SMB) refuses hard links with ENOTSUP. The media library
+    then holds a copy, reports its size, and still never changes the original."""
+    import errno
+
+    root, entries, poster = _root(tmp_path, tiny_video)
+    before = snapshot(root)
+    media = MediaLibrary(tmp_path / "cache")
+    media.configure(enabled=True, context=CONTEXT)
+
+    def no_links(*args, **kwargs):
+        raise OSError(errno.ENOTSUP, "Operation not supported")
+
+    monkeypatch.setattr(os, "link", no_links)
+    summary = media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    assert summary["failed"] == []
+    name = "2026-07-12 Aston Villa vs. Cambridge United U11 - Full match"
+    copy = root / "Media library" / name / f"{name}.mp4"
+    original = root / entries[0]["file"]
+    assert copy.read_bytes() == original.read_bytes()
+    assert copy.stat().st_ino != original.stat().st_ino  # a real copy, not a link
+    assert summary["copied"] == 1
+    assert summary["copied_bytes"] == original.stat().st_size
+    assert (copy.with_suffix(".nfo")).is_file()
+    assert not list((root / "Media library" / name).glob(".*.part"))  # no temp left behind
+    assert snapshot(root) == before
+    again = media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    assert again["copied"] == 0 and again["created"] == 0  # copied once only
+
+
+def test_a_linked_library_reports_no_copies(tmp_path, tiny_video):
+    root, entries, poster = _root(tmp_path, tiny_video)
+    media = MediaLibrary(tmp_path / "cache")
+    media.configure(enabled=True)
+    summary = media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    assert summary["copied"] == 0 and summary["copied_bytes"] == 0

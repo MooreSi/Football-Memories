@@ -52,3 +52,17 @@ it("is hidden when the helper is not running", async () => {
   await new Promise((r) => setTimeout(r, 50));
   expect(screen.queryByRole("region", { name: "Media library" })).toBeNull();
 });
+
+it("says when the drive cannot link files and copies were made instead", async () => {
+  stubFetch({ ...app, [`${H}/downloads/media`]: { enabled: true, folder: "/Volumes/NAS/Media library" } });
+  renderWithProviders(<MediaLibraryPanel entries={entries} />);
+  const panel = await screen.findByRole("region", { name: "Media library" });
+  vi.mocked(fetch).mockImplementationOnce(async () => new Response(JSON.stringify(
+    { enabled: true, folder: "/Volumes/NAS/Media library", created: 34, updated: 0, failed: [], copied: 17, copied_bytes: 6.2 * 1024 ** 3 }), { status: 200 }));
+  const button = await within(panel).findByRole("button", { name: "Update" });
+  await vi.waitFor(() => expect(button).toBeEnabled());
+  await userEvent.click(button);
+  expect(await within(panel).findByText(/17 videos were copied \(6\.2 GB\)/)).toBeInTheDocument();
+  expect(within(panel).getByText(/cannot link files/)).toBeInTheDocument();
+  expect(within(panel).queryByRole("alert")).toBeNull();
+});
