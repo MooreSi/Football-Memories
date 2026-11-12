@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ImportIn(BaseModel):
@@ -412,3 +412,17 @@ class ReelDetail(ReelSummary):
     has_opening_card: bool
     has_closing_card: bool
     items: list[ReelItemOut]
+
+
+class ScoreCorrectionIn(BaseModel):
+    """Spec 210: the owner's score for a Hudl match; both None clears it."""
+
+    match_id: str = Field(min_length=1, max_length=70)
+    ours: int | None = Field(ge=0, le=99)
+    theirs: int | None = Field(ge=0, le=99)
+
+    @model_validator(mode="after")
+    def _both_or_neither(self) -> ScoreCorrectionIn:
+        if (self.ours is None) != (self.theirs is None):
+            raise ValueError("give both scores, or neither to clear the correction")
+        return self

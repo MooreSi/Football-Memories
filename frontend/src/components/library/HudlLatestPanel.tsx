@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
 import { formatClock } from "../../lib/format";
 import { fixtureDate, fixtureParts } from "../../lib/hudlFixture";
+import { matchScore, useScoreCorrections } from "../../lib/matchScore";
 import { FixtureCrests } from "../FixtureCrests";
 
 /** Reference 1's right column, fed by the newest Hudl match for the selected age
@@ -17,6 +18,8 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
   // Owner request 2026-11-11: read the game from kick-off (times are video time, H:MM:SS).
   const recent = [...moments].sort((a, b) => a.time_s - b.time_s).slice(0, 8);
   const link = `/hudl/${encodeURIComponent(match.id)}`;
+  const corrections = useScoreCorrections();
+  const score = matchScore(match, club, corrections.data);
   return (
     <div className="space-y-5">
       <section aria-label={latest ? "Latest match" : "Selected match"} className="latest-match-panel panel p-5">
@@ -27,7 +30,10 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
         {parts ? (
           <div className="mt-4">
             <FixtureCrests home={home} away={parts.opponent} middle={<>
-              <p className="text-2xl font-semibold text-fg-muted">vs</p>
+              {score ? <>
+                <p className="text-3xl font-semibold tabular-nums">{score.ours}–{score.theirs}</p>
+                <p className="text-[11px] text-fg-subtle">{score.source === "corrected" ? "Corrected" : "From tags"}</p>
+              </> : <p className="text-2xl font-semibold text-fg-muted">vs</p>}
               {date && <p className="mt-1 whitespace-nowrap rounded-full bg-ok/15 px-2 py-0.5 text-[11px] text-ok">{date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</p>}
             </>} />
           </div>

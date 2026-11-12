@@ -1,4 +1,4 @@
-"""Settings (clip timing) and storage health."""
+"""Settings (clip timing), storage health and score corrections (spec 210)."""
 
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ from app.schemas import (
     ArchiveSummaryOut,
     FolderHealthOut,
     MissingFileOut,
+    ScoreCorrectionIn,
     StorageHealthOut,
 )
-from app.services import app_settings, storage
+from app.services import app_settings, scores, storage
 
 router = APIRouter(prefix="/api")
 Db = Annotated[Session, Depends(get_db)]
@@ -54,3 +55,15 @@ def storage_health(db: Db, settings: Cfg) -> StorageHealthOut:
             missing=[MissingFileOut(**asdict(m)) for m in summary.missing],
         ),
     )
+
+
+@router.get("/scores")
+def get_scores(db: Db) -> dict[str, dict[str, int]]:
+    """Spec 210: the owner's corrected scores, by Hudl match id."""
+    return scores.corrections(db)
+
+
+@router.put("/scores")
+def put_score(body: ScoreCorrectionIn, db: Db) -> dict[str, dict[str, int]]:
+    scores.correct(db, body.match_id, body.ours, body.theirs)
+    return scores.corrections(db)

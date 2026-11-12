@@ -13,6 +13,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Match scores (spec 210, owner request 2026-11-12):** score from goal tags,
+  or the owner's correction (match page editor, `/api/scores`, kept in
+  `preferences` so backups still restore). Hero pill, Latest panel and match
+  page. See [210-match-scores.md](todo/football-memories/210-match-scores.md).
+
 - **Update now restarts and reloads (2026-11-12, owner request):** after a
   successful update the helper restarts (Mac in place; Windows in a new console
   window that waits for port 8766) and Settings reloads the page once

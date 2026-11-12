@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { type HudlMatch, hudlAgeGroups } from "../../api/hudl";
 import { fixtureDate, fixtureLabel, fixtureParts } from "../../lib/hudlFixture";
+import { matchScore, useScoreCorrections } from "../../lib/matchScore";
 import { TeamBadge } from "../TeamBadge";
 import { Badge } from "../ui/Badge";
 
@@ -10,6 +11,7 @@ import { Badge } from "../ui/Badge";
  *  right arrow steps to the next (older) match, left arrow back towards the latest. */
 export function HudlHero({ matches, club, age, index, onIndex }: { matches: HudlMatch[]; club: string | null; age: string; index?: number; onIndex?: (i: number) => void }) {
   const [own, setOwn] = useState(0);
+  const corrections = useScoreCorrections();
   // Controlled by the Library page so the side panels follow the match on show.
   const i = index ?? own;
   const setI = (next: (x: number) => number) => { const v = next(i); setOwn(v); onIndex?.(v); };
@@ -22,6 +24,7 @@ export function HudlHero({ matches, club, age, index, onIndex }: { matches: Hudl
   const home = club || "Home";
   const moments = m.moments?.length ?? 0;
   const link = `/hudl/${encodeURIComponent(m.id)}`;
+  const score = matchScore(m, club, corrections.data);
   return (
     <section aria-label="Featured match" className="featured-hero relative overflow-hidden">
       <div className="hero-stage relative">
@@ -29,10 +32,12 @@ export function HudlHero({ matches, club, age, index, onIndex }: { matches: Hudl
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/40 to-ink-950/10" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-transparent" />
         {parts && (
-          <div role="group" aria-label={`${home} vs ${parts.opponent}`}
+          <div role="group" aria-label={score ? `${home} ${score.ours}, ${parts.opponent} ${score.theirs}` : `${home} vs ${parts.opponent}`}
+            title={score ? (score.source === "corrected" ? "Corrected score" : "Score from the goal tags") : undefined}
             className="hero-crests absolute top-5 left-5 flex items-center gap-2 rounded-full border border-white/10 bg-ink-950/55 p-1.5 pr-2 backdrop-blur-md">
             <TeamBadge name={home} size="sm" tone="home" />
-            <span className="text-[11px] font-bold tracking-widest text-fg-muted uppercase">v</span>
+            {score ? <span className="px-1 text-sm font-semibold tabular-nums">{score.ours}–{score.theirs}</span>
+              : <span className="text-[11px] font-bold tracking-widest text-fg-muted uppercase">v</span>}
             <TeamBadge name={parts.opponent} size="sm" tone="away" />
           </div>
         )}

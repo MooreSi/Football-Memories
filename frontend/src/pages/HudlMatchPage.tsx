@@ -6,6 +6,8 @@ import { Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Square } 
 import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
+import { MatchScoreBox } from '../components/match/MatchScoreBox';
+import { useHomeClub } from '../lib/useHomeClub';
 import { formatClock } from '../lib/format';
 import { advanceTagged, needsSeek, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 import { markHudlMomentWatched } from '../lib/hudlWatched';
@@ -58,6 +60,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
     onSuccess: () => qc.invalidateQueries({ queryKey: ['hudl-account'] }),
   });
   const match = library.data?.find(m => m.id === id);
+  const club = useHomeClub();
   const own = status.data?.match_id === id;
   const blocked = hudlBlocked(status.data);
   useEffect(() => {
@@ -117,6 +120,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, embedded = 
     <div className="analysis-stage min-w-0 space-y-5">
       <header className="flex flex-wrap items-center gap-4">
         <div className="mr-auto">{!embedded && <Link to="/" className="text-sm text-fg-muted">← Library</Link>}<p className={`screen-eyebrow ${embedded ? '' : 'mt-4'}`}>{match.age_group} · HUDL MATCH</p><h1 className={embedded ? "sr-only" : "text-2xl font-semibold"}>{match.title}</h1><p className="mt-2 text-sm text-fg-muted">Highest available source quality · Original-resolution offline copies</p></div>
+        {!embedded && <MatchScoreBox match={match} club={club} />}
         <Button variant="primary" disabled={busy} onClick={() => action.mutate({ action: 'download', match_id: id })}><Download size={16} /> Download full match</Button>
       </header>
       {streamUrl ? <StreamPlayer url={streamUrl} seek={seek} onTime={onTime} poster={match.thumbnail_url} /> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}

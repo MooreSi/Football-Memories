@@ -65,3 +65,16 @@ group, else "Home". The Library used only the imported team, so a fresh
 install with Hudl matches but nothing imported showed "Home vs. Stoke City"
 despite Plays for Aston Villa (owner report). Use the hook, not
 `clubName(match.team_name)`, for anything that names our side.
+
+## Match scores (spec 210, 2026-11-12)
+
+`lib/matchScore.ts`: the tagged score is the "Goal" axis of `teamProfile`
+(goal kicks are their own code). No goal tags means no score, never 0-0. When
+our side cannot be placed (no club name and no other paired codes), a single
+unplaced "<side> GOAL" code is ours; two such sides gives no score, because
+reading ours as 0 would be wrong. Corrections (`/api/scores`, stored as
+`score:<hudl id>` in `preferences`) win everywhere and are labelled
+"Corrected"; tag counts say "From tags". Shown on the hero crest pill, the
+Latest/Selected panel (in place of "vs") and the match page (with editor; not
+in the Clips embed). Owner's data: 139 of 286 matches have goal tags; latest
+U10 v Stoke City reads 12-9.

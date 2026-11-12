@@ -11,6 +11,13 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Spec 210 match scores (2026-11-12)
+
+| Item | Status |
+|---|---|
+| Tagged score per Hudl match, corrections on the match page | done (tests; browser-checked on the owner's real Hudl list via the dev server, correction saved and cleared on the dev database) |
+| Official results from Hudl | not started (needs read-only research on the real account; owner's call) |
+
 ## Spec 190 owner request batch (2026-11-10)
 
 | Item | Status |
