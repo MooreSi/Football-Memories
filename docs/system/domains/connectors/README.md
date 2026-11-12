@@ -394,7 +394,8 @@ but gave the two `2026-07-12` reels the refresh day. Inferred, not confirmed
 when month and day are swapped (07-12 -> 7 December) was rejected; 09-06, 11-01
 and 11-08 swap to past days and were accepted. Files now also carry
 `creation_time=<day>T12:00:00Z` (binary mvhd time), and media library copies get
-the match day as their file date (`os.utime`, copies only). Plex's database can be
+the match day as their file date (`os.utime`, copies only). After a refresh the
+owner confirmed Plex dated and ordered all 17 correctly. Plex's database can be
 read safely from a copy: `pct exec 102`, copy `com.plexapp.plugins.library.db`
 to /tmp, open with `Plex SQLite -readonly`.
 Before this, a moment export or reel on the share failed after encoding with a

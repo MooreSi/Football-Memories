@@ -27,8 +27,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   app's details (rewritten in place, frames identical) and seasons are written
   2026-27 in file tags. The owner must refresh metadata in Plex. The two
   12 July reels got today's date in Plex; files now also carry a binary
-  recording time and copies are file-dated on the match day (not yet confirmed
-  in Plex: needs the owner's refresh).
+  recording time and copies are file-dated on the match day; the owner
+  confirmed after a refresh that Plex now orders them correctly.
 
 - **"The batch stopped" now names its cause (2026-11-12, owner report):** a Reel
   Studio batch failed with the generic message right after the helper was
