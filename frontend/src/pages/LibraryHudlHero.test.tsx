@@ -84,3 +84,24 @@ it("lists moments from the latest match for the selected age group", async () =>
   expect(links[1]).toHaveTextContent("Goal");
   expect(links).toHaveLength(2);
 });
+
+it("names our side from the player's Plays for when nothing is imported yet", async () => {
+  // Owner report 2026-11-12: a fresh install with only Hudl matches showed "Home vs. Stoke City"
+  // although the player profile says Plays for Aston Villa.
+  localStorage.setItem("fm.hudl.age", "U11");
+  stubFetch({
+    "/api/matches": { total: 0, page: 1, page_size: 24, items: [] },
+    "/api/stats": { matches: 0, moments: 0, footage_seconds: 0, teams: 0, players: 1, top_tags: [], recent_moments: [] },
+    "/api/preferences": { primary_player_id: 5 },
+    "/api/players/5": { id: 5, display_name: "Sam Example", club_name: "Aston Villa", position: null, photo_url: null,
+      totals: { matches: 0, moments: 0, unwatched: 0, favourites: 0 }, categories: [], teams: [], per_match: [], teammates: [],
+      first_match_date: null, latest_match_date: null },
+    "/api/teams": [], "/api/seasons": [],
+    "http://127.0.0.1:8766/library": remote,
+    "http://127.0.0.1:8766/account": { configured: true, state: "ready", busy: false },
+  });
+  renderWithProviders(<LibraryPage />);
+  const hero = await screen.findByRole("region", { name: "Featured match" });
+  expect(await within(hero).findByRole("heading", { name: "Aston Villa vs. Stoke City U11" })).toBeInTheDocument();
+  expect(within(hero).queryByRole("heading", { name: /^Home vs\./ })).toBeNull();
+});

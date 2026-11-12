@@ -17,7 +17,8 @@ import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
 import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
-import { clubName, fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
+import { fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
+import { useHomeClub } from "../lib/useHomeClub";
 import { looksLikePlayer } from "../lib/hudlPlayer";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
@@ -69,7 +70,8 @@ export function LibraryPage() {
   const s = stats.data;
   const featured = latest.data?.items ?? [];
   const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
-  const club = clubName(featured[0]?.team_name);
+  // Our side: the player's "Plays for", else the newest imported team (owner report 2026-11-12).
+  const club = useHomeClub();
   // Owner request 2026-11-11: the right panel and the Match Profile follow the match shown
   // in the hero; the overview counts the selected age group and season.
   const [heroIndex, setHeroIndex] = useState(0);

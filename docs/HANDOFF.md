@@ -13,6 +13,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Library names our side from Plays for (2026-11-12, owner report):** the hero,
+  Latest match panel and Match Profile used only the newest imported team, so a
+  fresh install showed "Home vs. Stoke City". LibraryPage now uses `useHomeClub`
+  like Downloaded and Reel Studio. Test plus browser check on dev data.
+
 - **New-folder install could not reach its database (2026-11-12, owner report):**
   a second ZIP in a new folder got a new `.env` password, but the shared
   `football-memories` database volume kept the first one; backend crash-looped

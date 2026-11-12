@@ -56,3 +56,12 @@ links to the whole match. Charts and match-link grids must use min-w-0: ten flex
 bars' intrinsic date widths previously expanded the phone grid. Radar text uses
 short labels with full accessible descriptions/tooltips. Both screens checked
 at 375px with document width exactly 375; desktop checked against references.
+
+## Our side's name comes from the player first (2026-11-12)
+
+Every fixture label and crest for our side uses `useHomeClub()`: the primary
+player's "Plays for", else the newest imported team's name without its age
+group, else "Home". The Library used only the imported team, so a fresh
+install with Hudl matches but nothing imported showed "Home vs. Stoke City"
+despite Plays for Aston Villa (owner report). Use the hook, not
+`clubName(match.team_name)`, for anything that names our side.
