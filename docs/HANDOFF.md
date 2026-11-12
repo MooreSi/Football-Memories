@@ -13,6 +13,20 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **ZIP copies update themselves (2026-11-12, owner report from a second Mac):**
+  `backend/app/connectors/git_adopt.py` links a folder unzipped from GitHub to
+  the exact `main` commit it came from (new `.git`, index only, no file
+  changed); Settings > Update runs it on the first check, both installers in
+  step 4 (Mac: Apple `/usr/bin/python3`; Windows: `uv run --no-project`, uv now
+  installed in step 3 with Git). Installers restart themselves after a pull
+  that moved HEAD. Settings > Update now shows any helper 400 message instead
+  of "helper not running". **The Windows `.bat` had been broken since 46034aa**
+  (labels spliced into the Docker block, `:check_wsl` missing, so WSL check and
+  Docker download misbehaved); rewritten and covered by a label-structure test.
+  Verified on this Mac with GitHub's real ZIP and an older archive. **Not run
+  on Windows.** The owner's existing ZIP Mac needs the one-time Terminal
+  command in INSTALL.md (Updating), since its old installer cannot link itself.
+
 - **One reel per match (spec 200, `main`):** batch download has a fourth tile,
   and the Reel Studio has a Save as switch (One reel / One reel per match).
   Per-match mode drops the opening card. Each match is fetched in turn, then

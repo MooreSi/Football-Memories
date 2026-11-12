@@ -8,7 +8,7 @@ type Check = { current: string; latest: string; behind: number; update_available
 type Status = { state: "idle" | "working" | "done" | "error"; message: string };
 const SIX_HOURS = 6 * 60 * 60 * 1000;
 
-/** Spec 190: compares this copy with GitHub main through the desktop helper (the repository is private). */
+/** Spec 190: compares this copy with GitHub main through the desktop helper, which also links a copy downloaded as a ZIP to GitHub on its first check. */
 export function useUpdateCheck() {
   return useQuery<Check>({ queryKey: ["app-update"], queryFn: () => hudlRequest("/update/check"), retry: false,
     staleTime: SIX_HOURS, refetchInterval: SIX_HOURS, refetchOnWindowFocus: false });
@@ -45,7 +45,7 @@ export function UpdateSettings() {
       <h2 className="text-lg font-semibold">Update</h2>
       {check.isPending ? <p className="text-sm text-fg-muted">Checking GitHub for the latest version…</p> : check.isError ? (
         <div className="space-y-2 text-sm text-fg-muted">
-          <p>{check.error.message.includes("installer") ? check.error.message : "The desktop helper is not running, so this copy cannot check GitHub from here."}</p>
+          <p>{(check.error as Error & { status?: number }).status === 400 ? check.error.message : "The desktop helper is not running, so this copy cannot check GitHub from here."}</p>
           <p>To update, double-click <strong className="text-fg">Install Football Memories.command</strong> (Mac) or <strong className="text-fg">Install Football Memories.bat</strong> (Windows) in the app folder. It downloads the latest version, rebuilds the app and opens it.</p>
         </div>
       ) : data && (
@@ -70,7 +70,7 @@ export function UpdateSettings() {
       {state && state !== "idle" && <p role="status" className={`text-sm ${state === "error" ? "text-danger" : state === "done" ? "text-ok" : "text-fg-muted"}`}>{status.data?.message}</p>}
       {(apply.isError || recheck.isError) && <p role="alert" className="text-sm text-danger">{(apply.error ?? recheck.error)?.message}</p>}
       {!check.isError && <Button variant="ghost" disabled={recheck.isPending} onClick={() => recheck.mutate()}><RefreshCw size={14} aria-hidden /> Check now</Button>}
-      <p className="text-xs text-fg-subtle">Updating only fast-forwards to the latest version on GitHub and rebuilds the app. Your matches, downloads, settings and database are kept. A copy with local code changes is never overwritten.</p>
+      <p className="text-xs text-fg-subtle">Updating only fast-forwards to the latest version on GitHub and rebuilds the app. Your matches, downloads, settings and database are kept. A copy with local code changes is never overwritten. A copy downloaded as a ZIP is linked to GitHub the first time it checks, without changing any file.</p>
     </section>
   );
 }

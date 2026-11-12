@@ -8,6 +8,8 @@
 #   2. Apple command-line tools (git, Swift for the Keychain helper).
 #   3. Homebrew + ffmpeg, uv (Python runner) and Google Chrome for the Hudl helper.
 #   4. Updates this folder from GitHub (fast-forward only; local changes are kept).
+#      A folder unzipped from GitHub is linked to GitHub first; after an update the
+#      installer restarts itself so the new version's steps run.
 #   5. Creates .env with a random database password the first time.
 #   6. Builds and starts the app in Docker, starts the Hudl desktop helper.
 #   7. Opens the app in your browser.
@@ -91,11 +93,35 @@ fi
 
 # ---------- 4. Latest version ----------
 bold "4/7 Latest version from GitHub"
-if [ -d .git ] && command -v git >/dev/null 2>&1; then
-  if git pull --ff-only origin main >/dev/null 2>&1; then ok "Up to date ($(git rev-parse --short HEAD))"
+# A folder unzipped from GitHub has no .git: link it to the GitHub commit it was
+# made from so it can update itself (backend/app/connectors/git_adopt.py; it
+# changes no file). Apple's python3 comes with the command-line tools (step 2).
+ADOPT="$APP_DIR/backend/app/connectors/git_adopt.py"
+link_to_github() {
+  if [ -d .git ] && [ ! -e .git/football-memories-linking ]; then return 0; fi
+  echo "  Linking this copy to GitHub so it can update itself. No file is changed."
+  if /usr/bin/python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
+    /usr/bin/python3 -I "$ADOPT" "$APP_DIR" | sed 's/^/  /'
+  elif command -v uv >/dev/null 2>&1; then
+    uv run --no-project --quiet python -I "$ADOPT" "$APP_DIR" | sed 's/^/  /'
+  else
+    echo "  Python is missing, so this copy cannot be linked to GitHub yet."; return 1
+  fi
+  [ -d .git ] && [ ! -e .git/football-memories-linking ]
+}
+if ! command -v git >/dev/null 2>&1; then
+  warn "git is missing: install Apple's command-line tools to get updates."
+elif link_to_github; then
+  BEFORE="$(git rev-parse HEAD)"
+  if git pull --ff-only -q origin main >/dev/null 2>&1; then
+    if [ "$(git rev-parse HEAD)" != "$BEFORE" ] && [ -z "${FM_INSTALLER_RESTARTED:-}" ]; then
+      ok "Updated to $(git rev-parse --short HEAD). Restarting the installer with the new version."
+      FM_INSTALLER_RESTARTED=1 exec /bin/bash "$APP_DIR/Install Football Memories.command"
+    fi
+    ok "Up to date ($(git rev-parse --short HEAD))"
   else warn "Kept your current version (local changes or no connection)."; fi
 else
-  warn "Not a git copy: download the latest version from GitHub to update."
+  warn "Kept your current version: it could not be linked to GitHub (see above)."
 fi
 
 # ---------- 5. Settings ----------

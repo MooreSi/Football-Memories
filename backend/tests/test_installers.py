@@ -20,9 +20,7 @@ ENSURE_ENV = ROOT / "scripts" / "mac" / "ensure-env.sh"
 
 
 def _git(*args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args], cwd=ROOT, capture_output=True, text=True, check=False
-    )
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=False)
 
 
 def _password(env: Path) -> str:

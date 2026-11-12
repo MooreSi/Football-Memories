@@ -99,3 +99,28 @@ def test_update_routes_are_local_only(tmp_path, repo, monkeypatch):
         )
         assert client.post("/update/apply", json={}, headers=ORIGIN).status_code == 202
     app.state.account._executor.shutdown()
+
+
+def test_zip_copy_is_linked_to_github_before_checking(tmp_path):
+    # Owner report 2026-11-12: a ZIP install could never update.
+    linked = []
+
+    def adopt(folder, run):
+        linked.append(folder)
+        (folder / ".git").mkdir()
+        return OLD
+
+    result = Updater(tmp_path, run=FakeGit(behind=2), adopt=adopt).check()
+
+    assert linked == [tmp_path]
+    assert result["update_available"] is True
+
+
+def test_zip_copy_that_cannot_be_linked_explains_why(tmp_path):
+    from app.connectors.git_adopt import AdoptError
+
+    def adopt(folder, run):
+        raise AdoptError("This copy has been changed. Run the installer again.")
+
+    with pytest.raises(CaptureError, match="has been changed"):
+        Updater(tmp_path, run=FakeGit(), adopt=adopt).check()

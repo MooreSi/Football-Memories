@@ -279,3 +279,29 @@ snapshot sweep in `_tags.py`. They are module functions taking the connection;
 `BrowserConnection` keeps one-line delegating methods, so callers, the worker
 and tests that patch instance methods are unchanged. Anything that calls
 `fetch_media` stays in `_account.py`, because tests patch it there.
+
+## Updating a copy downloaded as a ZIP (2026-11-12)
+
+`git_adopt.py` links a folder with no `.git` to GitHub `main` so Settings >
+Update and the installers can fast-forward it. It fetches `main` into a new
+`.git`, then walks commits newest first: `read-tree --reset <commit>` (index
+only, never `-u`) plus `update-index --refresh` and `diff-files` with
+`core.fileMode=false`; the first commit with no modified or missing file wins,
+and `git reset` (mixed) puts `main` there. Untracked extras (`.env`, `data/`,
+the owner's files) are ignored by design. `--reset` is needed: plain
+`read-tree -m` refuses once the index is not up to date with the folder.
+No match or no connection removes the `.git` it was building. A `.git` holding
+`football-memories-linking` is an unfinished attempt and is redone.
+Standard library only and Python 3.9 compatible: the Mac installer runs it with
+Apple's `/usr/bin/python3` (3.9.6) before the app environment exists; Windows
+uses `uv run --no-project`. Checked on this Mac with GitHub's real Download ZIP
+(matched 659d7b1, clean) and an older archive (matched b7a46d3, then
+`pull --ff-only` reached main).
+
+Installers restart themselves after a pull that moved HEAD
+(`FM_INSTALLER_RESTARTED` stops a loop). On Windows this is required, not
+polish: cmd reads a running `.bat` from disk line by line, so the pull and
+restart sit in one parenthesised block that cmd reads before running it.
+`backend/tests/test_installer_scripts.py` checks the `.bat` label structure as
+text, since nothing here runs Windows; it caught a `.bat` broken since 46034aa
+(labels spliced into the Docker block, `:check_wsl` missing).

@@ -43,7 +43,7 @@ if (Test-Path -LiteralPath $installer) {
         git clone "$repo.git" "$target"
         if ($LASTEXITCODE -ne 0) { Say 'Stopped: git could not download the app.'; return }
     } else {
-        Say 'Downloading the ZIP from GitHub (this copy cannot update itself)...'
+        Say 'Downloading the ZIP from GitHub (the installer links it to GitHub for updates once Git is installed)...'
         $zip = Join-Path $env:TEMP 'football-memories.zip'
         $unpacked = Join-Path $env:TEMP 'football-memories-unpacked'
         Invoke-WebRequest -UseBasicParsing -Uri "$repo/archive/refs/heads/main.zip" -OutFile $zip

@@ -1,7 +1,9 @@
 """Settings > Update (spec 190, owner request 2026-11-10).
 
-The GitHub repository is private, so the check runs on this Mac with the owner's
-own git credentials: fetch origin/main and compare it with the running checkout.
+The check runs in the desktop helper on this computer: fetch origin/main from
+GitHub and compare it with the running checkout. A copy downloaded as a ZIP is
+first linked to GitHub by `git_adopt` (owner report 2026-11-12), which changes
+no file; if it cannot be linked the reason is reported.
 Applying an update is fast-forward only (`git pull --ff-only`); a checkout with
 local commits or conflicting edits is left exactly as it is and reported. Then
 the Docker stack is rebuilt with the new commit recorded, and the helper restarts
@@ -19,6 +21,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from app.connectors.git_adopt import AdoptError, adopt, needs_adoption
 from app.connectors.hudl_capture import CaptureError
 
 Runner = Callable[..., "subprocess.CompletedProcess[str]"]
@@ -46,12 +49,18 @@ class Updater:
     CACHE_S = 600
 
     def __init__(
-        self, repo: Path, run: Runner = _run, restart: Callable[[], None] = _restart
+        self,
+        repo: Path,
+        run: Runner = _run,
+        restart: Callable[[], None] = _restart,
+        adopt: Callable[..., str] = adopt,
     ) -> None:
         self.repo = repo
         self.run = run
         self.restart = restart
+        self.adopt = adopt
         self._lock = threading.Lock()
+        self._adopting = threading.Lock()
         self._checked: tuple[float, dict[str, Any]] | None = None
         self._status: dict[str, Any] = {"state": "idle", "message": ""}
 
@@ -64,11 +73,13 @@ class Updater:
         return str(done.stdout).strip()
 
     def _require_checkout(self) -> None:
-        if not (self.repo / ".git").exists():
-            raise CaptureError(
-                "This copy was not installed from GitHub with git. Download the latest version "
-                "and run the installer again to update."
-            )
+        if not needs_adoption(self.repo):
+            return
+        with self._adopting:
+            try:
+                self.adopt(self.repo, run=self.run)
+            except AdoptError as error:
+                raise CaptureError(str(error)) from error
 
     def check(self, force: bool = False) -> dict[str, Any]:
         self._require_checkout()

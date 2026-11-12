@@ -8,7 +8,7 @@ export type HudlProgress = {label:string; step:number; steps:number; done:number
 export type HudlStatus = {state:string; message:string; busy:boolean; syncing?:boolean; tag_age_group?:string|null; progress?:HudlProgress|null; catalogue_checked_at?:number|null; configured:boolean; secret_store?:string; platform?:"mac"|"windows"; match_id?:string; filename?:string; download_url?:string; download_kind?:"match"|"moments"|"reel"; stream_url?:string};
 export async function hudlRequest<T>(path:string,body?:unknown):Promise<T> {
  const response=await fetch(HUDL+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path==='/account/action'?scopedHudlAction(body):body)});
- const data=localiseHelperUrls(await response.json().catch(()=>({detail:'Hudl helper unavailable. Start it on the Mac (run the installer), then try again.'})),HUDL); if(!response.ok)throw new Error(data.detail||'Hudl helper unavailable');return data;
+ const data=localiseHelperUrls(await response.json().catch(()=>({detail:'Hudl helper unavailable. Start it on the Mac (run the installer), then try again.'})),HUDL); if(!response.ok)throw Object.assign(new Error(data.detail||'Hudl helper unavailable'),{status:response.status});return data;
 }
 export function useHudlStatus(){return useQuery<HudlStatus>({queryKey:['hudl-account'],queryFn:()=>hudlRequest('/account'),retry:false,refetchInterval:q=>q.state.data?.busy?1500:10000});}
 export function useHudlLibrary(){return useQuery<HudlMatch[]>({queryKey:['hudl-library'],queryFn:()=>hudlRequest('/library'),retry:false,refetchInterval:15000,refetchOnWindowFocus:'always',refetchOnReconnect:'always'});}

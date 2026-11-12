@@ -76,9 +76,33 @@ Deleting a download in Settings moves it to the Trash (Mac) or Recycle Bin
   changes is never overwritten; you are told instead.
 - **Without the helper running:** double-click the installer again.
 
-The repository is private, so update checks use your own git sign-in on this
-computer. A folder downloaded as a ZIP (no `.git`) cannot update itself:
-download the new version instead.
+**A folder downloaded as a ZIP** (no `.git`) updates too. The installer, or
+the first check in Settings → Update, links it to GitHub: it finds the GitHub
+version the ZIP was made from and records it in a new `.git` folder. No file in
+the folder is changed, so your `.env`, `data/` and downloads are untouched. If
+the app's files were edited by hand, no version matches and the copy is left
+exactly as it was, with a message. This needs git (Mac: Apple's command-line
+tools, installed by step 2; Windows: Git and uv, installed by step 3).
+
+After pulling a new version the installer restarts itself, so the new
+version's own steps run (on Windows this also stops cmd reading a batch file
+that git has just replaced).
+
+**Copies installed from a ZIP before 2026-11-12** have the older installer,
+which cannot link itself. Link it once from Terminal on that Mac (it changes no
+file), then double-click the installer twice: the first run updates the folder,
+the second runs the new installer. From then on it updates itself.
+
+```bash
+cd "path/to/the/app/folder" && curl -fsSL https://raw.githubusercontent.com/MooreSi/Football-Memories/main/backend/app/connectors/git_adopt.py | /usr/bin/python3 -I - .
+```
+
+On Windows, the same in PowerShell (it needs Git and uv, which the older
+installer already set up):
+
+```powershell
+cd "path\to\the\app\folder"; irm https://raw.githubusercontent.com/MooreSi/Football-Memories/main/backend/app/connectors/git_adopt.py | uv run --no-project --quiet python -I - .
+```
 
 ## Manual install (developers)
 

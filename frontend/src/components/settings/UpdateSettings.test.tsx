@@ -34,6 +34,17 @@ it("explains how to update without the desktop helper", async () => {
   expect(screen.getByText("Install Football Memories.bat")).toBeInTheDocument();
 });
 
+it("shows the helper's reason when a downloaded copy cannot be linked to GitHub", async () => {
+  // Owner report 2026-11-12: a ZIP copy is linked to GitHub on the first check; if that
+  // fails the helper says why, and the page must not claim the helper is not running.
+  const reason = "Could not reach GitHub to set up updates. Check the internet connection and try again.";
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail: reason }), { status: 400 })));
+  renderWithProviders(<UpdateSettings />);
+  expect(await screen.findByText(reason)).toBeInTheDocument();
+  expect(screen.queryByText(/desktop helper is not running/)).toBeNull();
+  expect(screen.getByText("Install Football Memories.command")).toBeInTheDocument();
+});
+
 it("flashes in the header only when an update is available", async () => {
   stubFetch({ [`${H}/update/check`]: available });
   renderWithProviders(<UpdateBadge />);
