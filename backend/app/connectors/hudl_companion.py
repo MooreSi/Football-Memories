@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
-from app.connectors import hudl_downloads
+from app.connectors import hudl_downloads, hudl_media
 from app.connectors.hudl_account import Catalogue, Credentials
 from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
@@ -106,6 +106,28 @@ class DeleteDownload(BaseModel):
 class RemoveDownload(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     file: str = Field(min_length=1, max_length=600)
+
+
+class MatchContext(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    label: str | None = Field(default=None, max_length=200)
+    ours: int | None = Field(default=None, ge=0, le=99)
+    theirs: int | None = Field(default=None, ge=0, le=99)
+
+
+class MediaContext(BaseModel):
+    """Spec 220: what only the app knows (club, player, label, score) for media players."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    club: str | None = Field(default=None, max_length=120)
+    player: str | None = Field(default=None, max_length=120)
+    matches: dict[str, MatchContext] = Field(default_factory=dict, max_length=2000)
+
+
+class MediaAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    enabled: bool | None = None
+    context: MediaContext | None = None
 
 
 class CaptureBusy(Exception):
@@ -332,6 +354,7 @@ def create_companion(output: Path) -> FastAPI:
         with request.app.state.hudl_gate:
             idle_for_files(request)
             moved = request.app.state.downloads.trash_file(body.name)
+            _trash_media_folder(request, body.name)
             return {**request.app.state.downloads.describe(), "trashed_as": moved}
 
     @app.post("/downloads/remove")
@@ -344,7 +367,61 @@ def create_companion(output: Path) -> FastAPI:
                 folders.folder, catalogue=request.app.state.catalogue.items()
             )
             moved = folders.trash_download(body.file, [str(e["file"]) for e in listed])
-            return {"trashed_as": moved}
+            return {"trashed_as": moved, "media_folder": _trash_media_folder(request, body.file)}
+
+    def _trash_media_folder(request: Request, relative: str) -> str | None:
+        """Spec 220: a download's media library folder holds only a link to the same video
+        and files this app wrote, so it goes to the Trash with it (the dialog says so)."""
+        folders: DownloadFolder = request.app.state.downloads
+        media = request.app.state.account.media
+        linked = media.folder_for(folders.folder, relative)
+        if linked is None:
+            return None
+        try:
+            folders.trash_media_folder(linked)
+        except CaptureError:
+            raise CaptureError(
+                "The video is in the Trash, but its Media library folder could not be moved "
+                f"there. Remove “{linked.name}” yourself."
+            ) from None
+        media.forget(folders.folder, relative)
+        return str(linked.name)
+
+    def _media_status(request: Request) -> dict[str, object]:
+        root = request.app.state.downloads.folder
+        return {
+            "enabled": request.app.state.account.media.enabled,
+            "folder": str(root / hudl_media.FOLDER),
+        }
+
+    @app.get("/downloads/media")
+    def media_library(request: Request) -> dict[str, object]:
+        return _media_status(request)
+
+    @app.post("/downloads/media")
+    def update_media_library(body: MediaAction, request: Request) -> dict[str, object]:
+        """Spec 220: turn the media library on or off, refresh the app's details, and
+        build what is missing. Local files only; nothing is sent to Hudl."""
+        account = request.app.state.account
+        account.media.configure(
+            enabled=body.enabled,
+            context=body.context.model_dump() if body.context is not None else None,
+        )
+        summary: dict[str, object] = {"created": 0, "updated": 0, "failed": []}
+        if account.media.enabled:
+            try:
+                summary = hudl_media.sync_downloads(
+                    account.media,
+                    account.index,
+                    request.app.state.downloads.folder,
+                    request.app.state.catalogue.items(),
+                    account.details,
+                )
+            except OSError as error:
+                raise CaptureError(
+                    "The media library folder could not be written. Your downloads are unchanged."
+                ) from error
+        return {**_media_status(request), **summary}
 
     @app.get("/downloads/index")
     def download_index(request: Request) -> list[dict[str, object]]:

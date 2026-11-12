@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from app.connectors.hudl_capture import CaptureError
+from app.connectors.hudl_media import MediaDetails, current_details
 from app.connectors.hudl_names import download_name
 from app.services.media import probe
 
@@ -60,7 +61,14 @@ _HLS_INPUT = [
 ]
 
 
-def _encode(source: Path, moment: dict[str, Any], clip: Path, *, offset: float = 0.0) -> None:
+def _encode(
+    source: Path,
+    moment: dict[str, Any],
+    clip: Path,
+    *,
+    offset: float = 0.0,
+    metadata: list[str] | None = None,
+) -> None:
     hls = source.suffix == ".m3u8"
     ok = _ffmpeg(
         [
@@ -77,6 +85,7 @@ def _encode(source: Path, moment: dict[str, Any], clip: Path, *, offset: float =
             "0:a?",
             *_VIDEO,
             *_AUDIO,
+            *(metadata or []),
             "-movflags",
             "+faststart",
             str(clip),
@@ -84,6 +93,16 @@ def _encode(source: Path, moment: dict[str, Any], clip: Path, *, offset: float =
     )
     if not ok or not clip.is_file():
         raise CaptureError("Clip export failed. The original video is unchanged.")
+
+
+def _clip_tags(
+    details: MediaDetails | None, combined: bool, number: int, moment: dict[str, Any]
+) -> list[str] | None:
+    """Spec 220: a clip in a ZIP is titled by its moment; a combined video's parts
+    need none (the joined file gets the download's details)."""
+    if details is None or combined:
+        return None
+    return details.clip(number, str(moment.get("category") or "Moment")).ffmpeg_args()
 
 
 def _verify(clip: Path, width: int | None, height: int | None) -> None:
@@ -100,6 +119,7 @@ def export_ranges(
     combined: bool = False,
     match_title: str | None = None,
     progress: Callable[[int, int], None] | None = None,
+    details: MediaDetails | None = None,
 ) -> Path:
     if not moments:
         raise CaptureError("Select at least one tagged moment or player code.")
@@ -115,11 +135,11 @@ def export_ranges(
         report(0, total)
         for index, moment in enumerate(ordered):
             clip = scratch / f"moment-{index + 1:04}.mp4"
-            _encode(source, moment, clip)
+            _encode(source, moment, clip, metadata=_clip_tags(details, combined, index + 1, moment))
             _verify(clip, original.width, original.height)
             clips.append(clip)
             report(index + 1, total)
-        _publish(scratch, clips, ordered, combined, report, total, match_title)
+        _publish(scratch, clips, ordered, combined, report, total, match_title, details)
         os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target
 
@@ -132,6 +152,7 @@ def _publish(
     report: Callable[[int, int], None],
     total: int,
     match_title: str | None = None,
+    details: MediaDetails | None = None,
 ) -> None:
     """Join encoded parts into one MP4, or store them as one file per moment."""
     if combined:
@@ -149,6 +170,7 @@ def _publish(
                 str(listing),
                 "-c",
                 "copy",
+                *(details.ffmpeg_args() if details else []),
                 "-movflags",
                 "+faststart",
                 str(result),
@@ -204,9 +226,12 @@ def export_from_segments(
 ) -> Path:
     """Fetch only the stream segments covering the chosen moments, then encode them.
 
+    Spec 220: details set with ``hudl_media.tagging`` are written into the files.
+
     Owner request (2026-11-10): selected moments must not wait for the whole match.
     `playlist` is the helper's local media playlist (asset-N.bin references).
     """
+    details = current_details()
     if not moments:
         raise CaptureError("Select at least one tagged moment or player code.")
     ordered = sorted(moments, key=lambda m: (m["time_s"], m["id"]))
@@ -253,11 +278,17 @@ def export_from_segments(
             source = scratch / f"moment-{number:04}.m3u8"
             source.write_text("\n".join(lines) + "\n")
             clip = scratch / f"moment-{number:04}.mp4"
-            _encode(source, moment, clip, offset=plan[0][0])
+            _encode(
+                source,
+                moment,
+                clip,
+                offset=plan[0][0],
+                metadata=_clip_tags(details, combined, number, moment),
+            )
             reference = probe(clips[0]) if clips else probe(clip)
             _verify(clip, reference.width, reference.height)
             clips.append(clip)
             report(len(needed) + number, total)
-        _publish(scratch, clips, ordered, combined, report, total, match_title)
+        _publish(scratch, clips, ordered, combined, report, total, match_title, details)
         os.link(scratch / ("combined.mp4" if combined else "moments.zip"), target)
     return target

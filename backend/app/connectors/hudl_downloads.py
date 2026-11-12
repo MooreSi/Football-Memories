@@ -39,6 +39,13 @@ _RECYCLE_WINDOWS = (
 )
 
 
+_RECYCLE_FOLDER_WINDOWS = (
+    "Add-Type -AssemblyName Microsoft.VisualBasic; "
+    "[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory("
+    "$env:FM_RECYCLE_PATH, 'OnlyErrorDialogs', 'SendToRecycleBin')"
+)
+
+
 def _powershell(script: str, **env: str) -> subprocess.CompletedProcess[str]:
     # Paths travel in environment variables, never inside the script text.
     return subprocess.run(
@@ -159,12 +166,24 @@ class DownloadFolder:
             raise CaptureError("That download is not in the download folder.") from None
         return self._trash(path)
 
+    def trash_media_folder(self, folder: Path) -> str:
+        """Spec 220: a download's folder in ``Media library/`` (named by its manifest)."""
+        if (
+            folder.parent != self.folder / "Media library"
+            or folder.name.startswith(".")
+            or folder.is_symlink()
+            or not folder.is_dir()
+        ):
+            raise CaptureError("The media library folder for this download was not found.")
+        return self._trash(folder)
+
     def _trash(self, path: Path) -> str:
         name = path.name
         if platform.system() == "Windows":
             # Owner decision 2026-11-11: the Recycle Bin is Windows' Trash; restorable.
+            script = _RECYCLE_FOLDER_WINDOWS if path.is_dir() else _RECYCLE_WINDOWS
             try:
-                result = _powershell(_RECYCLE_WINDOWS, FM_RECYCLE_PATH=str(path))
+                result = _powershell(script, FM_RECYCLE_PATH=str(path))
             except (OSError, subprocess.TimeoutExpired):
                 result = None
             if result is None or result.returncode != 0 or path.exists():

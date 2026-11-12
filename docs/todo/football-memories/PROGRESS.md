@@ -16,7 +16,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Item | Status |
 |---|---|
 | Downloaded > Delete with confirmation (to Trash) | done (tests; browser-checked layout and dialog on dev data, nothing deleted) |
-| Plex-friendly metadata for matches, moments, reels | todo (proposal with owner) |
+| Plex-friendly metadata for matches, moments, reels (spec 220) | done (tests; real-data scratch check; not yet tried in Plex/Jellyfin, not on a real new download) |
 
 ## Spec 210 match scores (2026-11-12)
 

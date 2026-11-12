@@ -116,6 +116,7 @@ def assemble_reel(
     *,
     cards: Iterable[Path] = (),
     progress: Callable[[int, int], None] | None = None,
+    metadata: list[str] | None = None,
 ) -> None:
     """Join cards and clips into one H.264/AAC MP4 at the largest clip's size."""
     if not parts:
@@ -174,6 +175,7 @@ def assemble_reel(
                 str(listing),
                 "-c",
                 "copy",
+                *(metadata or []),  # spec 220: title, date, description for media players
                 "-movflags",
                 "+faststart",
                 str(joined),

@@ -337,3 +337,27 @@ and `/api/health`, and reloads once the commit changed and the app answers;
 failed polls while the helper restarts mean keep waiting; gives up after 30 min
 with a message. A copy runs the new behaviour from the update after the one
 that installs it (the old page and helper perform that update).
+
+## Media player details (spec 220, 2026-11-12)
+
+New downloads get MP4 tags (title, date, description, synopsis, genre, artist,
+album, keywords) from the ffmpeg step that creates them: `capture_hls` and
+`assemble_reel` take `metadata=`, `export_ranges` takes `details=`, and
+`export_from_segments` reads `hudl_media.tagging(...)` (a context variable, so
+its signature and the test doubles that copy it stay unchanged). Each clip in a
+moments ZIP is titled by its own moment. ffmpeg 8 writes all ten keys into MP4
+with `-c copy` (checked with ffprobe); Plex reads embedded tags from MP4/M4V/MOV
+only, not MKV.
+
+`Media library/` (opt-in, `POST /downloads/media`) is one folder per download:
+a hard link to the video under a readable name, `poster.jpg` (the `.poster`
+full-quality snapshot, JPEG only) and a Kodi `<movie>` `.nfo` per video.
+Forum reports say Plex and Jellyfin need a folder per video for per-file
+posters. Hard links fail on exFAT/FAT and across drives; that download is then
+reported in `failed` and nothing is copied. The manifest
+`Media library/.football-memories.json` names the files the app wrote; only
+those `.nfo` files are rewritten (when the page's club, player or score
+changes), folder names never change, and Delete (Downloaded or Settings)
+moves the download's folder to the Trash with it. The club, player, label and
+score come from the page (`MediaContext`), because the helper cannot see the
+app database or the score corrections.

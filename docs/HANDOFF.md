@@ -13,16 +13,24 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Media player details (spec 220, 2026-11-12, owner request):** new downloads
+  carry MP4 tags (title, date, description, player...), and an opt-in
+  Downloaded > Media library switch builds `<download folder>/Media library/`:
+  one folder per download with a hard link to the video, `poster.jpg` and a
+  `.nfo`, using the club/player/score the page sends. Delete takes that folder
+  to the Trash too. Off by default ([owner decision 004](owner-decisions/004-media-library.md)).
+  Helper restarted on the new code (ended its in-memory Hudl session) and the
+  Docker frontend rebuilt. **Not yet tried in Plex/Jellyfin and not turned on
+  in the owner's real folder;** verified on real data in a scratch folder.
+  New downloads' embedded tags not observed on a real Hudl download.
+
 - **Downloaded > Delete (2026-11-12, owner request):** a third button under
   Save opens a confirmation, then `POST /downloads/remove` moves that one file
   to the Trash (Recycle Bin on Windows) via the same never-replace rename as
   Settings > Storage. Only a file the download index lists can be removed;
   a full match's `.tags.csv` stays. Play/Save/Delete are 24px with 3px gaps so
   the stack stays 78px and rows keep their height (browser-measured on dev
-  data, dialog opened and cancelled only). Not yet deployed: the running helper
-  and Docker frontend need Settings > Update. Owner also asked about Plex
-  metadata: files carry none today (no title/date tags, hash names for full
-  matches); proposal pending with the owner.
+  data, dialog opened and cancelled only). Deployed with spec 220.
 
 - **Match scores (spec 210, owner request 2026-11-12):** score from goal tags,
   or the owner's correction (match page editor, `/api/scores`, kept in

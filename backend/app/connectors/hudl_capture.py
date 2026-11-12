@@ -315,6 +315,7 @@ def capture_hls(
     *,
     max_height: int,
     progress: Callable[[int, int], None] = lambda done, total: None,
+    metadata: list[str] | None = None,
 ) -> tuple[Path, float]:
     def get(address: str) -> bytes:
         try:
@@ -376,6 +377,7 @@ def capture_hls(
                 str(playlist),
                 "-c",
                 "copy",
+                *(metadata or []),  # spec 220: title, date, description for media players
                 "-movflags",
                 "+faststart",
                 str(output),

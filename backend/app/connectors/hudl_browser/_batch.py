@@ -14,6 +14,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from app.connectors import hudl_media
 from app.connectors.hudl_capture import CaptureError
 
 if TYPE_CHECKING:
@@ -122,15 +123,23 @@ def _run_batch(
                 if connection._stream_match != identity or not connection._stream_id:
                     connection._prepare_stream(identity)
                 stream = connection._stream_id
-                target = hudl_exports.export_from_segments(
-                    connection._stream_playlist,
-                    connection._fetcher(stream),
-                    chosen,
-                    scratch if reel else folder,
-                    combined=True if reel else combined,
-                    match_title=title if isinstance(title, str) else None,
-                    progress=connection._reporter(label, number),
+                tags = (
+                    None
+                    if reel
+                    else connection.media.export_details(
+                        "moments", identity, title if isinstance(title, str) else None, chosen
+                    )
                 )
+                with hudl_media.tagging(tags):
+                    target = hudl_exports.export_from_segments(
+                        connection._stream_playlist,
+                        connection._fetcher(stream),
+                        chosen,
+                        scratch if reel else folder,
+                        combined=True if reel else combined,
+                        match_title=title if isinstance(title, str) else None,
+                        progress=connection._reporter(label, number),
+                    )
                 if per_match:
                     card = connection.cards.path(card_id) if card_id else None
                     match_name = _clean(title) or identity
@@ -144,6 +153,13 @@ def _run_batch(
                         output,
                         cards=[p for p in (card, closing) if p is not None],
                         progress=connection._reporter(step, number),
+                        metadata=connection.media.export_details(
+                            "reel",
+                            identity,
+                            f"{name or 'Highlight reel'} - {match_name}",
+                            chosen,
+                            titles={identity: title} if isinstance(title, str) else None,
+                        ).ffmpeg_args(),
                     )
                     connection.index.record(
                         "reel",
@@ -188,10 +204,19 @@ def _run_batch(
                 parts.append(cards[-1])
             output = folder / f"{name or 'Highlight reel'} ({secrets.token_hex(4)}).mp4"
             connection.report("exporting", "Assembling the highlight reel…")
+            titles = {i: connection.catalogue.find(i).get("title") for i, _, _ in plans}
             assemble_reel(
                 parts,
                 output,
                 cards=cards,
+                metadata=connection.media.export_details(
+                    "reel",
+                    None,
+                    str(reel.get("name") or "Highlight reel"),
+                    [m for _, chosen, _ in plans for m in chosen],
+                    matches=[i for i, _, _ in plans],
+                    titles={i: t for i, t in titles.items() if isinstance(t, str)},
+                ).ffmpeg_args(),
                 progress=lambda done, total: connection._set_progress(
                     "Assembling the highlight reel", len(plans) + 1, done, total
                 ),
@@ -242,17 +267,21 @@ def _export_worker(
         # Spec 190: moment exports are kept apart from full matches.
         folder = connection.output / "moments"
         folder.mkdir(parents=True, exist_ok=True)
-        target = export_from_segments(
-            playlist,
-            lambda index: connection.resource(stream, str(index))[0],
-            selected,
-            folder,
-            combined=combined,
-            **({"match_title": title} if isinstance(title, str) else {}),
-            progress=lambda done, total: connection._set_progress(
-                "Fetching and encoding the selected moments", 1, done, total
-            ),
+        tags = connection.media.export_details(
+            "moments", identity, title if isinstance(title, str) else None, selected
         )
+        with hudl_media.tagging(tags):
+            target = export_from_segments(
+                playlist,
+                lambda index: connection.resource(stream, str(index))[0],
+                selected,
+                folder,
+                combined=combined,
+                **({"match_title": title} if isinstance(title, str) else {}),
+                progress=lambda done, total: connection._set_progress(
+                    "Fetching and encoding the selected moments", 1, done, total
+                ),
+            )
         connection.index.record(
             "moments",
             identity,

@@ -10,11 +10,13 @@ Full-match captures made before the index existed are recognised by their
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,9 @@ class DownloadIndex:
     def __init__(self, path: Path) -> None:
         self.path = path
         self._lock = threading.Lock()
+        # Spec 220: told after each completed download (the media library). It must
+        # never fail the download, which is already saved and verified.
+        self.on_record: Callable[[], object] | None = None
 
     def _load(self) -> list[dict[str, Any]]:
         try:
@@ -79,6 +84,11 @@ class DownloadIndex:
             entries = [e for e in self._load() if e.get("file") != relative]
             entries.append(entry)
             self._save(entries)
+        if self.on_record is not None:
+            try:
+                self.on_record()
+            except Exception:  # see on_record; Downloaded > Update reports the details
+                logging.getLogger(__name__).warning("Media library update failed", exc_info=True)
 
     def entries(
         self, root: Path, catalogue: list[dict[str, Any]] | None = None

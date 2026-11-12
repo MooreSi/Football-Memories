@@ -28,6 +28,7 @@ from app.connectors.hudl_capture import (
     save_capture,
 )
 from app.connectors.hudl_index import DownloadIndex
+from app.connectors.hudl_media import MediaLibrary, sync_downloads
 from app.connectors.hudl_metadata import MatchCache, capture_key, optional_moments
 
 from . import _batch, _tags
@@ -55,6 +56,13 @@ class BrowserConnection:
         self.details = MatchCache(output.parent / ".hudl-account" / "details")
         self.index = DownloadIndex(output.parent / ".hudl-account" / "downloads-index.json")
         self.cards = CardStore(output.parent / ".hudl-account" / "reel-cards")
+        self.media = MediaLibrary(output.parent / ".hudl-account")
+        self.index.on_record = lambda: (
+            self.media.enabled
+            and sync_downloads(
+                self.media, self.index, self.output, self.catalogue.items(), self.details
+            )
+        )
         self._thumbnails: dict[str, str] = {}
         self._libraries: set[str] = set()
         self._teams: dict[str, dict[str, str]] = {}
@@ -634,6 +642,12 @@ class BrowserConnection:
                 Path(temp),
                 max_height=65536,
                 progress=progress,
+                metadata=self.media.export_details(
+                    "match",
+                    identity,
+                    title if isinstance(title, str) else None,
+                    [{"category": m.category} for m in moments],
+                ).ffmpeg_args(),
             )
             self.report("verifying", "Verifying captured video and moments.")
             target = save_capture(source, self.output, name, moments, length)

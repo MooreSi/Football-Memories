@@ -100,3 +100,13 @@ it("deletes a download only after a second confirmation, moving it to the Trash"
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /Move to Trash/ }));
   expect(posted()).toEqual([{ file: "moments/WBA.mp4" }]);
 });
+
+it("shows the media library panel and says Delete takes its folder too", async () => {
+  stubFetch({ [`${H}/downloads/index`]: entries, [`${H}/library`]: library, [`${H}/account`]: { platform: "mac" },
+    [`${H}/downloads/media`]: { enabled: true, folder: "/x/Media library" } });
+  renderWithProviders(<DownloadedPage />);
+  expect(await screen.findByRole("region", { name: "Media library" })).toBeInTheDocument();
+  const wba = await screen.findByRole("article", { name: /West Bromwich Albion/ });
+  await userEvent.click(within(wba).getByRole("button", { name: "Delete WBA.mp4" }));
+  expect(screen.getByRole("dialog", { name: "Delete WBA.mp4?" })).toHaveTextContent(/Media library folder/);
+});

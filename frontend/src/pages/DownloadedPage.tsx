@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { type DownloadEntry, hudlAgeGroups, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../api/hudl";
 import { TeamBadge } from "../components/TeamBadge";
+import { MediaLibraryPanel } from "../components/downloads/MediaLibraryPanel";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { formatBytes } from "../lib/format";
@@ -69,6 +70,7 @@ export function DownloadedPage() {
         </div>
       </header>
       {remove.error && <p role="alert" className="text-sm text-danger">{remove.error.message}</p>}
+      {index.data && index.data.length > 0 && <MediaLibraryPanel entries={index.data} />}
       {index.isPending ? <Spinner label="Reading downloads" /> : index.isError ? (
         <EmptyState icon={HardDriveDownload} title="Downloads unavailable">Start the desktop helper to see what has been downloaded.</EmptyState>
       ) : groups.size === 0 ? (
@@ -145,6 +147,7 @@ export function DownloadedPage() {
  *  (Recycle Bin on Windows) so it can still be put back. */
 function DeleteDialog({ entry, onClose, onConfirm }: { entry: DownloadEntry; onClose: () => void; onConfirm: () => void }) {
   const windows = useHudlStatus().data?.platform === "windows";
+  const media = useQuery<{ enabled: boolean }>({ queryKey: ["hudl-media"], queryFn: () => hudlRequest("/downloads/media"), retry: false });
   const name = entry.file.split("/").pop()!;
   return (
     <Overlay label={`Delete ${name}?`} onClose={onClose}>
@@ -153,6 +156,7 @@ function DeleteDialog({ entry, onClose, onConfirm }: { entry: DownloadEntry; onC
         {KIND[entry.kind].label}{entry.title ? ` for ${entry.title}` : ""}, {formatBytes(entry.size)}.{" "}
         {windows ? "It moves to the Recycle Bin, so you can restore it until the Recycle Bin is emptied."
           : "It moves to the Mac's Trash, so you can put it back from Finder until the Trash is emptied."}{" "}
+        {media.data?.enabled && "Its Media library folder (the player-friendly copy) goes there too. "}
         If you have not copied it anywhere else, this may be your only copy.
       </p>
       <div className="flex justify-end gap-2">
