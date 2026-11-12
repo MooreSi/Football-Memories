@@ -1,10 +1,10 @@
-import { Clapperboard, Download, Film, FolderArchive, HardDriveDownload, Play } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Clapperboard, Download, Film, FolderArchive, HardDriveDownload, Play, Trash2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Overlay } from "../components/ui/Overlay";
 import { Button } from "../components/ui/Button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { type DownloadEntry, hudlAgeGroups, hudlRequest, useDownloadIndex, useHudlLibrary } from "../api/hudl";
+import { type DownloadEntry, hudlAgeGroups, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../api/hudl";
 import { TeamBadge } from "../components/TeamBadge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
@@ -33,6 +33,12 @@ export function DownloadedPage() {
   const club = useHomeClub();
   const [filter, setFilter] = useState<Filter>("all");
   const [playing, setPlaying] = useState<DownloadEntry | null>(null);
+  const [deleting, setDeleting] = useState<DownloadEntry | null>(null);
+  const qc = useQueryClient();
+  const remove = useMutation({
+    mutationFn: (file: string) => hudlRequest<{ trashed_as: string }>("/downloads/remove", { file }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["hudl-download-index"] }),
+  });
   const entries = (index.data ?? []).filter((e) => filter === "all" || (filter === "match" ? e.kind === "match" : e.kind !== "match"));
   const groups = new Map<string, DownloadEntry[]>();
   for (const e of entries) {
@@ -62,6 +68,7 @@ export function DownloadedPage() {
           ))}
         </div>
       </header>
+      {remove.error && <p role="alert" className="text-sm text-danger">{remove.error.message}</p>}
       {index.isPending ? <Spinner label="Reading downloads" /> : index.isError ? (
         <EmptyState icon={HardDriveDownload} title="Downloads unavailable">Start the desktop helper to see what has been downloaded.</EmptyState>
       ) : groups.size === 0 ? (
@@ -104,14 +111,19 @@ export function DownloadedPage() {
                           {e.codes.length > 0 && <p className="truncate text-xs text-pin">{e.codes.slice(0, 6).join(", ")}{e.codes.length > 6 ? ` +${e.codes.length - 6}` : ""}</p>}
                           <p className="truncate font-mono text-[11px] text-fg-subtle">{e.file}</p>
                         </div>
-                        <div className="flex flex-col items-stretch gap-1.5">
+                        {/* Three buttons in the height two used to take (3 x 24px + 2 x 3px = 78px). */}
+                        <div className="flex flex-col items-stretch gap-[3px]">
                           <button type="button" onClick={() => setPlaying(e)} aria-label={`Play ${name}`}
-                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#2563eb] to-accent-strong px-3.5 text-sm font-semibold text-white hover:brightness-110">
-                            <Play size={14} aria-hidden /> Play
+                            className="inline-flex h-6 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#2563eb] to-accent-strong px-3 text-xs font-semibold text-white hover:brightness-110">
+                            <Play size={12} aria-hidden /> Play
                           </button>
-                          <a href={e.url} aria-label={`Save ${name}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 text-sm hover:bg-white/10">
-                            <Download size={14} aria-hidden /> Save
+                          <a href={e.url} aria-label={`Save ${name}`} className="inline-flex h-6 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 text-xs hover:bg-white/10">
+                            <Download size={12} aria-hidden /> Save
                           </a>
+                          <button type="button" onClick={() => setDeleting(e)} disabled={remove.isPending} aria-label={`Delete ${name}`}
+                            className="inline-flex h-6 items-center justify-center gap-1.5 rounded-full border border-danger/30 bg-danger/10 px-3 text-xs text-danger hover:bg-danger/20 disabled:opacity-40">
+                            <Trash2 size={12} aria-hidden /> Delete
+                          </button>
                         </div>
                       </li>
                     );
@@ -123,7 +135,31 @@ export function DownloadedPage() {
         </div>
       )}
       {playing && <PlayDialog entry={playing} onClose={() => setPlaying(null)} />}
+      {deleting && <DeleteDialog entry={deleting} onClose={() => setDeleting(null)}
+        onConfirm={() => { remove.mutate(deleting.file); setDeleting(null); }} />}
     </div>
+  );
+}
+
+/** Owner request 2026-11-12: Delete asks once more, then moves the file to the Trash
+ *  (Recycle Bin on Windows) so it can still be put back. */
+function DeleteDialog({ entry, onClose, onConfirm }: { entry: DownloadEntry; onClose: () => void; onConfirm: () => void }) {
+  const windows = useHudlStatus().data?.platform === "windows";
+  const name = entry.file.split("/").pop()!;
+  return (
+    <Overlay label={`Delete ${name}?`} onClose={onClose}>
+      <h2 className="text-lg font-semibold break-all">Delete {name}?</h2>
+      <p className="text-sm text-fg-muted">
+        {KIND[entry.kind].label}{entry.title ? ` for ${entry.title}` : ""}, {formatBytes(entry.size)}.{" "}
+        {windows ? "It moves to the Recycle Bin, so you can restore it until the Recycle Bin is emptied."
+          : "It moves to the Mac's Trash, so you can put it back from Finder until the Trash is emptied."}{" "}
+        If you have not copied it anywhere else, this may be your only copy.
+      </p>
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" onClick={onConfirm}><Trash2 size={14} aria-hidden /> {windows ? "Move to Recycle Bin" : "Move to Trash"}</Button>
+      </div>
+    </Overlay>
   );
 }
 

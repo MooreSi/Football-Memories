@@ -11,6 +11,13 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Owner requests 2026-11-12
+
+| Item | Status |
+|---|---|
+| Downloaded > Delete with confirmation (to Trash) | done (tests; browser-checked layout and dialog on dev data, nothing deleted) |
+| Plex-friendly metadata for matches, moments, reels | todo (proposal with owner) |
+
 ## Spec 210 match scores (2026-11-12)
 
 | Item | Status |

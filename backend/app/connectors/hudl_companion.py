@@ -103,6 +103,11 @@ class DeleteDownload(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
 
+class RemoveDownload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    file: str = Field(min_length=1, max_length=600)
+
+
 class CaptureBusy(Exception):
     pass
 
@@ -328,6 +333,18 @@ def create_companion(output: Path) -> FastAPI:
             idle_for_files(request)
             moved = request.app.state.downloads.trash_file(body.name)
             return {**request.app.state.downloads.describe(), "trashed_as": moved}
+
+    @app.post("/downloads/remove")
+    def remove_download(body: RemoveDownload, request: Request) -> dict[str, object]:
+        """Owner request 2026-11-12: Downloaded > Delete, after a confirmation."""
+        with request.app.state.hudl_gate:
+            idle_for_files(request)
+            folders: DownloadFolder = request.app.state.downloads
+            listed = request.app.state.account.index.entries(
+                folders.folder, catalogue=request.app.state.catalogue.items()
+            )
+            moved = folders.trash_download(body.file, [str(e["file"]) for e in listed])
+            return {"trashed_as": moved}
 
     @app.get("/downloads/index")
     def download_index(request: Request) -> list[dict[str, object]]:

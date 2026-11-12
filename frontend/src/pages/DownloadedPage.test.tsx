@@ -80,3 +80,23 @@ it("plays a moments ZIP clip after clip from the downloaded file", async () => {
   const asked = vi.mocked(fetch).mock.calls.map(([u]) => String(u)).find((u) => u.includes("/downloads/members"));
   expect(asked).toContain("file=moments%2FStoke%20Sam.zip");
 });
+
+it("deletes a download only after a second confirmation, moving it to the Trash", async () => {
+  stubFetch({ [`${H}/downloads/index`]: entries, [`${H}/library`]: library, [`${H}/account`]: { platform: "mac" },
+    [`${H}/downloads/remove`]: { trashed_as: "WBA.mp4" } });
+  const posted = () => vi.mocked(fetch).mock.calls.filter((c) => String(c[0]).endsWith("/downloads/remove"))
+    .map((c) => JSON.parse(String(c[1]?.body)));
+  renderWithProviders(<DownloadedPage />);
+  const user = userEvent.setup();
+  const wba = await screen.findByRole("article", { name: /West Bromwich Albion/ });
+  await user.click(within(wba).getByRole("button", { name: "Delete WBA.mp4" }));
+  const dialog = screen.getByRole("dialog", { name: "Delete WBA.mp4?" });
+  expect(dialog).toHaveTextContent(/Trash/);
+  expect(posted()).toEqual([]);
+  await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(posted()).toEqual([]);
+  await user.click(within(wba).getByRole("button", { name: "Delete WBA.mp4" }));
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /Move to Trash/ }));
+  expect(posted()).toEqual([{ file: "moments/WBA.mp4" }]);
+});

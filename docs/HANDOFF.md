@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Downloaded > Delete (2026-11-12, owner request):** a third button under
+  Save opens a confirmation, then `POST /downloads/remove` moves that one file
+  to the Trash (Recycle Bin on Windows) via the same never-replace rename as
+  Settings > Storage. Only a file the download index lists can be removed;
+  a full match's `.tags.csv` stays. Play/Save/Delete are 24px with 3px gaps so
+  the stack stays 78px and rows keep their height (browser-measured on dev
+  data, dialog opened and cancelled only). Not yet deployed: the running helper
+  and Docker frontend need Settings > Update. Owner also asked about Plex
+  metadata: files carry none today (no title/date tags, hash names for full
+  matches); proposal pending with the owner.
+
 - **Match scores (spec 210, owner request 2026-11-12):** score from goal tags,
   or the owner's correction (match page editor, `/api/scores`, kept in
   `preferences` so backups still restore). Hero pill, Latest panel and match

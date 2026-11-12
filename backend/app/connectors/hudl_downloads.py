@@ -3,7 +3,8 @@
 Owner request (2026-11-10): choose the download folder and delete files from
 Settings > Storage. The default stays the app inbox (golden rule 5). Deletion
 moves one named file to the macOS Trash and never replaces anything there, so
-it can be undone from Finder.
+it can be undone from Finder. Owner request (2026-11-12): Downloaded > Delete
+moves a file the download index lists, including in moments/ and reels/.
 """
 
 from __future__ import annotations
@@ -139,6 +140,27 @@ class DownloadFolder:
             raise CaptureError("That file is not in the download folder.")
         if path.suffix.lower() not in _SHOWN:
             raise CaptureError("Choose a file shown in the download folder.")
+        return self._trash(path)
+
+    def trash_download(self, relative: str, listed: list[str]) -> str:
+        """Owner request 2026-11-12: Downloaded > Delete. Only a file the Downloaded
+        screen lists (``listed``, from the download index) may be moved to the Trash."""
+        if relative not in listed:
+            raise CaptureError("Choose a download shown on the Downloaded screen.")
+        parts = relative.split("/")
+        if len(parts) > 2 or any(p in {"", ".", ".."} or p.startswith(".") for p in parts):
+            raise CaptureError("Choose a download shown on the Downloaded screen.")
+        path = self.folder.joinpath(*parts)
+        if path.is_symlink() or path.parent.is_symlink() or not path.is_file():
+            raise CaptureError("That download is no longer in the download folder.")
+        try:
+            path.resolve().relative_to(self.folder.resolve())
+        except ValueError:
+            raise CaptureError("That download is not in the download folder.") from None
+        return self._trash(path)
+
+    def _trash(self, path: Path) -> str:
+        name = path.name
         if platform.system() == "Windows":
             # Owner decision 2026-11-11: the Recycle Bin is Windows' Trash; restorable.
             try:
