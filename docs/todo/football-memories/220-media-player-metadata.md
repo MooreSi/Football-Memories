@@ -100,3 +100,8 @@ Plex Personal Media agent, Local Media Assets on) and Jellyfin.
   instead and the panel shows the count and size. Suite: backend 439 (SQLite and
   Postgres), frontend 219. Built on the owner's share: 17 folders, 17 copies
   (6.2 GB, byte-identical), 17 posters, 17 `.nfo`; originals untouched.
+- 2026-11-12 follow-up (owner's Plex showed collections "27" and "U11 2026" and
+  Hudl-style titles): file tags write seasons as 2026-27 (Plex splits at "/"), and
+  media library copies carry and follow the app's details. One test's
+  byte-identical assertion for copies became a frame-by-frame comparison, with the
+  owner's approval. Backend 443 (SQLite and Postgres). All 17 NAS copies retagged.

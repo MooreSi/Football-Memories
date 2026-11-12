@@ -21,7 +21,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   restarted on the new code. The media library now copies videos on a drive
   without hard links (symlinks and clones were probed on the share and do not
   help) and the panel says how much: the owner's library was built on the NAS,
-  17 reels, 6.2 GB of copies. Not yet tried in Plex.
+  17 reels, 6.2 GB of copies. Plex (LXC 102 on the owner's Proxmox,
+  192.168.3.225; Football mounted read-only at `/mnt/Football`) showed Hudl-style
+  titles and two junk collections from the "/" in "2026/27": copies now carry the
+  app's details (rewritten in place, frames identical) and seasons are written
+  2026-27 in file tags. The owner must refresh metadata in Plex.
 
 - **"The batch stopped" now names its cause (2026-11-12, owner report):** a Reel
   Studio batch failed with the generic message right after the helper was

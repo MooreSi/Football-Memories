@@ -19,6 +19,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import threading
 import xml.etree.ElementTree as ET
@@ -88,6 +89,11 @@ class MediaDetails:
     album: str | None
 
     def ffmpeg_args(self) -> list[str]:
+        # Plex splits tag values at "/" ("U11 2026/27" became collections "U11 2026"
+        # and "27"), so seasons are written 2026-27 inside the file.
+        def plain(text: str | None) -> str | None:
+            return text.replace("/", "-") if text else text
+
         values = {
             "title": self.title,
             "date": self.played.isoformat() if self.played else None,
@@ -96,8 +102,8 @@ class MediaDetails:
             "comment": "Saved by Football Memories",
             "genre": "Football",
             "artist": self.player,
-            "album": self.album,
-            "keywords": ", ".join(self.tags) or None,
+            "album": plain(self.album),
+            "keywords": ", ".join(plain(t) or "" for t in self.tags) or None,
         }
         args: list[str] = []
         for key, value in values.items():
@@ -332,7 +338,9 @@ class MediaLibrary:
                 assert record is not None
                 ours: list[str] = record.setdefault("files", [])
                 try:
-                    videos, extra = self._videos(source, folder, ours)
+                    videos, extra = self._videos(source, folder, record, details)
+                    if not extra and _retag(source, folder, record, details):
+                        updated += 1
                 except OSError:
                     failed.append(relative)
                     if not ours:
@@ -381,9 +389,12 @@ class MediaLibrary:
         }
 
     @staticmethod
-    def _videos(source: Path, folder: Path, ours: list[str]) -> tuple[int, int]:
+    def _videos(
+        source: Path, folder: Path, record: dict[str, Any], details: MediaDetails
+    ) -> tuple[int, int]:
         """Put ``source``'s video(s) in ``folder``. Returns (files made, bytes copied
         because the drive cannot link; 0 when linked or unpacked from a ZIP)."""
+        ours: list[str] = record["files"]
         made = 0
         if source.suffix.lower() == ".zip":
             with zipfile.ZipFile(source) as archive:
@@ -416,16 +427,85 @@ class MediaLibrary:
                 raise
             # SMB shares (the owner's NAS), exFAT and FAT have no hard links: copy.
             # The original is only read; the copy is published without replacing.
+            # A copy is this app's own file, so it carries the app's details inside
+            # it (Plex reads only those). The original is only read.
             descriptor, temporary = tempfile.mkstemp(dir=folder, prefix=".", suffix=".part")
             os.close(descriptor)
             try:
-                shutil.copyfile(source, temporary)
+                if not _tagged(source, Path(temporary), details):
+                    shutil.copyfile(source, temporary)
                 copied = Path(temporary).stat().st_size
                 publish_new(Path(temporary), target)
             finally:
                 Path(temporary).unlink(missing_ok=True)
+            record["copy"] = target.name
+            record["tagged"] = details.ffmpeg_args()
         ours.append(target.name)
         return 1, copied
+
+
+def _tagged(source: Path, output: Path, details: MediaDetails) -> bool:
+    """Remux ``source`` into ``output`` with ``details`` (no re-encode)."""
+    if source.suffix.lower() != ".mp4":
+        return False
+    try:
+        done = subprocess.run(
+            [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-nostdin",
+                "-y",
+                "-i",
+                str(source),
+                "-map",
+                "0",
+                "-c",
+                "copy",
+                *details.ffmpeg_args(),
+                "-f",
+                "mp4",
+                str(output),
+            ],
+            capture_output=True,
+            timeout=3600,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return done.returncode == 0 and output.stat().st_size > 0
+
+
+def _retag(source: Path, folder: Path, record: dict[str, Any], details: MediaDetails) -> bool:
+    """Rewrite the details inside this app's own copy when they changed. Never a
+    hard link (that would be the original download) and never a file not ours."""
+    name = record.get("copy")
+    if name is None and source.suffix.lower() != ".zip":
+        # Copies made before copies were marked: the video this app wrote for the
+        # download. The link and inode checks below tell a copy from the original.
+        name = f"{folder.name}{source.suffix.lower()}"
+    if not isinstance(name, str) or name not in record.get("files", []):
+        return False
+    if record.get("tagged") == details.ffmpeg_args():
+        return False
+    copy = folder / name
+    if copy.is_symlink() or not copy.is_file():
+        return False
+    status = copy.stat()
+    if status.st_nlink != 1 or status.st_ino == source.stat().st_ino:
+        return False
+    descriptor, temporary = tempfile.mkstemp(dir=folder, prefix=".", suffix=".part")
+    os.close(descriptor)
+    try:
+        if not _tagged(copy, Path(temporary), details):
+            return False
+        os.replace(temporary, copy)  # replaces only this app's own copy
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+    record["copy"] = name
+    record["tagged"] = details.ffmpeg_args()
+    return True
 
 
 def _clip_number(name: str) -> tuple[int, str]:

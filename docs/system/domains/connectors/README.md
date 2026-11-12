@@ -376,6 +376,16 @@ move the download), so on a drive with no hard links it copies the video
 1067-byte Minshall-French "XSym" stub file that only the Mac's SMB client follows
 (Plex on the NAS would see a text file), and `cp -c` (clonefile) silently does a
 full copy over the network (330 MB in, 318 MB out for 300 MB), so neither avoids
-the extra space. Owner's library: 17 reels, 6.2 GB copied, byte-identical.
+the extra space. Owner's library: 17 reels, 6.2 GB copied.
+
+Plex (seen 2026-11-12 in the owner's "Other videos" library, Plex Personal Media
+agent) ignores `.nfo` and reads only the tags inside the file. It splits tag
+values at "/": album "U11 2026/27" became two collections, "U11 2026" and "27",
+each holding every video. `ffmpeg_args` therefore writes seasons as `2026-27`
+(the `.nfo` keeps `2026/27`). A media library copy is the app's own file, so it is
+remuxed (`-c copy`, no re-encode) with the app's current details and rewritten
+when they change (`tagged` and `copy` in the manifest; copies made before that
+was recorded are recognised as the folder-named video with one link and an inode
+other than the original's). A hard link is never rewritten: it is the original.
 Before this, a moment export or reel on the share failed after encoding with a
 bare `OSError` at the link. Verified on the real share with a throwaway folder.

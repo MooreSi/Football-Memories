@@ -26,6 +26,29 @@ def tags(path: Path) -> dict[str, str]:
     return json.loads(out)["format"].get("tags", {})
 
 
+def frames(path: Path) -> str:
+    """A checksum of every video and audio frame, ignoring the container's tags."""
+    return subprocess.run(
+        [
+            "ffmpeg",
+            "-v",
+            "error",
+            "-i",
+            str(path),
+            "-map",
+            "0",
+            "-c",
+            "copy",
+            "-f",
+            "framemd5",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+
+
 def entry(kind: str, file: str, **extra):
     return {
         "kind": kind,
@@ -283,10 +306,13 @@ def test_a_drive_without_hard_links_gets_a_copy_and_says_so(tmp_path, tiny_video
     name = "2026-07-12 Aston Villa vs. Cambridge United U11 - Full match"
     copy = root / "Media library" / name / f"{name}.mp4"
     original = root / entries[0]["file"]
-    assert copy.read_bytes() == original.read_bytes()
+    # Owner approved 2026-11-12: a copy carries the app's details inside it (Plex
+    # reads only those), so it is compared by picture and sound, not bytes.
+    assert frames(copy) == frames(original)
+    assert tags(copy)["title"] == "Aston Villa vs. Cambridge United U11 - Full match"
     assert copy.stat().st_ino != original.stat().st_ino  # a real copy, not a link
     assert summary["copied"] == 1
-    assert summary["copied_bytes"] == original.stat().st_size
+    assert summary["copied_bytes"] == copy.stat().st_size
     assert (copy.with_suffix(".nfo")).is_file()
     assert not list((root / "Media library" / name).glob(".*.part"))  # no temp left behind
     assert snapshot(root) == before
@@ -300,3 +326,83 @@ def test_a_linked_library_reports_no_copies(tmp_path, tiny_video):
     media.configure(enabled=True)
     summary = media.sync(root, entries[:1], TITLES, lambda match_id: poster)
     assert summary["copied"] == 0 and summary["copied_bytes"] == 0
+
+
+def test_tags_have_no_slash_because_plex_splits_on_it(tmp_path):
+    """Plex made collections "U11 2026" and "27" from the album "U11 2026/27"."""
+    media = MediaLibrary(tmp_path)
+    media.configure(context=CONTEXT)
+    args = media.details(entry("match", "hudl-x.mp4"), TITLES).ffmpeg_args()
+    values = dict(a.split("=", 1) for a in args if "=" in a)
+    assert values["album"] == "U11 2026-27"
+    assert "/" not in values["keywords"] and "2026-27" in values["keywords"]
+
+
+def _no_links(monkeypatch):
+    import errno
+
+    def refuse(*args, **kwargs):
+        raise OSError(errno.ENOTSUP, "Operation not supported")
+
+    monkeypatch.setattr(os, "link", refuse)
+
+
+def test_a_copy_carries_the_apps_details_and_is_retagged_when_they_change(
+    tmp_path, tiny_video, monkeypatch
+):
+    root, entries, poster = _root(tmp_path, tiny_video)
+    before = snapshot(root)
+    media = MediaLibrary(tmp_path / "cache")
+    media.configure(enabled=True)  # no app context yet: Hudl-style title
+    _no_links(monkeypatch)
+    media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    folder = media.folder_for(root, entries[0]["file"])
+    assert folder is not None
+    copy = folder / f"{folder.name}.mp4"
+    assert tags(copy)["title"] == "U11 v Cambridge (A) - Full match"
+    media.configure(context=CONTEXT)
+    summary = media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    assert tags(copy)["title"] == "Aston Villa vs. Cambridge United U11 - Full match"
+    assert summary["updated"] >= 1 and summary["copied"] == 0
+    assert not list(folder.glob(".*"))  # no temp left behind
+    assert snapshot(root) == before  # the original is never rewritten
+    inode = copy.stat().st_ino
+    media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    assert copy.stat().st_ino == inode  # unchanged details: not rewritten again
+
+
+def test_a_linked_video_is_never_rewritten_for_new_details(tmp_path, tiny_video):
+    root, entries, poster = _root(tmp_path, tiny_video)
+    media = MediaLibrary(tmp_path / "cache")
+    media.configure(enabled=True)
+    media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    media.configure(context=CONTEXT)
+    media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    original = root / entries[0]["file"]
+    folder = media.folder_for(root, entries[0]["file"])
+    assert folder is not None
+    assert (folder / f"{folder.name}.mp4").stat().st_ino == original.stat().st_ino
+    assert "title" not in tags(original)
+
+
+def test_copies_made_before_retagging_existed_are_recognised(tmp_path, tiny_video, monkeypatch):
+    """The owner's 17 NAS copies were made by a version that did not mark them."""
+    root, entries, poster = _root(tmp_path, tiny_video)
+    before = snapshot(root)
+    media = MediaLibrary(tmp_path / "cache")
+    media.configure(enabled=True)
+    _no_links(monkeypatch)
+    media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    manifest_path = root / "Media library" / ".football-memories.json"
+    manifest = json.loads(manifest_path.read_text())
+    for record in manifest.values():
+        record.pop("copy", None)
+        record.pop("tagged", None)
+    manifest_path.write_text(json.dumps(manifest))
+    media.configure(context=CONTEXT)
+    summary = media.sync(root, entries[:1], TITLES, lambda match_id: poster)
+    folder = media.folder_for(root, entries[0]["file"])
+    assert folder is not None
+    assert tags(folder / f"{folder.name}.mp4")["title"].startswith("Aston Villa vs.")
+    assert summary["updated"] >= 1
+    assert snapshot(root) == before
