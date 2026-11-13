@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, SecretStr
 
 from app.connectors.hudl_account import Credentials
@@ -20,8 +21,9 @@ class VeoCredentials(BaseModel):
 
 
 class VeoAction(BaseModel):
-    action: Literal["test", "refresh", "watch", "download"]
+    action: Literal["test", "refresh", "watch", "download", "disconnect"]
     match_id: str | None = Field(default=None, max_length=200)
+    name: str | None = Field(default=None, max_length=200)
 
 
 @router.get("/account")
@@ -55,7 +57,10 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
     if body.action in {"watch", "download"}:
         if not body.match_id:
             raise CaptureError("Select a Veo match first.")
-        state.veo.start(body.action, body.match_id)
+        if body.action == "download" and body.name:
+            state.veo.start(body.action, body.match_id, name=body.name)
+        else:
+            state.veo.start(body.action, body.match_id)
     else:
         state.veo.start(body.action)
     return {"accepted": True}
@@ -79,5 +84,22 @@ def stream(token: str, request: Request) -> Response:
 
 @router.get("/library")
 def library(request: Request) -> list[dict[str, object]]:
-    items: list[dict[str, object]] = request.app.state.veo.library()
-    return items
+    veo = request.app.state.veo
+    poster = getattr(veo, "poster", lambda identity: None)
+    return [
+        {
+            **item,
+            "poster_url": f"http://127.0.0.1:8766/veo/match/{item['id']}/poster"
+            if poster(str(item.get("id"))) is not None
+            else None,
+        }
+        for item in veo.library()
+    ]
+
+
+@router.get("/match/{identity}/poster")
+def match_poster(identity: str, request: Request) -> FileResponse:
+    path = request.app.state.veo.poster(identity)
+    if path is None:
+        raise HTTPException(404, "No poster saved for this match")
+    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "max-age=3600"})

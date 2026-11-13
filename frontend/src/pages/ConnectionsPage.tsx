@@ -10,6 +10,8 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
 import { HIDDEN_KEY, readHidden } from "../lib/connections";
+import { HomeTeamField } from "../components/settings/HomeTeamField";
+import { ClubCrestUpload } from "../components/settings/ClubCrestUpload";
 
 const LABELS: Record<string, string> = {
   list_teams: "List teams",
@@ -33,6 +35,7 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
 
 export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
   const [hudlState, setHudlState] = useState<string | null>(null);
+  const [veoState, setVeoState] = useState<string | null>(null);
   const [hidden, setHidden] = useState<string[]>(readHidden);
   useEffect(() => { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(hidden)); } catch { /* a convenience only */ } }, [hidden]);
   const shown = (id: string) => !hidden.includes(id);
@@ -55,7 +58,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
           <Toggle label="Show Veo" on={shown("veo")} onChange={(on) => show("veo", on)} />
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
-          {q.data.filter((c) => c.id !== "hudl" || shown("hudl")).map((c) => (
+          {q.data.filter((c) => c.id !== "local_import" && (c.id !== "hudl" || shown("hudl"))).map((c) => (
             <section key={c.id} className="panel h-fit space-y-4 p-5" aria-label={c.name}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{c.name}</h2>
@@ -63,7 +66,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                   : c.available ? <Badge tone="ok">Available</Badge> : <Badge tone="warn">Not available</Badge>}
               </div>
               {c.reason && (c.id !== "hudl" || !hudlState) && <p className="text-sm text-fg-muted">{c.reason}</p>}
-              {c.id === "hudl" && hudlState && <p className="text-sm text-fg-muted">Save your Hudl account securely, test the connection, then choose a cached match to stream or download.</p>}
+              {c.id === "hudl" && hudlState && <p className="text-sm text-fg-muted">Save your Hudl account securely, select Connect, then choose a cached match to stream or download.</p>}
               {c.id === "hudl" && (
                 <div className="space-y-2 border-y border-line py-3">
                   <a
@@ -104,15 +107,22 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                   Details: <code>{c.docs}</code> in the project folder.
                 </p>
               )}
-              {c.id === "hudl" && <><HudlAccount onConnectionChange={setHudlState} /><details><summary className="cursor-pointer text-sm text-fg-muted">Capture a match by URL</summary><div className="mt-4"><HudlCapture /></div></details></>}
+              {c.id === "hudl" && <><HudlAccount onConnectionChange={setHudlState} /><HomeTeamField source="hudl" /><details><summary className="cursor-pointer text-sm text-fg-muted">Capture a match by URL</summary><div className="mt-4"><HudlCapture /></div></details></>}
             </section>
           ))}
           {shown("veo") && <section className="panel h-fit space-y-4 p-5" aria-label="Veo">
-            <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Veo</h2></div>
-            <p className="text-sm text-fg-muted">Connect the Veo account you record with. The desktop helper signs in with your saved account and reads your Veo match list, details and highlights; it never changes anything on Veo. Watching and downloading Veo matches in the Library comes next.</p>
-            <VeoAccount />
+            <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Veo</h2>
+              {veoState && <Badge tone={veoState === "Connected" ? "ok" : "warn"}>{veoState}</Badge>}</div>
+            <p className="text-sm text-fg-muted">Connect the Veo account you record with. The desktop helper signs in with your saved account and reads your Veo match list, details and highlights; it never changes anything on Veo. Watch and download Veo matches from All matches.</p>
+            <VeoAccount onConnectionChange={setVeoState} />
+            <HomeTeamField source="veo" />
           </section>}
         </div>
+        <section aria-label="Club crests" className="panel space-y-3 p-5">
+          <h2 className="text-lg font-semibold">Club crests</h2>
+          <p className="text-sm text-fg-muted">Crests come from Wikipedia where the club has a page. For grassroots clubs, add the crest yourself; it is used for Veo and Hudl matches alike.</p>
+          <ClubCrestUpload />
+        </section>
         </div>
       )}
     </>

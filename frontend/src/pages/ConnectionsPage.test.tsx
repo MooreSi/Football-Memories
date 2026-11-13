@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders, stubFetch } from "../test/render";
 import { ConnectionsPage } from "./ConnectionsPage";
@@ -40,17 +40,19 @@ describe("ConnectionsPage", () => {
     expect(screen.queryByRole("button", { name: /connect/i })).toBeNull();
   });
 
-  it("places Hudl alongside Import from folder rather than across the full width", async () => {
+  it("puts Veo beside Hudl where Import from folder was (owner request 2026-11-13)", async () => {
     stubFetch({
       "/api/connectors": [
         { id: "hudl", name: "Hudl", available: true, reason: "", docs: "", limitations: [], capabilities: {} },
         { id: "local_import", name: "Import from folder", available: true, reason: "", docs: "", limitations: [], capabilities: {} },
       ],
+      "http://127.0.0.1:8766/veo/account": { configured: true, busy: false, state: "ready", message: "Connected to Veo", summary: null },
     });
     renderWithProviders(<ConnectionsPage />);
     const hudl = await screen.findByRole("region", { name: "Hudl" });
-    const local = screen.getByRole("region", { name: "Import from folder" });
-    expect(hudl.parentElement).toBe(local.parentElement);
-    expect(hudl.className).not.toMatch(/col-span/);
+    const veo = screen.getByRole("region", { name: "Veo" });
+    expect(hudl.parentElement).toBe(veo.parentElement);
+    expect(screen.queryByRole("region", { name: "Import from folder" })).toBeNull();
+    expect(await within(veo).findByText("Connected")).toBeInTheDocument();
   });
 });

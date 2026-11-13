@@ -83,13 +83,13 @@ export function PlayerHubPage() {
           <div className="profile-top">
             <PlayerCard player={p} moments={p.totals.moments + hudlMoments.length} games={p.totals.matches + hudl.length} />
             <ProfilePanel key={`${p.id}-${p.display_name}-${p.shirt_number}-${p.position}-${p.club_name}-${p.card_style}`} player={p} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatTile label="Matches" icon={Trophy} value={String(p.totals.matches + hudl.length)} unit="tagged in" />
-            <StatTile label="Moments" icon={Sparkles} value={String(p.totals.moments + hudlMoments.length)} unit="tagged" />
-            <StatTile label="Unwatched" icon={Eye} value={String(p.totals.unwatched + hudlMoments.filter((m) => !watched.has(m.id)).length)} unit="new" />
-            <StatTile label="Favourites" icon={Heart} value={String(p.totals.favourites)} unit="saved" />
+            {/* Owner request 2026-11-13: the four counts stack beside Teams, as tall as the card. */}
+            <div className="profile-stats" aria-label="Player totals">
+              <StatTile compact label="Matches" icon={Trophy} value={String(p.totals.matches + hudl.length)} unit="tagged in" />
+              <StatTile compact label="Moments" icon={Sparkles} value={String(p.totals.moments + hudlMoments.length)} unit="tagged" />
+              <StatTile compact label="Unwatched" icon={Eye} value={String(p.totals.unwatched + hudlMoments.filter((m) => !watched.has(m.id)).length)} unit="new" />
+              <StatTile compact label="Favourites" icon={Heart} value={String(p.totals.favourites)} unit="saved" />
+            </div>
           </div>
 
           <section aria-label="Moments per match" className="panel min-w-0 p-5">

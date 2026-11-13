@@ -28,7 +28,7 @@ describe("HudlAccount", () => {
     ] }, [`${BASE}/account/action`]: { accepted: true } });
     const user = userEvent.setup();
     renderWithProviders(<HudlAccount />);
-    await user.click(await screen.findByRole("button", { name: "Test" }));
+    await user.click(await screen.findByRole("button", { name: "Connect" }));
     const calls = vi.mocked(fetch).mock.calls.filter(([url]) => url === `${BASE}/account/action`);
     expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ action: "test" });
     expect(screen.queryByRole("button", { name: "Stream Team A vs B" })).toBeNull();

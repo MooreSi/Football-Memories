@@ -44,9 +44,43 @@ class _Refused(Exception):
         self.wait_s = wait_s
 
 
+# Owner request 2026-11-13: grassroots sides carry a short code or a colour after the
+# club ("Solihull Moors CB", "Riverside Reds"); every side shares the club's crest.
+_COLOURS = {
+    "blue",
+    "blues",
+    "red",
+    "reds",
+    "white",
+    "whites",
+    "black",
+    "blacks",
+    "green",
+    "greens",
+    "yellow",
+    "yellows",
+    "amber",
+    "ambers",
+    "orange",
+    "purple",
+    "claret",
+    "navy",
+    "gold",
+    "golds",
+}
+
+
+def _without_side(words: list[str]) -> list[str]:
+    while len(words) > 1 and (
+        re.fullmatch(r"[A-Z]{1,3}", words[-1]) or words[-1].casefold() in _COLOURS
+    ):
+        words = words[:-1]
+    return words
+
+
 def club_name(name: str) -> str:
     name = re.sub(r"\b(?:u\s*\d{1,2}|under[ -]?\d{1,2}|f\.?c\.?)\b", "", name, flags=re.I)
-    return " ".join(name.casefold().strip(" .").split())
+    return " ".join(_without_side(name.strip(" .").split())).casefold()
 
 
 def logo_candidate(name: str) -> str | None:
@@ -108,7 +142,7 @@ def _written(name: str) -> str:
     """The name as the page would title it: "AFC Bournemouth" keeps its capitals; a name
     typed all in lower case is title-cased."""
     name = re.sub(r"\b(?:u\s*\d{1,2}s?|under[ -]?\d{1,2}|f\.?c\.?)(?=\s|$)", "", name, flags=re.I)
-    name = " ".join(name.strip(" .").split())
+    name = " ".join(_without_side(name.strip(" .").split()))
     return name if name != name.lower() else name.title()
 
 
@@ -166,3 +200,35 @@ def cached_crest(name: str, directory: Path) -> Path | None:
         except Exception:
             _MISSES[key] = time.monotonic() + _NO_CREST_S
             return None
+
+
+CREST_LIMIT = 2_000_000
+
+
+def crest_type(data: bytes) -> str | None:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def save_crest(name: str, data: bytes, directory: Path) -> Path:
+    """Owner request 2026-11-13: the owner's own crest for a club (grassroots clubs are
+    rarely on Wikipedia). It replaces any cached crest for that club."""
+    if len(data) > CREST_LIMIT or crest_type(data) is None:
+        raise ValueError("Choose a PNG, JPEG or WebP image under 2 MB.")
+    identity = club_name(name)
+    if not identity:
+        raise ValueError("Enter the club's name.")
+    key = hashlib.sha256(identity.encode()).hexdigest()
+    target = safe_join(directory, f"{key}.png")
+    directory.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(".upload")
+    with _LOCK:
+        temporary.write_bytes(data)
+        temporary.replace(target)
+        _MISSES.pop(key, None)
+    return target

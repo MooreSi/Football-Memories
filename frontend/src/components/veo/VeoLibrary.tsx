@@ -31,9 +31,11 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
       const expiry = veoExpiry(m);
       const highlights = m.moments?.length ?? 0;
       return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
-        <Link to={`/veo/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
+        <Link to={`/clips?match=${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
           <div className="relative grid aspect-video place-items-center overflow-hidden bg-ink-800 text-fg-subtle">
-            <span className="grid place-items-center gap-1"><Film size={28} aria-hidden />{m.score && <span className="text-2xl font-semibold text-fg">{m.score.ours}–{m.score.theirs}</span>}</span>
+            {m.poster_url ? <img crossOrigin="anonymous" src={m.poster_url} alt={m.title} loading="lazy" className="absolute inset-0 size-full object-cover" />
+              : <span className="grid place-items-center gap-1"><Film size={28} aria-hidden /></span>}
+            {m.score && <span className="absolute right-2.5 bottom-2.5 rounded-lg bg-ink-950/85 px-2.5 py-1 text-lg font-semibold tabular-nums text-fg">{m.score.ours}–{m.score.theirs}</span>}
             <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{veoAgeGroups(m).join(" / ")} · Veo</span>
             {expiry && <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-warn"><Clock3 size={12} aria-hidden />{expiry}</span>}
           </div>

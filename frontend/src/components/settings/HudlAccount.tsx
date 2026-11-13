@@ -114,15 +114,15 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
         <input aria-label="Hudl password" type="password" autoComplete="off" required disabled={busy}
           className="field" value={password} onChange={e => setPassword(e.target.value)}
           placeholder={q.data.configured ? `Saved in ${windows ? "Credential Manager" : "Keychain"} — enter to replace` : "Password"} /></label>
-      <p className="text-xs text-fg-subtle">Saved only in {where}. Test signs in and refreshes available matches. Complete any verification in the Hudl browser.</p>
+      <p className="text-xs text-fg-subtle">Saved only in {where}. Connect signs in and refreshes available matches. Complete any verification in the Hudl browser.</p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="primary" disabled={busy}>{save.isPending ? "Saving…" : "Save"}</Button>
-        <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate({ action: "test" })}>Test</Button>
+        <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate({ action: "test" })}>Connect</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate({ action: "refresh" })}><RefreshCw size={14} /> Refresh matches</Button>
         {q.data.session_active && <Button type="button" disabled={busy} onClick={() => action.mutate({ action: "disconnect" })}>Disconnect</Button>}
       </div>
     </form>
-    {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Test to connect.</p>}
+    {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in.</p>}
     <p role="status" className={`text-xs ${q.data.state === "error" ? "text-danger" : "text-fg-muted"}`}>{q.data.message}</p>
     {(save.isError || action.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error)?.message}</p>}
     {q.data.filename && <Link to="/import" className="inline-flex text-sm font-semibold text-accent underline">Import downloaded match</Link>}

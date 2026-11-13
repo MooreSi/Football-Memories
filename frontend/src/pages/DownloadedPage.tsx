@@ -12,6 +12,8 @@ import { Spinner } from "../components/ui/Spinner";
 import { formatBytes } from "../lib/format";
 import { fixtureDate, fixtureLabel, fixtureParts, ukDate } from "../lib/hudlFixture";
 import { useHomeClub } from "../lib/useHomeClub";
+import { useVeoTeam } from "../lib/useHomeTeams";
+import { useVeoLibrary } from "../api/veo";
 
 type Filter = "all" | "match" | "moments";
 const KIND: Record<DownloadEntry["kind"], { label: string; icon: typeof Film }> = {
@@ -31,7 +33,9 @@ function describe(e: DownloadEntry): string {
 export function DownloadedPage() {
   const index = useDownloadIndex();
   const library = useHudlLibrary();
-  const club = useHomeClub();
+  const hudlClub = useHomeClub();
+  const veoTeam = useVeoTeam();
+  const veoLibrary = useVeoLibrary();
   const [filter, setFilter] = useState<Filter>("all");
   const [playing, setPlaying] = useState<DownloadEntry | null>(null);
   const [deleting, setDeleting] = useState<DownloadEntry | null>(null);
@@ -80,9 +84,12 @@ export function DownloadedPage() {
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {[...groups].map(([key, list]) => {
-            const match = library.data?.find((m) => m.id === key);
-            const title = match?.title ?? list[0].title ?? "Downloaded files";
-            const age = match ? hudlAgeGroups(match)[0] : "";
+            const isVeo = key.startsWith("veo-");
+            const club = isVeo ? veoTeam : hudlClub;
+            const veoMatch = isVeo ? veoLibrary.data?.find((m) => m.id === key) : undefined;
+            const match = isVeo ? undefined : library.data?.find((m) => m.id === key);
+            const title = match?.title ?? veoMatch?.title ?? list[0].title ?? "Downloaded files";
+            const age = match ? hudlAgeGroups(match)[0] : veoMatch?.age_group && veoMatch.age_group !== "Unclassified" ? veoMatch.age_group : "";
             const parts = fixtureParts(title, club);
             const date = fixtureDate(title);
             const label = fixtureLabel(title, club, age);
@@ -90,7 +97,7 @@ export function DownloadedPage() {
               <article key={key} aria-label={label} className="panel overflow-hidden">
                 <div className="flex gap-4 border-b border-line p-4">
                   <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-xl bg-ink-800">
-                    {match?.thumbnail_url ? <img crossOrigin="anonymous" src={match.thumbnail_url} alt="" className="size-full object-cover" />
+                    {(match?.thumbnail_url || veoMatch?.poster_url) ? <img crossOrigin="anonymous" src={(match?.thumbnail_url || veoMatch?.poster_url)!} alt="" className="size-full object-cover" />
                       : <Film className="m-auto mt-6 text-fg-subtle" aria-hidden />}
                     {parts && <span className="absolute top-1.5 left-1.5 flex gap-1"><TeamBadge name={club || "Home"} size="sm" /><TeamBadge name={parts.opponent} size="sm" tone="away" /></span>}
                   </div>
@@ -98,6 +105,7 @@ export function DownloadedPage() {
                     <h2 className="font-semibold leading-snug">{label}</h2>
                     <p className="text-xs text-fg-muted">{[date && ukDate(date), age, match?.season_label, parts?.venue].filter(Boolean).join(" · ")}</p>
                     {match && <Link to={`/hudl/${encodeURIComponent(match.id)}`} className="text-xs text-accent hover:underline">Open match</Link>}
+                    {veoMatch && <Link to={`/veo/${encodeURIComponent(veoMatch.id)}`} className="text-xs text-accent hover:underline">Open match</Link>}
                   </div>
                 </div>
                 <ul className="divide-y divide-line">

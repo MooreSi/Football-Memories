@@ -31,3 +31,13 @@ it('keeps the date horizontal under the vertical opposition name, which is large
   expect(date.nextElementSibling).toHaveAttribute('data-bar-label');
   expect(bar.querySelector('[data-bar-label]')?.className).toContain('text-xs');
 });
+
+// Owner request 2026-11-13: the wider box holds more matches, and the bars are a blue gradient.
+it('shows the last 20 matches with blue gradient bars', () => {
+  const many = Array.from({ length: 25 }, (_, i) => ({ match_id: i + 1, match_date: `2026-0${1 + Math.floor(i / 9)}-${String(1 + (i % 9)).padStart(2, '0')}`, opponent: `Team ${i + 1}`, moments: i }));
+  render(<MemoryRouter><MomentsPerMatch series={many} /></MemoryRouter>);
+  const bars = within(screen.getByRole('list', { name: 'Moments per match, oldest to newest' })).getAllByRole('listitem');
+  expect(bars).toHaveLength(20);
+  expect(bars[0].querySelector('[data-bar-label]')?.textContent).toBe('Team 6');
+  for (const bar of bars) expect(bar.querySelector('a')?.className).toMatch(/bg-linear-to-t/);
+});

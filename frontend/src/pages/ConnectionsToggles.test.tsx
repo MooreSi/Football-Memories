@@ -28,7 +28,7 @@ it("shows Hudl and Veo, and hides each one with its switch until shown again", a
   expect(screen.getByRole("region", { name: "Hudl" })).toBeInTheDocument();
   await user.click(screen.getByRole("switch", { name: "Show Hudl" }));
   expect(screen.queryByRole("region", { name: "Hudl" })).toBeNull();
-  expect(screen.getByRole("region", { name: "Local import" })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Local import" })).toBeNull(); // removed from Connections, owner request
   view.unmount();
   open();
   expect(await screen.findByRole("switch", { name: "Show Hudl" })).toHaveAttribute("aria-checked", "false");

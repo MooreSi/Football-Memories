@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import type { PlayerProfile } from "../../api/types";
 import { trend } from "../../lib/player";
 
-/** Reference 03's "Dynamics" bar chart: moments per match, last 10 matches. */
+/** Reference 03's "Dynamics" bar chart: moments per match, the last 20 matches
+ *  (owner request 2026-11-13: the full-width box held 10 too far apart). */
 export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"] }) {
-  const last = series.slice(-10);
+  const last = series.slice(-20);
   if (last.length === 0) return <p className="p-6 text-center text-sm text-fg-muted">No matches yet.</p>;
   const max = Math.max(...last.map((s) => s.moments));
   const t = trend(last.map((s) => s.moments));
@@ -18,7 +19,7 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
         Moments per match
         <span className="sr-only">trend {t}</span>
       </p>
-      <ol className="flex h-56 items-end gap-2" aria-label="Moments per match, oldest to newest">
+      <ol className="flex h-56 items-end gap-1.5" aria-label="Moments per match, oldest to newest">
         {last.map((s, i) => (
           <li key={s.match_id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
             <span className="text-sm font-semibold tabular-nums">{s.moments}</span>
@@ -27,8 +28,8 @@ export function MomentsPerMatch({ series }: { series: PlayerProfile["per_match"]
                 to={s.href ?? `/matches/${s.match_id}`}
                 title={`vs ${s.opponent}, ${s.match_date}`}
                 aria-label={`${s.moments} moments vs ${s.opponent}`}
-                className={`w-full max-w-10 rounded-md border transition hover:brightness-125 ${
-                  i >= half ? "border-accent/60 bg-accent/35" : "border-white/15 bg-white/15"
+                className={`w-full max-w-9 rounded-t-md rounded-b-sm bg-linear-to-t from-[#1e3a8a] via-[#2563eb] to-[#38bdf8] shadow-[0_0_12px_#3b82f640] transition hover:brightness-125 ${
+                  i >= half ? "" : "opacity-60"
                 }`}
                 style={{ height: `${Math.max(6, (s.moments / max) * 100)}%` }}
               />

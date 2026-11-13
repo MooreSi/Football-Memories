@@ -9,11 +9,11 @@ function display(value: string): string {
  *  own line, so large counts such as 29,687 stay inside the box. The number scales with
  *  the tile's own width (container units), and the grid keeps tiles equal, so the
  *  size stays the same across a row. */
-export function StatTile({ label, icon: Icon, value, unit, hint }: {
-  label: string; icon: LucideIcon; value: string; unit?: string; hint?: string;
+export function StatTile({ label, icon: Icon, value, unit, hint, compact = false }: {
+  label: string; icon: LucideIcon; value: string; unit?: string; hint?: string; compact?: boolean;
 }) {
   return (
-    <div role="group" aria-label={label} className="@container tile flex min-h-[132px] min-w-0 flex-col justify-between overflow-hidden p-4">
+    <div role="group" aria-label={label} className={`@container tile flex min-w-0 flex-col justify-between overflow-hidden ${compact ? "min-h-0 px-4 py-3" : "min-h-[132px] p-4"}`}>
       <div className="flex items-start justify-between gap-2">
         <span className="truncate text-sm text-fg-muted">{label}</span>
         <Icon size={17} className="shrink-0 text-fg-subtle @max-[7.5rem]:hidden" aria-hidden />

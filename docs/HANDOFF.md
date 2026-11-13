@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Owner follow-ups after the first Veo download (2026-11-13):** Veo posters saved
+  on Refresh; crests ignore side codes/colours and the owner can add crests
+  (Settings > Connections > Club crests; decision 008 open on other sources);
+  Veo downloads named `<match> <date>.mp4`; Veo matches open in the Clip explorer;
+  team name per source (`/api/settings/home-teams`, used by `useHomeClub` for Hudl
+  and `useVeoTeam`); My Player restacked (Tagged with removed), Recent matches 20
+  bars in a blue gradient; Connections: Import card gone, Connect, Veo Disconnect.
+  Deployed (Docker rebuilt, helper restarted). Owner to set the Veo team name and
+  run Refresh matches for posters.
+
 - **Spec 260, Veo Library and playback ([260](todo/football-memories/260-veo-library-and-playback.md)):**
   task 1 built: "Connected Veo" section under All matches (`components/veo/VeoLibrary`,
   same filters, expiry badge, hidden by Show Veo off via `lib/connections`) and

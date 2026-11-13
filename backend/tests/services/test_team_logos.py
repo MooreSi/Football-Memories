@@ -228,3 +228,55 @@ def test_a_page_found_as_written_must_show_a_club_crest(tmp_path, monkeypatch) -
     assert cached_crest("Tokyo", tmp_path) is None
     assert downloads == []
     assert cached_crest("Barcelona", tmp_path) is not None  # negative control
+
+
+# Owner request 2026-11-13: grassroots (mostly Veo) teams carry a side code or colour
+# ("Solihull Moors CB", "Kidderminster CG"); the club's crest is the same for all sides.
+@pytest.mark.parametrize(
+    ("team", "club"),
+    [
+        ("Solihull Moors CB", "solihull moors"),
+        ("Kidderminster CG", "kidderminster"),
+        ("Riverside Blue", "riverside"),
+        ("Riverside U11 Reds", "riverside"),
+        ("AFC Wimbledon", "afc wimbledon"),
+        ("PSV", "psv"),
+        ("Aston Villa", "aston villa"),
+    ],
+)
+def test_a_side_code_or_colour_shares_the_clubs_crest(team: str, club: str) -> None:
+    assert club_name(team) == club
+
+
+def test_a_side_code_is_dropped_from_the_wikipedia_lookup(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    asked: list[str] = []
+
+    def fetch(url):
+        asked.append(url)
+        if "wikipedia.org/w/api.php" in url:
+            return b'{"query":{"pages":{"1":{"pageimage":"Solihull_Moors_FC_logo.svg","thumbnail":{"source":"https://upload.wikimedia.org/x.png"}}}}}'
+        return b"\x89PNG\r\n\x1a\nsynthetic"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert cached_crest("Solihull Moors CB", tmp_path) is not None
+    assert "Solihull+Moors+F.C." in asked[0] and "CB" not in asked[0]
+
+
+def test_an_uploaded_crest_replaces_the_cached_one_and_is_served_first(
+    tmp_path, monkeypatch
+) -> None:
+    from app.services.team_logos import cached_crest, save_crest
+
+    monkeypatch.setattr("app.services.team_logos._fetch", lambda url: pytest.fail("no lookup"))
+    png = b"\x89PNG\r\n\x1a\nowner-crest"
+    path = save_crest("Riverside Juniors CB", png, tmp_path)
+    assert path.read_bytes() == png
+    assert cached_crest("Riverside Juniors", tmp_path) == path
+    jpeg = b"\xff\xd8\xff\xe0owner-jpeg"
+    assert save_crest("Riverside Juniors", jpeg, tmp_path).read_bytes() == jpeg
+    for bad in (b"GIF89a", b"<svg", b"\x89PNG\r\n\x1a\n" + b"x" * 2_000_001):
+        with pytest.raises(ValueError):
+            save_crest("Riverside Juniors", bad, tmp_path)
+    assert cached_crest("Riverside Juniors", tmp_path).read_bytes() == jpeg  # type: ignore[union-attr]

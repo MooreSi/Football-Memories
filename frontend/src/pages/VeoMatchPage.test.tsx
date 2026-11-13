@@ -91,3 +91,12 @@ it("starts a full-match download in the helper", async () => {
   await userEvent.setup().click(button);
   expect(sent()).toContainEqual({ action: "download", match_id: "veo-a" });
 });
+
+it("names the download with the Veo team from Settings", async () => {
+  stubFetch({ [LIB]: [{ ...match, title: "260901 RJ vs Rovers" }], [ACTION]: { accepted: true }, [STATUS]: idle,
+    "/api/settings/home-teams": { hudl: null, veo: "Riverside Juniors" } });
+  open("veo-a");
+  await screen.findByRole("heading", { name: /Riverside Juniors vs\. Rovers/ });
+  await userEvent.setup().click(screen.getByRole("button", { name: "Download full match" }));
+  expect(sent()).toContainEqual({ action: "download", match_id: "veo-a", name: "Riverside Juniors vs. Rovers U11" });
+});

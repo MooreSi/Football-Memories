@@ -15,6 +15,8 @@ from app.schemas import (
     AppSettingsPatch,
     ArchiveSummaryOut,
     FolderHealthOut,
+    HomeTeamsOut,
+    HomeTeamsPatch,
     MissingFileOut,
     ScoreCorrectionIn,
     StorageHealthOut,
@@ -38,6 +40,16 @@ def get_app_settings(db: Db) -> AppSettingsOut:
 @router.put("/settings", response_model=AppSettingsOut)
 def put_app_settings(body: AppSettingsPatch, db: Db) -> AppSettingsOut:
     return _out(app_settings.update_clip_timing(db, body.clip_pre_s, body.clip_post_s))
+
+
+@router.get("/settings/home-teams", response_model=HomeTeamsOut)
+def get_home_teams(db: Db) -> HomeTeamsOut:
+    return HomeTeamsOut(**app_settings.home_teams(db))
+
+
+@router.put("/settings/home-teams", response_model=HomeTeamsOut)
+def put_home_teams(body: HomeTeamsPatch, db: Db) -> HomeTeamsOut:
+    return HomeTeamsOut(**app_settings.update_home_teams(db, body.model_dump()))
 
 
 @router.get("/storage/health", response_model=StorageHealthOut)

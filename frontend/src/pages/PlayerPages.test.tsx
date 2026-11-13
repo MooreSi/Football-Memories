@@ -46,11 +46,12 @@ describe("PlayerHubPage", () => {
     expect(within(card).getByText(/Tag counts, not ratings/)).toBeInTheDocument();
   });
 
-  it("lists team history, teammates and links first and latest games", async () => {
+  it("lists team history and links first and latest games", async () => {
     stubFetch({ "/api/players/5": profile, "/api/players/5/moments": { total: 1, items: [moment] } });
     renderHub();
     expect(await screen.findByText("U12 · 2026/27")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Alex Sample/ })).toHaveAttribute("href", "/player/6");
+    // Owner request 2026-11-13: the "Tagged with" teammates panel was removed.
+    expect(screen.queryByRole("link", { name: /Alex Sample/ })).toBeNull();
     expect(screen.getByRole("link", { name: /First archived game/ })).toHaveAttribute("href", "/matches/1");
     expect(screen.getByRole("link", { name: /Latest game/ })).toHaveAttribute("href", "/matches/2");
   });

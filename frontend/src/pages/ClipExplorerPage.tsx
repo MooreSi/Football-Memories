@@ -1,7 +1,7 @@
 import { useArchiveFilters } from "../lib/archiveFilters";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clapperboard, ListVideo, Save, Search, Shuffle } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { MomentFilters, MomentItem } from "../api/types";
@@ -15,6 +15,9 @@ import { moveItem, removeAt } from "../lib/queue";
 import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { latestFirst } from "../lib/hudlFixture";
 import { HudlMatchView } from "./HudlMatchPage";
+import { VeoMatchView } from "./VeoMatchPage";
+import { useVeoLibrary } from "../api/veo";
+import { connectionShown } from "../lib/connections";
 import { BatchDownload } from "../components/clips/BatchDownload";
 
 const PAGE = 60;
@@ -24,12 +27,16 @@ const START: MomentFilters = { categories: [], playerIds: [], playerMode: "any",
  *  search moments across imported matches. */
 export function ClipExplorerPage() {
   const library = useHudlLibrary();
-  const [chosen, setChosen] = useState<string | null>(null);
+  const veoLibrary = useVeoLibrary();
+  const [params] = useSearchParams();
+  const [chosen, setChosen] = useState<string | null>(params.get("match"));
   const {age,season}=useArchiveFilters();
   const all = latestFirst(library.data ?? []);
+  const veo = connectionShown("veo") ? latestFirst(veoLibrary.data ?? []) : [];
   const forAge = all.filter((m) => (!age || hudlAgeGroups(m).includes(age)) && (!season || m.season_label===season));
   const fallback = forAge[0]?.id ?? "imported";
-  const selected = chosen && (chosen === "imported" || all.some((m) => m.id === chosen)) ? chosen : fallback;
+  const isVeo = Boolean(chosen && veo.some((m) => m.id === chosen));
+  const selected = chosen && (chosen === "imported" || isVeo || all.some((m) => m.id === chosen)) ? chosen : fallback;
   const picker = (
       <label className="panel flex flex-wrap items-center gap-3 p-4 text-sm text-fg-muted">
         Match
@@ -42,11 +49,24 @@ export function ClipExplorerPage() {
               {all.filter((m) => !forAge.includes(m)).map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
             </optgroup>
           )}
+          {veo.length > 0 && <optgroup label="Veo (newest first)">
+            {veo.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
+          </optgroup>}
           <option value="imported">No Hudl match (imported clips only)</option>
         </select>
       </label>
   );
-  if (!all.length) return <ImportedClips />;
+  if (isVeo && selected) return (
+    <div className="space-y-5">
+      <ClipsHeader />
+      {picker}
+      <section aria-label="Selected Veo match" className="min-w-0">
+        <VeoMatchView key={selected} id={selected} embedded />
+      </section>
+    </div>
+  );
+  if (!all.length && !veo.length) return <ImportedClips />;
+  if (!all.length && selected !== "imported") return <ImportedClips>{picker}</ImportedClips>;
   if (selected === "imported") return <ImportedClips>{picker}</ImportedClips>;
   // Spec 190: a Hudl match has one workspace. Make Highlight Reel and Batch download
   // replace the duplicate saved-clips explorer; imported clips stay one option away.

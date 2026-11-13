@@ -20,7 +20,7 @@ it("lists cached Veo matches with links, score and expiry, filtered like All mat
   stubFetch({ [LIB]: matches });
   renderWithProviders(<VeoLibrary filters={{ age: "U11", season: "", search: "" }} />);
   const a = await screen.findByRole("link", { name: /Rovers/ });
-  expect(a).toHaveAttribute("href", "/veo/veo-a");
+  expect(a).toHaveAttribute("href", "/clips?match=veo-a"); // owner request: Veo opens in the Clip explorer
   expect(a).toHaveTextContent("3–1");
   expect(a).toHaveTextContent("1 highlight");
   expect(within(screen.getByRole("link", { name: /Town/ })).getByText("Video expires soon on Veo")).toBeInTheDocument();
@@ -54,4 +54,11 @@ it("says the helper is unavailable without inventing matches", async () => {
   await screen.findByText(/Veo matches unavailable/);
   expect(screen.queryAllByRole("link")).toHaveLength(0);
   await userEvent.setup().click(screen.getByRole("button", { name: "Retry connection" }));
+});
+
+it("shows the poster the helper saved from Veo's thumbnail", async () => {
+  stubFetch({ [LIB]: [{ ...matches[0], poster_url: "http://127.0.0.1:8766/veo/match/veo-a/poster" }] });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  const link = await screen.findByRole("link", { name: /Rovers/ });
+  expect(within(link).getByRole("img")).toHaveAttribute("src", "http://127.0.0.1:8766/veo/match/veo-a/poster");
 });

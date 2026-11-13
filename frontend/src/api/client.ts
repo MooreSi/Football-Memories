@@ -27,7 +27,12 @@ export interface MatchQuery {
   pageSize?: number;
 }
 
+export type HomeTeams = { hudl: string | null; veo: string | null };
+
 export const api = {
+  homeTeams: () => request<HomeTeams>("/api/settings/home-teams"),
+  saveHomeTeams: (body: Partial<Record<"hudl" | "veo", string>>) =>
+    request<HomeTeams>("/api/settings/home-teams", { method: "PUT", body: JSON.stringify(body) }),
   matches(query: MatchQuery): Promise<MatchPage> {
     const p = new URLSearchParams({ page: String(query.page), page_size: String(query.pageSize ?? 24) });
     if (query.q) p.set("q", query.q);

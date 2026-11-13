@@ -470,6 +470,14 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   Downloads: `veo-<capture_key>-<height>p.mp4` in the download folder, `.part`
   until the length matches and ffprobe reads it, hard-linked into place so an
   existing file is never replaced; recorded in the download index.
+- Owner follow-ups 2026-11-13: Refresh saves one poster per recording from its
+  `thumbnail` (c.veocdn.com image, at most 2 MB) into `.veo-account/posters/`,
+  missing ones only, 1 s apart; the thumbnail address is not stored; a refusal stops
+  posters for that refresh, never the refresh. Downloads are named
+  `<match> <YYYY-MM-DD>.mp4` (the page sends its label, built with the Veo team name
+  from Settings; the helper makes it file-safe); "already downloaded" comes from the
+  download index by match id, and a same-named file of another match gets " (2)".
+  Disconnect forgets the in-memory video addresses and stream, no Veo request.
 - Expired recordings (182 of 238) keep their details but list no video and no
   highlights. `expiration_status`: `does-not-expire`, `does-not-expire-soon`,
   `expires-soon`, `expired`.

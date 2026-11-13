@@ -110,3 +110,18 @@ it("shows the media library panel and says Delete takes its folder too", async (
   await userEvent.click(within(wba).getByRole("button", { name: "Delete WBA.mp4" }));
   expect(screen.getByRole("dialog", { name: "Delete WBA.mp4?" })).toHaveTextContent(/Media library folder/);
 });
+
+// Owner request 2026-11-13: a Veo download is named with the Veo team, not the Hudl club.
+it("labels a Veo download with the Veo team name from Settings", async () => {
+  stubFetch({
+    [`${H}/downloads/index`]: [{ kind: "match", match_id: "veo-a", matches: ["veo-a"], title: "261108 RJ vs Northgate CB", file: "RJ vs Northgate 2026-11-08.mp4",
+      url: `${H}/files/s/x.mp4`, moment_count: 0, codes: [], combined: false, created: 0, size: 1, modified: 0 }],
+    [`${H}/library`]: library,
+    [`${H}/veo/library`]: [{ id: "veo-a", source: "veo", title: "261108 RJ vs Northgate CB", age_group: "Unclassified", available: true, moments: [] }],
+    "/api/settings/home-teams": { hudl: "Aston Example", veo: "Riverside Juniors" },
+  });
+  renderWithProviders(<DownloadedPage />);
+  const veo = await screen.findByRole("article", { name: /Riverside Juniors vs\. Northgate CB/ });
+  expect(within(veo).getByRole("link", { name: "Open match" })).toHaveAttribute("href", "/veo/veo-a");
+  expect(screen.queryByRole("article", { name: /Aston Example vs\. Northgate/ })).toBeNull();
+});

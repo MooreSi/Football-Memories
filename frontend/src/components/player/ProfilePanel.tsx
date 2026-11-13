@@ -1,11 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, ChevronLeft, ChevronRight, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
+import { Camera, Pencil, Shield, Shirt, Trash2 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import type { CardStyleId, PlayerProfile } from "../../api/types";
 import { CARD_STYLES } from "./PlayerCard";
-import { initials } from "../TeamBadge";
 import { Button } from "../ui/Button";
 import { PhotoCropper } from "./PhotoCropper";
 
@@ -43,12 +41,10 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
     onSuccess: () => void qc.invalidateQueries(),
   });
   const photoError = (upload.error ?? removePhoto.error) as Error | null;
-  const scroller = useRef<HTMLDivElement>(null);
-  const scroll = (d: number) => scroller.current?.scrollBy({ left: d * 200, behavior: "smooth" });
 
   return (
-    <div className="space-y-4">
-      <section aria-label="Teams and numbers" className="panel space-y-5 p-5">
+    <div className="h-full">
+      <section aria-label="Teams and numbers" className="panel h-full space-y-5 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Teams</h2>
           {!editing && (
@@ -180,32 +176,6 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
         )}
       </section>
 
-      <section aria-label="Tagged with" className="panel p-5">
-        <h2 className="mb-1 text-center text-lg font-semibold">Tagged with</h2>
-        <p className="mb-3 text-center text-xs text-fg-subtle">Players on the same moments</p>
-        {player.teammates.length === 0 ? (
-          <p className="text-center text-sm text-fg-muted">Nobody else is tagged on these moments yet.</p>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button type="button" aria-label="Scroll left" onClick={() => scroll(-1)} className="grid size-8 shrink-0 place-items-center rounded-full border border-line hover:border-accent/50">
-              <ChevronLeft size={16} />
-            </button>
-            <div ref={scroller} className="flex flex-1 gap-3 overflow-x-auto scroll-smooth py-1 [scrollbar-width:none]">
-              {player.teammates.map((t) => (
-                <Link key={t.id} to={`/player/${t.id}`} title={`${t.display_name}: ${t.shared_moments} shared`} className="flex shrink-0 flex-col items-center gap-1">
-                  <span className="grid size-12 place-items-center rounded-full border-2 border-fg/70 text-sm font-bold hover:border-accent">
-                    {initials(t.display_name)}
-                  </span>
-                  <span className="max-w-16 truncate text-[11px] text-fg-muted">{t.display_name}</span>
-                </Link>
-              ))}
-            </div>
-            <button type="button" aria-label="Scroll right" onClick={() => scroll(1)} className="grid size-8 shrink-0 place-items-center rounded-full border border-line hover:border-accent/50">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </section>
     </div>
   );
 }

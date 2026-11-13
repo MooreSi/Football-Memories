@@ -24,6 +24,16 @@ class FakeMedia:
         self.short = short
         self.ranges: list[tuple[str, int, int | None]] = []
         self.downloads: list[str] = []
+        self.images: list[str] = []
+        self.refuse_images = False
+
+    def media_image(self, url: str) -> bytes:
+        self.images.append(url)
+        if self.refuse_images:
+            from app.connectors.veo._client import VeoRefused
+
+            raise VeoRefused(429)
+        return b"\xff\xd8synthetic-jpeg"
 
     def media_range(self, url: str, start: int, end: int | None) -> tuple[int, int, bytes]:
         self.ranges.append((url, start, end))
@@ -60,6 +70,7 @@ def setup(tmp_path: Path, media: FakeMedia, probe: Any = lambda path: 3600.0):  
         probe=probe,
         index=index,
         folder=lambda: folder,
+        sleep=lambda s: None,
     )
     return veo, api, sessions, folder, index
 
@@ -127,7 +138,8 @@ def test_download_writes_a_part_file_then_renames_and_indexes(tmp_path: Path) ->
     status = veo.status()
     assert status["state"] == "done", status["message"]
     files = sorted(p.name for p in folder.iterdir())
-    assert len(files) == 1 and files[0].startswith("veo-") and files[0].endswith("-1080p.mp4")
+    # Owner request 2026-11-13: "<match> <date>.mp4" (was veo-<key>-<height>p.mp4).
+    assert files == ["Riverside U11 vs Northgate 2026-11-08.mp4"]
     assert (folder / files[0]).stat().st_size == TOTAL
     entry = index.entries(folder)[0]
     assert entry["kind"] == "match" and entry["match_id"] == IDENTITY
@@ -171,3 +183,82 @@ def test_streaming_waits_while_a_download_runs(tmp_path: Path) -> None:
     veo.start("download", IDENTITY)
     with pytest.raises(CaptureError, match="download"):
         veo.stream(token, "bytes=0-1")
+
+
+def test_disconnect_forgets_the_video_addresses_and_stream_without_contacting_veo(
+    tmp_path: Path,
+) -> None:
+    veo, api, sessions, _, _ = setup(tmp_path, FakeMedia())
+    veo.start("refresh")
+    veo.start("watch", IDENTITY)
+    token = veo.status()["stream_url"].rsplit("/", 1)[1]
+    calls, signed = len(api.paths), len(sessions)
+    veo.start("disconnect")
+    status = veo.status()
+    assert status["state"] == "idle" and status["stream_url"] is None
+    assert "Disconnected" in status["message"]
+    assert (len(api.paths), len(sessions)) == (calls, signed)
+    with pytest.raises(CaptureError, match="expired"):
+        veo.stream(token, "bytes=0-1")
+    assert veo.library()  # the cached match list stays
+
+
+def test_download_uses_the_name_the_page_gives_made_safe(tmp_path: Path) -> None:
+    veo, _, _, folder, _ = setup(tmp_path, FakeMedia())
+    veo.start("refresh")
+    veo.start("download", IDENTITY, name='Riverside vs. Northgate/../U11: "final"')
+    assert [p.name for p in folder.iterdir()] == [
+        "Riverside vs. Northgate U11 final 2026-11-08.mp4"
+    ]
+
+
+def test_a_same_named_file_of_another_match_is_kept_and_the_new_one_numbered(
+    tmp_path: Path,
+) -> None:
+    veo, _, _, folder, index = setup(tmp_path, FakeMedia())
+    veo.start("refresh")
+    folder.mkdir(parents=True)
+    other = folder / "Riverside U11 vs Northgate 2026-11-08.mp4"
+    other.write_bytes(b"someone else's file")
+    veo.start("download", IDENTITY)
+    assert other.read_bytes() == b"someone else's file"
+    assert (folder / "Riverside U11 vs Northgate 2026-11-08 (2).mp4").stat().st_size == TOTAL
+    assert [e["file"] for e in index.entries(folder)] == [
+        "Riverside U11 vs Northgate 2026-11-08 (2).mp4"
+    ]
+
+
+def test_already_downloaded_is_decided_by_the_index_not_the_name(tmp_path: Path) -> None:
+    media = FakeMedia()
+    veo, _, _, folder, _ = setup(tmp_path, media)
+    veo.start("refresh")
+    veo.start("download", IDENTITY)
+    media.downloads.clear()
+    veo.start("download", IDENTITY, name="A different label")
+    assert media.downloads == []
+    assert "already" in veo.status()["message"]
+    assert len(list(folder.iterdir())) == 1
+
+
+def test_refresh_keeps_one_poster_per_match_and_never_its_address(tmp_path: Path) -> None:
+    media = FakeMedia()
+    veo, _, _, _, _ = setup(tmp_path, media)
+    veo.start("refresh")
+    assert len(media.images) == 2  # the active and the expired match
+    assert veo.poster(IDENTITY) is not None
+    assert veo.poster(IDENTITY).read_bytes().startswith(b"\xff\xd8")  # type: ignore[union-attr]
+    assert veo.poster("veo-unknown") is None
+    assert "thumbnail" not in (tmp_path / "veo" / "library.json").read_text()
+    media.images.clear()
+    veo.start("refresh")
+    assert media.images == []  # cached posters are not fetched again
+
+
+def test_a_refused_poster_stops_poster_reads_but_not_the_refresh(tmp_path: Path) -> None:
+    media = FakeMedia()
+    media.refuse_images = True
+    veo, _, _, _, _ = setup(tmp_path, media)
+    veo.start("refresh")
+    assert veo.status()["state"] == "ready"
+    assert len(media.images) == 1
+    assert veo.poster(IDENTITY) is None

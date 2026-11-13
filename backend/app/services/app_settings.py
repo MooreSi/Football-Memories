@@ -53,3 +53,29 @@ def update_clip_timing(db: Session, pre_s: float | None, post_s: float | None) -
         _set(db, POST_KEY, post_s)
     db.commit()
     return clip_timing(db)
+
+
+HOME_TEAM_KEYS = {"hudl": "home_team_hudl", "veo": "home_team_veo"}
+
+
+def home_teams(db: Session) -> dict[str, str | None]:
+    found: dict[str, str | None] = {}
+    for source, key in HOME_TEAM_KEYS.items():
+        pref = db.get(Preference, key)
+        found[source] = pref.value if pref is not None and pref.value else None
+    return found
+
+
+def update_home_teams(db: Session, names: dict[str, str | None]) -> dict[str, str | None]:
+    for source, value in names.items():
+        if source not in HOME_TEAM_KEYS or value is None:
+            continue
+        cleaned = " ".join(value.split()) or None
+        key = HOME_TEAM_KEYS[source]
+        pref = db.get(Preference, key)
+        if pref is None:
+            db.add(Preference(key=key, value=cleaned))
+        else:
+            pref.value = cleaned
+    db.commit()
+    return home_teams(db)

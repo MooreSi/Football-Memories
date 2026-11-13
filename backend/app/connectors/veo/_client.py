@@ -218,7 +218,7 @@ def _open(request: urllib.request.Request, timeout: float) -> Any:
     return _OPENER.open(request, timeout=timeout)
 
 
-def _video(url: str) -> str:
+def _video(url: str, suffixes: tuple[str, ...] = (".mp4",)) -> str:
     parts = urlsplit(url)
     if (
         parts.scheme != "https"
@@ -226,15 +226,23 @@ def _video(url: str) -> str:
         or parts.port is not None
         or parts.query
         or parts.fragment
-        or not parts.path.endswith(".mp4")
+        or not parts.path.lower().endswith(suffixes)
     ):
         raise CaptureError("The Veo connection only reads Veo's own match videos.")
     return url
 
 
-def _fetch(url: str, headers: dict[str, str], opener: Opener | None, timeout: float) -> Any:
+def _fetch(
+    url: str,
+    headers: dict[str, str],
+    opener: Opener | None,
+    timeout: float,
+    suffixes: tuple[str, ...] = (".mp4",),
+) -> Any:
     # _video allows only https://c.veocdn.com/...mp4, so no file: or custom scheme.
-    request = urllib.request.Request(_video(url), headers=headers, method="GET")  # noqa: S310
+    request = urllib.request.Request(  # noqa: S310
+        _video(url, suffixes), headers=headers, method="GET"
+    )
     try:
         return (opener or _open)(request, timeout)
     except urllib.error.HTTPError as error:
@@ -279,3 +287,18 @@ def media_download(
     if done != total:
         raise CaptureError("The Veo download was incomplete. Nothing was retried.")
     return total
+
+
+IMAGE_LIMIT = 2_000_000
+
+
+def media_image(url: str, opener: Opener | None = None) -> bytes:
+    """One recording's thumbnail (a still image) from Veo's video host, at most 2 MB."""
+    with _fetch(url, {}, opener, 30, (".jpg", ".jpeg", ".png", ".webp")) as response:
+        kind = str(response.headers.get("Content-Type") or "")
+        if response.status != 200 or not kind.startswith("image/"):
+            raise CaptureError("Veo's thumbnail answered in a way the app does not expect.")
+        data = response.read(IMAGE_LIMIT + 1)
+    if len(data) > IMAGE_LIMIT:
+        raise CaptureError("Veo's thumbnail was larger than expected; it was not kept.")
+    return bytes(data)

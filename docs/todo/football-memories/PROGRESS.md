@@ -31,6 +31,19 @@ no additional code or live capture needed. App/helper run the verified source.
 | 4. Highlight clips | todo (after 3) |
 | Veo in insights / player hub | todo: owner decision 007 (Veo tags are event types, not players) |
 
+## Owner follow-ups 2026-11-13 (after the first Veo download)
+
+| Item | Status |
+|---|---|
+| Veo posters in the Library (from Veo's thumbnail, saved on Refresh) | done (tests); owner runs Refresh to fill them |
+| Grassroots crests: side codes/colours ignored; owner-added crests (Settings) | done (tests); other sources: owner decision 008 |
+| Veo download named `<match> <date>.mp4` | done (tests); the earlier download keeps its name |
+| Veo match opens in the Clip explorer (`/clips?match=`, `/veo/:id` redirects) | done (tests) |
+| Team name per source (Hudl, Veo) in Settings; Downloaded uses it | done (tests) |
+| My Player: no Tagged with; Teams narrower; four totals stacked, card height | done (tests; browser-checked on real data) |
+| Recent matches: 20 matches, blue gradient bars | done (tests; browser-checked) |
+| Connections: Import from folder removed, Veo beside Hudl; Connect; Veo Disconnect and status | done (tests; browser-checked) |
+
 ## Spec 240 drawing board (owner request 2026-11-13)
 
 | Item | Status |

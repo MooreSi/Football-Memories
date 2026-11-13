@@ -85,7 +85,9 @@
 .profile-heading > div:first-child > p:first-child { color: var(--color-accent); }
 .profile-heading h1 { font-size: 30px; }
 .profile-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: start; }
-.profile-top { display: grid; grid-template-columns: 265px minmax(0, 1fr); gap: 20px; align-items: start; }
+.profile-top { display: grid; grid-template-columns: 265px minmax(0, 1fr) minmax(180px, 230px); gap: 20px; align-items: stretch; }
+/* Owner request 2026-11-13: Matches, Moments, Unwatched, Favourites stacked, the same height as the card. */
+.profile-stats { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 /* Player card finishes (spec 190). Edge = metallic gradient, face = deep tone of the
    same metal, sheen = one sharp diagonal highlight. Text colours are set per finish
    so contrast holds on every style. */
@@ -117,10 +119,9 @@
 .player-shield-inner img:not(.card-crest) { box-shadow: none; border-radius: 16px; --tw-ring-color: #727db6; width: 150px; height: 150px; }
 .player-shield-inner figcaption { font-family: "Arial Narrow", "Helvetica Neue", sans-serif; font-stretch: condensed; font-size: 25px; letter-spacing: -.035em; line-height: 1.1; }
 .profile-chip { justify-content: center; flex: 1; background: #303137; border-color: #45464e; border-radius: 8px; }
-.profile-details > div:nth-child(2) .tile { background: #292a2ed9; border-color: #ffffff0b; }
+.profile-stats .tile { background: #292a2ed9; border-color: #ffffff0b; }
 .profile-details svg polygon[fill="none"] { stroke: #ffffff20; }
 .profile-details svg polygon:not([fill="none"]) { fill: #8998f548; stroke: #a6b1ff; }
-.profile-details section[aria-label="Moments per match"] ol a { background: #7d8ee66b; border-color: #a6b1ff; }
 [data-screen="profile"] :focus-visible { outline-color: var(--color-accent); }
 @media (min-width: 1600px) { .library-dashboard { grid-template-columns: 300px minmax(0, 1fr) 330px; gap: 28px; } .hero-stage { min-height: 600px; } }
 @media (max-width: 1250px) {
@@ -131,12 +132,13 @@
   .dashboard-latest { grid-column: 2; grid-row: 3; }
   .dashboard-overview { grid-row: 2 / span 2; }
   .hero-stage { min-height: 460px; }
-  .profile-top { grid-template-columns: 230px minmax(0, 1fr); }
+  .profile-top { grid-template-columns: 230px minmax(0, 1fr) minmax(160px, 200px); }
   .profile-workspace { gap: 22px; }
 }
 @media (max-width: 1000px) {
   .brand-wordmark { display: none; }
   .profile-top { grid-template-columns: 260px minmax(0, 1fr); }
+  .profile-stats { grid-column: 1 / -1; grid-template-rows: none; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .analysis-workspace { grid-template-columns: 210px minmax(0, 1fr); gap: 12px; }
   .analysis-match-heading > div:first-child { order: -1; width: 100%; }
   .analysis-match-heading > div:last-child { margin-left: auto; }
@@ -175,6 +177,7 @@
   .moments-rail { position: static; max-height: 430px; }
   [data-screen="analysis"] .app-main { padding: 12px; }
   .profile-top { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .profile-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .player-shield { max-width: 280px; }
   .profile-heading > div:last-child { gap: 6px; }
   .profile-heading > div:last-child button { font-size: 11px; padding: 8px; }

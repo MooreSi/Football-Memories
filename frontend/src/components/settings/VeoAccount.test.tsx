@@ -30,7 +30,7 @@ it("tests and refreshes the saved account and shows what it found", async () => 
   });
   const user = userEvent.setup();
   renderWithProviders(<VeoAccount />);
-  await user.click(await screen.findByRole("button", { name: "Test" }));
+  await user.click(await screen.findByRole("button", { name: "Connect" }));
   expect(body("/veo/action")).toEqual({ action: "test" });
   await user.click(screen.getByRole("button", { name: /Refresh matches/ }));
   expect(body("/veo/action")).toEqual({ action: "refresh" });
@@ -43,6 +43,24 @@ it("tests and refreshes the saved account and shows what it found", async () => 
 it("cannot test before an account is saved, and names Credential Manager on Windows", async () => {
   stubFetch({ [`${BASE}/veo/account`]: { ...idle, secret_store: "Windows Credential Manager" } });
   renderWithProviders(<VeoAccount />);
-  expect(await screen.findByRole("button", { name: "Test" })).toBeDisabled();
+  expect(await screen.findByRole("button", { name: "Connect" })).toBeDisabled();
   expect(screen.getByText(/Saved only in Windows Credential Manager/)).toBeInTheDocument();
+});
+
+it("disconnects a connected account without forgetting it", async () => {
+  stubFetch({
+    [`${BASE}/veo/account`]: { ...idle, configured: true, state: "ready", message: "Connected to Veo", summary: null },
+    [`${BASE}/veo/action`]: { accepted: true },
+  });
+  const user = userEvent.setup();
+  renderWithProviders(<VeoAccount />);
+  await user.click(await screen.findByRole("button", { name: "Disconnect" }));
+  expect(body("/veo/action")).toEqual({ action: "disconnect" });
+});
+
+it("offers no Disconnect before it is connected", async () => {
+  stubFetch({ [`${BASE}/veo/account`]: { ...idle, configured: true } });
+  renderWithProviders(<VeoAccount />);
+  await screen.findByRole("button", { name: "Connect" });
+  expect(screen.queryByRole("button", { name: "Disconnect" })).toBeNull();
 });

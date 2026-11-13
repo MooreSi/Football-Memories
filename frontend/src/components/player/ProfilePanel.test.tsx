@@ -92,3 +92,11 @@ describe("ProfilePanel club and card style", () => {
     expect(screen.getByText("Aston Villa")).toBeInTheDocument();
   });
 });
+
+// Owner request 2026-11-13: "Tagged with" is removed from My Player.
+it("no longer shows a Tagged with panel, even with teammates", () => {
+  renderPanel({ ...player, teammates: [{ id: 9, display_name: "Alex Example", shared_moments: 4 }] });
+  expect(screen.getByRole("region", { name: "Teams and numbers" })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Tagged with" })).toBeNull();
+  expect(screen.queryByText("Alex Example")).toBeNull();
+});

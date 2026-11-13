@@ -279,6 +279,18 @@ class AppSettingsPatch(BaseModel):
     clip_post_s: float | None = Field(default=None, ge=0, le=60)
 
 
+class HomeTeamsOut(BaseModel):
+    hudl: str | None
+    veo: str | None
+
+
+class HomeTeamsPatch(BaseModel):
+    """Owner request 2026-11-13: the owner's team as each source names it. "" clears."""
+
+    hudl: str | None = Field(default=None, max_length=100)
+    veo: str | None = Field(default=None, max_length=100)
+
+
 class FolderHealthOut(BaseModel):
     role: str
     path: str

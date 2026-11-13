@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { clubName } from "./hudlFixture";
+import { useHomeTeams } from "./useHomeTeams";
 
-/** The owner's club: the primary player's "Plays for", else the newest imported team. */
+/** The owner's Hudl club: the name saved in Settings > Connections, else the primary
+ *  player's "Plays for", else the newest imported team. */
 export function useHomeClub(): string | null {
+  const saved = useHomeTeams()?.hudl;
   const q = useQuery({
     queryKey: ["home-club"],
     retry: false,
@@ -24,5 +27,5 @@ export function useHomeClub(): string | null {
       }
     },
   });
-  return q.data ?? null;
+  return saved || (q.data ?? null);
 }

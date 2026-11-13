@@ -23,7 +23,7 @@ export type VeoHighlight = { id: string; category: string; time_s: number; durat
 export type VeoMatch = {
   id: string; source: "veo"; title: string; team?: string | null; age_group: string; age_groups?: string[]; season_label?: string;
   duration_s?: number; available: boolean; expiration_status?: string | null; home_or_away?: string | null;
-  score?: { ours: number; theirs: number } | null; halves?: number[][]; moments?: VeoHighlight[];
+  score?: { ours: number; theirs: number } | null; halves?: number[][]; moments?: VeoHighlight[]; poster_url?: string | null;
 };
 export function useVeoLibrary() {
   return useQuery<VeoMatch[]>({ queryKey: ["veo-library"], queryFn: () => veoRequest("/library"), retry: false, refetchInterval: 30000 });

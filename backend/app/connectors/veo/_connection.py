@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from app.connectors.hudl_capture import CaptureError
+from app.connectors.hudl_metadata import capture_key
 
 from ._parse import ACTIVE, best_video, library_item, next_page
 
@@ -33,6 +34,7 @@ class VeoConnection:
         probe: Callable[[Path], float | None] | None = None,
         index: Any = None,
         folder: Callable[[], Path] | None = None,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if session is None:
             from ._client import session as real_session
@@ -49,6 +51,8 @@ class VeoConnection:
         self._stream: tuple[str, str] | None = None
         self._media_lock = threading.Lock()
         self._downloading = False
+        self._sleep = sleep
+        self.posters = directory / "posters"
         self.loader = loader
         self.directory = directory
         self.path = directory / "library.json"
@@ -87,9 +91,12 @@ class VeoConnection:
         with self._lock:
             self._state.update(values)
 
-    def start(self, action: str, match_id: str | None = None) -> None:
+    def start(self, action: str, match_id: str | None = None, name: str | None = None) -> None:
+        if action == "disconnect":
+            self.disconnect()
+            return
         if action not in {"test", "refresh", "watch", "download"}:
-            raise CaptureError("Choose Test, Refresh, Watch or Download.")
+            raise CaptureError("Choose Connect, Refresh, Watch or Download.")
         if action in {"watch", "download"}:
             item = self._match(match_id)
             if item is None or not item.get("available") or not item.get("slug"):
@@ -103,19 +110,37 @@ class VeoConnection:
             if action in {"watch", "download"} and match_id in self._videos:
                 message = "Preparing the Veo video…"
             self._state.update(state="working", message=message, progress=None)
-        self._run(lambda: self._perform(action, match_id))
+        self._run(lambda: self._perform(action, match_id, name))
+
+    def disconnect(self) -> None:
+        """Forget the in-memory video addresses and stream; the saved account and the
+        cached match list stay. No request to Veo."""
+        with self._lock:
+            if self._busy:
+                raise CaptureError("Wait for the Veo operation to finish first.")
+            self._videos.clear()
+            self._stream = None
+            self._state.update(
+                state="idle",
+                message="Disconnected. Your Veo account stays saved; select Connect to sign in.",
+                summary=None,
+                progress=None,
+                match_id=None,
+                stream_url=None,
+                filename=None,
+            )
 
     def _match(self, identity: str | None) -> dict[str, Any] | None:
         return next((i for i in self.library() if i.get("id") == identity), None)
 
-    def _perform(self, action: str, match_id: str | None = None) -> None:
+    def _perform(self, action: str, match_id: str | None = None, name: str | None = None) -> None:
         try:
             if action in {"watch", "download"} and match_id:
                 url = self._videos.get(match_id) or self._read_video(match_id)
                 if action == "watch":
                     self._watch(match_id, url)
                 else:
-                    self._download(match_id, url)
+                    self._download(match_id, url, name)
                 return
             with self._session(self.loader) as api:
                 if action == "test":
@@ -180,6 +205,7 @@ class VeoConnection:
                     r for r in items or [] if isinstance(r, dict) and r.get("identifier")
                 ]
                 page = next_page(headers.get("link"))
+        self._save_posters(recordings)
         active = [
             r
             for r in recordings
@@ -226,6 +252,37 @@ class VeoConnection:
                 f"{moments} highlights."
             ),
         )
+
+    def poster(self, identity: str) -> Path | None:
+        path = self.posters / f"{capture_key(identity)}.jpg"
+        return path if path.is_file() else None
+
+    def _save_posters(self, recordings: list[dict[str, Any]]) -> None:
+        """One still per match from Veo's own thumbnail, kept on this computer; the
+        thumbnail's address is not stored. Missing ones only; a refusal stops posters
+        for this refresh (no retries) and never stops the refresh."""
+        waiting = [
+            r
+            for r in recordings
+            if isinstance(r.get("thumbnail"), str) and self.poster(f"veo-{r['identifier']}") is None
+        ]
+        for number, r in enumerate(waiting):
+            self._report(message=f"Saving Veo posters… ({number + 1} of {len(waiting)})")
+            if number:
+                self._sleep(1.0)
+            try:
+                data = self._media.media_image(r["thumbnail"])
+            except Exception:  # noqa: BLE001 (a poster is optional; stop asking Veo for more)
+                return
+            self.posters.mkdir(parents=True, exist_ok=True, mode=0o700)
+            target = self.posters / f"{capture_key('veo-' + str(r['identifier']))}.jpg"
+            descriptor, temporary = tempfile.mkstemp(dir=self.posters, suffix=".tmp")
+            try:
+                with os.fdopen(descriptor, "wb") as stream:
+                    stream.write(data)
+                os.replace(temporary, target)
+            finally:
+                Path(temporary).unlink(missing_ok=True)
 
     def _remember(self, identity: str, videos: Any) -> str | None:
         video = best_video(videos if isinstance(videos, list) else [])
@@ -278,20 +335,33 @@ class VeoConnection:
             )
         return start, start + len(body) - 1, total, body
 
-    def _download(self, identity: str, url: str) -> None:
+    def _downloaded(self, identity: str, folder: Path) -> str | None:
+        """The file this match was already downloaded to, from the download index."""
+        if self.index is None:
+            return None
+        for entry in self.index.entries(folder):
+            if entry.get("kind") == "match" and entry.get("match_id") == identity:
+                return str(entry["file"])
+        return None
+
+    def _download(self, identity: str, url: str, name: str | None = None) -> None:
         item = self._match(identity) or {}
         folder = self._folder()
         folder.mkdir(parents=True, exist_ok=True)
-        height = item.get("video_height") or "full"
-        target = folder / f"veo-{item.get('capture_key')}-{height}p.mp4"
-        if target.exists():
+        done = self._downloaded(identity, folder)
+        if done is not None:
             self._report(
                 state="done",
-                filename=target.name,
+                filename=done,
                 match_id=identity,
                 message="This Veo match is already downloaded. Nothing was replaced.",
             )
             return
+        # Owner request 2026-11-13: "<match> <date>.mp4". Never another file's name.
+        stem = " ".join(p for p in (file_label(name, item.get("title")), title_date(item)) if p)
+        target, number = folder / f"{stem}.mp4", 2
+        while target.exists() or target.with_name(target.name + ".part").exists():
+            target, number = folder / f"{stem} ({number}).mp4", number + 1
         part = target.with_name(target.name + ".part")
 
         def progress(done: int, total: int) -> None:
@@ -387,3 +457,18 @@ def _probe_duration(path: Path) -> float | None:
     except (OSError, subprocess.TimeoutExpired, ValueError):
         return None
     return value if value > 0 else None
+
+
+def file_label(name: str | None, title: object) -> str:
+    """A safe file name from the page's label, else the title without its date prefix."""
+    raw = name if isinstance(name, str) and name.strip() else str(title or "Veo match")
+    if raw is not name:
+        raw = re.sub(r"^\d{6}\s+", "", raw)
+    words = re.sub(r"[^\w .,&'()-]", " ", raw).split()
+    label = " ".join(w for w in words if w.strip(".-"))[:120].strip(" .")
+    return label or "Veo match"
+
+
+def title_date(item: dict[str, Any]) -> str:
+    found = re.match(r"^(\d{2})(\d{2})(\d{2})\s", str(item.get("title") or ""))
+    return f"20{found[1]}-{found[2]}-{found[3]}" if found else ""

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from app.connectors.hudl_capture import CaptureError
-from app.connectors.veo._client import CHUNK, media_download, media_range
+from app.connectors.veo._client import CHUNK, media_download, media_image, media_range
 
 URL = "https://c.veocdn.com/synthetic/match.mp4"
 TOTAL = 50_000_000
@@ -98,3 +98,20 @@ def test_a_short_download_is_an_error(tmp_path: Path) -> None:
     opener = Opener(lambda h: Response(200, {"Content-Length": "5000"}, b"m" * 100))
     with pytest.raises(CaptureError, match="incomplete"):
         media_download(URL, tmp_path / "x.part", lambda d, t: None, opener=opener)
+
+
+def test_reads_a_thumbnail_image_from_veos_host_only(tmp_path: Path) -> None:
+    image = "https://c.veocdn.com/synthetic/thumbnail.jpg"
+    opener = Opener(lambda h: Response(200, {"Content-Type": "image/jpeg"}, b"\xff\xd8jpeg"))
+    assert media_image(image, opener=opener) == b"\xff\xd8jpeg"
+    for url in (
+        "https://evil.test/thumbnail.jpg",
+        "https://c.veocdn.com/x/match.mp4",
+        image + "?x=1",
+    ):
+        with pytest.raises(CaptureError):
+            media_image(url, opener=opener)
+    assert len(opener.sent) == 1
+    huge = Opener(lambda h: Response(200, {"Content-Type": "image/jpeg"}, b"x" * 3_000_001))
+    with pytest.raises(CaptureError):
+        media_image(image, opener=huge)
