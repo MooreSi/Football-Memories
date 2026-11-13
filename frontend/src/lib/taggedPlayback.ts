@@ -21,11 +21,16 @@ export function needsSeek(next: HudlMoment, time: number): boolean {
   return !(next.time_s < time && end > time);
 }
 
-/** Owner request 2026-11-13: the next (dir 1) or previous (dir -1) tagged moment from
- *  `time`, in match order. Half a second either side counts as "here". */
-export function nextMoment(moments: HudlMoment[], time: number, dir: 1 | -1): HudlMoment | undefined {
-  const sorted = [...moments].sort((a, b) => a.time_s - b.time_s);
-  return dir === 1 ? sorted.find((m) => m.time_s > time + 0.5) : sorted.reverse().find((m) => m.time_s < time - 0.5);
+/** Owner request 2026-11-13: the next (dir 1) or previous (dir -1) tagged moment, in
+ *  match order (moments at the same second keep the list's order). From the highlighted
+ *  moment (`fromId`) it is simply the one after or before it, however far the video has
+ *  played on; with nothing highlighted it is the first after (or before) `time`, where
+ *  half a second either side counts as "here". */
+export function nextMoment(moments: HudlMoment[], time: number, dir: 1 | -1, fromId?: string): HudlMoment | undefined {
+  const sorted = moments.map((m, i) => ({ m, i })).sort((a, b) => a.m.time_s - b.m.time_s || a.i - b.i).map((x) => x.m);
+  const at = fromId === undefined ? -1 : sorted.findIndex((m) => m.id === fromId);
+  if (at >= 0) return sorted[at + dir];
+  return dir === 1 ? sorted.find((m) => m.time_s > time + 0.5) : [...sorted].reverse().find((m) => m.time_s < time - 0.5);
 }
 
 export function timeLeft(seconds: number | null | undefined): string {

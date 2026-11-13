@@ -19,6 +19,11 @@
   Veo connections with the switches at the top.
 
 ### Fixed
+- **Next / previous moment** goes to the moment after (or before) the one
+  outlined, in match order, even when the video has played on past later
+  moments; moments at the same second are no longer skipped.
+- After skipping from a moment you clicked, that moment no longer keeps a
+  second outline (the browser's keyboard focus ring).
 - The green outline on the playing moment is drawn all the way round, and a
   moment you click is outlined too.
 - Continue watching shows only the last three matches.

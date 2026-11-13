@@ -13,6 +13,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Next-moment fix (owner report 2026-11-13):** Next/Previous now step from the
+  outlined moment in match order (ties keep list order), not from the video's
+  play position; the clicked tile releases focus so its focus ring is not taken
+  for a second highlight; the list scrolls to keep the new moment in view.
+
 - **Veo connection, phase 1 (spec 250, D-035, owner decision 006 answered):**
   helper routes `/veo/account|credentials|action|library`, package
   `backend/app/connectors/veo/` (`_client` is the only module that talks to Veo:

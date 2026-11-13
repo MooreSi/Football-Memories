@@ -102,6 +102,9 @@ U10 v Stoke City reads 12-9.
   lists of meetings show dates.
 - Code matching for players is case-insensitive (`lib/codes.ts`): a hub created
   as "Pat Example" finds "PAT EXAMPLE" tags.
+- Skipping between tiles (Next / N) must move or release keyboard focus: a tile
+  button clicked earlier keeps focus, and the next key press makes the browser
+  draw its focus ring there, which reads as a second highlighted moment.
 - A highlight on a tile inside a scrolling list must be an inset ring
   (`ring-inset`): an outer box-shadow is clipped by the list's overflow box, so
   the outline looked broken on the edge tiles.

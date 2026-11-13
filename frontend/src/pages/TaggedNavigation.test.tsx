@@ -47,3 +47,25 @@ it('skips to the next tagged moment with the button or the N key, in the chosen 
   await user.keyboard('b');
   expect(current()).toHaveTextContent('0:30');
 });
+
+// Owner report 2026-11-13: Next skipped moments and two tiles looked highlighted.
+it('steps from the highlighted moment, not from where the video has played to', () => {
+  const list = [t('x', 'RAMY', 7), t('y', 'KICK OFF', 9), t('z', 'THEO', 9), t('w', 'PRESSING', 13), t('v', 'CONTESTED', 47)];
+  expect(nextMoment(list, 40, 1, 'x')?.id).toBe('y'); // the video ran on to 0:40; next is still 0:09
+  expect(nextMoment(list, 9, 1, 'y')?.id).toBe('z'); // same second, not skipped
+  expect(nextMoment(list, 9, 1, 'z')?.id).toBe('w');
+  expect(nextMoment(list, 9, -1, 'z')?.id).toBe('y');
+  expect(nextMoment(list, 13, 1, 'v')).toBeUndefined();
+});
+
+it('leaves only the new moment highlighted after skipping from a clicked one', async () => {
+  open(); const user = userEvent.setup();
+  const list = await screen.findByRole('region', { name: 'Hudl tagged moments' });
+  const clicked = within(list).getByRole('button', { name: /ROVERS CHANCE/i });
+  await user.click(clicked);
+  expect(clicked).toHaveFocus();
+  await user.keyboard('n');
+  expect(current()).toHaveTextContent('0:30');
+  expect(within(list).getAllByRole('listitem').filter(li => li.getAttribute('aria-current'))).toHaveLength(1);
+  expect(list.contains(document.activeElement) && document.activeElement !== document.body).toBe(false);
+});

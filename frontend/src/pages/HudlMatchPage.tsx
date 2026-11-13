@@ -134,10 +134,23 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const watch = (m: HudlMoment) => { setQueue(undefined); setFocus(m); markHudlMomentWatched(m.id); setSeek({ time: m.time_s, nonce: Date.now() }); };
   // Owner request 2026-11-13: skip to the next/previous tagged moment of the codes shown,
   // by button, N / B (same keys on Mac and Windows) or the keyboard's media keys.
+  const list = useRef<HTMLUListElement>(null);
   const skip = (dir: 1 | -1) => {
-    const from = dir === 1 ? Math.max(now, active?.time_s ?? -1) : active?.time_s ?? now;
-    const m = nextMoment(filtered, from, dir);
-    if (m) watch(m);
+    const m = nextMoment(filtered, now, dir, active && filtered.some(x => x.id === active.id) ? active.id : undefined);
+    if (!m) return;
+    // A tile clicked earlier keeps keyboard focus, and the browser then draws its focus
+    // ring there as well as the green outline on the new moment: let it go.
+    const held = document.activeElement;
+    if (held instanceof HTMLElement && list.current?.contains(held)) held.blur();
+    watch(m);
+    // Keep the new moment in sight inside the list without scrolling the page.
+    requestAnimationFrame(() => {
+      const box = list.current, tile = box?.querySelector<HTMLElement>(`li[data-moment="${CSS.escape(m.id)}"]`);
+      if (!box || !tile) return;
+      const top = tile.offsetTop - box.offsetTop, bottom = top + tile.offsetHeight;
+      if (top < box.scrollTop) box.scrollTop = top - 8;
+      else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight + 8;
+    });
   };
   const skipRef = useRef(skip);
   skipRef.current = skip;
@@ -212,7 +225,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
         {code && <Link to={`/player/hudl/${encodeURIComponent(code)}`}><Button>See every match tagged “{code}”</Button></Link>}
         {match.tag_status === 'unsynced' && <p role="note" className="rounded-xl border border-warn/20 bg-warn/5 p-4 text-sm text-fg-muted">Hudl has not marked this tag timeline as synced. You can still stream or download the full match. Tagged moment and player downloads are unavailable until verified timings are available.</p>}
         {!moments.length && match.tag_status !== 'unsynced' && <p className="text-sm text-fg-muted">Tags load and cache when you open this match, independently of full-match downloads. Videos without supported tags can still stream.</p>}
-        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li aria-current={active?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${active?.id === m.id ? 'border-ok bg-ok/10 ring-2 ring-inset ring-ok' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => watch(m)}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{phaseOf.has(m.id) ? `${phaseOf.get(m.id)!.outcome === 'goal' ? 'Goal' : 'Chance'}: ${phaseOf.get(m.id)!.steps.join(' → ')}` : m.category}</span>{noted.get(m.id)?.text && <span className="block truncate text-xs text-fg-muted">{noted.get(m.id)!.text}</span>}</button>{noted.has(m.id) && <StickyNote size={14} aria-label="Has a note" className="text-pin" />}<Play size={14} /></li>)}</ul>
+        <ul ref={list} className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li data-moment={m.id} aria-current={active?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${active?.id === m.id ? 'border-ok bg-ok/10 ring-2 ring-inset ring-ok' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => watch(m)}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{phaseOf.has(m.id) ? `${phaseOf.get(m.id)!.outcome === 'goal' ? 'Goal' : 'Chance'}: ${phaseOf.get(m.id)!.steps.join(' → ')}` : m.category}</span>{noted.get(m.id)?.text && <span className="block truncate text-xs text-fg-muted">{noted.get(m.id)!.text}</span>}</button>{noted.has(m.id) && <StickyNote size={14} aria-label="Has a note" className="text-pin" />}<Play size={14} /></li>)}</ul>
       </section>
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}
