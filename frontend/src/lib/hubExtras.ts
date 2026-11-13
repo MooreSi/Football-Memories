@@ -61,5 +61,9 @@ export function rankHudlMoments(library: HudlMatch[] | undefined, name: string, 
       });
     }
   }
-  return ranked.sort((a, b) => b.score - a.score || b.date.localeCompare(a.date) || b.time_s - a.time_s).slice(0, limit);
+  ranked.sort((a, b) => b.score - a.score || b.date.localeCompare(a.date) || b.time_s - a.time_s);
+  // Variety: each match's best moment first, then the rest in the same order.
+  const seen = new Set<string>();
+  const firsts = ranked.filter((m) => !seen.has(m.match_id) && seen.add(m.match_id));
+  return [...firsts, ...ranked.filter((m) => !firsts.includes(m))].slice(0, limit);
 }

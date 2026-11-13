@@ -45,3 +45,14 @@ it("never counts a goalkeeper code, a goal kick or a goal conceded as a team goa
   ] };
   expect(rankHudlMoments([match], "Sam Example", 5, "Riverside")).toEqual([]);
 });
+
+it("takes the best moment from each match before a second from the same match", () => {
+  const busy = { id: "d", title: "261108 U11 v City (H)", age_group: "U11", capture_key: "d", moments: [
+    t("d1", "Sam Example", 10), t("g1", "RIVERSIDE GOAL", 10), t("d2", "Sam Example", 100), t("g2", "RIVERSIDE GOAL", 100),
+    t("d3", "Sam Example", 200), t("g3", "RIVERSIDE GOAL", 200), t("og", "OPPOSITION GOAL", 900),
+  ] };
+  const quiet = { id: "e", title: "261001 U11 v Town (A)", age_group: "U11", capture_key: "e", moments: [
+    t("e1", "Sam Example", 10), t("c", "RIVERSIDE CHANCE", 10), t("oc", "OPPOSITION CHANCE", 900),
+  ] };
+  expect(rankHudlMoments([busy, quiet], "Sam Example", 4, "Riverside").map((m) => m.moment_id)).toEqual(["d3", "e1", "d2", "d1"]);
+});

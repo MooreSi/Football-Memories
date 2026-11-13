@@ -48,7 +48,7 @@ export function TopMoments({ playerId, name, library, club = null }: { playerId:
   return <section aria-label="Top 5 moments" className="panel space-y-4 p-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-lg font-semibold">Top 5 moments</h2>
-        <p className="text-xs text-fg-subtle">Favourites first, then moments in a team goal, a save or a chance.</p></div>
+        <p className="text-xs text-fg-subtle">Favourites first, then moments in a team goal, a save or a chance, one match at a time.</p></div>
       <Button variant="primary" disabled={makeImported.isPending} onClick={makeReel}><Clapperboard size={15} aria-hidden /> Make a reel</Button>
     </div>
     {hudl.length > 0 && imported.length > 0 && <p className="text-xs text-fg-subtle">The reel uses the Hudl moments; add imported favourites in Highlight reels.</p>}
