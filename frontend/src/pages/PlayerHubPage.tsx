@@ -14,6 +14,7 @@ import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { PlayerInsights } from "../components/player/PlayerInsights";
+import { RecordsPanel } from "../components/player/RecordsPanel";
 import { useHomeClub } from "../lib/useHomeClub";
 
 /** Layout follows reference 03: card left, teams/numbers/teammates beside it (dates column and moments feed removed as duplicates, 2026-11-11),
@@ -91,6 +92,8 @@ export function PlayerHubPage() {
               <StatTile compact label="Favourites" icon={Heart} value={String(p.totals.favourites)} unit="saved" />
             </div>
           </div>
+
+          <RecordsPanel series={perMatch} />
 
           <section aria-label="Moments per match" className="panel min-w-0 p-5">
             <h2 className="mb-3 text-lg font-semibold">Recent matches</h2>

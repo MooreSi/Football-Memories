@@ -22,6 +22,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   bars in a blue gradient; Connections: Import card gone, Connect, Veo Disconnect.
   Deployed (Docker rebuilt, helper restarted). Owner to set the Veo team name and
   run Refresh matches for posters.
+  Then **Records and streaks** on My Player (`lib/records.ts`, `RecordsPanel`): from
+  moments per match only (imported + Hudl); a run is matches at or above the average.
 
 - **Spec 260, Veo Library and playback ([260](todo/football-memories/260-veo-library-and-playback.md)):**
   task 1 built: "Connected Veo" section under All matches (`components/veo/VeoLibrary`,
