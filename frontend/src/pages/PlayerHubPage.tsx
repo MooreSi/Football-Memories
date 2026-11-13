@@ -16,6 +16,8 @@ import { Spinner } from "../components/ui/Spinner";
 import { PlayerInsights } from "../components/player/PlayerInsights";
 import { RecordsPanel } from "../components/player/RecordsPanel";
 import { SeasonStory } from "../components/player/SeasonStory";
+import { MilestonesTimeline } from "../components/player/MilestonesTimeline";
+import { involvement } from "../lib/insights";
 import { useHomeClub } from "../lib/useHomeClub";
 
 /** Layout follows reference 03: card left, teams/numbers/teammates beside it (dates column and moments feed removed as duplicates, 2026-11-11),
@@ -47,6 +49,13 @@ export function PlayerHubPage() {
   const perMatch = [...p.per_match, ...hudlPerMatch(hudl, p.display_name)]
     .filter((m) => m.match_date)
     .sort((a, b) => a.match_date.localeCompare(b.match_date));
+  // Milestones also need each Hudl match's age group and the team goals that
+  // overlapped the player's moments (owner request 2026-11-13).
+  const club = p.club_name || home;
+  const milestoneSeries = [...p.per_match, ...hudlPerMatch(hudl, p.display_name).map((e, i) => ({
+    ...e, age: hudl[i].age,
+    goals: involvement(remote.data?.find((m) => m.id === hudl[i].id)?.moments ?? [], p.display_name, club).headline.ourGoals,
+  }))];
   const href = (m: (typeof perMatch)[number]) => m.href ?? `/matches/${m.match_id}`;
   const first = perMatch[0];
   const latest = perMatch[perMatch.length - 1];
@@ -96,6 +105,7 @@ export function PlayerHubPage() {
 
           <RecordsPanel series={perMatch} />
           <SeasonStory series={perMatch} name={p.display_name} />
+          <MilestonesTimeline series={milestoneSeries} name={p.display_name} />
 
           <section aria-label="Moments per match" className="panel min-w-0 p-5">
             <h2 className="mb-3 text-lg font-semibold">Recent matches</h2>

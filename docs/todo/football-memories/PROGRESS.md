@@ -45,6 +45,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Connections: Import from folder removed, Veo beside Hudl; Connect; Veo Disconnect and status | done (tests; browser-checked) |
 | My Player: Records and streaks (best match, best month, above-average run, next milestone, personal best) | done (tests; browser-checked on real data) |
 | My Player: Season story (a few sentences per season, change on last season, match of the month links) | done (tests; browser-checked on real data) |
+| My Player: Milestones timeline (first match, seasons, new age groups, moment and match counts, new bests, first team goal with the player on) | done (tests; browser-checked on real data) |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 

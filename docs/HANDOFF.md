@@ -26,6 +26,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   moments per match only (imported + Hudl); a run is matches at or above the average.
   Then **Season story** (`lib/seasonStory.ts`, `SeasonStory`): July-June seasons,
   the player's first name (no guessed pronouns), match of the month per month.
+  Then **Milestones** (`lib/milestones.ts`, `MilestonesTimeline`): badges along a
+  scrolling timeline; Hudl age groups and team goals overlapping the player's moments
+  (`involvement`). A new best counts only after five matches.
 
 - **Spec 260, Veo Library and playback ([260](todo/football-memories/260-veo-library-and-playback.md)):**
   task 1 built: "Connected Veo" section under All matches (`components/veo/VeoLibrary`,
