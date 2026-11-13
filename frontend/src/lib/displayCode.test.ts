@@ -13,6 +13,10 @@ it("leaves situation codes and anything not a plain name as they are", () => {
   expect(displayCode("DEF IN FINAL 3RD")).toBe("DEF IN FINAL 3RD");
   expect(displayCode("THEO (T)")).toBe("THEO (T)");
   expect(displayCode("QCC")).toBe("QCC");
+  // Seen in real tag sets: plain words that are not names.
+  expect(displayCode("END HALF")).toBe("END HALF");
+  expect(displayCode("BEST PRACTICE")).toBe("BEST PRACTICE");
+  expect(displayCode("RIVERSIDE INJURY")).toBe("RIVERSIDE INJURY");
 });
 
 it("rewrites every moment's code in a served library and nothing else", () => {

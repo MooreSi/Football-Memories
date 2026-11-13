@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3 (2026-11-13)
+
+### New
+- **Match insights** on every match: possession worked out from how long each
+  side had the ball, a minute-by-minute **momentum** chart (click a bar to watch
+  that minute), and your record against the opponent.
+- **Attacks ending in a chance**: every attack that ended in a chance or goal as
+  one clip, ready to play back to back, download or make into a reel.
+- **Player hub insights**: what your player was on the pitch during (attacking,
+  defending, set pieces), a **football journey** season by season, who he
+  **plays alongside most**, and the attacks he was in.
+- **Opponents**: your record against every club for one team, followed as it
+  moves up an age group each season (U11 in 2026/27 is U10 in 2025/26), split
+  by season with every game listed.
+- **Shareable reports**: a match or season report with club crests, saved as an
+  image or printed to PDF.
+- **Notes and drawings** on any moment: a note plus arrows or lines over the
+  video, shown again when that moment plays.
+- **Alerts**: a bell for new matches and new moments of your player.
+- **Continue watching** on the Library, resuming each match where you stopped.
+
+### Better
+- The same tag in different spellings ("&amp;" and "&", "CHRIS DEMO" and
+  "Chris Demo") now counts as one, and player names read "Chris Demo".
+- The Match Profile's possession point shows time on the ball, not a count of tags.
+
+### Fixed
+- Header labels no longer wrap at smaller desktop widths.
+
 ## 0.2 (2026-11-13)
 
 ### New

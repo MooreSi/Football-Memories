@@ -6,6 +6,8 @@ import { fixtureDate, fixtureParts } from "../../lib/hudlFixture";
 import { type Group, involvementTotals, journey, partnerships, phases } from "../../lib/insights";
 import { sameCode } from "../../lib/codes";
 
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
 const GROUPS: { key: Group; label: string }[] = [
   { key: "attacking", label: "Attacking" }, { key: "defending", label: "Defending" }, { key: "setPieces", label: "Set pieces" },
 ];
@@ -51,7 +53,7 @@ export function PlayerInsights({ library, name, club }: { library: HudlMatch[] |
           <label className="text-xs text-fg-muted">Season <select className="field ml-1 w-auto" value={chosen} onChange={(e) => setSeason(e.target.value)}>
             <option value="all">All seasons</option>{seasons.map((s) => <option key={s.season}>{s.season}</option>)}</select></label>
         </div>
-        <p className="text-sm">Tagged during <strong>{v.headline.ourChances}</strong> of our chances and <strong>{v.headline.ourGoals}</strong> goals, and during <strong>{v.headline.theirChances}</strong> opposition chances, across {v.matches} {v.matches === 1 ? "match" : "matches"}.</p>
+        <p className="text-sm">Tagged during <strong>{v.headline.ourChances}</strong> of our chances and <strong>{v.headline.ourGoals}</strong> {v.headline.ourGoals === 1 ? "goal" : "goals"}, and during <strong>{v.headline.theirChances}</strong> opposition {v.headline.theirChances === 1 ? "chance" : "chances"}, across {plural(v.matches, "match", "matches")}.</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {GROUPS.map((g) => (
             <div key={g.key} className="tile p-3">
@@ -80,11 +82,11 @@ export function PlayerInsights({ library, name, club }: { library: HudlMatch[] |
       {attacks.length > 0 && (
         <section aria-label="Attacks he was in" className="panel space-y-3 p-5">
           <h2 className="flex items-center gap-2 text-lg font-semibold"><Route size={16} className="text-accent" aria-hidden /> Attacks he was in that ended in a chance</h2>
-          <p className="text-sm text-fg-muted">{attacks.length} attacks ({attacks.filter((a) => a.phase.outcome === "goal").length} goals) in {byMatch.length} {byMatch.length === 1 ? "match" : "matches"}. Open a match to play them back to back, download them or make a reel.</p>
+          <p className="text-sm text-fg-muted">{plural(attacks.length, "attack")} ({plural(attacks.filter((a) => a.phase.outcome === "goal").length, "goal")}) in {plural(byMatch.length, "match", "matches")}. Open a match to play them back to back, download them or make a reel.</p>
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{byMatch.map((m) => (
             <li key={m.id}><Link className="tile flex justify-between gap-3 p-3 text-sm hover:border-accent/60" to={`/hudl/${encodeURIComponent(m.id)}?player=${encodeURIComponent(name)}&phases=1`}>
               <span className="min-w-0 truncate">{fixtureParts(m.title, club)?.opponent ?? m.title}<span className="block text-xs text-fg-subtle">{fixtureDate(m.title)?.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) ?? "Undated"}</span></span>
-              <span className="shrink-0 text-xs text-pin">{attacks.filter((a) => a.match.id === m.id).length} attacks</span></Link></li>))}</ul>
+              <span className="shrink-0 text-xs text-pin">{plural(attacks.filter((a) => a.match.id === m.id).length, "attack")}</span></Link></li>))}</ul>
         </section>
       )}
     </div>

@@ -20,14 +20,14 @@ const library = [
 it("says what he was on the pitch during, for the latest season by default", () => {
   renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
   const panel = screen.getByRole("region", { name: "Involvement" });
-  expect(panel).toHaveTextContent("Tagged during 0 of our chances and 1 goals, and during 0 opposition chances, across 1 match.");
+  expect(panel).toHaveTextContent("Tagged during 0 of our chances and 1 goal, and during 0 opposition chances, across 1 match.");
   expect(panel).toHaveTextContent(/not necessarily the one who made them/);
 });
 
 it("switches the season, and charts every season of the journey", async () => {
   renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
   await userEvent.setup().selectOptions(screen.getByLabelText("Season"), "all");
-  expect(screen.getByRole("region", { name: "Involvement" })).toHaveTextContent("Tagged during 1 of our chances and 1 goals");
+  expect(screen.getByRole("region", { name: "Involvement" })).toHaveTextContent("Tagged during 1 of our chances and 1 goal");
   const journey = screen.getByRole("region", { name: "Football journey" });
   expect(within(journey).getAllByRole("listitem").map((li) => li.getAttribute("aria-label"))).toEqual([
     "2025-26: 1 moments per match over 1 matches, 100% attacking, 0% defending",

@@ -12,33 +12,49 @@ animated title cards. Nothing is uploaded anywhere.
 
 ## What it does
 
-- **Match Library**: every match with both clubs' crests, the newest first. Icons show
-  which matches and moments you have already downloaded. Overview stats follow the
-  age group and season you pick.
+- **Match Library**: every match with both clubs' crests, the newest first, with
+  scores, a Match Profile and possession for the match on show. **Continue
+  watching** picks up where you stopped; icons show what you have downloaded.
 - **Match page**: watch the whole game or only the tagged moments, filter by
-  moment type or player, and play tagged moments back to back.
+  moment type or player, and play tagged moments back to back. **Match
+  insights** show possession, a minute-by-minute momentum chart (click a bar to
+  watch it) and your record against the opponent. **Attacks ending in a chance**
+  turns each attack into one clip. Add a **note or arrows** to any moment.
+- **My Player**: a player card in seven finishes, a memories timeline, and what
+  your player was on the pitch during, his football journey season by season,
+  and who he plays alongside most.
+- **Opponents**: your record against every club for one team, followed as it
+  moves up an age group each season, split by season with every game.
+- **Reports**: a match or season report with club crests, saved as an image or
+  printed to PDF for family.
 - **Clips**: pick a match, choose a player or code, and download their moments as
   separate clips, one video, or straight into a highlight reel. **Batch download**
   does the same across many matches in one go.
-- **Highlight reels**: six animated card styles (Floodlights, Kick-off, Trophy
-  gold, Neon, Matchday poster, Clean). Each match gets its own opening card,
-  filled in automatically with both crests, the opponent and the date.
+- **Highlight reels**: six animated card styles, each match with its own opening
+  card filled in automatically with both crests, the opponent and the date.
 - **Downloaded**: every full match, moment set and reel on this computer, with
-  Play and Save buttons.
-- **My Player**: a player card in seven finishes (gold, silver, bronze and more)
-  showing the club crest, moments and games, plus a memories timeline.
+  Play, Save and Delete, and an optional folder for Plex and other media players.
+- **Alerts**: a bell for new matches and new moments of your player.
 - **Phones and tablets**: open the app from any device on your home Wi-Fi.
 - **Updates**: Settings > Update checks GitHub and updates in one click.
 
-| Match page | Player hub |
+| Match page | Match insights |
 |---|---|
-| ![Match page](docs/screenshots/match.png) | ![Player hub](docs/screenshots/player.png) |
+| ![Match page](docs/screenshots/match.png) | ![Match insights](docs/screenshots/insights.png) |
 
-| Clips | On a phone |
+| Player hub | On the pitch during, journey and partnerships |
 |---|---|
-| ![Clips](docs/screenshots/clips.png) | <img src="docs/screenshots/phone.png" alt="On a phone" width="260"> |
+| ![Player hub](docs/screenshots/player.png) | ![Player insights](docs/screenshots/player-insights.png) |
 
-Screenshots use the built-in sample data, not real players.
+| Opponents | Clips |
+|---|---|
+| ![Opponents](docs/screenshots/opponents.png) | ![Clips](docs/screenshots/clips.png) |
+
+| Match report | Season report | On a phone |
+|---|---|---|
+| <img src="docs/screenshots/report-match.png" alt="Match report" width="260"> | <img src="docs/screenshots/report-season.png" alt="Season report" width="260"> | <img src="docs/screenshots/phone.png" alt="On a phone" width="220"> |
+
+Screenshots use made-up sample data (club, opponents and players), not real players or footage.
 
 ## Installing
 

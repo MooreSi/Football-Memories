@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Release 0.3 (2026-11-13):** versions 0.3.0, CHANGELOG, README rewritten for
+  the new features, ten screenshots in `docs/screenshots/` taken from made-up
+  data (club Riverside, fictional opponents, synthetic players and tags, a drawn
+  pitch) served by a throwaway stand-in helper; nothing real or from Hudl.
+  Fixed while shooting: "END HALF" and other plain-word codes were shown as names.
+
 - **Opponents by team, report crests (owner request 2026-11-13, D-033):**
   Opponents, head-to-head and the season report follow one team across seasons
   (U11 2026/27 = U10 2025/26 = U9 2024/25), each club split by season with every
