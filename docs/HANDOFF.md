@@ -18,8 +18,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   authorizes reads with a token header from localStorage, not a cookie.
   `_client` now copies the page's own `authorization` header (`signed_in_header`,
   `token_http`), in memory only, and still waits for the form and the app
-  (`confirm_signed_in` names a 401). Helper restarted. **Owner to select Test
-  again**; not yet checked on the real account.
+  (`confirm_signed_in` names a 401). Helper restarted. **Owner's Test passed
+  2026-11-13:** 284 matches in 3 clubs, 56 with video, 228 expired, 7 expiring.
+  Refresh matches not yet run.
 
 - **Next-moment fix (owner report 2026-11-13):** Next/Previous now step from the
   outlined moment in match order (ties keep list order), not from the video's
