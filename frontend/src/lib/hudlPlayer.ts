@@ -13,10 +13,10 @@ function iso(date: Date | null): string | null {
 }
 
 /** Cached Hudl matches where `name` is a tagged code, oldest first. */
-export function hudlPlayerMatches(library: HudlMatch[] | undefined, name: string): HudlPlayerMatch[] {
+export function hudlPlayerMatches(library: HudlMatch[] | undefined, name: string, club?: string | null): HudlPlayerMatch[] {
   return (library ?? [])
     .map((m) => ({
-      id: m.id, title: m.title, opponent: fixtureParts(m.title)?.opponent ?? m.title,
+      id: m.id, title: m.title, opponent: fixtureParts(m.title, club)?.opponent ?? m.title,
       date: iso(fixtureDate(m.title)), season: m.season_label || "Unclassified", age: m.age_group,
       thumbnail_url: m.thumbnail_url,
       moments: (m.moments ?? []).filter((t) => t.category === name).sort((a, b) => a.time_s - b.time_s),

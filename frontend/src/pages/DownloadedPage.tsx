@@ -83,7 +83,7 @@ export function DownloadedPage() {
             const match = library.data?.find((m) => m.id === key);
             const title = match?.title ?? list[0].title ?? "Downloaded files";
             const age = match ? hudlAgeGroups(match)[0] : "";
-            const parts = fixtureParts(title);
+            const parts = fixtureParts(title, club);
             const date = fixtureDate(title);
             const label = fixtureLabel(title, club, age);
             return (

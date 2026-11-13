@@ -13,6 +13,19 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-11)
 
+- **Opponents and crests (2026-11-13, owner report):** Chelsea, Manchester City,
+  "The Hammers", "Bluebirds" and others showed initials. Two causes: Wikipedia
+  answered 429 when a page asked for many crests at once and the app kept that
+  as "no crest" for 24 hours; and Hudl titles use nicknames and short forms the
+  app did not know. `frontend/src/lib/clubs.ts` resolves nicknames, short forms
+  and cut-off names to full clubs; `fixtureParts(title, ourClub)` also reads
+  "Arsenal v Aston Villa" and "Barcelona 3-0 Aston Villa". The backend now
+  paces Wikipedia (1s), honours Retry-After and only keeps a real "no crest" for
+  a day; the badge retries after 30s and 90s. Docker app rebuilt and checked:
+  every match on the player timeline shows the right crest. **CFT Slovakia has
+  no public club page or crest**, so it keeps initials; a way for the owner to
+  pick a crest for such clubs would be a separate feature.
+
 - **Saving to a NAS share (2026-11-12, owner report):** the owner's download
   folder is `/Volumes/SMB_Share/Football` (SMB, TrueNAS). Reel Studio stopped with
   `OSError in hudl_exports.py:293`: the share has no hard links (`ENOTSUP`). All

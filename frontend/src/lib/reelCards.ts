@@ -34,7 +34,7 @@ export const CARD_SECONDS: Record<CardKind, number> = { opening: 4, match: 3.5, 
 
 /** A match card from a Hudl title such as "261108 U11 v Stoke (A)". */
 export function matchCard(title: string, club: string | null, extra: { age?: string; moments?: number } = {}): CardSpec {
-  const parts = fixtureParts(title);
+  const parts = fixtureParts(title, club);
   const date = fixtureDate(title);
   const home = club || "Home";
   const away = parts?.opponent ?? title;

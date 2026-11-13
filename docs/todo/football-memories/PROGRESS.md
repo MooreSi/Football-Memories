@@ -11,6 +11,13 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Owner request 2026-11-13: opponents and crests
+
+| Item | Status |
+|---|---|
+| Opponent read from every Hudl title form (nicknames, short forms, cut-off names, "Arsenal v Aston Villa", scores) | done (tests from the owner's real titles; every title in the cached library checked) |
+| Crest lookups survive Wikipedia rate limits (429 pauses, not a day-long miss) | done (tests; checked on the live Docker app: all timeline matches show crests except CFT Slovakia) |
+
 ## Owner requests 2026-11-12
 
 | Item | Status |

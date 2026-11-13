@@ -6,6 +6,7 @@ import { type HudlMatch, downloadState, hudlBlocked, hudlRequest, useDownloadInd
 import { fixtureDate, fixtureParts, latestFirst, ukDate } from "../../lib/hudlFixture";
 import { looksLikePlayer } from "../../lib/hudlPlayer";
 import { timeLeft } from "../../lib/taggedPlayback";
+import { useHomeClub } from "../../lib/useHomeClub";
 import { Button } from "../ui/Button";
 
 type Output = "zip" | "mp4" | "reel" | "reels";
@@ -24,6 +25,7 @@ export function BatchDownload({ matches }: { matches: HudlMatch[] }) {
   const status = useHudlStatus();
   const saved = downloadState(useDownloadIndex().data);
   const [code, setCode] = useState("");
+  const club = useHomeClub();
   const [output, setOutput] = useState<Output>("zip");
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [touched, setTouched] = useState(false);
@@ -84,7 +86,7 @@ export function BatchDownload({ matches }: { matches: HudlMatch[] }) {
             <ul aria-label="Matches to include" className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
               {rows.map(({ m, count }) => {
                 const date = fixtureDate(m.title);
-                const name = fixtureParts(m.title)?.opponent ?? m.title;
+                const name = fixtureParts(m.title, club)?.opponent ?? m.title;
                 const done = saved.get(m.id)?.moments;
                 return (
                   <li key={m.id}>

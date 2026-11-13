@@ -28,7 +28,7 @@ export function YourPlayerCard() {
   }
   const p = player.data;
   if (!p) return null;
-  const hudl = hudlPlayerMatches(remote.data, p.display_name);
+  const hudl = hudlPlayerMatches(remote.data, p.display_name, p.club_name);
   const hudlMoments = hudl.reduce((n, m) => n + m.moments.length, 0);
   const watched = watchedHudlMoments();
   const unwatched = p.totals.unwatched + hudl.reduce((n, m) => n + m.moments.filter((x) => !watched.has(x.id)).length, 0);

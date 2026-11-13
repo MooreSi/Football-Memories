@@ -19,7 +19,7 @@ export function HudlHero({ matches, club, age, index, onIndex }: { matches: Hudl
   if (!m) return null;
   const group = age || hudlAgeGroups(m)[0];
   const date = fixtureDate(m.title);
-  const parts = fixtureParts(m.title);
+  const parts = fixtureParts(m.title, club);
   const venue = parts?.venue;
   const home = club || "Home";
   const moments = m.moments?.length ?? 0;

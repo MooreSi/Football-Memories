@@ -11,7 +11,7 @@ import { FixtureCrests } from "../FixtureCrests";
 /** Spec 190 follow-up (owner request 2026-11-11): the panel and its moments follow the
  *  match shown in the hero, and list every tagged moment of that game. */
 export function HudlLatestPanel({ match, club, age, latest = true }: { match: HudlMatch; club: string | null; age: string; latest?: boolean }) {
-  const parts = fixtureParts(match.title);
+  const parts = fixtureParts(match.title, club);
   const date = fixtureDate(match.title);
   const home = club || "Home";
   const moments = match.moments ?? [];

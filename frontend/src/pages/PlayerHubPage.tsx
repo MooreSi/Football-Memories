@@ -36,7 +36,7 @@ export function PlayerHubPage() {
   }
   const p = profile.data;
   // Hudl tag metadata counts alongside imported matches (owner request 2026-11-10).
-  const hudl = hudlPlayerMatches(remote.data, p.display_name);
+  const hudl = hudlPlayerMatches(remote.data, p.display_name, p.club_name);
   const hudlMoments = hudl.flatMap((m) => m.moments);
   const watched = watchedHudlMoments();
   const perMatch = [...p.per_match, ...hudlPerMatch(hudl, p.display_name)]

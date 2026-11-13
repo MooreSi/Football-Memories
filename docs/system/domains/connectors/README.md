@@ -272,6 +272,17 @@ matched helper output. Prior archive files unchanged; no new full match capture.
 - Wikipedia crest files are often plain SVG names (`Liverpool_FC.svg`), so the
   old "crest/logo/badge" keyword filter missed them; `.svg` counts as a crest.
 
+## Wikipedia crests and rate limits (2026-11-13)
+- Wikipedia answers 429 with `Retry-After` (about 20s) after roughly ten quick
+  anonymous requests. That used to be cached as "no crest" for 24 hours, so
+  Chelsea and Manchester City showed initials. `team_logos` now spaces requests
+  1s apart, pauses every lookup for Retry-After on 429/5xx/network errors (not a
+  miss), and keeps only a real "not found" for a day.
+- Names keep their capitals ("AFC Bournemouth"); title-casing gave "Afc
+  Bournemouth", which is not a page. The last lookup, the name as written, may be
+  a city or country, so its image must name a club (FC, crest, logo, badge):
+  "Tokyo" as written is the city with a flag SVG.
+
 ## hudl_browser package layout (2026-11-11)
 `_account.py` passed the 800-line ceiling and was split (rule 70): batch and
 single-match moment exports and reels live in `_batch.py`, the paced tag and

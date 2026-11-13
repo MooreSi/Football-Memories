@@ -79,7 +79,7 @@ export function LibraryPage() {
   const shown = heroMatches[Math.min(heroIndex, heroMatches.length - 1)];
   const profileKinds = shown ? matchProfile(shown.moments ?? []) : s?.top_tags ?? [];
   const profileTeams = shown ? teamProfile(shown.moments ?? [], club) : null;
-  const opponent = shown ? fixtureParts(shown.title)?.opponent ?? "Opposition" : "Opposition";
+  const opponent = shown ? fixtureParts(shown.title, club)?.opponent ?? "Opposition" : "Opposition";
   const scoped = Boolean(remote.data?.length);
   const scopedMoments = heroMatches.reduce((n, m) => n + (m.moments?.length ?? 0), 0) + items.reduce((n, m) => n + m.event_count, 0);
   const scopedSeconds = heroMatches.reduce((n, m) => n + (m.duration_s ?? 0), 0) + items.reduce((n, m) => n + (m.duration_s ?? 0), 0);

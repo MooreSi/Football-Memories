@@ -1,4 +1,29 @@
+import pytest
+
+from app.services import team_logos
 from app.services.team_logos import club_name, logo_candidate
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.now = 1000.0
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+
+
+@pytest.fixture(autouse=True)
+def clock(monkeypatch):
+    """Lookups remember misses in module state; every test starts clean on a fake clock."""
+    fake = _Clock()
+    monkeypatch.setattr(team_logos, "_MISSES", {})
+    monkeypatch.setattr(team_logos, "_PAUSED_UNTIL", [0.0])
+    monkeypatch.setattr(team_logos.time, "monotonic", fake.monotonic)
+    monkeypatch.setattr(team_logos.time, "sleep", fake.sleep)
+    return fake
 
 
 def test_age_group_and_club_suffixes_share_identity() -> None:
@@ -104,3 +129,102 @@ def test_a_photo_is_never_taken_as_a_crest(tmp_path, monkeypatch) -> None:
     assert all(
         "api.php" in c.args[0] for c in fetch.call_args_list
     )  # the photo is never downloaded
+
+
+def _rate_limited(url, retry_after="30"):
+    from email.message import Message
+    from urllib.error import HTTPError
+
+    headers = Message()
+    if retry_after:
+        headers["Retry-After"] = retry_after
+    return HTTPError(url, 429, "Too Many Requests", headers, None)
+
+
+def test_a_rate_limited_lookup_is_retried_soon(tmp_path, monkeypatch, clock) -> None:
+    """Owner report 2026-11-13: Chelsea and Manchester City showed initials. Wikipedia
+    had answered 429 and the miss was kept for 24 hours as if no crest existed."""
+    from app.services.team_logos import cached_crest
+
+    crest = "https://upload.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/250px-Chelsea_FC.svg.png"
+    calls = []
+
+    def fetch(url):
+        calls.append(url)
+        if len(calls) == 1:
+            raise _rate_limited(url)
+        return _wiki(crest) if "api.php" in url else b"\x89PNG\r\n\x1a\nchelsea"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert cached_crest("Chelsea", tmp_path) is None
+    # Inside Wikipedia's Retry-After window nothing is asked, for this club or any other.
+    assert cached_crest("Chelsea", tmp_path) is None
+    assert cached_crest("Fulham", tmp_path) is None
+    assert len(calls) == 1
+    clock.now += 31
+    path = cached_crest("Chelsea", tmp_path)
+    assert path is not None and path.read_bytes().endswith(b"chelsea")
+
+
+def test_a_club_with_no_crest_is_not_asked_again_for_a_day(tmp_path, monkeypatch, clock) -> None:
+    from unittest.mock import Mock
+
+    from app.services.team_logos import cached_crest
+
+    fetch = Mock(return_value=_wiki(None, missing=True))
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert cached_crest("CFT Slovakia", tmp_path) is None
+    asked = fetch.call_count
+    assert asked > 0
+    clock.now += 3600
+    assert cached_crest("CFT Slovakia", tmp_path) is None
+    assert fetch.call_count == asked
+    clock.now += 86400
+    cached_crest("CFT Slovakia", tmp_path)
+    assert fetch.call_count > asked
+
+
+def test_the_club_name_keeps_its_capitals(tmp_path, monkeypatch) -> None:
+    """ "AFC Bournemouth" is the page title; title-casing it gave "Afc Bournemouth"."""
+    from urllib.parse import parse_qs, urlsplit
+
+    from app.services.team_logos import cached_crest
+
+    asked = []
+    crest = "https://upload.wikimedia.org/wikipedia/en/thumb/e/e5/AFC_Bournemouth_%282013%29.svg/250px-x.png"
+
+    def fetch(url):
+        if "api.php" in url:
+            title = parse_qs(urlsplit(url).query)["titles"][0]
+            asked.append(title)
+            return _wiki(crest) if title == "AFC Bournemouth" else _wiki(None, missing=True)
+        return b"\x89PNG\r\n\x1a\ncherries"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert cached_crest("AFC Bournemouth", tmp_path) is not None
+    assert asked == ["AFC Bournemouth F.C.", "AFC Bournemouth A.F.C.", "AFC Bournemouth"]
+
+
+def test_a_page_found_as_written_must_show_a_club_crest(tmp_path, monkeypatch) -> None:
+    """ "Tokyo" as written is the city, whose page image is a flag SVG."""
+    from app.services.team_logos import cached_crest
+
+    flag = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Flag_of_Tokyo_Metropolis.svg/250px-x.png"
+    crest = "https://upload.wikimedia.org/wikipedia/en/thumb/0/0b/FC_Barcelona_%28crest%29.svg/250px-x.png"
+    downloads = []
+
+    def fetch(url):
+        from urllib.parse import parse_qs, urlsplit
+
+        if "api.php" in url:
+            title = parse_qs(urlsplit(url).query)["titles"][0]
+            if title in {"Tokyo", "Barcelona"}:
+                return _wiki(flag if title == "Tokyo" else crest)
+            return _wiki(None, missing=True)
+        downloads.append(url)
+        return b"\x89PNG\r\n\x1a\nimage"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert cached_crest("Tokyo", tmp_path) is None
+    assert downloads == []
+    assert cached_crest("Barcelona", tmp_path) is not None  # negative control

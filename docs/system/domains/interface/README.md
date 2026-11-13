@@ -66,6 +66,17 @@ install with Hudl matches but nothing imported showed "Home vs. Stoke City"
 despite Plays for Aston Villa (owner report). Use the hook, not
 `clubName(match.team_name)`, for anything that names our side.
 
+## Opponents from Hudl titles (2026-11-13)
+
+Hudl titles name opponents by nickname ("The Hammers", "Bluebirds", "Magpies"),
+short form ("Man City", "QPR"), cut-off name ("Shrewsbury Tow") or with our club
+first ("Arsenal v Aston Villa", "Barcelona 3-0 Aston Villa"). `lib/clubs.ts`
+(`resolveClub`) maps these to full club names; pass our club to `fixtureParts`
+so it can tell which side is the opponent. `TeamBadge` resolves names too, so
+an imported match with a nickname still gets a crest. Add a new nickname to
+`ALIASES` with a test in `lib/hudlFixture.test.ts`. Ambiguous nicknames
+("Blues", "Reds", "Dons", "Dundee") are deliberately left out.
+
 ## Match scores (spec 210, 2026-11-12)
 
 `lib/matchScore.ts`: the tagged score is the "Goal" axis of `teamProfile`
