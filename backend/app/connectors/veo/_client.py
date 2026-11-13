@@ -83,6 +83,16 @@ def _check(page: Page) -> None:
 def sign_in(page: Page, credentials: Any) -> None:
     """One attempt at Veo's normal sign-in form; stops at any challenge."""
     _check(page)
+    try:
+        # app.veo.co hands over to auth.veo.co in the page's own script, so the
+        # form can appear after the first load settles (owner report 2026-11-13).
+        page.wait_for_selector("#email", state="visible", timeout=30_000)
+    except Exception:
+        _check(page)
+        raise CaptureError(
+            "Veo did not show its sign-in form. Nothing was typed; try again later."
+        ) from None
+    _check(page)
     page.fill("#email", credentials.username)
     page.fill("#password", credentials.password.get_secret_value())
     page.click('button[type="submit"]')
@@ -93,7 +103,26 @@ def sign_in(page: Page, credentials: Any) -> None:
         raise CaptureError(
             "Veo sign-in did not finish. Check the email and password in Settings, then test again."
         ) from None
+    try:
+        # The first app.veo.co address can be the OIDC callback, before the session
+        # cookie is set; let the app finish loading before anything is read.
+        page.wait_for_load_state("networkidle", timeout=30_000)
+    except Exception:  # noqa: S110 (a page that never idles is judged by confirm_signed_in)
+        pass
     _check(page)
+
+
+def confirm_signed_in(api: VeoApi) -> None:
+    """The first read after sign-in. A 401 here means the sign-in did not take."""
+    try:
+        api.get("/api/app/user/")
+    except VeoRefused as refused:
+        if refused.status != 401:
+            raise
+        raise CaptureError(
+            "Veo did not keep the sign-in, so nothing was read. Check the email and "
+            "password in Settings, then test again. Nothing was retried."
+        ) from None
 
 
 @contextmanager
@@ -106,12 +135,13 @@ def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
             page = context.new_page()
             page.goto(APP + "/", wait_until="domcontentloaded")
             page.wait_for_load_state("networkidle", timeout=30_000)
-            if urlsplit(page.url).hostname != "app.veo.co":
-                credentials = loader()
-                try:
-                    sign_in(page, credentials)
-                finally:
-                    del credentials
+            # The context is new and empty, so it is never already signed in. Veo's
+            # root can stay on app.veo.co while its script decides to hand over.
+            credentials = loader()
+            try:
+                sign_in(page, credentials)
+            finally:
+                del credentials
 
             def http(url: str) -> tuple[int, dict[str, str], Any]:
                 response = context.request.get(url, headers={"Accept": "application/json"})
@@ -123,7 +153,9 @@ def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
                         raise CaptureError("Veo sent something the app could not read.") from None
                 return response.status, dict(response.headers), body
 
-            yield VeoApi(http)
+            api = VeoApi(http)
+            confirm_signed_in(api)
+            yield api
         finally:
             try:
                 browser.close()

@@ -429,6 +429,13 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
 - No public API. The web app reads JSON under `https://app.veo.co/api/app/` with
   the session cookie alone (no extra header). Sign-in is auth.veo.co, an OIDC
   interaction form: `#email`, `#password`, `button[type=submit]`.
+- **Sign-in timing (owner report 2026-11-13, first real Test):** Save and Test
+  answered "Veo signed this session out" (401 on the first `/api/app/user/`).
+  The client had trusted the first app.veo.co address as signed in, and skipped
+  the form whenever the root had not yet left app.veo.co. Now it always waits
+  for `#email`, waits for network idle after the hand-back, and treats a 401 on
+  the first read as "Veo did not keep the sign-in". Which of the two it was is
+  not known; not yet re-tested on the real account.
 - `clubs/?filter=own` -> `clubs/<slug>/recordings/?filter=own&page=N`, 20 a page,
   `Link: rel="next"`, counts in `x-veo-total-count`, `x-veo-matches-expired`,
   `x-veo-matches-soon-expiring`.

@@ -6,7 +6,7 @@ import pytest
 
 from app.connectors.hudl_account import Credentials
 from app.connectors.hudl_capture import CaptureError
-from app.connectors.veo._client import VeoApi, sign_in
+from app.connectors.veo._client import VeoApi, confirm_signed_in, sign_in
 
 SECRET = "FAKE_VEO_SECRET_51c2"  # noqa: S105
 
@@ -88,3 +88,68 @@ def test_sign_in_fills_the_two_fields_and_waits_for_the_app() -> None:
     page.fill.assert_any_call("#password", SECRET)
     page.click.assert_called_once_with('button[type="submit"]')
     page.wait_for_url.assert_called_once()
+
+
+# Owner report 2026-11-13: Save and Test answered "Veo signed this session out"
+# (401 on the first read). The sign-in must wait for Veo's form, wait for the app
+# to finish loading after the hand-back, and a 401 straight after sign-in must
+# say the sign-in did not take rather than that Veo signed the session out.
+
+
+def _names(page: MagicMock) -> list[str]:
+    return [
+        c[0]
+        for c in page.mock_calls
+        if c[0] in {"wait_for_selector", "fill", "click", "wait_for_url", "wait_for_load_state"}
+    ]
+
+
+def test_sign_in_waits_for_the_email_field_before_typing() -> None:
+    page = MagicMock()
+    page.locator.return_value.count.return_value = 0
+    sign_in(page, Credentials("veo@example.test", SECRET))
+    page.wait_for_selector.assert_any_call("#email", state="visible", timeout=30_000)
+    names = _names(page)
+    assert names.index("wait_for_selector") < names.index("fill")
+
+
+def test_sign_in_stops_without_typing_when_the_form_never_appears() -> None:
+    page = MagicMock()
+    page.locator.return_value.count.return_value = 0
+    page.wait_for_selector.side_effect = TimeoutError("no form")
+    with pytest.raises(CaptureError, match="sign-in form") as error:
+        sign_in(page, Credentials("veo@example.test", SECRET))
+    page.fill.assert_not_called()
+    page.click.assert_not_called()
+    assert SECRET not in str(error.value)
+
+
+def test_sign_in_waits_for_the_app_to_finish_loading_after_the_hand_back() -> None:
+    page = MagicMock()
+    page.locator.return_value.count.return_value = 0
+    sign_in(page, Credentials("veo@example.test", SECRET))
+    names = _names(page)
+    assert "wait_for_load_state" in names
+    assert names.index("wait_for_url") < len(names) - 1 - names[::-1].index("wait_for_load_state")
+    page.wait_for_load_state.assert_any_call("networkidle", timeout=30_000)
+
+
+def test_a_401_straight_after_sign_in_says_the_sign_in_did_not_take() -> None:
+    http = FakeHttp({"https://app.veo.co/api/app/user/": (401, {}, {})})
+    veo, _ = api(http)
+    with pytest.raises(CaptureError) as error:
+        confirm_signed_in(veo)
+    assert "did not keep the sign-in" in str(error.value)
+    assert "signed this session out" not in str(error.value)
+    assert len(http.calls) == 1
+
+
+def test_confirm_passes_when_veo_knows_the_user_and_keeps_other_refusals() -> None:
+    http = FakeHttp({"https://app.veo.co/api/app/user/": (200, {}, {"id": "u"})})
+    veo, _ = api(http)
+    confirm_signed_in(veo)
+    assert len(http.calls) == 1
+    http = FakeHttp({"https://app.veo.co/api/app/user/": (429, {}, {})})
+    veo, _ = api(http)
+    with pytest.raises(CaptureError, match="slow down"):
+        confirm_signed_in(veo)
