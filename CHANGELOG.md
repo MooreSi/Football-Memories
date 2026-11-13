@@ -9,6 +9,14 @@
   keyboard shortcuts. Draw on any frame or on a tagged moment; drawings are
   saved with their note, replay over the video at their time and are listed
   under the video. **Screenshot** downloads a PNG of the frame with its drawing.
+- **Move tool** in the drawing board: drag any mark to a new place.
+- **Next / previous tagged moment** under the video: the buttons, the N and B
+  keys, or the keyboard's media next/previous keys (Mac and Windows).
+
+### Fixed
+- The green outline on the playing moment is drawn all the way round, and a
+  moment you click is outlined too.
+- Continue watching shows only the last three matches.
 
 ## 0.3 (2026-11-13)
 

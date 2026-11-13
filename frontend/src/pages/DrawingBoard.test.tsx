@@ -86,3 +86,18 @@ it('offers a screenshot of the frame with its drawing', async () => {
   open();
   expect(await screen.findByRole('button', { name: 'Download screenshot' })).toBeEnabled();
 });
+
+it('moves a mark with the move tool', async () => {
+  open(); const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Draw on video' }));
+  await user.keyboard('l');
+  drag([0.1, 0.1], [0.3, 0.1]);
+  await user.click(screen.getByRole('button', { name: /^Move/ }));
+  const mark = document.querySelector('[aria-label="Drawing area"] [data-shape="line"]')!;
+  fireEvent.pointerDown(mark, { clientX: 0.2 * 1600, clientY: 0.1 * 900, pointerId: 1 });
+  const area = screen.getByRole('img', { name: 'Drawing area' });
+  fireEvent.pointerMove(area, { clientX: 0.4 * 1600, clientY: 0.3 * 900, pointerId: 1 });
+  fireEvent.pointerUp(area, { clientX: 0.4 * 1600, clientY: 0.3 * 900, pointerId: 1 });
+  await user.click(screen.getByRole('button', { name: 'Save drawing' }));
+  expect(lastPut().shapes).toEqual([{ kind: 'line', x1: 0.3, y1: 0.3, x2: 0.5, y2: 0.3, colour: '#facc15', width: 2 }]);
+});

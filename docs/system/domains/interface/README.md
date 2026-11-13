@@ -102,6 +102,9 @@ U10 v Stoke City reads 12-9.
   lists of meetings show dates.
 - Code matching for players is case-insensitive (`lib/codes.ts`): a hub created
   as "Pat Example" finds "PAT EXAMPLE" tags.
+- A highlight on a tile inside a scrolling list must be an inset ring
+  (`ring-inset`): an outer box-shadow is clipped by the list's overflow box, so
+  the outline looked broken on the edge tiles.
 - Drawing board (spec 240): toolbar under the match video, above Match insights;
   the surface covers the 16:9 stage box, so marks are relative to that box, not
   to the letterboxed frame. The PNG export letterboxes the frame the same way

@@ -144,6 +144,20 @@ export function drawingSvg(shapes: Shape[], note = ""): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><defs>${SHADOW}</defs><g filter="url(#${SHADOW_ID})">${body}</g>${caption}</svg>`;
 }
 
+/** The mark moved by (dx, dy), stopping at the frame edge so its shape never changes. */
+export function moveShape(s: Shape, dx: number, dy: number): Shape {
+  const xs = [s.x1, s.x2, ...(s.cx === undefined ? [] : [s.cx]), ...(s.points ?? []).map((p) => p[0])];
+  const ys = [s.y1, s.y2, ...(s.cy === undefined ? [] : [s.cy]), ...(s.points ?? []).map((p) => p[1])];
+  const mx = Math.min(1 - Math.max(...xs), Math.max(-Math.min(...xs), dx));
+  const my = Math.min(1 - Math.max(...ys), Math.max(-Math.min(...ys), dy));
+  const fx = (v: number) => Math.round((v + mx) * 1e4) / 1e4, fy = (v: number) => Math.round((v + my) * 1e4) / 1e4;
+  return {
+    ...s, x1: fx(s.x1), y1: fy(s.y1), x2: fx(s.x2), y2: fy(s.y2),
+    ...(s.cx === undefined ? {} : { cx: fx(s.cx) }), ...(s.cy === undefined ? {} : { cy: fy(s.cy) }),
+    ...(s.points ? { points: s.points.map(([x, y]) => [fx(x), fy(y)] as [number, number]) } : {}),
+  };
+}
+
 /** A drawing on a frame that is not a tagged moment is keyed by match and time. */
 export function frameNoteId(matchId: string, time: number): string {
   return `frame:${matchId}:${time.toFixed(1)}`;

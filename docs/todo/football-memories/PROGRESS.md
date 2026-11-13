@@ -11,6 +11,16 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Owner follow-ups 2026-11-13
+
+| Item | Status |
+|---|---|
+| Drawing Move tool | done (tests; real mouse drag in the browser) |
+| Next / previous tagged moment (buttons, N/B, media keys) | done (tests; browser-checked buttons and N; media keys not tried) |
+| Green outline complete, follows the clicked moment | done (tests; browser-checked) |
+| Continue watching: last three | done (test) |
+| Veo connection and Hudl/Veo show-hide toggles | blocked (owner decision 006) |
+
 ## Spec 240 drawing board (owner request 2026-11-13)
 
 | Item | Status |

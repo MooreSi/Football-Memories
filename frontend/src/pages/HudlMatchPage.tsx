@@ -2,14 +2,14 @@ import { Overlay } from '../components/ui/Overlay';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Route, Share2, Square, StickyNote } from 'lucide-react';
+import { Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Route, Share2, SkipBack, SkipForward, Square, StickyNote } from 'lucide-react';
 import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
 import { MatchScoreBox } from '../components/match/MatchScoreBox';
 import { useHomeClub } from '../lib/useHomeClub';
 import { formatClock } from '../lib/format';
-import { advanceTagged, needsSeek, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
+import { advanceTagged, needsSeek, nextMoment, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 import { markHudlMomentWatched } from '../lib/hudlWatched';
 import { MatchInsights } from '../components/match/MatchInsights';
 import { MatchDrawing } from '../components/match/MatchDrawing';
@@ -62,6 +62,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const [now, setNow] = useState(0);
   const [focus, setFocus] = useState<HudlMoment>();
   const [phasesOnly, setPhasesOnly] = useState(initialPhases);
+  const [drawing, setDrawing] = useState(false);
   const notes = useNotes(id);
   const saveNote = useSaveNote();
   const [asking, setAsking] = useState(false);
@@ -128,6 +129,34 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const current = queue?.list[queue.index];
   useEffect(() => { if (current) { markHudlMomentWatched(current.id); setFocus(current); } }, [current]);
   const noteTarget = focus ?? current;
+  // The moment outlined in green: the one Play Tagged is on, or the one last clicked.
+  const active = current ?? focus;
+  const watch = (m: HudlMoment) => { setQueue(undefined); setFocus(m); markHudlMomentWatched(m.id); setSeek({ time: m.time_s, nonce: Date.now() }); };
+  // Owner request 2026-11-13: skip to the next/previous tagged moment of the codes shown,
+  // by button, N / B (same keys on Mac and Windows) or the keyboard's media keys.
+  const skip = (dir: 1 | -1) => {
+    const from = dir === 1 ? Math.max(now, active?.time_s ?? -1) : active?.time_s ?? now;
+    const m = nextMoment(filtered, from, dir);
+    if (m) watch(m);
+  };
+  const skipRef = useRef(skip);
+  skipRef.current = skip;
+  useEffect(() => {
+    if (drawing || !streamUrl) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target;
+      if (e.metaKey || e.ctrlKey || e.altKey || (el instanceof HTMLElement && (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.isContentEditable))) return;
+      if (e.key.toLowerCase() === 'n') skipRef.current(1);
+      if (e.key.toLowerCase() === 'b') skipRef.current(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    const media = typeof navigator !== 'undefined' ? navigator.mediaSession : undefined;
+    try { media?.setActionHandler('nexttrack', () => skipRef.current(1)); media?.setActionHandler('previoustrack', () => skipRef.current(-1)); } catch { /* not supported */ }
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      try { media?.setActionHandler('nexttrack', null); media?.setActionHandler('previoustrack', null); } catch { /* not supported */ }
+    };
+  }, [drawing, streamUrl]);
 
   if (!match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">{library.isPending ? 'Loading cached match…' : 'This match is not cached. Refresh Hudl from Library.'}</p></div>;
   return <div className="analysis-workspace">
@@ -147,7 +176,11 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       </header>
       {streamUrl ? <MatchDrawing matchId={id} title={match.title} notes={notes.data} target={noteTarget} now={now} saving={saveNote.isPending}
         error={saveNote.isError ? saveNote.error.message : undefined} onSave={(note, done) => saveNote.mutate(note, { onSuccess: done })}
-        onGoTo={time => { setQueue(undefined); setSeek({ time, nonce: Date.now() }); }}>
+        onGoTo={time => { setQueue(undefined); setSeek({ time, nonce: Date.now() }); }} onEditing={setDrawing}
+        controls={filtered.length > 0 && <span className="flex items-center gap-1">
+          <Button variant="ghost" aria-label="Previous tagged moment (B)" title="Previous tagged moment (B)" onClick={() => skip(-1)}><SkipBack size={15} /></Button>
+          <Button aria-label="Next tagged moment (N)" title="Next tagged moment (N, or the media next key)" onClick={() => skip(1)}><SkipForward size={15} className="text-accent" /> Next moment</Button>
+        </span>}>
         <StreamPlayer url={streamUrl} seek={seek} onTime={onTime} poster={match.thumbnail_url} />
       </MatchDrawing> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}
       {current && <div role="status" aria-label="Tagged playback" className="panel flex flex-wrap items-center gap-3 p-3 text-sm">
@@ -179,7 +212,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
         {code && <Link to={`/player/hudl/${encodeURIComponent(code)}`}><Button>See every match tagged “{code}”</Button></Link>}
         {match.tag_status === 'unsynced' && <p role="note" className="rounded-xl border border-warn/20 bg-warn/5 p-4 text-sm text-fg-muted">Hudl has not marked this tag timeline as synced. You can still stream or download the full match. Tagged moment and player downloads are unavailable until verified timings are available.</p>}
         {!moments.length && match.tag_status !== 'unsynced' && <p className="text-sm text-fg-muted">Tags load and cache when you open this match, independently of full-match downloads. Videos without supported tags can still stream.</p>}
-        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li aria-current={current?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${current?.id === m.id ? 'border-2 border-ok shadow-[0_0_0_1px_var(--color-ok)]' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => { setQueue(undefined); setFocus(m); markHudlMomentWatched(m.id); setSeek({ time: m.time_s, nonce: Date.now() }); }}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{phaseOf.has(m.id) ? `${phaseOf.get(m.id)!.outcome === 'goal' ? 'Goal' : 'Chance'}: ${phaseOf.get(m.id)!.steps.join(' → ')}` : m.category}</span>{noted.get(m.id)?.text && <span className="block truncate text-xs text-fg-muted">{noted.get(m.id)!.text}</span>}</button>{noted.has(m.id) && <StickyNote size={14} aria-label="Has a note" className="text-pin" />}<Play size={14} /></li>)}</ul>
+        <ul className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li aria-current={active?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${active?.id === m.id ? 'border-ok bg-ok/10 ring-2 ring-inset ring-ok' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => watch(m)}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{phaseOf.has(m.id) ? `${phaseOf.get(m.id)!.outcome === 'goal' ? 'Goal' : 'Chance'}: ${phaseOf.get(m.id)!.steps.join(' → ')}` : m.category}</span>{noted.get(m.id)?.text && <span className="block truncate text-xs text-fg-muted">{noted.get(m.id)!.text}</span>}</button>{noted.has(m.id) && <StickyNote size={14} aria-label="Has a note" className="text-pin" />}<Play size={14} /></li>)}</ul>
       </section>
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}

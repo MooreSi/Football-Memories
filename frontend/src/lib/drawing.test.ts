@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { H, W, containRect, curveThrough, drawingFileName, drawingSvg, finish, frameNoteId, isFrameNote, marks, smoothPath, thin } from "./drawing";
+import { H, W, containRect, moveShape, curveThrough, drawingFileName, drawingSvg, finish, frameNoteId, isFrameNote, marks, smoothPath, thin } from "./drawing";
 
 describe("marks", () => {
   it("draws an arrow as a shaft that stops short of a head pointing at the end", () => {
@@ -87,4 +87,15 @@ it("names the screenshot after the match and minute, safe for any disk", () => {
 it("letterboxes the frame the way the player shows it", () => {
   expect(containRect(1920, 1080, 1600, 900)).toEqual({ x: 0, y: 0, w: 1600, h: 900 });
   expect(containRect(1000, 1000, 1600, 900)).toEqual({ x: 350, y: 0, w: 900, h: 900 });
+});
+
+describe("moveShape", () => {
+  it("moves every point of a mark, its bend and its pen points by the same amount", () => {
+    expect(moveShape({ kind: "curve", x1: 0.1, y1: 0.2, x2: 0.3, y2: 0.4, cx: 0.2, cy: 0.1 }, 0.1, 0.05))
+      .toEqual({ kind: "curve", x1: 0.2, y1: 0.25, x2: 0.4, y2: 0.45, cx: 0.3, cy: 0.15 });
+    expect(moveShape({ kind: "pen", x1: 0.1, y1: 0.1, x2: 0.2, y2: 0.2, points: [[0.1, 0.1], [0.2, 0.2]] }, 0.1, 0).points).toEqual([[0.2, 0.1], [0.3, 0.2]]);
+  });
+  it("stops at the frame edge without changing the mark's shape", () => {
+    expect(moveShape({ kind: "line", x1: 0.8, y1: 0.5, x2: 0.9, y2: 0.5 }, 0.5, 0)).toEqual({ kind: "line", x1: 0.9, y1: 0.5, x2: 1, y2: 0.5 });
+  });
 });

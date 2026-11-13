@@ -21,7 +21,7 @@ export function MarkLayer({ shapes, onMarkDown }: { shapes: Shape[]; onMarkDown?
     <defs dangerouslySetInnerHTML={{ __html: SHADOW }} />
     <g filter={`url(#${SHADOW_ID})`}>
       {shapes.map((s, i) => (
-        <g key={i} data-index={i} className={onMarkDown ? "cursor-pointer transition-opacity hover:opacity-50" : undefined}
+        <g key={i} data-index={i} className={onMarkDown ? "cursor-pointer transition-opacity hover:opacity-60" : undefined}
           onPointerDown={onMarkDown ? (e) => { e.stopPropagation(); onMarkDown(i, e); } : undefined}>
           {marks(s).map((m, j) => {
             const Tag = m.tag;

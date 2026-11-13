@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Owner follow-ups 2026-11-13:** drawing Move tool (V); next/previous tagged
+  moment (buttons, N/B, media keys via `navigator.mediaSession`) within the codes
+  shown; green outline now an inset ring (the list's scroll box clipped the old
+  outer shadow) and follows the clicked moment too; Continue watching capped at 3.
+  **Veo connection not built**: waiting on owner decision 006 (permission,
+  credentials, scope); nothing signed in to Veo. Browser-checked via the stand-in.
+
 - **Drawing board (spec 240, D-034, owner request 2026-11-13):** toolbar under the
   match video (above Match insights): Draw on video, Note / draw on a moment,
   Screenshot, saved drawings. Ten tools, colours, widths, undo/redo, eraser, keys.

@@ -21,6 +21,13 @@ export function needsSeek(next: HudlMoment, time: number): boolean {
   return !(next.time_s < time && end > time);
 }
 
+/** Owner request 2026-11-13: the next (dir 1) or previous (dir -1) tagged moment from
+ *  `time`, in match order. Half a second either side counts as "here". */
+export function nextMoment(moments: HudlMoment[], time: number, dir: 1 | -1): HudlMoment | undefined {
+  const sorted = [...moments].sort((a, b) => a.time_s - b.time_s);
+  return dir === 1 ? sorted.find((m) => m.time_s > time + 0.5) : sorted.reverse().find((m) => m.time_s < time - 0.5);
+}
+
 export function timeLeft(seconds: number | null | undefined): string {
   if (seconds == null) return "estimating time left";
   if (seconds < 60) return `about ${Math.max(1, Math.round(seconds))} sec left`;

@@ -1,7 +1,7 @@
-import { Camera, CircleDot, Eraser, Footprints, Hash, MoveUpRight, PenLine, PenTool, Pencil, Redo2, Slash, Spline, SquareDashed, Trash, Type, Undo2, X } from "lucide-react";
+import { Camera, CircleDot, Move, Eraser, Footprints, Hash, MoveUpRight, PenLine, PenTool, Pencil, Redo2, Slash, Spline, SquareDashed, Trash, Type, Undo2, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { HudlMoment } from "../../api/hudl";
-import { COLOURS, DEFAULT_COLOUR, H, W, curveThrough, drawingFileName, finish, frameNoteId, isFrameNote } from "../../lib/drawing";
+import { COLOURS, DEFAULT_COLOUR, H, W, curveThrough, moveShape, drawingFileName, finish, frameNoteId, isFrameNote } from "../../lib/drawing";
 import { captureDrawing, saveFile } from "../../lib/frameCapture";
 import { formatClock } from "../../lib/format";
 import type { MomentNote, Shape, ShapeKind } from "../../lib/viewerState";
@@ -11,8 +11,9 @@ import { MarkLayer, NoteOverlay, activeNotes } from "./NoteLayer";
 /** Spec 240: the drawing board. A toolbar under the video (above Match insights) opens
  *  a drawing surface over the paused frame; drawings are saved as data with the note
  *  (spec 230), on a tagged moment or on any frame, and export as a PNG screenshot. */
-type Tool = ShapeKind | "erase";
+type Tool = ShapeKind | "erase" | "move";
 const TOOLS: { tool: Tool; key: string; label: string; icon: typeof Pencil }[] = [
+  { tool: "move", key: "v", label: "Move", icon: Move },
   { tool: "pen", key: "p", label: "Pen", icon: Pencil },
   { tool: "arrow", key: "a", label: "Arrow", icon: MoveUpRight },
   { tool: "dashed", key: "r", label: "Dashed run", icon: Footprints },
@@ -36,9 +37,9 @@ const typing = (el: EventTarget | null) => el instanceof HTMLElement && (["INPUT
 const toolClass = "grid size-9 shrink-0 place-items-center rounded-xl text-fg-muted transition hover:bg-white/10 hover:text-fg aria-pressed:bg-gradient-to-br aria-pressed:from-accent-strong aria-pressed:to-[#3b82f6] aria-pressed:text-ink-950 aria-pressed:shadow-[0_0_18px_-4px_rgb(34_211_238/0.85)] disabled:opacity-30";
 const Divider = () => <span aria-hidden className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />;
 
-export function MatchDrawing({ matchId, title, notes, target, now, saving, error, onSave, onGoTo, children }: {
+export function MatchDrawing({ matchId, title, notes, target, now, saving, error, onSave, onGoTo, onEditing, controls, children }: {
   matchId: string; title: string; notes: MomentNote[] | undefined; target?: HudlMoment; now: number;
-  saving: boolean; error?: string; onSave: (note: MomentNote, done: () => void) => void; onGoTo: (time: number) => void; children: ReactNode;
+  saving: boolean; error?: string; onSave: (note: MomentNote, done: () => void) => void; onGoTo: (time: number) => void; onEditing?: (on: boolean) => void; controls?: ReactNode; children: ReactNode;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -46,6 +47,7 @@ export function MatchDrawing({ matchId, title, notes, target, now, saving, error
   const [colour, setColour] = useState(DEFAULT_COLOUR);
   const [width, setWidth] = useState<1 | 2 | 3>(2);
   const [shot, setShot] = useState<{ busy?: boolean; message?: string; error?: boolean }>({});
+  useEffect(() => { onEditing?.(session !== null); }, [session !== null]);
   const video = () => stage.current?.querySelector("video") ?? null;
   const drawings = (notes ?? []).filter((n) => n.shapes.length > 0).sort((a, b) => a.time_s - b.time_s);
 
@@ -107,7 +109,8 @@ export function MatchDrawing({ matchId, title, notes, target, now, saving, error
     <div ref={stage} className="relative">
       {children}
       {session
-        ? <Surface shapes={session.shapes} tool={tool} colour={colour} width={width} onAdd={(s) => commit([...session.shapes, s])} onErase={(i) => commit(session.shapes.filter((_, j) => j !== i))} />
+        ? <Surface shapes={session.shapes} tool={tool} colour={colour} width={width} onAdd={(s) => commit([...session.shapes, s])} onErase={(i) => commit(session.shapes.filter((_, j) => j !== i))}
+          onMove={(i, s) => commit(session.shapes.map((x, j) => (j === i ? s : x)))} />
         : <NoteOverlay notes={activeNotes(notes, now)} />}
     </div>
     {session ? (
@@ -154,6 +157,7 @@ export function MatchDrawing({ matchId, title, notes, target, now, saving, error
       </div>
     ) : (
       <div className="flex flex-wrap items-center gap-2 text-sm">
+        {controls}
         <Button onClick={drawHere}><PenTool size={15} className="text-accent" /> Draw on video</Button>
         {target && <Button onClick={() => noteMoment(target)}><PenLine size={14} /> {notes?.some((n) => n.moment_id === target.id) ? "Edit note" : "Note / draw"} on {formatClock(target.time_s)} {target.category}</Button>}
         <Button variant="ghost" aria-label="Download screenshot" title="Download a PNG of this frame with any drawing on it" disabled={shot.busy} onClick={screenshot}><Camera size={15} /> Screenshot</Button>
@@ -173,9 +177,10 @@ export function MatchDrawing({ matchId, title, notes, target, now, saving, error
 }
 
 /** The drawing surface over the paused frame. */
-function Surface({ shapes, tool, colour, width, onAdd, onErase }: {
-  shapes: Shape[]; tool: Tool; colour: string; width: 1 | 2 | 3; onAdd: (s: Shape) => void; onErase: (index: number) => void;
+function Surface({ shapes, tool, colour, width, onAdd, onErase, onMove }: {
+  shapes: Shape[]; tool: Tool; colour: string; width: 1 | 2 | 3; onAdd: (s: Shape) => void; onErase: (index: number) => void; onMove: (index: number, s: Shape) => void;
 }) {
+  const [moving, setMoving] = useState<{ index: number; from: [number, number]; shape: Shape } | null>(null);
   const box = useRef<SVGSVGElement>(null);
   const [draft, setDraft] = useState<Shape | null>(null);
   const swoop = useRef<[number, number][]>([]);
@@ -185,7 +190,7 @@ function Surface({ shapes, tool, colour, width, onAdd, onErase }: {
     return [round((e.clientX - r.left) / (r.width || 1)), round((e.clientY - r.top) / (r.height || 1))];
   };
   const down = (e: React.PointerEvent) => {
-    if (tool === "erase" || label) return;
+    if (tool === "erase" || tool === "move" || label) return;
     const [x, y] = point(e);
     if (tool === "text") { setLabel({ x, y, text: "" }); return; }
     if (tool === "marker") {
@@ -197,6 +202,12 @@ function Surface({ shapes, tool, colour, width, onAdd, onErase }: {
     setDraft({ kind: tool, x1: x, y1: y, x2: x, y2: y, colour, width, ...(tool === "pen" ? { points: [[x, y]] } : {}) });
   };
   const move = (e: React.PointerEvent) => {
+    if (moving) {
+      if (!shapes[moving.index]) { setMoving(null); return; }
+      const [x, y] = point(e);
+      setMoving({ ...moving, shape: moveShape(shapes[moving.index], x - moving.from[0], y - moving.from[1]) });
+      return;
+    }
     if (!draft) return;
     const [x, y] = point(e);
     swoop.current.push([x, y]);
@@ -205,6 +216,7 @@ function Surface({ shapes, tool, colour, width, onAdd, onErase }: {
     else setDraft({ ...draft, x2: x, y2: y });
   };
   const up = () => {
+    if (moving) { if (shapes[moving.index]) onMove(moving.index, moving.shape); setMoving(null); return; }
     if (!draft) return;
     const done = finish(draft);
     if (done) onAdd(done);
@@ -216,9 +228,10 @@ function Surface({ shapes, tool, colour, width, onAdd, onErase }: {
   };
   return <>
     <svg ref={box} aria-label="Drawing area" role="img" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
-      className={`absolute inset-0 h-full w-full touch-none rounded-xl ring-2 ring-accent/70 shadow-[inset_0_0_60px_rgb(34_211_238/0.12)] ${tool === "erase" ? "cursor-default" : tool === "text" ? "cursor-text" : "cursor-crosshair"}`}
-      onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDraft(null)}>
-      <MarkLayer shapes={draft ? [...shapes, draft] : shapes} onMarkDown={tool === "erase" ? (i) => onErase(i) : undefined} />
+      className={`absolute inset-0 h-full w-full touch-none rounded-xl ring-2 ring-accent/70 shadow-[inset_0_0_60px_rgb(34_211_238/0.12)] ${tool === "move" ? "cursor-move" : tool === "erase" ? "cursor-default" : tool === "text" ? "cursor-text" : "cursor-crosshair"}`}
+      onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => { setDraft(null); setMoving(null); }}>
+      <MarkLayer shapes={moving ? shapes.map((s, i) => (i === moving.index ? moving.shape : s)) : draft ? [...shapes, draft] : shapes}
+        onMarkDown={tool === "erase" ? (i) => onErase(i) : tool === "move" ? (i, e) => { box.current?.setPointerCapture?.(e.pointerId); setMoving({ index: i, from: point(e), shape: shapes[i] }); } : undefined} />
     </svg>
     <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-accent uppercase">● Drawing</span>
     {label && <input autoFocus aria-label="Label text" maxLength={40} value={label.text} placeholder="Type, then Enter"

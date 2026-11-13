@@ -126,3 +126,11 @@ it('keeps a crest as initials when none is found, and puts long season values on
   expect(card.querySelector('[data-crest=initials]')).not.toBeNull();
   expect(card.querySelector('[data-row=stacked]')).toHaveTextContent('Plays alongside');
 });
+
+it('shows only the last three matches still being watched, newest first', async () => {
+  const five = ['m1', 'm2', 'm3', 'm4', 'm5'].map((id, i) => ({ id, title: `26110${i + 1} U11 v Club ${i}`, age_group: 'U11', capture_key: id, duration_s: 5000, moments: [] }));
+  stubFetch({ '/api/watching': five.map((m, i) => ({ match_id: m.id, position_s: 600 + i, duration_s: 5000, updated_at: 10 - i })) });
+  renderWithProviders(<ContinueWatching library={five} club="Rovers" />);
+  const row = await screen.findByRole('region', { name: 'Continue watching' });
+  expect(within(row).getAllByRole('link').map(l => l.getAttribute('href'))).toEqual(['/hudl/m1?t=600', '/hudl/m2?t=601', '/hudl/m3?t=602']);
+});

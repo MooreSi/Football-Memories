@@ -5,11 +5,12 @@ import { formatClock } from "../../lib/format";
 import { fixtureLabel } from "../../lib/hudlFixture";
 import { unfinished, useWatching } from "../../lib/viewerState";
 
-/** Spec 230: matches started and not finished, newest first, resuming where you stopped. */
+/** Spec 230: matches started and not finished, newest first, resuming where you stopped.
+ *  Owner request 2026-11-13: the last three only. */
 export function ContinueWatching({ library, club }: { library: HudlMatch[] | undefined; club: string | null }) {
   const watching = useWatching();
   const byId = new Map((library ?? []).map((m) => [m.id, m]));
-  const rows = unfinished(watching.data, new Map([...byId].map(([id, m]) => [id, m.duration_s]))).slice(0, 6);
+  const rows = unfinished(watching.data, new Map([...byId].map(([id, m]) => [id, m.duration_s]))).slice(0, 3);
   if (!rows.length) return null;
   return (
     <section aria-label="Continue watching" className="panel p-5">
