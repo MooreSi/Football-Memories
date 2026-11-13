@@ -215,7 +215,10 @@ def create_companion(output: Path) -> FastAPI:
         Path.home() / "Library/Caches/FootballMemories", service="Veo"
     )
     app.state.veo = VeoConnection(
-        lambda: app.state.veo_store.load(), output.parent / ".veo-account"
+        lambda: app.state.veo_store.load(),
+        output.parent / ".veo-account",
+        index=app.state.account.index,
+        folder=lambda: app.state.downloads.folder,
     )
     app.state.veo_configured = None
     app.state.account.output = app.state.capture.output = app.state.downloads.folder
@@ -629,6 +632,8 @@ def create_companion(output: Path) -> FastAPI:
         account = request.app.state.account.status()
         if account["busy"] and not account.get("syncing"):
             raise CaptureError("Wait for the active download or export to finish first.")
+        if request.app.state.veo.status().get("busy"):
+            raise CaptureError("Wait for the Veo operation to finish first.")
         request.app.state.updater.apply()
         return {"accepted": True}
 

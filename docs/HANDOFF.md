@@ -17,9 +17,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   task 1 built: "Connected Veo" section under All matches (`components/veo/VeoLibrary`,
   same filters, expiry badge, hidden by Show Veo off via `lib/connections`) and
   `/veo/:id` (`pages/VeoMatchPage`: score, halves, highlights). Veo items stay
-  out of Hudl's `/library` on purpose. Tasks 2-3 (watch, download) wait on an
-  owner-approved check of how c.veocdn.com serves one MP4. Owner's Veo cache is
-  empty until they select Refresh matches.
+  out of Hudl's `/library` on purpose. **Tasks 2-3 built:** Watch (helper
+  `/veo/stream/<token>`, Range 206, video address in memory only; after a helper
+  restart Watch signs in once and reads that match's `/videos/`) and Download full
+  match (`.part`, length + ffprobe, hard link, never overwrite, download index).
+  The CDN is public (owner-approved check). Not yet tried by the owner. Task 4
+  (highlight clips) todo; decision 007 open. Owner's Veo cache is empty until they
+  select Refresh matches.
 
 - **Veo Test fix (owner report 2026-11-13):** first real Test said "Veo signed
   this session out". Two owner-approved read-only sign-in checks showed Veo

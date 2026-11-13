@@ -11,8 +11,11 @@ from __future__ import annotations
 
 import re
 import time
+import urllib.error
+import urllib.request
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -193,3 +196,86 @@ def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
                 browser.close()
             except Exception:  # noqa: S110 (the owner may have closed it; never log browser errors)
                 pass
+
+
+# Spec 260: Veo's video files. Owner-approved check 2026-11-13: c.veocdn.com serves the
+# full-match MP4 publicly (no cookie or header), answers Range with 206, ~900 MB at
+# 1080p. The address is held in memory only and never reaches a message or a log.
+CDN = "c.veocdn.com"
+CHUNK = 8 * 1024 * 1024
+Opener = Callable[[urllib.request.Request, float], Any]
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
+        return None  # a redirect is answered as an error, never followed
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def _open(request: urllib.request.Request, timeout: float) -> Any:
+    return _OPENER.open(request, timeout=timeout)
+
+
+def _video(url: str) -> str:
+    parts = urlsplit(url)
+    if (
+        parts.scheme != "https"
+        or parts.hostname != CDN
+        or parts.port is not None
+        or parts.query
+        or parts.fragment
+        or not parts.path.endswith(".mp4")
+    ):
+        raise CaptureError("The Veo connection only reads Veo's own match videos.")
+    return url
+
+
+def _fetch(url: str, headers: dict[str, str], opener: Opener | None, timeout: float) -> Any:
+    # _video allows only https://c.veocdn.com/...mp4, so no file: or custom scheme.
+    request = urllib.request.Request(_video(url), headers=headers, method="GET")  # noqa: S310
+    try:
+        return (opener or _open)(request, timeout)
+    except urllib.error.HTTPError as error:
+        raise VeoRefused(error.code) from None
+    except (OSError, ValueError):
+        raise CaptureError("Veo's video could not be reached. Nothing was retried.") from None
+
+
+def media_range(
+    url: str, start: int, end: int | None, opener: Opener | None = None
+) -> tuple[int, int, bytes]:
+    """One Range read of a Veo video, at most CHUNK bytes: (start, total size, bytes)."""
+    last = start + CHUNK - 1 if end is None else min(end, start + CHUNK - 1)
+    if start < 0 or last < start:
+        raise CaptureError("That part of the video does not exist.")
+    with _fetch(url, {"Range": f"bytes={start}-{last}"}, opener, 60) as response:
+        found = re.fullmatch(
+            r"bytes (\d+)-(\d+)/(\d+)", str(response.headers.get("Content-Range") or "")
+        )
+        if response.status != 206 or not found or int(found[1]) != start:
+            raise CaptureError("Veo's video answered in a way the app does not expect.")
+        body = response.read(CHUNK)
+        if len(body) != int(found[2]) - start + 1:
+            raise CaptureError("Veo's video sent an incomplete part. Nothing was retried.")
+        return start, int(found[3]), body
+
+
+def media_download(
+    url: str, target: Path, progress: Callable[[int, int], None], opener: Opener | None = None
+) -> int:
+    """The whole video into `target` (the caller's .part file). Returns its size."""
+    with _fetch(url, {}, opener, 120) as response:
+        length = response.headers.get("Content-Length")
+        if response.status != 200 or not str(length or "").isdigit():
+            raise CaptureError("Veo's video answered in a way the app does not expect.")
+        total, done = int(length), 0
+        with target.open("wb") as out:
+            while chunk := response.read(1 << 20):
+                out.write(chunk)
+                done += len(chunk)
+                progress(done, total)
+    if done != total:
+        raise CaptureError("The Veo download was incomplete. Nothing was retried.")
+    return total

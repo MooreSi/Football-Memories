@@ -26,8 +26,8 @@ no additional code or live capture needed. App/helper run the verified source.
 | Item | Status |
 |---|---|
 | 1. Connected Veo in All matches, `/veo/:id` page (details, halves, highlights) | done (6 tests; browser-checked desktop and phone on a synthetic stand-in; owner's cache empty until Refresh) |
-| 2. Watch (stream through the helper, Range) | blocked: owner-approved CDN check of one match |
-| 3. Full-match MP4 download | blocked: same check |
+| 2. Watch (stream through the helper, Range) | done (tests); not yet watched on the real account |
+| 3. Full-match MP4 download | done (tests); not yet downloaded on the real account |
 | 4. Highlight clips | todo (after 3) |
 | Veo in insights / player hub | todo: owner decision 007 (Veo tags are event types, not players) |
 

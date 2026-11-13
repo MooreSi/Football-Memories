@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field, SecretStr
 
 from app.connectors.hudl_account import Credentials
@@ -20,7 +20,8 @@ class VeoCredentials(BaseModel):
 
 
 class VeoAction(BaseModel):
-    action: Literal["test", "refresh"]
+    action: Literal["test", "refresh", "watch", "download"]
+    match_id: str | None = Field(default=None, max_length=200)
 
 
 @router.get("/account")
@@ -51,8 +52,29 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
     state = request.app.state
     if not (state.veo_configured or state.veo_store.configured()):
         raise CaptureError("Save the Veo email and password first.")
-    state.veo.start(body.action)
+    if body.action in {"watch", "download"}:
+        if not body.match_id:
+            raise CaptureError("Select a Veo match first.")
+        state.veo.start(body.action, body.match_id)
+    else:
+        state.veo.start(body.action)
     return {"accepted": True}
+
+
+@router.get("/stream/{token}")
+def stream(token: str, request: Request) -> Response:
+    """Spec 260: one Range read of the match video for the browser's video element."""
+    start, end, total, body = request.app.state.veo.stream(token, request.headers.get("range"))
+    return Response(
+        content=body,
+        status_code=206,
+        media_type="video/mp4",
+        headers={
+            "Content-Range": f"bytes {start}-{end}/{total}",
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.get("/library")

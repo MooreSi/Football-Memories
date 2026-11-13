@@ -47,6 +47,15 @@ def moment(highlight: dict[str, Any]) -> dict[str, Any] | None:
     return item
 
 
+def best_video(videos: list[dict[str, Any]] | None) -> dict[str, Any] | None:
+    """The match video the app plays: Veo's standard render when listed, else the first
+    available one. (Which render types Veo lists is not yet confirmed: domain README.)"""
+    available = [v for v in videos or [] if v.get("availability") == "available"]
+    standard = [v for v in available if v.get("render_type") == "standard"]
+    chosen = standard or available
+    return chosen[0] if chosen else None
+
+
 def library_item(
     recording: dict[str, Any],
     detail: dict[str, Any] | None = None,
@@ -58,7 +67,7 @@ def library_item(
     identity = f"veo-{recording['identifier']}"
     title = _title({**recording, **(detail or {})})
     status = str(recording.get("expiration_status") or "")
-    video = next((v for v in videos or [] if v.get("availability") == "available"), None)
+    video = best_video(videos)
     available = bool(recording.get("is_accessible")) and status in ACTIVE and video is not None
     stats = ((detail or {}).get("info") or {}).get("stats") or {}
     score = stats.get("score_aggregated") if isinstance(stats, dict) else None

@@ -6,6 +6,7 @@ export type VeoSummary = { clubs: number; matches: number; with_video: number; e
 export type VeoStatus = {
   configured: boolean; busy: boolean; state: string; message: string; secret_store?: string;
   summary: VeoSummary | null; progress?: { done: number; total: number; fraction: number } | null; library_checked_at?: number | null;
+  match_id?: string | null; stream_url?: string | null; filename?: string | null;
 };
 
 export async function veoRequest<T>(path: string, body?: unknown): Promise<T> {
@@ -33,4 +34,8 @@ export function veoAgeGroups(match: VeoMatch): string[] {
 export function veoExpiry(match: VeoMatch): string | null {
   if (!match.available || match.expiration_status === "expired") return "Video expired on Veo";
   return match.expiration_status === "expires-soon" ? "Video expires soon on Veo" : null;
+}
+export function useVeoStatus() {
+  return useQuery<VeoStatus>({ queryKey: ["veo-account"], queryFn: () => veoRequest("/account"), retry: false,
+    refetchInterval: (query) => (query.state.data?.busy ? 1500 : false) });
 }

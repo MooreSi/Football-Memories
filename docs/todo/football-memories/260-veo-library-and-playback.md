@@ -1,6 +1,6 @@
 # 260: Veo matches in the Library, playback and download
 
-**Status:** Building (task 1)
+**Status:** Building (tasks 1-3 built; task 4 todo)
 **Sensitive:** YES: requests to Veo and its video CDN (tasks 2-4), files written to the
 library (task 3). `/safe-change` governs. Authorized by owner decision 006 / D-035
 (scope: list, metadata, stream, download, as Hudl).
@@ -27,8 +27,10 @@ helper's cache, but nothing in the app shows them, plays them or saves them.
    with HTTP Range passed through `_client` (the only module that talks to
    Veo), so the browser's `<video>` seeks. Highlights seek the player.
 3. **Download the full match.** Same URL; write `<name>.mp4.part`, verify the byte
-   length against Content-Length and the ffprobe duration against Veo's, then
-   rename. Never overwrite: an existing file is skipped. Listed in Downloads.
+   length against Content-Length and that ffprobe reads a duration, then hard-link
+   into place (never replaces a file). An existing file is skipped. Listed in
+   Downloads. (Comparing with Veo's duration was dropped: Veo's match duration is
+   not confirmed to be the video's length.)
 4. **Highlight clips.** ffmpeg cuts chosen highlights from the downloaded file
    (separate files or one video), like Hudl moments.
 
@@ -52,11 +54,12 @@ helper's cache, but nothing in the app shows them, plays them or saves them.
 
 ## Open questions (provisional default in use)
 
-- **Does c.veocdn.com need the sign-in?** Unknown. Task 2 starts with an
-  owner-approved, read-only check of one active match: read its `/videos/` JSON
-  and request the first 1 KB of the MP4 with and without the header. Prints
-  statuses and header names only.
-- **Veo file names.** Default `veo-<date>-<title>-<height>p.mp4` beside Hudl's.
+- **Does c.veocdn.com need the sign-in?** Answered by the owner-approved check
+  2026-11-13: no; public MP4, Range 206 (domain README).
+- **Veo file names.** `veo-<capture_key>-<height>p.mp4` beside Hudl's
+  `hudl-<capture_key>-...`, so "already downloaded" keys on Veo's identifier.
+- **Which video render** (Veo lists two per match): `standard` preferred; not
+  confirmed until the owner watches one.
 
 ## Test plan
 
@@ -78,4 +81,7 @@ check above, then the owner plays one match and downloads one.
   synthetic stand-in helper, desktop and 375px, no horizontal scroll
 - [x] task 1: no credential, cookie, token or video URL written anywhere (no Veo contact)
 - [x] task 1: nothing on Hudl or Veo modified; no library file touched
-- [ ] tasks 2-4: not built; real-account check not done
+- [x] tasks 2-3: suite green (backend 522 SQLite and Postgres, frontend 347); 27 new
+  tests, each red first; video address never in status, cache or messages (tested)
+- [ ] tasks 2-3: owner watches one match and downloads one (not done)
+- [ ] task 4: not built

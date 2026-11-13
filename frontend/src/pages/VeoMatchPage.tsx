@@ -1,14 +1,24 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { useVeoLibrary, veoExpiry } from "../api/veo";
+import { ArrowLeft, Download, Play, Sparkles } from "lucide-react";
+import { useVeoLibrary, useVeoStatus, veoExpiry, veoRequest } from "../api/veo";
+import { Button } from "../components/ui/Button";
 import { formatClock } from "../lib/format";
 
 const HALF = ["1st half", "2nd half", "Extra time 1", "Extra time 2"];
 
-/** Spec 260 task 1: one cached Veo match. Playback and download come with tasks 2 and 3. */
+/** Spec 260: one cached Veo match; Watch and Download run in the desktop helper. */
 export function VeoMatchPage() {
   const id = useParams().id!;
   const library = useVeoLibrary();
+  const status = useVeoStatus();
+  const qc = useQueryClient();
+  const video = useRef<HTMLVideoElement>(null);
+  const action = useMutation({
+    mutationFn: (name: "watch" | "download") => veoRequest("/action", { action: name, match_id: id }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["veo-account"] }),
+  });
   const match = library.data?.find(m => m.id === id);
   const back = <Link to="/" className="inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg"><ArrowLeft size={14} aria-hidden /> All matches</Link>;
   if (library.isPending) return <div className="p-6 text-sm text-fg-muted">Loading the Veo match…</div>;
@@ -18,6 +28,10 @@ export function VeoMatchPage() {
   const types = [...highlights.reduce((all, h) => all.set(h.category, (all.get(h.category) ?? 0) + 1), new Map<string, number>())]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const expiry = veoExpiry(match);
+  const own = status.data?.match_id === id;
+  const busy = Boolean(status.data?.busy) || action.isPending;
+  const stream = own && !status.data?.busy ? status.data?.stream_url : null;
+  const seek = (seconds: number) => { if (video.current) { video.current.currentTime = seconds; void video.current.play?.()?.catch?.(() => undefined); } };
   return <div className="mx-auto grid max-w-6xl gap-5 p-4 md:grid-cols-[250px_1fr] md:p-6">
     <aside className="space-y-4">
       {back}
@@ -35,16 +49,29 @@ export function VeoMatchPage() {
     </aside>
     <section className="space-y-4">
       {!match.available && <p className="tile p-4 text-sm text-fg-muted">Veo no longer has the video for this match, so only its details are kept.</p>}
-      {match.available && <p className="tile p-4 text-sm text-fg-muted">Watching and downloading Veo matches are being built. These are Veo's highlights for this match.</p>}
+      {match.available && <div className="flex flex-wrap items-center gap-2">
+        <Button disabled={busy} onClick={() => action.mutate("watch")}><Play size={14} aria-hidden /> Watch match</Button>
+        <Button variant="ghost" disabled={busy} onClick={() => action.mutate("download")}><Download size={14} aria-hidden /> Download full match</Button>
+      </div>}
+      {own && status.data?.busy && <p role="status" className="text-xs text-accent">{status.data.message}</p>}
+      {own && !status.data?.busy && status.data?.state === "done" && <p role="status" className="text-xs text-ok">{status.data.message} It is listed under Downloaded.</p>}
+      {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
+      {stream && <video ref={video} aria-label="Veo match video" className="aspect-video w-full rounded-xl bg-black" controls playsInline crossOrigin="anonymous" src={stream} />}
       {(match.halves?.length ?? 0) > 0 && <p className="text-xs text-fg-subtle">
         {match.halves!.map((h, i) => `${HALF[i] ?? `Period ${i + 1}`} ${formatClock(h[0])}–${formatClock(h[1])}`).join(" · ")}</p>}
       {highlights.length > 0 && <ul aria-label="Veo highlights" className="tile divide-y divide-line">
-        {highlights.map(h => <li key={h.id} className="flex flex-wrap items-baseline gap-3 px-4 py-2.5 text-sm">
-          <span className="w-14 font-mono text-xs text-pin">{formatClock(h.time_s)}</span>
-          <span className="font-semibold uppercase">{h.category}</span>
-          {h.ai && <span className="inline-flex items-center gap-1 text-[11px] text-fg-subtle"><Sparkles size={11} aria-hidden />Veo AI</span>}
-          {h.note && <span className="text-xs text-fg-muted">{h.note}</span>}
-        </li>)}
+        {highlights.map(h => {
+          const row = <>
+            <span className="w-14 font-mono text-xs text-pin">{formatClock(h.time_s)}</span>
+            <span className="font-semibold uppercase">{h.category}</span>
+            {h.ai && <span className="inline-flex items-center gap-1 text-[11px] text-fg-subtle"><Sparkles size={11} aria-hidden />Veo AI</span>}
+            {h.note && <span className="text-xs text-fg-muted">{h.note}</span>}
+          </>;
+          return <li key={h.id} className="text-sm">{stream
+            ? <button type="button" aria-label={`${formatClock(h.time_s)} ${h.category}`} onClick={() => seek(h.time_s)}
+                className="flex w-full flex-wrap items-baseline gap-3 px-4 py-2.5 text-left hover:bg-white/5">{row}</button>
+            : <div className="flex flex-wrap items-baseline gap-3 px-4 py-2.5">{row}</div>}</li>;
+        })}
       </ul>}
     </section>
   </div>;

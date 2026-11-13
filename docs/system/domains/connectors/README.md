@@ -455,6 +455,21 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   duration in seconds from the video start, type, tags `{name, slug, origin,
   custom}`, `is_ai_generated`; `team_association` and `involved_players` were
   empty on every match looked at), `/periods/` (`timeframe` [start, end] s).
+- **Video files (owner-approved check 2026-11-13):** `/videos/` listed 2 entries for
+  the match checked (keys include `render_type`, `url`, `height`, `mime_type`,
+  `bit_rate`). The URL is `https://c.veocdn.com/...mp4`, no query string, served
+  by CloudFront with **no cookie or header**; Range answers 206 with
+  `Content-Range`; one 1080p match was ~903 MB. Which `render_type` values exist is
+  not confirmed: `_parse.best_video` prefers `standard`, else the first available.
+  The URL is a working link to the footage, so it is kept in memory only
+  (`VeoConnection._videos`), never in `library.json`, a message or a log.
+- Watch/download (spec 260): `_client.media_range` (Range, at most 8 MiB, no
+  redirects) and `media_download` (one GET into a `.part`), stdlib urllib, host
+  locked to c.veocdn.com. The helper serves `/veo/stream/<token>` as 206; the
+  page's `<video crossOrigin="anonymous">` sends the Origin the helper requires.
+  Downloads: `veo-<capture_key>-<height>p.mp4` in the download folder, `.part`
+  until the length matches and ffprobe reads it, hard-linked into place so an
+  existing file is never replaced; recorded in the download index.
 - Expired recordings (182 of 238) keep their details but list no video and no
   highlights. `expiration_status`: `does-not-expire`, `does-not-expire-soon`,
   `expires-soon`, `expired`.
