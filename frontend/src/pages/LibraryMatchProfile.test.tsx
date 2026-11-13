@@ -51,7 +51,7 @@ it("draws one shape for our team and one for the opposition when the codes say w
   await userEvent.click(within(hero).getByRole("button", { name: "Next match" }));
   const profile = screen.getByRole("region", { name: "Match profile" });
   expect(within(profile).getByRole("img")).toHaveAccessibleName(
-    "Match profile, Home v Derby County: Possession 2 v 1, Chance 1 v 2, Corner 1 v 0");
+    "Match profile, Home v Derby County: Possession 67% v 33%, Chance 1 v 2, Corner 1 v 0");
   expect(profile.querySelector("[data-side=ours]")).not.toBeNull();
   expect(profile.querySelector("[data-side=theirs]")).not.toBeNull();
   expect(within(profile).getByText("Derby County")).toBeInTheDocument();

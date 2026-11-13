@@ -47,3 +47,16 @@ export function looksLikePlayer(code: string): boolean {
   const words = code.toLowerCase().split(/\s+/).filter(Boolean);
   return words.length >= 2 && words.length <= 3 && words.every((w) => /^[a-z'-]+$/.test(w) && !SITUATION.has(w));
 }
+
+/** Owner decision 005 (2026-11-13): player names read "Chris Demo", not "CHRIS DEMO".
+ *  The helper merges spellings in upper case; only codes that look like a name are
+ *  re-cased, and only for display (comparisons ignore case, see lib/codes.ts). */
+export function displayCode(code: string): string {
+  if (!looksLikePlayer(code)) return code;
+  return code.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
+/** The served library with player names re-cased; the input is not changed. */
+export function displayLibrary(library: HudlMatch[]): HudlMatch[] {
+  return library.map((m) => (m.moments ? { ...m, moments: m.moments.map((t) => ({ ...t, category: displayCode(t.category) })) } : m));
+}

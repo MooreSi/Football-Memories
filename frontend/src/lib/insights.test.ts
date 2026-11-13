@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HudlMatch, HudlMoment } from "../api/hudl";
-import { involvement, journey, momentum, partnerships, phases, possession, possessionTotals, sameCode } from "./insights";
+import { involvement, withPossessionTime, journey, momentum, partnerships, phases, possession, possessionTotals, sameCode } from "./insights";
 
 let n = 0;
 const m = (category: string, time_s: number, duration_s = 0): HudlMoment => ({ id: `m${n++}`, category, time_s, duration_s });
@@ -129,5 +129,18 @@ describe("phases", () => {
   });
   it("keeps only the phases a player was in when one is named", () => {
     expect(phases(tags, CLUB, "PAT EXAMPLE").map((x) => x.outcome)).toEqual(["goal"]);
+  });
+});
+
+describe("withPossessionTime", () => {
+  it("puts time on the ball on the radar's possession point, keeping its place (owner decision 005)", () => {
+    const team = { axes: [{ name: "Possession", ours: 9, theirs: 1 }, { name: "Chance", ours: 1, theirs: 2 }], neutral: [] };
+    const out = withPossessionTime(team, { ours: 30, theirs: 90, contested: 0, oursPct: 25, theirsPct: 75 });
+    expect(out.axes).toEqual([{ name: "Possession", ours: 25, theirs: 75, unit: "%" }, { name: "Chance", ours: 1, theirs: 2 }]);
+    expect(team.axes[0]).toEqual({ name: "Possession", ours: 9, theirs: 1 });
+  });
+  it("leaves the counts alone when the tags have no possession time", () => {
+    const team = { axes: [{ name: "Possession", ours: 9, theirs: 1 }], neutral: [] };
+    expect(withPossessionTime(team, null)).toEqual(team);
   });
 });

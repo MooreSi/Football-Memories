@@ -1,6 +1,7 @@
 import { scopedHudlAction } from "../lib/archiveFilters";
 import { useQuery } from '@tanstack/react-query';
 import { helperBase, localiseHelperUrls } from './helperBase';
+import { displayLibrary } from '../lib/hudlPlayer';
 export const HUDL = helperBase();
 export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number};
 export type HudlMatch = {id:string; title:string; age_group:string; age_groups?:string[]; capture_key:string; season_label?:string; tag_status?:"synced"|"unsynced"|"none"|"unavailable"; tag_error?:string; thumbnail_url?:string|null; poster_url?:string|null; poster_checked_at?:number; moments?:HudlMoment[]; duration_s?:number};
@@ -11,7 +12,7 @@ export async function hudlRequest<T>(path:string,body?:unknown):Promise<T> {
  const data=localiseHelperUrls(await response.json().catch(()=>({detail:'Hudl helper unavailable. Start it on the Mac (run the installer), then try again.'})),HUDL); if(!response.ok)throw Object.assign(new Error(data.detail||'Hudl helper unavailable'),{status:response.status});return data;
 }
 export function useHudlStatus(){return useQuery<HudlStatus>({queryKey:['hudl-account'],queryFn:()=>hudlRequest('/account'),retry:false,refetchInterval:q=>q.state.data?.busy?1500:10000});}
-export function useHudlLibrary(){return useQuery<HudlMatch[]>({queryKey:['hudl-library'],queryFn:()=>hudlRequest('/library'),retry:false,refetchInterval:15000,refetchOnWindowFocus:'always',refetchOnReconnect:'always'});}
+export function useHudlLibrary(){return useQuery<HudlMatch[]>({queryKey:['hudl-library'],queryFn:async()=>displayLibrary(await hudlRequest<HudlMatch[]>('/library')),retry:false,refetchInterval:15000,refetchOnWindowFocus:'always',refetchOnReconnect:'always'});}
 
 /** Actual Hudl library memberships take precedence over legacy title-derived ages. */
 export function hudlAgeGroups(match: HudlMatch): string[] {

@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-032 (2026-11-13) Owner answers 005: possession time, weights, name case
+The Match Profile radar's possession point shows time on the ball (%), replacing
+the tag count D-030 pinned (its test now expects the %). Momentum weights stay.
+Player-name codes display as "Chris Demo" (page-side re-casing of name-like
+codes only; the helper's merged key stays upper case). `from-hudl-tag` finds a
+hub by name ignoring case and spacing, so the owner's existing upper-case hub is
+reused rather than duplicated.
+
 ## D-031 (2026-11-13) Insights from tag lengths, times and overlaps (spec 230)
 Tag codes are merged where the helper serves its cache (`canonical_code`:
 entities decoded, spaces collapsed, upper case); files on disk stay verbatim and

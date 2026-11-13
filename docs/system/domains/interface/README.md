@@ -112,3 +112,7 @@ U10 v Stoke City reads 12-9.
   makes it use `/helper` instead of 127.0.0.1:8766, and proxy that to a stand-in
   serving a saved `/library`. Opening the app against the real helper starts the
   app-open check (D-023).
+- Player names display re-cased ("Chris Demo") by `displayCode`, applied once
+  in `useHudlLibrary`; it relies on the `looksLikePlayer` heuristic, so a name
+  with digits or brackets ("THEO (T)") stays as written, and "MCDONALD" becomes
+  "Mcdonald". Never compare codes with `===`; use `sameCode`.

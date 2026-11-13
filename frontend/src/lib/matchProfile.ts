@@ -2,7 +2,7 @@ import type { HudlMoment } from "../api/hudl";
 import { looksLikePlayer } from "./hudlPlayer";
 
 export type Kind = { name: string; count: number };
-export type Axis = { name: string; ours: number; theirs: number };
+export type Axis = { name: string; ours: number; theirs: number; unit?: "%" };
 
 const NOISE = new Set(["BALL OUT OF PLAY", "BALL IN PLAY"]);
 const THEIRS = /^(?:OPPOSITION|OPP)\s+(.+)$/i;

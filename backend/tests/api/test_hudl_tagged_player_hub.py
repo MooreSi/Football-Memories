@@ -28,3 +28,13 @@ def test_hudl_tagged_name_rejects_blank_input(client: TestClient) -> None:
         response = client.post("/api/players/from-hudl-tag", json={"category": category})
         assert response.status_code in {400, 422}
     assert client.get("/api/players").json() == []
+
+
+def test_picking_a_name_in_another_case_reuses_the_existing_hub(client) -> None:
+    """Owner decision 005: names show as "Sam Example"; a hub made as "SAM EXAMPLE" is reused."""
+    first = client.post("/api/players/from-hudl-tag", json={"category": "SAM EXAMPLE"}).json()
+    again = client.post("/api/players/from-hudl-tag", json={"category": "Sam  Example"}).json()
+    assert again == first
+    assert len(client.get("/api/players").json()) == 1
+    other = client.post("/api/players/from-hudl-tag", json={"category": "Sam Exampl"}).json()
+    assert other != first

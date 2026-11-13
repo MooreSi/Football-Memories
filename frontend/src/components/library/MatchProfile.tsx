@@ -39,7 +39,7 @@ function Swatch({ colour, dashed }: { colour: string; dashed?: boolean }) {
 }
 
 function TeamRadar({ axes, neutral, ours, theirs }: { axes: Axis[]; neutral: Kind[]; ours: string; theirs: string }) {
-  const label = `Match profile, ${ours} v ${theirs}: ${axes.map((a) => `${a.name} ${a.ours} v ${a.theirs}`).join(", ")}`;
+  const label = `Match profile, ${ours} v ${theirs}: ${axes.map((a) => `${a.name} ${a.ours}${a.unit ?? ""} v ${a.theirs}${a.unit ?? ""}`).join(", ")}`;
   return (
     <>
       <div className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
@@ -55,11 +55,11 @@ function TeamRadar({ axes, neutral, ours, theirs }: { axes: Axis[]; neutral: Kin
       <p className="mt-1 text-center text-[10px] text-fg-subtle">Each point is scaled to whichever side had more.</p>
       <ol className="mt-3 space-y-1.5" aria-hidden>
         {axes.map((a, i) => (
-          <li key={a.name} title={`${a.name}: ${ours} ${a.ours}, ${theirs} ${a.theirs}`} className="grid grid-cols-[1.25rem_1fr_2rem_2rem] items-baseline gap-2 text-xs">
+          <li key={a.name} title={`${a.name}: ${ours} ${a.ours}${a.unit ?? ""}, ${theirs} ${a.theirs}${a.unit ?? ""}`} className="grid grid-cols-[1.25rem_1fr_2.5rem_2.5rem] items-baseline gap-2 text-xs">
             <span className="font-semibold text-fg-muted tabular-nums">{i + 1}</span>
             <span className="truncate">{a.name}</span>
-            <span className="text-right font-semibold tabular-nums" style={{ color: OURS }}>{a.ours}</span>
-            <span className="text-right font-semibold tabular-nums" style={{ color: THEIRS }}>{a.theirs}</span>
+            <span className="text-right font-semibold tabular-nums" style={{ color: OURS }}>{a.ours}{a.unit}</span>
+            <span className="text-right font-semibold tabular-nums" style={{ color: THEIRS }}>{a.theirs}{a.unit}</span>
           </li>
         ))}
       </ol>

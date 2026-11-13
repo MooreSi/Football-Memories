@@ -56,8 +56,8 @@ it('lists our attacks that ended in a chance as clips with their steps', async (
 it('saves a note on the moment last clicked', async () => {
   open(); const user = userEvent.setup();
   const list = await screen.findByRole('region', { name: 'Hudl tagged moments' });
-  await user.click(within(list).getByRole('button', { name: /SAM EXAMPLE/ }));
-  await user.click(screen.getByRole('button', { name: /Note \/ draw on 0:25 SAM EXAMPLE/ }));
+  await user.click(within(list).getByRole('button', { name: /Sam Example/ }));
+  await user.click(screen.getByRole('button', { name: /Note \/ draw on 0:25 Sam Example/ }));
   await user.type(screen.getByLabelText('Note'), 'Lovely first touch');
   await user.click(screen.getByRole('button', { name: 'Save note' }));
   const put = vi.mocked(fetch).mock.calls.find(c => String(c[0]) === '/api/notes' && c[1]?.method === 'PUT');

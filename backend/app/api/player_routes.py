@@ -148,15 +148,21 @@ def choose_hudl_tagged_player(body: TaggedPlayerIn, db: Db) -> dict[str, int]:
     Unlike /from-tag there may be no imported events yet; the player still gets a
     hub for photo and details, and any imported moments with that code are linked.
     """
-    name = body.category.strip()
+    name = " ".join(body.category.split())
     if not name:
         raise HTTPException(400, "Select a tagged player name.")
-    player = db.scalars(select(Player).where(Player.display_name == name)).first()
+    # Spec 230 / owner decision 005: codes are shown re-cased, so "Sam Example" and
+    # "SAM EXAMPLE" are the same player and must reach the same hub.
+    player = db.scalars(
+        select(Player).where(func.upper(Player.display_name) == name.upper()).order_by(Player.id)
+    ).first()
     if player is None:
         player = Player(display_name=name)
         db.add(player)
         db.flush()
-    events = db.scalars(select(Event).join(TagDefinition).where(TagDefinition.name == name)).all()
+    events = db.scalars(
+        select(Event).join(TagDefinition).where(func.upper(TagDefinition.name) == name.upper())
+    ).all()
     for event in events:
         if player not in event.players:
             event.players.append(player)

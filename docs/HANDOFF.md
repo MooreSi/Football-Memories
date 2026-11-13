@@ -27,7 +27,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   `data/helper.log`; that ended its in-memory Hudl session). Live helper serves
   320 codes, none with "&amp;" or lower case; download folder still
   `/Volumes/SMB_Share/Football`. Not tried over a real stream: notes editor,
-  momentum seek. Owner question [005](owner-decisions/005-insight-choices.md).
+  momentum seek. Owner question [005](owner-decisions/005-insight-choices.md)
+  answered (D-032): radar possession uses time, weights kept, names shown as
+  "Chris Demo"; the owner's hub (id 4) renamed from upper case to match.
 
 ## Earlier state (2026-11-11)
 
@@ -375,7 +377,7 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 ## Next steps (in order)
 
 0. **Spec 230:** with the owner, try a note and a momentum click on a real
-   stream. Owner question 005 (radar possession point, weights, upper case).
+   stream.
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
 2. Per-clip timing override (brief section 9). (Playback history on the server: done in spec 230 for Hudl matches; not for imported matches.)

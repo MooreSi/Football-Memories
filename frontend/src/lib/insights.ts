@@ -3,7 +3,7 @@ import { codeKey, sameCode } from "./codes";
 import { looksLikePlayer } from "./hudlPlayer";
 
 export { codeKey, sameCode };
-import { codeSides, sentence, type Side } from "./matchProfile";
+import { type Axis, type Kind, codeSides, sentence, type Side } from "./matchProfile";
 
 /** Spec 230: what the tag lengths, times and overlaps say beyond plain counts.
  *  Every figure here comes from the coaches' tags; overlaps say a player was tagged
@@ -58,6 +58,13 @@ export function possessionTotals(matches: HudlMoment[][], club: string | null): 
   }
   const total = split(ours, theirs, contested);
   return total && { ...total, matches: counted };
+}
+
+/** Owner decision 005: the Match Profile's possession point shows time on the ball (%),
+ *  not the number of possession tags. Its place among the axes stays as counted. */
+export function withPossessionTime<T extends { axes: Axis[]; neutral: Kind[] }>(team: T, poss: Possession | null): T {
+  if (!poss) return team;
+  return { ...team, axes: team.axes.map((a) => (a.name === "Possession" ? { name: a.name, ours: poss.oursPct, theirs: poss.theirsPct, unit: "%" as const } : a)) };
 }
 
 // ---------------------------------------------------------------- momentum

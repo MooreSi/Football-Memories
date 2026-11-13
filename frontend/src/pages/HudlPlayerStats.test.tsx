@@ -31,7 +31,7 @@ it('counts Hudl-tagged matches and moments on the hub',async()=>{
  expect(within(chart).getByRole('link',{name:'2 moments vs Stoke City'})).toHaveAttribute('href','/hudl/a?player=SAM%20EXAMPLE');
  const timeline=screen.getByRole('region',{name:'Memories timeline'});
  expect(await within(timeline).findByText('Season 2026/27')).toBeInTheDocument();
- expect(within(timeline).getByRole('link',{name:/1:00 SAM EXAMPLE/})).toHaveAttribute('href','/hudl/a?moment=1');
+ expect(within(timeline).getByRole('link',{name:/1:00 Sam Example/})).toHaveAttribute('href','/hudl/a?moment=1');
 });
 
 it('shows Hudl totals on the Your player card',async()=>{

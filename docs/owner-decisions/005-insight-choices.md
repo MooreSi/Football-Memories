@@ -1,6 +1,6 @@
 # 005: Possession in the radar, momentum weights, and tag spelling
 
-**Status:** open
+**Status:** answered 2026-11-13
 **Raised by:** spec 230 session, 2026-11-13
 
 ## The question
@@ -29,4 +29,11 @@ minutes look strongest; the spelling is what you see in every list.
    `frontend/src/lib/insights.ts`. 3. `canonical_code` in
    `backend/app/connectors/hudl_metadata.py` (display only; nothing on disk).
 
-ANSWER:
+ANSWER: (owner, 2026-11-13)
+1. Use possession time: the radar's possession point now shows % of time on
+   the ball (`withPossessionTime`); its place among the axes is still by count.
+2. Yes: the momentum weights stay.
+3. Names like "Chris Demo": the helper still merges spellings in upper case, and
+   the page re-cases codes that look like a name (`displayCode` in
+   `lib/hudlPlayer.ts`, applied once in `useHudlLibrary`). Situation codes stay
+   as written. Hub lookups ignore case, so an existing "SAM EXAMPLE" hub is reused.
