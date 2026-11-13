@@ -17,6 +17,8 @@ import { PlayerInsights } from "../components/player/PlayerInsights";
 import { RecordsPanel } from "../components/player/RecordsPanel";
 import { SeasonStory } from "../components/player/SeasonStory";
 import { MilestonesTimeline } from "../components/player/MilestonesTimeline";
+import { OpponentMap } from "../components/player/OpponentMap";
+import { TopMoments } from "../components/player/TopMoments";
 import { involvement } from "../lib/insights";
 import { useHomeClub } from "../lib/useHomeClub";
 
@@ -104,8 +106,10 @@ export function PlayerHubPage() {
           </div>
 
           <RecordsPanel series={perMatch} />
+          <TopMoments playerId={p.id} name={p.display_name} library={remote.data} />
           <SeasonStory series={perMatch} name={p.display_name} />
           <MilestonesTimeline series={milestoneSeries} name={p.display_name} />
+          <OpponentMap series={perMatch} />
 
           <section aria-label="Moments per match" className="panel min-w-0 p-5">
             <h2 className="mb-3 text-lg font-semibold">Recent matches</h2>

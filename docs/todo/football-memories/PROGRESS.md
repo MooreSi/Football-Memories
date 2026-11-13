@@ -54,6 +54,8 @@ no additional code or live capture needed. App/helper run the verified source.
 | My Player: Records and streaks (best match, best month, above-average run, next milestone, personal best) | done (tests; browser-checked on real data) |
 | My Player: Season story (a few sentences per season, change on last season, match of the month links) | done (tests; browser-checked on real data) |
 | My Player: Milestones timeline (first match, seasons, new age groups, moment and match counts, new bests, first team goal with the player on) | done (tests; browser-checked on real data) |
+| My Player: Top 5 moments (favourites, then Hudl moments in a team goal, save, chance or shot faced; Make a reel) | done (tests) |
+| My Player: Opponent map (clubs played, crests, how often, latest match) | done (tests) |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 

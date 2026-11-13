@@ -39,6 +39,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Then **Milestones** (`lib/milestones.ts`, `MilestonesTimeline`): badges along a
   scrolling timeline; Hudl age groups and team goals overlapping the player's moments
   (`involvement`). A new best counts only after five matches.
+  Then **Top 5 moments** (`TopMoments`, `lib/hubExtras.rankHudlMoments`: overlap with
+  GOAL > SAVE > CHANCE/SHOT > opposition shot; Make a reel goes to the Reel Studio, or
+  `/api/reels` for imported favourites) and **Opponent map** (`OpponentMap`).
 
 - **Spec 260, Veo Library and playback ([260](todo/football-memories/260-veo-library-and-playback.md)):**
   task 1 built: "Connected Veo" section under All matches (`components/veo/VeoLibrary`,
