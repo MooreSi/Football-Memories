@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-034 (2026-11-13) Drawings are saved as vector data, not pixels or Hudl metadata (spec 240)
+Owner asked whether a saved drawing is best kept as metadata. It is kept as data
+in the app: the marks (kind, 0..1 points, colour, width, label) with the note in
+`preferences`, on a tagged moment (moment id) or any frame (`frame:<match>:<s>`).
+Hudl is never written to (golden rules). Vector data replays over the video at
+its time, stays sharp at any size, is in every backup and can be edited; the PNG
+screenshot is an export of it. Older arrow/line notes read back unchanged.
+
 ## D-033 (2026-11-13) Opponents and season reports follow one team across seasons
 Owner request: all-teams totals mixed different players. A team is keyed by
 season start year minus age, so it moves up an age group each season. Opponents

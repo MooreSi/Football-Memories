@@ -428,15 +428,36 @@ class ScoreCorrectionIn(BaseModel):
         return self
 
 
-class NoteShapeIn(BaseModel):
-    """Spec 230: one line or arrow drawn over the video, in 0..1 frame coordinates."""
+Unit = Annotated[float, Field(ge=0, le=1)]
 
-    kind: Literal["arrow", "line"]
-    x1: float = Field(ge=0, le=1)
-    y1: float = Field(ge=0, le=1)
-    x2: float = Field(ge=0, le=1)
-    y2: float = Field(ge=0, le=1)
+
+class NoteShapeIn(BaseModel):
+    """Spec 230/240: one mark drawn over the video, in 0..1 frame coordinates.
+
+    Arrow and line are spec 230's; the rest are the drawing board's (spec 240).
+    The optional fields are left out of the stored mark when not given, so marks
+    saved before spec 240 read back unchanged.
+    """
+
+    kind: Literal["arrow", "line", "dashed", "curve", "pen", "spotlight", "zone", "text", "marker"]
+    x1: Unit
+    y1: Unit
+    x2: Unit
+    y2: Unit
     colour: str = Field(default="#facc15", pattern=r"^#[0-9a-fA-F]{6}$")
+    width: int | None = Field(default=None, ge=1, le=3)
+    cx: Unit | None = None
+    cy: Unit | None = None
+    points: list[tuple[Unit, Unit]] | None = Field(default=None, max_length=400)
+    label: str | None = Field(default=None, min_length=1, max_length=40)
+
+    @model_validator(mode="after")
+    def _complete(self) -> NoteShapeIn:
+        if self.kind == "pen" and len(self.points or []) < 2:
+            raise ValueError("a pen stroke needs at least two points")
+        if self.kind in ("text", "marker") and not (self.label or "").strip():
+            raise ValueError("a text label or marker needs its text")
+        return self
 
 
 class MomentNoteIn(BaseModel):

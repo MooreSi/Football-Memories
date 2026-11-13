@@ -116,3 +116,58 @@ def test_viewer_state_does_not_leak_into_other_preferences(client: TestClient) -
     client.put("/api/alerts/seen", json={"matches": [], "player": None, "counts": {}})
     assert client.get("/api/preferences").json() == {"primary_player_id": None}
     assert client.get("/api/scores").json() == {}
+
+
+# Spec 240: professional drawing tools. Each mark is saved as data in 0..1 frame space.
+PEN = {
+    "kind": "pen",
+    "x1": 0.1,
+    "y1": 0.1,
+    "x2": 0.3,
+    "y2": 0.2,
+    "points": [[0.1, 0.1], [0.2, 0.15], [0.3, 0.2]],
+}
+CURVE = {
+    "kind": "curve",
+    "x1": 0.1,
+    "y1": 0.8,
+    "x2": 0.7,
+    "y2": 0.8,
+    "cx": 0.4,
+    "cy": 0.4,
+    "width": 3,
+    "colour": "#22d3ee",
+}
+LABEL = {"kind": "text", "x1": 0.5, "y1": 0.5, "x2": 0.5, "y2": 0.5, "label": "Press here"}
+MARKS = [
+    PEN,
+    CURVE,
+    LABEL,
+    {"kind": "dashed", "x1": 0.2, "y1": 0.2, "x2": 0.6, "y2": 0.3},
+    {"kind": "spotlight", "x1": 0.5, "y1": 0.6, "x2": 0.55, "y2": 0.62, "width": 1},
+    {"kind": "zone", "x1": 0.6, "y1": 0.2, "x2": 0.4, "y2": 0.5},
+    {"kind": "marker", "x1": 0.3, "y1": 0.3, "x2": 0.3, "y2": 0.3, "label": "7"},
+]
+
+
+def test_every_drawing_tool_is_kept_as_drawn(client: TestClient) -> None:
+    body = note(moment_id="frame:" + MATCH + ":1234.5", time_s=1234.5, text="", shapes=MARKS)
+    assert client.put("/api/notes", json=body).status_code == 200
+    (saved,) = client.get("/api/notes", params={"match_id": MATCH}).json()
+    assert saved["moment_id"] == "frame:" + MATCH + ":1234.5"
+    assert saved["shapes"] == [{"colour": "#facc15", **mark} for mark in MARKS]
+
+
+def test_bad_drawing_marks_are_rejected(client: TestClient) -> None:
+    for shape in (
+        {**PEN, "points": [[0.1, 0.1]]},
+        {**PEN, "points": [[0.1, 0.1], [1.2, 0.5]]},
+        {**PEN, "points": [[0.1, 0.1]] * 401},
+        {**LABEL, "label": ""},
+        {**LABEL, "label": "x" * 41},
+        {**CURVE, "width": 4},
+        {**CURVE, "cx": -0.1},
+        {**ARROW, "kind": "triangle"},
+    ):
+        assert client.put("/api/notes", json=note(shapes=[shape])).status_code == 422, shape
+    assert client.get("/api/notes").json() == []

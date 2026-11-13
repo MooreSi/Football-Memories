@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Drawing board (spec 240, D-034, owner request 2026-11-13):** toolbar under the
+  match video (above Match insights): Draw on video, Note / draw on a moment,
+  Screenshot, saved drawings. Ten tools, colours, widths, undo/redo, eraser, keys.
+  Saved as vector data with the note in `preferences` (moment id, or
+  `frame:<match>:<seconds>`); PNG export of frame + drawing. Browser-checked
+  through the synthetic stand-in helper and a scratch SQLite backend (no Hudl,
+  no owner data): every tool drawn, saved, reloaded, PNG made from the poster and
+  from a playing frame, phone width. Not yet deployed to the Docker app; not
+  tried on a real Hudl stream.
+
 - **Release 0.3 (2026-11-13):** versions 0.3.0, CHANGELOG, README rewritten for
   the new features, ten screenshots in `docs/screenshots/` taken from made-up
   data (club Riverside, fictional opponents, synthetic players and tags, a drawn

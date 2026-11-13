@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### New
+- **Drawing board** on every match, under the video: pen, arrow, dashed run,
+  curved arrow, line, spotlight ring, shaded zone, text labels and numbered
+  player markers, in six colours and three widths, with undo, redo, eraser and
+  keyboard shortcuts. Draw on any frame or on a tagged moment; drawings are
+  saved with their note, replay over the video at their time and are listed
+  under the video. **Screenshot** downloads a PNG of the frame with its drawing.
+
 ## 0.3 (2026-11-13)
 
 ### New

@@ -3,7 +3,13 @@ import { useCallback, useRef } from "react";
 import type { Seen } from "./alerts";
 
 /** Spec 230: notes, continue watching and the alerts snapshot (backend `preferences`). */
-export type Shape = { kind: "arrow" | "line"; x1: number; y1: number; x2: number; y2: number; colour?: string };
+/** One mark in 0..1 frame space. Arrow and line are spec 230's; the rest are the drawing
+ *  board's (spec 240). Optional fields are absent on marks that do not use them. */
+export type ShapeKind = "arrow" | "line" | "dashed" | "curve" | "pen" | "spotlight" | "zone" | "text" | "marker";
+export type Shape = {
+  kind: ShapeKind; x1: number; y1: number; x2: number; y2: number; colour?: string;
+  width?: 1 | 2 | 3; cx?: number; cy?: number; points?: [number, number][]; label?: string;
+};
 export type MomentNote = { moment_id: string; match_id: string; time_s: number; text: string; shapes: Shape[]; updated_at?: number };
 export type Watching = { match_id: string; position_s: number; duration_s: number; updated_at: number };
 

@@ -102,6 +102,14 @@ U10 v Stoke City reads 12-9.
   lists of meetings show dates.
 - Code matching for players is case-insensitive (`lib/codes.ts`): a hub created
   as "Pat Example" finds "PAT EXAMPLE" tags.
+- Drawing board (spec 240): toolbar under the match video, above Match insights;
+  the surface covers the 16:9 stage box, so marks are relative to that box, not
+  to the letterboxed frame. The PNG export letterboxes the frame the same way
+  (`containRect`). Before the stream has played, `video.videoWidth` is 0: the
+  export uses the poster instead. Stream and poster load with
+  `crossOrigin="anonymous"`; without it the canvas would be tainted and the
+  export falls back to the drawing alone. Exported marks are one SVG string
+  (`drawingSvg`), the overlay renders the same `marks()` in React.
 - Notes, continue watching and the alerts snapshot are stored by the backend in
   `preferences` (`/api/notes`, `/api/watching`, `/api/alerts/seen`). Responses
   that are not the expected shape are treated as empty (an existing score test

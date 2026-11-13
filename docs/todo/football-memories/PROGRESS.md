@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Spec 240 drawing board (owner request 2026-11-13)
+
+| Item | Status |
+|---|---|
+| Toolbar under the video, above Match insights | done (tests; browser-checked desktop and phone width) |
+| Ten drawing tools, colours, widths, undo/redo, eraser, keys | done (tests; each tool drawn in the browser) |
+| Save drawing as data (moment or any frame) | done (API and page tests; saved and reloaded on a scratch backend) |
+| PNG screenshot of frame + drawing | done (poster and playing frame checked in the browser; real Hudl stream not tried) |
+
 ## Spec 230 match insights (owner request 2026-11-13)
 
 | Item | Status |

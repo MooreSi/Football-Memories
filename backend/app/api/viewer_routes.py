@@ -22,7 +22,7 @@ def get_notes(db: Db, match_id: str | None = None) -> list[dict[str, Any]]:
 
 @router.put("/notes")
 def put_note(body: MomentNoteIn, db: Db) -> list[dict[str, Any]]:
-    viewer.save_note(db, body.model_dump())
+    viewer.save_note(db, body.model_dump(exclude_none=True))
     return viewer.notes(db, body.match_id)
 
 

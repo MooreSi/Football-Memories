@@ -2,7 +2,7 @@ import { Overlay } from '../components/ui/Overlay';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Clapperboard, Download, Film, FolderArchive, ListVideo, PenLine, Play, Route, Share2, Square, StickyNote } from 'lucide-react';
+import { Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Route, Share2, Square, StickyNote } from 'lucide-react';
 import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
@@ -12,7 +12,7 @@ import { formatClock } from '../lib/format';
 import { advanceTagged, needsSeek, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 import { markHudlMomentWatched } from '../lib/hudlWatched';
 import { MatchInsights } from '../components/match/MatchInsights';
-import { NoteEditor, NoteOverlay, activeNotes } from '../components/match/NoteLayer';
+import { MatchDrawing } from '../components/match/MatchDrawing';
 import { looksLikePlayer } from '../lib/hudlPlayer';
 import { phases } from '../lib/insights';
 import { sameCode } from '../lib/codes';
@@ -61,9 +61,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const [seek, setSeek] = useState<{ time: number; nonce: number } | undefined>(initialTime && !initialMoment ? { time: initialTime, nonce: 1 } : undefined);
   const [now, setNow] = useState(0);
   const [focus, setFocus] = useState<HudlMoment>();
-  const [editing, setEditing] = useState(false);
   const [phasesOnly, setPhasesOnly] = useState(initialPhases);
-  const stage = useRef<HTMLDivElement>(null);
   const notes = useNotes(id);
   const saveNote = useSaveNote();
   const [asking, setAsking] = useState(false);
@@ -130,7 +128,6 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const current = queue?.list[queue.index];
   useEffect(() => { if (current) { markHudlMomentWatched(current.id); setFocus(current); } }, [current]);
   const noteTarget = focus ?? current;
-  const startNote = () => { stage.current?.querySelector('video')?.pause(); setEditing(true); };
 
   if (!match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">{library.isPending ? 'Loading cached match…' : 'This match is not cached. Refresh Hudl from Library.'}</p></div>;
   return <div className="analysis-workspace">
@@ -148,14 +145,11 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
         {!embedded && <Link to={`/report/match/${encodeURIComponent(id)}`}><Button><Share2 size={16} /> Share report</Button></Link>}
         <Button variant="primary" disabled={busy} onClick={() => action.mutate({ action: 'download', match_id: id })}><Download size={16} /> Download full match</Button>
       </header>
-      {streamUrl ? <div ref={stage} className="relative"><StreamPlayer url={streamUrl} seek={seek} onTime={onTime} poster={match.thumbnail_url} />
-        {editing && noteTarget ? <NoteEditor moment={noteTarget} matchId={id} existing={noted.get(noteTarget.id)} saving={saveNote.isPending}
-          onCancel={() => setEditing(false)} onSave={note => saveNote.mutate(note, { onSuccess: () => setEditing(false) })} />
-          : <NoteOverlay notes={activeNotes(notes.data, now)} />}</div> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}
-      {streamUrl && noteTarget && !editing && <div className="flex flex-wrap items-center gap-3 text-sm">
-        <Button onClick={startNote}><PenLine size={14} /> {noted.has(noteTarget.id) ? 'Edit note' : 'Note / draw'} on {formatClock(noteTarget.time_s)} {noteTarget.category}</Button>
-        {saveNote.isError && <span role="alert" className="text-danger">{saveNote.error.message}</span>}
-      </div>}
+      {streamUrl ? <MatchDrawing matchId={id} title={match.title} notes={notes.data} target={noteTarget} now={now} saving={saveNote.isPending}
+        error={saveNote.isError ? saveNote.error.message : undefined} onSave={(note, done) => saveNote.mutate(note, { onSuccess: done })}
+        onGoTo={time => { setQueue(undefined); setSeek({ time, nonce: Date.now() }); }}>
+        <StreamPlayer url={streamUrl} seek={seek} onTime={onTime} poster={match.thumbnail_url} />
+      </MatchDrawing> : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 text-center"><p>{own ? status.data?.message : 'Preparing highest-quality stream…'}</p>{!busy && <Button onClick={() => action.mutate({ action: 'stream', match_id: id })}>Stream highest quality</Button>}</div></div>}
       {current && <div role="status" aria-label="Tagged playback" className="panel flex flex-wrap items-center gap-3 p-3 text-sm">
         <ListVideo size={16} className="text-accent" aria-hidden />
         <span className="mr-auto">Playing tagged moment {queue!.index + 1} of {queue!.list.length} · <span className="text-pin">{formatClock(current.time_s)}</span> {current.category}</span>
