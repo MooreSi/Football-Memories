@@ -421,3 +421,30 @@ the owner's cache, 2026-11-13). `/library` serves every moment through
 case); the batch exporter compares codes the same way. `MatchCache.read` and the
 files on disk stay verbatim (an existing test pins it), so the merge can be
 changed without touching the cache. Moment ids are unchanged.
+
+## Veo (spec 250, D-035)
+
+Learned from a read-only look at the owner's account (owner signed in, 2026-11-13):
+
+- No public API. The web app reads JSON under `https://app.veo.co/api/app/` with
+  the session cookie alone (no extra header). Sign-in is auth.veo.co, an OIDC
+  interaction form: `#email`, `#password`, `button[type=submit]`.
+- `clubs/?filter=own` -> `clubs/<slug>/recordings/?filter=own&page=N`, 20 a page,
+  `Link: rel="next"`, counts in `x-veo-total-count`, `x-veo-matches-expired`,
+  `x-veo-matches-soon-expiring`.
+- Per match, by slug: `matches/<slug>/`, `/videos/` (full match MP4 1920x1080 on
+  `c.veocdn.com`, no query string), `/highlights/?include_ai=true` (start and
+  duration in seconds from the video start, type, tags `{name, slug, origin,
+  custom}`, `is_ai_generated`; `team_association` and `involved_players` were
+  empty on every match looked at), `/periods/` (`timeframe` [start, end] s).
+- Expired recordings (182 of 238) keep their details but list no video and no
+  highlights. `expiration_status`: `does-not-expire`, `does-not-expire-soon`,
+  `expires-soon`, `expired`.
+- Score: `info.stats.score_aggregated {own, opponent}`. `info.age_group` was null.
+- `/api/mes/v2/<id>/match-events` and `step-events` need a bearer token the cookie
+  does not carry (401). Not used.
+- **Opening a match page POSTs `matches/<slug>/views/`.** The helper reads JSON
+  only and never opens match pages, so it records no views on Veo.
+- The Keychain item is `FootballMemories.Veo` (Hudl's stays `FootballMemories.Hudl`);
+  Windows target `FootballMemories/Veo`. Changing `hudl_keychain.swift` rebuilds
+  the small Keychain helper, so macOS may ask once to allow it access to the Hudl item.

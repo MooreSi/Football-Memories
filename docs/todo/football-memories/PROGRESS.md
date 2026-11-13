@@ -19,7 +19,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Next / previous tagged moment (buttons, N/B, media keys) | done (tests; browser-checked buttons and N; media keys not tried) |
 | Green outline complete, follows the clicked moment | done (tests; browser-checked) |
 | Continue watching: last three | done (test) |
-| Veo connection and Hudl/Veo show-hide toggles | blocked (owner decision 006) |
+| Veo connection and Hudl/Veo show-hide toggles | partial: phase 1 done (save, test, refresh, toggles; spec 250); phase 2 (Library, stream, download) todo |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 

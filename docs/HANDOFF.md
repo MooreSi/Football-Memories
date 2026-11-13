@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Veo connection, phase 1 (spec 250, D-035, owner decision 006 answered):**
+  helper routes `/veo/account|credentials|action|library`, package
+  `backend/app/connectors/veo/` (`_client` is the only module that talks to Veo:
+  GET-only `/api/app/` JSON, 1 s apart, no retries, one sign-in attempt),
+  Keychain item / Credential Manager target per service, cache
+  `.veo-account/library.json`. Settings > Connections: Veo card and Show Hudl /
+  Show Veo switches (localStorage). What Veo exposes is in
+  `docs/system/domains/connectors/README.md`. **Phase 2 open:** Veo matches in
+  Library and match page, streaming and MP4 download. Real-account check: the
+  owner saves the account in Settings and selects Test, then Refresh.
+
 - **Owner follow-ups 2026-11-13:** drawing Move tool (V); next/previous tagged
   moment (buttons, N/B, media keys via `navigator.mediaSession`) within the codes
   shown; green outline now an inset ring (the list's scroll box clipped the old

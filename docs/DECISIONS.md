@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-035 (2026-11-13) Veo connection authorized, same scope as Hudl
+Owner decision 006: permission to access the owner's Veo account; Veo has no
+public API (its help pages offer in-app downloads only), so the desktop helper
+uses normal-user browser capture as D-012 does for Hudl. Credentials go in the
+OS secret store (Keychain on macOS, Credential Manager on Windows, as D-014 and
+the Windows decision of 2026-11-11), under a Veo entry separate from Hudl's.
+Same safeguards: read-only, one sign-in attempt, challenges stop the run,
+cookies and signed URLs in memory only, no automated test talks to Veo.
+
 ## D-034 (2026-11-13) Drawings are saved as vector data, not pixels or Hudl metadata (spec 240)
 Owner asked whether a saved drawing is best kept as metadata. It is kept as data
 in the app: the marks (kind, 0..1 points, colour, width, label) with the note in

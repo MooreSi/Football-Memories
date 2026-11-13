@@ -2,10 +2,14 @@
 import Foundation
 import Security
 
-let operation = CommandLine.arguments.last ?? ""
+let arguments = CommandLine.arguments
+let operation = arguments.last ?? ""
+// Spec 250: one item per service. Hudl's call has no service argument (unchanged).
+let service = arguments.count == 3 ? arguments[1] : "Hudl"
+if !["Hudl", "Veo"].contains(service) { exit(1) }
 let query: [String: Any] = [
     kSecClass as String: kSecClassGenericPassword,
-    kSecAttrService as String: "FootballMemories.Hudl",
+    kSecAttrService as String: "FootballMemories.\(service)",
     kSecAttrAccount as String: "saved-account"
 ]
 func finish(_ status: OSStatus) {

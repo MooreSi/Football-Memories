@@ -16,16 +16,25 @@ from typing import Any
 from app.connectors.hudl_account import Credentials
 from app.connectors.hudl_capture import CaptureError
 
+SERVICES = ("Hudl", "Veo")
+
 
 class Keychain:
+    """One Keychain item per service (spec 250): FootballMemories.Hudl / .Veo."""
+
     label = "macOS Keychain"
 
-    def __init__(self, directory: Path) -> None:
+    def __init__(self, directory: Path, service: str = "Hudl") -> None:
+        if service not in SERVICES:
+            raise ValueError("unknown service")
         self.directory = directory
+        self.service = service
 
     def _executable(self) -> Path:
         if platform.system() != "Darwin":
-            raise CaptureError("Saved Hudl credentials require macOS Keychain on the desktop.")
+            raise CaptureError(
+                f"Saved {self.service} credentials require macOS Keychain on the desktop."
+            )
         source = Path(__file__).with_suffix(".swift")
         digest = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
         target = self.directory / f"keychain-{digest}"
@@ -47,14 +56,20 @@ class Keychain:
     def _invoke(self, operation: str, data: bytes = b"") -> bytes:
         try:
             result = subprocess.run(
-                [str(self._executable()), operation],
+                [
+                    str(self._executable()),
+                    *([] if self.service == "Hudl" else [self.service]),
+                    operation,
+                ],
                 input=data,
                 capture_output=True,
                 timeout=180,
                 check=False,
             )
             if result.returncode != 0:
-                raise CaptureError("Keychain access failed or no Hudl credentials are saved.")
+                raise CaptureError(
+                    f"Keychain access failed or no {self.service} credentials are saved."
+                )
             return result.stdout
         except CaptureError:
             raise
@@ -81,7 +96,9 @@ class Keychain:
         except CaptureError:
             raise
         except Exception:
-            raise CaptureError("Keychain could not read the saved Hudl account.") from None
+            raise CaptureError(
+                f"Keychain could not read the saved {self.service} account."
+            ) from None
 
     def configured(self) -> bool:
         try:
@@ -169,8 +186,12 @@ class WindowsCredentialStore:
     TARGET = "FootballMemories/Hudl"
     MAX_BLOB = 2560  # CRED_MAX_CREDENTIAL_BLOB_SIZE
 
-    def __init__(self, api: Any) -> None:
+    def __init__(self, api: Any, service: str = "Hudl") -> None:
+        if service not in SERVICES:
+            raise ValueError("unknown service")
         self.api = api
+        self.service = service
+        self.target = f"FootballMemories/{service}"
 
     def __repr__(self) -> str:
         return "WindowsCredentialStore()"
@@ -182,33 +203,34 @@ class WindowsCredentialStore:
         if len(blob) > self.MAX_BLOB:
             raise CaptureError("That username and password are too long for Credential Manager.")
         try:
-            self.api.write(self.TARGET, credentials.username, blob)
+            self.api.write(self.target, credentials.username, blob)
         except Exception:
             raise CaptureError(
-                "Windows Credential Manager could not save the Hudl account."
+                f"Windows Credential Manager could not save the {self.service} account."
             ) from None
 
     def load(self) -> Credentials:
         try:
-            found = self.api.read(self.TARGET)
+            found = self.api.read(self.target)
             if found is None:
                 raise LookupError
             data = json.loads(found[1].decode("utf-8"))
             return Credentials(data["username"], data["password"])
         except Exception:
             raise CaptureError(
-                "No Hudl account is saved in Windows Credential Manager, or it could not be read."
+                f"No {self.service} account is saved in Windows Credential Manager, or it could "
+                "not be read."
             ) from None
 
     def configured(self) -> bool:
         try:
-            return self.api.read(self.TARGET) is not None
+            return self.api.read(self.target) is not None
         except Exception:
             return False
 
 
-def secret_store(directory: Path) -> Keychain | WindowsCredentialStore:
-    """The operating system's own secret store for the saved Hudl account."""
+def secret_store(directory: Path, service: str = "Hudl") -> Keychain | WindowsCredentialStore:
+    """The operating system's own secret store for one service's saved account."""
     if platform.system() == "Windows":
-        return WindowsCredentialStore(_Advapi32())
-    return Keychain(directory)
+        return WindowsCredentialStore(_Advapi32(), service=service)
+    return Keychain(directory, service=service)

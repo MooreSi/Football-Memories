@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, PlugZap, X } from "lucide-react";
 import { api } from "../api/client";
 import { HudlAccount } from "../components/settings/HudlAccount";
 import { HudlCapture } from "../components/settings/HudlCapture";
+import { VeoAccount } from "../components/settings/VeoAccount";
 import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -19,8 +20,27 @@ const LABELS: Record<string, string> = {
   import_files: "Import files",
 };
 
+// Owner request 2026-11-13: show or hide the Hudl and Veo connections (this browser only).
+const HIDDEN_KEY = "fm.connections.hidden";
+function readHidden(): string[] {
+  try { const v = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]"); return Array.isArray(v) ? v.filter((x) => typeof x === "string") : []; } catch { return []; }
+}
+
+function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
+  return <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}
+    className="inline-flex items-center gap-2 rounded-full border border-line bg-ink-900/70 px-3 py-1.5 text-sm text-fg-muted hover:text-fg">
+    <span aria-hidden className={`relative h-5 w-9 rounded-full transition ${on ? "bg-accent" : "bg-ink-700"}`}>
+      <span className={`absolute top-0.5 size-4 rounded-full bg-white transition-all ${on ? "left-[18px]" : "left-0.5"}`} /></span>
+    {label}
+  </button>;
+}
+
 export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
   const [hudlState, setHudlState] = useState<string | null>(null);
+  const [hidden, setHidden] = useState<string[]>(readHidden);
+  useEffect(() => { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(hidden)); } catch { /* a convenience only */ } }, [hidden]);
+  const shown = (id: string) => !hidden.includes(id);
+  const show = (id: string, on: boolean) => setHidden((h) => (on ? h.filter((x) => x !== id) : [...new Set([...h, id])]));
   const q = useQuery({ queryKey: ["connectors"], queryFn: api.connectors });
 
   return (
@@ -33,8 +53,13 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
           {(q.error as Error).message}
         </EmptyState>
       ) : (
+        <div className="space-y-4">
+        <div className="flex flex-wrap gap-2" aria-label="Connections shown">
+          <Toggle label="Show Hudl" on={shown("hudl")} onChange={(on) => show("hudl", on)} />
+          <Toggle label="Show Veo" on={shown("veo")} onChange={(on) => show("veo", on)} />
+        </div>
         <div className="grid gap-5 lg:grid-cols-2">
-          {q.data.map((c) => (
+          {q.data.filter((c) => c.id !== "hudl" || shown("hudl")).map((c) => (
             <section key={c.id} className="panel h-fit space-y-4 p-5" aria-label={c.name}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{c.name}</h2>
@@ -86,6 +111,12 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
               {c.id === "hudl" && <><HudlAccount onConnectionChange={setHudlState} /><details><summary className="cursor-pointer text-sm text-fg-muted">Capture a match by URL</summary><div className="mt-4"><HudlCapture /></div></details></>}
             </section>
           ))}
+          {shown("veo") && <section className="panel h-fit space-y-4 p-5" aria-label="Veo">
+            <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Veo</h2></div>
+            <p className="text-sm text-fg-muted">Connect the Veo account you record with. The desktop helper signs in with your saved account and reads your Veo match list, details and highlights; it never changes anything on Veo. Watching and downloading Veo matches in the Library comes next.</p>
+            <VeoAccount />
+          </section>}
+        </div>
         </div>
       )}
     </>

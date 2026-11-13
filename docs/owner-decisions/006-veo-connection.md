@@ -1,6 +1,6 @@
 # 006: Connecting a Veo account
 
-**Status:** open
+**Status:** answered 2026-11-13
 **Raised by:** drawing-board follow-up session, 2026-11-13
 
 ## The question
@@ -46,4 +46,15 @@ session, a read-only listing first, then the metadata Veo exposes. A read-only
 check of what this account shows is the first step. The owner signs in in the
 browser pane themselves; the agent never types the password.
 
-ANSWER:
+ANSWER (owner, 2026-11-13, in chat):
+
+1. Yes, permission to access the account; browser capture like Hudl is fine,
+   after checking what else is possible.
+2. Yes, it is allowed (downloading this account's footage).
+3. Yes: save the Veo username and password in the macOS Keychain, and in the
+   Windows secret store (Credential Manager) on Windows.
+4. Scope: the same as the Hudl connection (list, metadata, stream, download).
+
+Recorded as D-035. The agent still never types the password: the owner enters
+it in Settings (the helper submits it through Veo's normal sign-in), or signs in
+in the browser pane for the read-only exploration.

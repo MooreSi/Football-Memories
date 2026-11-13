@@ -13,6 +13,11 @@
 - **Next / previous tagged moment** under the video: the buttons, the N and B
   keys, or the keyboard's media next/previous keys (Mac and Windows).
 
+- **Veo connection** in Settings > Connections: save your Veo account (kept
+  in the Keychain on Mac or Credential Manager on Windows), test it and read
+  your Veo matches, their details and highlights. Show or hide the Hudl and
+  Veo connections with the switches at the top.
+
 ### Fixed
 - The green outline on the playing moment is drawn all the way round, and a
   moment you click is outlined too.

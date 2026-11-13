@@ -194,6 +194,7 @@ def create_companion(output: Path) -> FastAPI:
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         yield
         application.state.account.close()
+        application.state.veo.close()
 
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     output = output.expanduser().resolve()
@@ -206,6 +207,17 @@ def create_companion(output: Path) -> FastAPI:
         lambda: app.state.keychain.load(), app.state.catalogue, output
     )
     app.state.downloads = DownloadFolder(output, cache / "downloads.json")
+    # Spec 250 (D-035): the Veo account, with its own secret-store entry and cache.
+    from app.connectors.veo._connection import VeoConnection
+    from app.connectors.veo._routes import router as veo_router
+
+    app.state.veo_store = secret_store(
+        Path.home() / "Library/Caches/FootballMemories", service="Veo"
+    )
+    app.state.veo = VeoConnection(
+        lambda: app.state.veo_store.load(), output.parent / ".veo-account"
+    )
+    app.state.veo_configured = None
     app.state.account.output = app.state.capture.output = app.state.downloads.folder
     app.state.account_configured = None
     app.state.hudl_gate = threading.Lock()
@@ -266,6 +278,8 @@ def create_companion(output: Path) -> FastAPI:
     @app.exception_handler(CaptureError)
     async def account_error(request: Request, error: CaptureError) -> JSONResponse:
         return JSONResponse({"detail": str(error)}, status_code=400)
+
+    app.include_router(veo_router)
 
     @app.get("/account")
     def account_status(request: Request) -> dict[str, object]:

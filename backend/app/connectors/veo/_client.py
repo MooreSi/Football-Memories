@@ -1,0 +1,131 @@
+"""The one module that talks to Veo (spec 250, D-035).
+
+Normal-user sign-in in an ephemeral Chrome context (headless, as D-022 for Hudl),
+then GET-only reads of Veo's own web-app JSON under /api/app/, one at a time and
+at least a second apart. No retries: a refusal, rate limit or challenge stops the
+run and is shown to the owner. Cookies stay in the browser context's memory; no
+storage state, response body or URL is written or logged here.
+"""
+
+from __future__ import annotations
+
+import re
+import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from typing import Any
+from urllib.parse import urlsplit
+
+from playwright.sync_api import Page, sync_playwright
+
+from app.connectors.hudl_capture import CaptureError
+
+APP = "https://app.veo.co"
+GAP_S = 1.0
+CHALLENGE = (
+    'iframe[src*="captcha"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"], '
+    'input[autocomplete="one-time-code"], input[name="otp"], input[name="code"]'
+)
+_PATH = re.compile(r"^/api/app/[A-Za-z0-9_\-./?=&%:+]*$")
+
+Http = Callable[[str], tuple[int, dict[str, str], Any]]
+
+
+class VeoRefused(CaptureError):
+    """Veo said no (401, 403, 429, 5xx...). The run stops; nothing is retried."""
+
+    def __init__(self, status: int) -> None:
+        self.status = status
+        reason = {
+            401: "Veo signed this session out",
+            403: "Veo refused access to that page",
+            429: "Veo asked the app to slow down",
+        }.get(status, f"Veo answered with an error ({status})")
+        super().__init__(f"{reason}. Nothing was retried; try again later.")
+
+
+class VeoApi:
+    """GET-only reads of Veo's web-app JSON, paced. There is no write method."""
+
+    def __init__(
+        self,
+        http: Http,
+        sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._http = http
+        self._sleep = sleep
+        self._clock = clock
+        self._last: float | None = None
+
+    def get(self, path: str) -> tuple[dict[str, str], Any]:
+        if not _PATH.fullmatch(path) or ".." in path:
+            raise CaptureError("The Veo connection only reads Veo's own match lists.")
+        if self._last is not None:
+            wait = GAP_S - (self._clock() - self._last)
+            if wait > 0:
+                self._sleep(wait)
+        self._last = self._clock()
+        status, headers, body = self._http(APP + path)
+        if status != 200:
+            raise VeoRefused(status)
+        return {k.lower(): v for k, v in headers.items()}, body
+
+
+def _check(page: Page) -> None:
+    found = page.locator(CHALLENGE)
+    if found.count() and found.first.is_visible():
+        raise CaptureError(
+            "Veo asked for verification. Sign in to Veo in your own browser once, then test again."
+        )
+
+
+def sign_in(page: Page, credentials: Any) -> None:
+    """One attempt at Veo's normal sign-in form; stops at any challenge."""
+    _check(page)
+    page.fill("#email", credentials.username)
+    page.fill("#password", credentials.password.get_secret_value())
+    page.click('button[type="submit"]')
+    try:
+        page.wait_for_url(lambda url: urlsplit(url).hostname == "app.veo.co", timeout=45_000)
+    except Exception:
+        _check(page)
+        raise CaptureError(
+            "Veo sign-in did not finish. Check the email and password in Settings, then test again."
+        ) from None
+    _check(page)
+
+
+@contextmanager
+def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
+    """A signed-in, ephemeral Veo session for one operation."""
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(channel="chrome", headless=True)
+        try:
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto(APP + "/", wait_until="domcontentloaded")
+            page.wait_for_load_state("networkidle", timeout=30_000)
+            if urlsplit(page.url).hostname != "app.veo.co":
+                credentials = loader()
+                try:
+                    sign_in(page, credentials)
+                finally:
+                    del credentials
+
+            def http(url: str) -> tuple[int, dict[str, str], Any]:
+                response = context.request.get(url, headers={"Accept": "application/json"})
+                body = None
+                if response.status == 200:
+                    try:
+                        body = response.json()
+                    except Exception:
+                        raise CaptureError("Veo sent something the app could not read.") from None
+                return response.status, dict(response.headers), body
+
+            yield VeoApi(http)
+        finally:
+            try:
+                browser.close()
+            except Exception:  # noqa: S110 (the owner may have closed it; never log browser errors)
+                pass
