@@ -22,9 +22,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   notes and arrows over the video; `/report/match/:id` and `/report/season`
   (PNG or print to PDF); alerts bell; Continue watching. See
   [230-match-insights.md](todo/football-memories/230-match-insights.md).
-  **Not deployed:** after merging, rebuild Docker (`docker compose up -d --build
-  frontend backend`) and restart the helper (needed for the spelling merge; it
-  ends its in-memory Hudl session). Not tried over a real stream: notes editor,
+  **Deployed 2026-11-13:** merged to `main` (0b0947e), Docker frontend and
+  backend rebuilt, helper restarted on the new code (PID 38416, log
+  `data/helper.log`; that ended its in-memory Hudl session). Live helper serves
+  320 codes, none with "&amp;" or lower case; download folder still
+  `/Volumes/SMB_Share/Football`. Not tried over a real stream: notes editor,
   momentum seek. Owner question [005](owner-decisions/005-insight-choices.md).
 
 ## Earlier state (2026-11-11)
@@ -372,8 +374,7 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
-0. **Spec 230:** merge `spec-230-match-insights`, rebuild Docker and restart the
-   helper; then, with the owner, try a note and a momentum click on a real
+0. **Spec 230:** with the owner, try a note and a momentum click on a real
    stream. Owner question 005 (radar possession point, weights, upper case).
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.

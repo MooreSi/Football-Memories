@@ -1,6 +1,6 @@
 # 230: Match insights, player journey, notes, alerts and continue watching
 
-**Status:** Shipped on branch spec-230-match-insights (not deployed)
+**Status:** Shipped (main, deployed 2026-11-13)
 **Sensitive:** no. Reads the helper's existing tag cache only; no Hudl request,
 credential, session or library file changes. Batch selection by code (helper)
 changes comparison only.
@@ -99,4 +99,4 @@ are unchanged.
 - [x] nothing on Hudl modified; no library file deleted or overwritten
 - [x] browser check on real cached data through a stand-in helper (see PROGRESS)
 - [ ] notes editor and momentum seek over a real stream: not done
-- [ ] deployed to the owner's Docker app and helper: not done
+- [x] deployed: Docker rebuilt, helper restarted 2026-11-13

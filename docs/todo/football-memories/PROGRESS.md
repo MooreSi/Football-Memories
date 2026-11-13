@@ -25,7 +25,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Shareable report (PNG + print to PDF) | done (tests; PNG drawn in the browser from real data) |
 | Alerts bell (new matches / new player moments) | done (tests; on the dev database it reported the one match the catalogue refresh added) |
 | Continue watching | done (tests; no real watch rows yet) |
-| Not deployed | Docker images not rebuilt, helper not restarted on the new code (see HANDOFF) |
+| Deployed | merged to main, Docker rebuilt, helper restarted 2026-11-13 (see HANDOFF) |
 
 ## Owner request 2026-11-13: opponents and crests
 
