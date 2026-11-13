@@ -14,10 +14,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 ## Current state (2026-11-13)
 
 - **Veo Test fix (owner report 2026-11-13):** first real Test said "Veo signed
-  this session out". `_client.sign_in` now waits for the form and for the app to
-  finish loading; `confirm_signed_in` reads `/api/app/user/` once and names a 401
-  as a sign-in that did not take. Helper restarted on the new code. **Owner to
-  select Test again**; not yet checked on the real account.
+  this session out". Two owner-approved read-only sign-in checks showed Veo
+  authorizes reads with a token header from localStorage, not a cookie.
+  `_client` now copies the page's own `authorization` header (`signed_in_header`,
+  `token_http`), in memory only, and still waits for the form and the app
+  (`confirm_signed_in` names a 401). Helper restarted. **Owner to select Test
+  again**; not yet checked on the real account.
 
 - **Next-moment fix (owner report 2026-11-13):** Next/Previous now step from the
   outlined moment in match order (ties keep list order), not from the video's

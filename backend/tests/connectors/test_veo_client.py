@@ -6,7 +6,13 @@ import pytest
 
 from app.connectors.hudl_account import Credentials
 from app.connectors.hudl_capture import CaptureError
-from app.connectors.veo._client import VeoApi, confirm_signed_in, sign_in
+from app.connectors.veo._client import (
+    VeoApi,
+    confirm_signed_in,
+    sign_in,
+    signed_in_header,
+    token_http,
+)
 
 SECRET = "FAKE_VEO_SECRET_51c2"  # noqa: S105
 
@@ -153,3 +159,84 @@ def test_confirm_passes_when_veo_knows_the_user_and_keeps_other_refusals() -> No
     veo, _ = api(http)
     with pytest.raises(CaptureError, match="slow down"):
         confirm_signed_in(veo)
+
+
+# Owner-approved checks 2026-11-13: Veo's page reads /api/app/user/ with a token it
+# keeps in localStorage, not a cookie, so the app's cookie-only reads got 401. The
+# client copies the sign-in header from the page's own successful read, in memory.
+
+TOKEN = "Bearer FAKE_VEO_TOKEN_9d3e"  # noqa: S105
+
+
+class FakeResponse:
+    def __init__(self, status: int, body: object = None) -> None:
+        self.status = status
+        self.headers = {"x-veo-total-count": "3"}
+        self._body = body
+
+    def json(self) -> object:
+        return self._body
+
+
+class FakeRequest:
+    def __init__(self, url: str, status: int | None, headers: dict[str, str]) -> None:
+        self.url = url
+        self._status = status
+        self._headers = headers
+
+    def response(self) -> FakeResponse | None:
+        return None if self._status is None else FakeResponse(self._status)
+
+    def all_headers(self) -> dict[str, str]:
+        return self._headers
+
+
+class FakeRequestContext:
+    def __init__(self, status: int = 200) -> None:
+        self.status = status
+        self.sent: list[tuple[str, dict[str, str]]] = []
+
+    def get(self, url: str, headers: dict[str, str]) -> FakeResponse:
+        self.sent.append((url, headers))
+        return FakeResponse(self.status, {"id": "u"})
+
+
+USER = "https://app.veo.co/api/app/user/"
+
+
+def test_takes_the_sign_in_header_from_the_pages_own_successful_user_read() -> None:
+    seen = [
+        FakeRequest(USER, 401, {"accept": "application/json"}),
+        FakeRequest("https://app.veo.co/api/app/clubs/", 200, {"authorization": "other"}),
+        FakeRequest(USER, 200, {"accept": "application/json", "authorization": TOKEN}),
+    ]
+    assert signed_in_header(seen) == TOKEN
+
+
+def test_stops_clearly_when_the_page_never_sent_a_sign_in_header() -> None:
+    for seen in (
+        [],
+        [FakeRequest(USER, 401, {"authorization": TOKEN})],
+        [FakeRequest(USER, None, {"authorization": TOKEN})],
+        [FakeRequest(USER, 200, {"accept": "application/json"})],
+    ):
+        with pytest.raises(CaptureError, match="sign-in has changed") as error:
+            signed_in_header(seen)
+        assert "FAKE_VEO_TOKEN" not in str(error.value)
+
+
+def test_reads_send_the_header_and_a_refusal_never_carries_it(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("DEBUG")
+    request = FakeRequestContext()
+    http = token_http(request, TOKEN)
+    status, headers, body = http(USER)
+    assert (status, body) == (200, {"id": "u"})
+    assert headers == {"x-veo-total-count": "3"}
+    assert request.sent == [(USER, {"Accept": "application/json", "Authorization": TOKEN})]
+    refused = VeoApi(token_http(FakeRequestContext(401), TOKEN), sleep=lambda s: None)
+    with pytest.raises(CaptureError) as error:
+        refused.get("/api/app/user/")
+    assert "FAKE_VEO_TOKEN" not in str(error.value) + repr(error.value) + caplog.text
+    assert "FAKE_VEO_TOKEN" in TOKEN  # negative control: the marker is really in the token

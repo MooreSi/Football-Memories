@@ -104,8 +104,8 @@ def sign_in(page: Page, credentials: Any) -> None:
             "Veo sign-in did not finish. Check the email and password in Settings, then test again."
         ) from None
     try:
-        # The first app.veo.co address can be the OIDC callback, before the session
-        # cookie is set; let the app finish loading before anything is read.
+        # The first app.veo.co address is /signin-redirect/, before the page has its
+        # token and has read the account; let the app finish loading first.
         page.wait_for_load_state("networkidle", timeout=30_000)
     except Exception:  # noqa: S110 (a page that never idles is judged by confirm_signed_in)
         pass
@@ -125,6 +125,46 @@ def confirm_signed_in(api: VeoApi) -> None:
         ) from None
 
 
+USER = APP + "/api/app/user/"
+
+
+def signed_in_header(seen: Any) -> str:
+    """The sign-in header Veo's own page sent on its last successful /api/app/user/
+    read. Veo keeps the token in the page's storage, not a cookie (owner-approved
+    check, 2026-11-13). Held in memory for one operation; never logged or saved."""
+    for request in reversed(list(seen)):
+        if urlsplit(request.url)._replace(query="", fragment="").geturl() != USER:
+            continue
+        response = request.response()
+        if response is None or response.status != 200:
+            continue
+        value = request.all_headers().get("authorization")
+        if value:
+            return str(value)
+    raise CaptureError(
+        "Veo's sign-in has changed: its page did not read the account the way the app "
+        "expects. Nothing was read or retried."
+    )
+
+
+def token_http(request: Any, authorization: str) -> Http:
+    """GETs that carry Veo's sign-in header. The header never reaches a message."""
+
+    def http(url: str) -> tuple[int, dict[str, str], Any]:
+        response = request.get(
+            url, headers={"Accept": "application/json", "Authorization": authorization}
+        )
+        body = None
+        if response.status == 200:
+            try:
+                body = response.json()
+            except Exception:
+                raise CaptureError("Veo sent something the app could not read.") from None
+        return response.status, dict(response.headers), body
+
+    return http
+
+
 @contextmanager
 def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
     """A signed-in, ephemeral Veo session for one operation."""
@@ -133,6 +173,8 @@ def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
         try:
             context = browser.new_context()
             page = context.new_page()
+            seen: list[Any] = []
+            page.on("request", lambda r: seen.append(r) if r.url.startswith(USER) else None)
             page.goto(APP + "/", wait_until="domcontentloaded")
             page.wait_for_load_state("networkidle", timeout=30_000)
             # The context is new and empty, so it is never already signed in. Veo's
@@ -143,17 +185,7 @@ def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
             finally:
                 del credentials
 
-            def http(url: str) -> tuple[int, dict[str, str], Any]:
-                response = context.request.get(url, headers={"Accept": "application/json"})
-                body = None
-                if response.status == 200:
-                    try:
-                        body = response.json()
-                    except Exception:
-                        raise CaptureError("Veo sent something the app could not read.") from None
-                return response.status, dict(response.headers), body
-
-            api = VeoApi(http)
+            api = VeoApi(token_http(context.request, signed_in_header(seen)))
             confirm_signed_in(api)
             yield api
         finally:

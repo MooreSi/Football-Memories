@@ -426,16 +426,27 @@ changed without touching the cache. Moment ids are unchanged.
 
 Learned from a read-only look at the owner's account (owner signed in, 2026-11-13):
 
-- No public API. The web app reads JSON under `https://app.veo.co/api/app/` with
-  the session cookie alone (no extra header). Sign-in is auth.veo.co, an OIDC
-  interaction form: `#email`, `#password`, `button[type=submit]`.
+- No public API. The web app reads JSON under `https://app.veo.co/api/app/`.
+  **Corrected 2026-11-13 (owner-approved sign-in checks):** not with a cookie.
+  After sign-in the page keeps the token in localStorage (`auth_token`,
+  `oidc.user:https://auth.veo.co:...`) and sends it on each read; app.veo.co sets
+  no session cookie (only `csrftoken`; the `_session*` cookies are on auth.veo.co).
+  Cookie-only reads get 401. The client copies the `authorization` header from
+  the page's own 200 read of `/api/app/user/`, in memory, for one operation. The
+  earlier "cookie alone" note was probably the owner's older browser session.
+- Sign-in: app.veo.co/ -> auth.veo.co/login.html (an OIDC interaction form:
+  `#email`, `#password`, `button[type=submit]`) -> app.veo.co/signin-redirect/
+  -> app.veo.co/ -> the first club's `/clubs/<slug>/recordings/`. The page's
+  first `/api/app/user/` is 401 (before sign-in), the next 200. On the way the
+  page also sends Veo's own analytics (`/-/t/api/v1/*`, Sentry) and a
+  subscriptions lookup POST; no match page, no view.
 - **Sign-in timing (owner report 2026-11-13, first real Test):** Save and Test
   answered "Veo signed this session out" (401 on the first `/api/app/user/`).
   The client had trusted the first app.veo.co address as signed in, and skipped
   the form whenever the root had not yet left app.veo.co. Now it always waits
   for `#email`, waits for network idle after the hand-back, and treats a 401 on
-  the first read as "Veo did not keep the sign-in". Which of the two it was is
-  not known; not yet re-tested on the real account.
+  the first read as "Veo did not keep the sign-in". The owner's re-test showed
+  that message: the real cause was the token header (above), not timing.
 - `clubs/?filter=own` -> `clubs/<slug>/recordings/?filter=own&page=N`, 20 a page,
   `Link: rel="next"`, counts in `x-veo-total-count`, `x-veo-matches-expired`,
   `x-veo-matches-soon-expiring`.
