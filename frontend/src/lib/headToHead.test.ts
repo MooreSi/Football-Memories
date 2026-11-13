@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { HudlMatch, HudlMoment } from "../api/hudl";
-import { opponentRecords, recordAgainst } from "./headToHead";
+import { bySeason, opponentRecords, recordAgainst } from "./headToHead";
 
 let n = 0;
 const goals = (ours: number, theirs: number): HudlMoment[] => [
@@ -32,4 +32,18 @@ it("does not count an unscored match as a draw, and uses the owner's correction"
 it("lists every opponent, most played first", () => {
   expect(opponentRecords(lib, "Aston Villa", {}).map((r) => [r.opponent, r.played])).toEqual([["Stoke City", 4], ["Rovers", 1]]);
   expect(recordAgainst(lib, "Aston Villa", {}, "Nobody FC")).toBeNull();
+});
+
+it("splits a record by season, newest first, with every game in it", () => {
+  const seasons = [
+    { ...match("s1", "260901 U11 v Stoke City", goals(2, 0)), season_label: "2026/27" },
+    { ...match("s2", "260915 U11 v Stoke City", goals(1, 1)), season_label: "2026/27" },
+    { ...match("s3", "251001 U10 v Stoke City", goals(0, 3)), season_label: "2025/26" },
+    { ...match("s4", "251008 U10 v Stoke City"), season_label: "2025/26" },
+  ];
+  const r = recordAgainst(seasons, "Aston Villa", {}, "Stoke City")!;
+  expect(bySeason(r).map(({ meetings, ...s }) => ({ ...s, games: meetings.map((m) => m.id) }))).toEqual([
+    { season: "2026/27", played: 2, scored: 2, won: 1, drawn: 1, lost: 0, goalsFor: 3, goalsAgainst: 1, games: ["s2", "s1"] },
+    { season: "2025/26", played: 2, scored: 1, won: 0, drawn: 0, lost: 1, goalsFor: 0, goalsAgainst: 3, games: ["s4", "s3"] },
+  ]);
 });

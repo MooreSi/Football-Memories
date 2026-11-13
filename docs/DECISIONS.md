@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-033 (2026-11-13) Opponents and season reports follow one team across seasons
+Owner request: all-teams totals mixed different players. A team is keyed by
+season start year minus age, so it moves up an age group each season. Opponents
+shows that team (all its seasons by default, or one), each club split by season
+with every game; the match page counts only that team's meetings; the season
+report is one team in one season. Default team: link, saved choice, Library age
+group, the primary player's most-tagged age group this season, then the busiest.
+
 ## D-032 (2026-11-13) Owner answers 005: possession time, weights, name case
 The Match Profile radar's possession point shows time on the ball (%), replacing
 the tag count D-030 pinned (its test now expects the %). Momentum weights stay.

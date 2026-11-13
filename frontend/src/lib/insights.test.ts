@@ -83,8 +83,8 @@ describe("partnerships", () => {
       match("c", "250915 Aston Villa v Town", "2025-26", [m("ALEX SAMPLE", 51, 1)]),
     ];
     expect(partnerships(lib, "Pat Example")).toEqual([
-      { name: "ALEX SAMPLE", shared: 2, matches: 2 },
-      { name: "JO TESTER", shared: 1, matches: 2 },
+      { name: "Alex Sample", shared: 2, matches: 2 },
+      { name: "Jo Tester", shared: 1, matches: 2 },
     ]);
   });
 });

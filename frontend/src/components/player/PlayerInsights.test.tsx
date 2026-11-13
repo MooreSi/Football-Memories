@@ -37,7 +37,7 @@ it("switches the season, and charts every season of the journey", async () => {
 
 it("ranks partners and links his attacks that ended in a chance", () => {
   renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
-  expect(screen.getByRole("region", { name: "Best partnerships" })).toHaveTextContent("ALEX SAMPLE1 shared moments · 1 match");
+  expect(screen.getByRole("region", { name: "Best partnerships" })).toHaveTextContent("Alex Sample1 shared moments · 1 match");
   const attacks = screen.getByRole("region", { name: "Attacks he was in" });
   expect(within(attacks).getByRole("link")).toHaveAttribute("href", "/hudl/b?player=Pat%20Example&phases=1");
 });

@@ -1,6 +1,6 @@
 import type { HudlMatch, HudlMoment } from "../api/hudl";
 import { codeKey, sameCode } from "./codes";
-import { looksLikePlayer } from "./hudlPlayer";
+import { displayCode, looksLikePlayer } from "./hudlPlayer";
 
 export { codeKey, sameCode };
 import { type Axis, type Kind, codeSides, sentence, type Side } from "./matchProfile";
@@ -194,7 +194,7 @@ export function partnerships(matches: HudlMatch[], name: string): Partner[] {
       if (code !== me && looksLikePlayer(code)) others.set(code, [...(others.get(code) ?? []), m]);
     }
     for (const [code, theirs] of others) {
-      const p = out.get(code) ?? { name: code, shared: 0, matches: 0 };
+      const p = out.get(code) ?? { name: displayCode(code), shared: 0, matches: 0 };
       theirs.sort(byStart);
       p.matches += 1;
       p.shared += mine.filter((m) => overlapsAny(m, theirs)).length;

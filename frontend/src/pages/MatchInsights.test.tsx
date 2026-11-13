@@ -44,6 +44,20 @@ it('shows the record against this opponent across meetings', async () => {
   expect(h2h).toHaveTextContent('W 1 D 0 L 1');
 });
 
+it('counts only meetings of the same team across seasons', async () => {
+  const seasonal = [
+    { ...library[0], season_label: '2026/27', age_groups: ['U11'] },
+    { ...library[1], season_label: '2025/26', age_groups: ['U10'] },
+    { id: 'c', title: '261020 U10 v Derby County', age_group: 'U10', age_groups: ['U10'], season_label: '2026/27', tag_status: 'synced', moments: [] },
+  ];
+  stubFetch({ 'http://127.0.0.1:8766/library': seasonal, 'http://127.0.0.1:8766/account': { configured: true, state: 'ready', busy: false, match_id: 'a', stream_url: 'http://127.0.0.1:8766/stream/x/playlist.m3u8' },
+    'http://127.0.0.1:8766/account/action': { accepted: true }, '/api/notes': [], '/api/scores': {}, '/api/watching': { ok: true }, '/api/players': [] });
+  renderWithProviders(<Routes><Route path='/hudl/:id' element={<HudlMatchPage />} /></Routes>, '/hudl/a');
+  const h2h = await screen.findByRole('region', { name: 'Head to head' });
+  expect(h2h).toHaveTextContent('2 played');
+  expect(within(h2h).getByRole('link', { name: 'All opponents' })).toHaveAttribute('href', '/opponents?age=U11&season=2026%2F27');
+});
+
 it('lists our attacks that ended in a chance as clips with their steps', async () => {
   open(); const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: 'Attacks ending in a chance (1)' }));

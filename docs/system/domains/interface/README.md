@@ -116,3 +116,17 @@ U10 v Stoke City reads 12-9.
   in `useHudlLibrary`; it relies on the `looksLikePlayer` heuristic, so a name
   with digits or brackets ("THEO (T)") stays as written, and "MCDONALD" becomes
   "Mcdonald". Never compare codes with `===`; use `sameCode`.
+
+## One team across seasons (owner request 2026-11-13)
+
+- A team is the same players moving up an age group each season: U11 in
+  2026/27 = U10 in 2025/26 = U9 in 2024/25. `lib/teams.ts` keys it as
+  (season's first year - age) and matches any of a video's age memberships
+  (mixed groups like "U9/U10" count for both). Undated videos belong to no team.
+- Opponents, the match page's head-to-head and the season report use one team;
+  never aggregate across age groups (different players). The choice is kept in
+  `fm.opponents.team`; first time it follows a link, then the Library's age
+  group, then the age group the primary player is tagged in most this season.
+- Report cards embed crests as data URLs (fetched from `/api/team-logo`) so the
+  PNG export never hits a tainted canvas; `lib/reportLayout.ts` moves a value
+  under its label when both do not fit on one line.

@@ -4,7 +4,7 @@ import { fixtureDate, fixtureParts } from "./hudlFixture";
 import { type Corrections, type Score, matchScore } from "./matchScore";
 
 /** Spec 230: our record against each club, from match titles and scores (spec 210). */
-export type Meeting = { id: string; title: string; date: string | null; score: Score | null };
+export type Meeting = { id: string; title: string; date: string | null; season: string; score: Score | null };
 export type Record = {
   opponent: string; played: number; scored: number; won: number; drawn: number; lost: number;
   goalsFor: number; goalsAgainst: number; last: Meeting | null; meetings: Meeting[];
@@ -38,7 +38,7 @@ export function opponentRecords(library: HudlMatch[] | undefined, club: string |
       else if (score.ours < score.theirs) r.lost += 1;
       else r.drawn += 1;
     }
-    r.meetings.push({ id: match.id, title: match.title, date: iso(fixtureDate(match.title)), score });
+    r.meetings.push({ id: match.id, title: match.title, date: iso(fixtureDate(match.title)), season: match.season_label || "Unclassified", score });
   }
   for (const r of records) {
     r.meetings.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
@@ -49,4 +49,22 @@ export function opponentRecords(library: HudlMatch[] | undefined, club: string |
 
 export function recordAgainst(library: HudlMatch[] | undefined, club: string | null, corrections: Corrections | undefined, opponent: string): Record | null {
   return opponentRecords(library, club, corrections).find((r) => sameClub(r.opponent, opponent)) ?? null;
+}
+
+export type SeasonRecord = { season: string; played: number; scored: number; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; meetings: Meeting[] };
+
+/** One opponent's record split by season, newest first; each season keeps its games. */
+export function bySeason(record: Record): SeasonRecord[] {
+  const out = new Map<string, SeasonRecord>();
+  for (const m of record.meetings) {
+    const s = out.get(m.season) ?? { season: m.season, played: 0, scored: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, meetings: [] };
+    s.played += 1;
+    s.meetings.push(m);
+    if (m.score) {
+      s.scored += 1; s.goalsFor += m.score.ours; s.goalsAgainst += m.score.theirs;
+      if (m.score.ours > m.score.theirs) s.won += 1; else if (m.score.ours < m.score.theirs) s.lost += 1; else s.drawn += 1;
+    }
+    out.set(m.season, s);
+  }
+  return [...out.values()].sort((a, b) => b.season.localeCompare(a.season));
 }

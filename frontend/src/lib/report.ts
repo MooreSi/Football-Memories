@@ -8,7 +8,7 @@ import { sameCode } from "./codes";
 
 /** Spec 230: the numbers on a shareable report, kept apart from drawing them. */
 export type ReportLine = { label: string; value: string };
-export type Report = { eyebrow: string; title: string; subtitle: string; headline: string | null; possession: { ours: number; theirs: number } | null;
+export type Report = { kind: "match" | "season"; eyebrow: string; title: string; subtitle: string; headline: string | null; possession: { ours: number; theirs: number } | null;
   ours: string; theirs: string; lines: ReportLine[]; player: { name: string; lines: ReportLine[] } | null };
 
 export function matchReport(match: HudlMatch, club: string | null, corrections: Corrections | undefined, player: string | null): Report {
@@ -21,7 +21,7 @@ export function matchReport(match: HudlMatch, club: string | null, corrections: 
   const tagged = player ? moments.filter((m) => sameCode(m.category, player)).length : 0;
   const v = player && tagged ? involvementTotals([match], player, club) : null;
   return {
-    eyebrow: `MATCH REPORT · ${match.age_group}`, title: `${club || "Us"} v ${opponent}`, subtitle: date ? ukDate(date) : match.title,
+    kind: "match", eyebrow: `MATCH REPORT · ${match.age_group}`, title: `${club || "Us"} v ${opponent}`, subtitle: date ? ukDate(date) : match.title,
     headline: score ? `${score.ours} - ${score.theirs}` : null, possession: poss && { ours: poss.oursPct, theirs: poss.theirsPct },
     ours: club || "Us", theirs: opponent,
     lines: axes.map((a) => ({ label: a.name, value: `${a.ours} - ${a.theirs}` })),
@@ -42,7 +42,7 @@ export function seasonReport(matches: HudlMatch[], scope: string, club: string |
   const partners = player ? partnerships(matches, player).slice(0, 3) : [];
   const scored = sum("scored");
   return {
-    eyebrow: "SEASON REPORT", title: `${club || "Our team"}`, subtitle: scope,
+    kind: "season", eyebrow: "SEASON REPORT", title: `${club || "Our team"}`, subtitle: scope,
     headline: scored ? `W${sum("won")} D${sum("drawn")} L${sum("lost")}` : null,
     possession: poss && { ours: poss.oursPct, theirs: poss.theirsPct }, ours: club || "Us", theirs: "Opponents",
     lines: [

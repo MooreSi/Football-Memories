@@ -1,7 +1,8 @@
 import { Activity, Swords } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
-import { useHudlLibrary } from "../../api/hudl";
+import { hudlAgeGroups, useHudlLibrary } from "../../api/hudl";
+import { cohortOf, inCohort } from "../../lib/teams";
 import { recordAgainst } from "../../lib/headToHead";
 import { fixtureParts } from "../../lib/hudlFixture";
 import { MOMENTUM_WEIGHTS, type Possession, momentum, possession } from "../../lib/insights";
@@ -74,16 +75,21 @@ export function HeadToHead({ match, club }: { match: HudlMatch; club: string | n
   const library = useHudlLibrary();
   const corrections = useScoreCorrections();
   const opponent = fixtureParts(match.title, club)?.opponent;
-  const r = opponent ? recordAgainst(library.data, club, corrections.data, opponent) : null;
+  // Owner request 2026-11-13: only this team's meetings (it moves up an age group each
+  // season); other age groups are different players. Undated matches use everything.
+  const age = hudlAgeGroups(match)[0] ?? "";
+  const team = cohortOf(age, match.season_label);
+  const scope = team === null ? library.data : library.data?.filter((m) => inCohort(m, team));
+  const r = opponent ? recordAgainst(scope, club, corrections.data, opponent) : null;
   if (!r) return null;
   const others = r.meetings.filter((m) => m.id !== match.id);
   return (
     <section aria-label="Head to head" className="space-y-2">
       <div className="flex items-center justify-between"><h3 className="flex items-center gap-2 text-sm font-semibold"><Swords size={14} aria-hidden /> Against {r.opponent}</h3>
-        <Link to="/opponents" className="text-xs text-accent hover:underline">All opponents</Link></div>
+        <Link to={team === null ? "/opponents" : `/opponents?age=${encodeURIComponent(age)}&season=${encodeURIComponent(match.season_label ?? "")}`} className="text-xs text-accent hover:underline">All opponents</Link></div>
       <p className="text-sm"><span className="font-semibold">{r.played} played</span>{r.scored > 0 && <> · W {r.won} D {r.drawn} L {r.lost} · goals {r.goalsFor}-{r.goalsAgainst}</>}{r.scored < r.played && <span className="text-fg-subtle"> ({r.played - r.scored} without a score)</span>}</p>
       {others.length > 0 && <ul className="space-y-1 text-xs text-fg-muted">{others.slice(0, 4).map((m) => (
-        <li key={m.id}><Link className="hover:text-fg" to={`/hudl/${encodeURIComponent(m.id)}`}>{m.date ?? "Undated"} · {m.score ? `${m.score.ours}-${m.score.theirs}` : "no score"}</Link></li>
+        <li key={m.id}><Link className="hover:text-fg" to={`/hudl/${encodeURIComponent(m.id)}`}>{m.date ?? "Undated"} · {m.season} · {m.score ? `${m.score.ours}-${m.score.theirs}` : "no score"}</Link></li>
       ))}</ul>}
     </section>
   );

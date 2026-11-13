@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Opponents by team, report crests (owner request 2026-11-13, D-033):**
+  Opponents, head-to-head and the season report follow one team across seasons
+  (U11 2026/27 = U10 2025/26 = U9 2024/25), each club split by season with every
+  game; match report shows both crests; season report values wrap instead of
+  overlapping; header nav labels no longer wrap at 1280px. Browser-checked on
+  real cached data through the stand-in helper (no Hudl).
+
 - **Match insights (spec 230, branch `spec-230-match-insights`, owner request
   2026-11-13):** duplicate tag spellings merged where the helper serves its
   cache; possession % from tag lengths (match page, Library); momentum timeline
