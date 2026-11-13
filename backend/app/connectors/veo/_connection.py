@@ -102,9 +102,9 @@ class VeoConnection:
         if action == "disconnect":
             self.disconnect()
             return
-        if action not in {"test", "refresh", "watch", "download", "reel"}:
+        if action not in {"test", "refresh", "watch", "download", "reel", "moments"}:
             raise CaptureError("Choose Connect, Refresh, Watch or Download.")
-        if action in {"watch", "download", "reel"}:
+        if action in {"watch", "download", "reel", "moments"}:
             item = self._match(match_id)
             if item is None or not item.get("available") or not item.get("slug"):
                 raise CaptureError("Veo has no video for this match.")
@@ -112,12 +112,12 @@ class VeoConnection:
             if self._busy:
                 raise CaptureError("A Veo operation is already running.")
             self._busy = True
-            self._downloading = action in {"download", "reel"}
+            self._downloading = action in {"download", "reel", "moments"}
             message = "Signing in to Veo…"
             if action in {"watch", "download"} and match_id in self._videos:
                 message = "Preparing the Veo video…"
-            if action == "reel":
-                message = "Preparing the highlight reel…"
+            if action in {"reel", "moments"}:
+                message = "Preparing the highlights…"
             self._state.update(state="working", message=message, progress=None)
         self._run(lambda: self._perform(action, match_id, name, reel))
 
@@ -150,10 +150,10 @@ class VeoConnection:
         reel: dict[str, Any] | None = None,
     ) -> None:
         try:
-            if action == "reel" and match_id:
-                from ._reels import make_reel
+            if action in {"reel", "moments"} and match_id:
+                from ._reels import make_reel, save_moments
 
-                make_reel(self, match_id, name, reel or {})
+                (make_reel if action == "reel" else save_moments)(self, match_id, name, reel or {})
                 return
             if action in {"watch", "download"} and match_id:
                 url = self._videos.get(match_id) or self._read_video(match_id)

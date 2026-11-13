@@ -18,7 +18,7 @@ import { phases } from '../lib/insights';
 import { sameCode } from '../lib/codes';
 import { useNotes, useRecordWatching, useSaveNote } from '../lib/viewerState';
 
-function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose: (combined: boolean) => void; onCancel: () => void }) {
+export function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose: (combined: boolean) => void; onCancel: () => void }) {
   const title = `Download ${count} ${count === 1 ? 'moment' : 'moments'}`;
   return <Overlay label={title} onClose={onCancel}>
       <h2 className="text-lg font-semibold">{title}</h2>

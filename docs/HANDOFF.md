@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Veo tick boxes and Veo data research (owner request 2026-11-13):** Veo
+  highlights have tick boxes; Play Tagged, Download selected moments (helper action
+  `moments`: one video or ZIP, cut from the saved match) and the reel use them.
+  Research (public web-app code only, nothing sent to the account) found many
+  unused Veo read paths, analytics included; listed with a proposed one-off
+  read-only check in owner decision 009, waiting on the owner.
+
 - **Connections switches, Veo reels, crest search (owner requests 2026-11-13):**
   Show Hudl/Show Veo now only choose the libraries listed (Library and Clips),
   never the Connections boxes. Veo match page has Make highlight reel → Reel

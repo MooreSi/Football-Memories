@@ -149,3 +149,55 @@ def test_reel_needs_a_match_veo_still_has(tmp_path: Path) -> None:
     veo, *_ = _ready(tmp_path, FakeMedia())
     with pytest.raises(CaptureError):
         veo.start("reel", "veo-unknown", name="x", reel={"moment_ids": ["h-1"]})
+
+
+# Owner request 2026-11-13: download the ticked Veo highlights, as on a Hudl match.
+
+
+def test_selected_highlights_download_as_one_video(tmp_path: Path, match_video: Path) -> None:
+    media = FakeMedia()
+    veo, api, sessions, folder, index = _ready(tmp_path, media)
+    saved = _seed_download(veo, folder, index, match_video)
+    before, calls = saved.read_bytes(), len(api.paths)
+
+    veo.start(
+        "moments",
+        IDENTITY,
+        name="Norton Lindsay v Northgate",
+        reel={"moment_ids": ["h-2", "h-1"], "combined": True},
+    )
+
+    status = veo.status()
+    assert status["state"] == "done", status["message"]
+    assert status["filename"].startswith("moments/Norton Lindsay v Northgate moments (")
+    assert status["filename"].endswith(".mp4")
+    info = probe(folder / status["filename"])
+    assert info.video_codec == "h264" and 6.0 < info.duration_s < 8.5  # 3 s + 4 s
+    assert (len(api.paths), media.downloads) == (calls, [])
+    assert saved.read_bytes() == before
+    entry = next(e for e in index.entries(folder) if e["kind"] == "moments")
+    assert entry["match_id"] == IDENTITY and entry["combined"] is True
+
+
+def test_selected_highlights_download_as_separate_files_in_a_zip(
+    tmp_path: Path, match_video: Path
+) -> None:
+    import zipfile
+
+    veo, _, _, folder, index = _ready(tmp_path, FakeMedia())
+    _seed_download(veo, folder, index, match_video)
+
+    veo.start(
+        "moments",
+        IDENTITY,
+        name="Norton Lindsay v Northgate",
+        reel={"moment_ids": ["h-1", "h-3"], "combined": False},
+    )
+
+    status = veo.status()
+    assert status["state"] == "done", status["message"]
+    assert status["filename"].endswith(".zip")
+    with zipfile.ZipFile(folder / status["filename"]) as archive:
+        names = archive.namelist()
+    assert names == ["01 0-02 SHOT ON GOAL.mp4", "02 0-15 GOAL.mp4"]
+    assert not list(folder.rglob(".veo-reel-*"))

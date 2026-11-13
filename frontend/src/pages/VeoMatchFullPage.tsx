@@ -1,13 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Activity, Clapperboard, Download, Play, SkipBack, SkipForward, Sparkles } from "lucide-react";
+import { Activity, Clapperboard, Download, ListVideo, Play, SkipBack, SkipForward, Sparkles, Square } from "lucide-react";
 import { type VeoHighlight, type VeoMatch, useVeoLibrary, useVeoStatus, veoExpiry, veoRequest } from "../api/veo";
 import { Button } from "../components/ui/Button";
 import { MatchDrawing } from "../components/match/MatchDrawing";
 import { formatClock } from "../lib/format";
 import { fixtureLabel } from "../lib/hudlFixture";
-import { nextMoment } from "../lib/taggedPlayback";
+import { advanceTagged, needsSeek, nextMoment, taggedPlaylist } from "../lib/taggedPlayback";
+import { DownloadChoice } from "./HudlMatchPage";
 import { useVeoTeam } from "../lib/useHomeTeams";
 import { SPELL, veoInsights } from "../lib/veoInsights";
 import { useNotes, useSaveNote } from "../lib/viewerState";
@@ -95,12 +96,17 @@ export function VeoMatchFull({ id }: { id: string }) {
   const [now, setNow] = useState(0);
   const [focus, setFocus] = useState<VeoHighlight>();
   const [drawing, setDrawing] = useState(false);
+  // Owner request 2026-11-13: tick boxes as on a Hudl match. Ticked highlights are what
+  // Play Tagged plays, the reel uses and Download saves; none ticked means all shown.
+  const [selected, setSelected] = useState<string[]>([]);
+  const [queue, setQueue] = useState<{ list: VeoHighlight[]; index: number }>();
+  const [asking, setAsking] = useState(false);
   const started = useRef(false);
   const list = useRef<HTMLUListElement>(null);
   const navigate = useNavigate();
   const action = useMutation({
-    mutationFn: ({ name, label }: { name: "watch" | "download"; label?: string }) =>
-      veoRequest("/action", { action: name, match_id: id, ...(label ? { name: label } : {}) }),
+    mutationFn: ({ name, label, extra }: { name: "watch" | "download" | "moments"; label?: string; extra?: object }) =>
+      veoRequest("/action", { action: name, match_id: id, ...(label ? { name: label } : {}), ...extra }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["veo-account"] }),
   });
   const match = library.data?.find(m => m.id === id);
@@ -119,9 +125,30 @@ export function VeoMatchFull({ id }: { id: string }) {
   const types = [...highlights.reduce((all, h) => all.set(h.category, (all.get(h.category) ?? 0) + 1), new Map<string, number>())]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const shown = highlights.filter(h => !type || h.category === type);
-  const watch = (h: VeoHighlight) => { setFocus(h); setSeek({ time: h.time_s, nonce: Date.now() }); };
+  const chosen = selected.length ? highlights.filter(h => selected.includes(h.id)) : shown;
+  const current = queue?.list[queue.index];
+  const active = current ?? focus;
+  const watch = (h: VeoHighlight) => { setQueue(undefined); setFocus(h); setSeek({ time: h.time_s, nonce: Date.now() }); };
+  const playTagged = () => {
+    const list = taggedPlaylist(chosen);
+    if (!list.length) return;
+    setQueue({ list, index: 0 });
+    setFocus(list[0]);
+    setSeek({ time: list[0].time_s, nonce: Date.now() });
+  };
+  const onTime = (time: number) => {
+    setNow(time);
+    if (!queue) return;
+    const next = advanceTagged(queue.list, queue.index, time);
+    if (next === null) setQueue(undefined);
+    else if (next !== queue.index) {
+      setQueue({ list: queue.list, index: next });
+      setFocus(queue.list[next]);
+      if (needsSeek(queue.list[next], time)) setSeek({ time: queue.list[next].time_s, nonce: Date.now() });
+    }
+  };
   const skip = (dir: 1 | -1) => {
-    const h = nextMoment(shown, now, dir, focus && shown.some(x => x.id === focus.id) ? focus.id : undefined);
+    const h = nextMoment(shown, now, dir, active && shown.some(x => x.id === active.id) ? active.id : undefined);
     if (!h) return;
     const held = document.activeElement;
     if (held instanceof HTMLElement && list.current?.contains(held)) held.blur();
@@ -177,27 +204,37 @@ export function VeoMatchFull({ id }: { id: string }) {
               <Button variant="ghost" aria-label="Previous highlight (B)" title="Previous highlight (B)" onClick={() => skip(-1)}><SkipBack size={15} /></Button>
               <Button aria-label="Next highlight (N)" title="Next highlight (N)" onClick={() => skip(1)}><SkipForward size={15} className="text-accent" /> Next moment</Button>
             </span>}>
-            <VeoPlayer url={stream} seek={seek} onTime={setNow} poster={match.poster_url} />
+            <VeoPlayer url={stream} seek={seek} onTime={onTime} poster={match.poster_url} />
           </MatchDrawing>
         : <div className="panel grid aspect-video place-items-center"><div className="space-y-3 p-4 text-center">
             <p className="text-sm">{own && status.data?.message ? status.data.message : "Preparing the Veo video…"}</p>
             {!busy && <Button onClick={() => action.mutate({ name: "watch" })}><Play size={14} /> Watch match</Button>}</div></div>}
+      {current && <div role="status" aria-label="Tagged playback" className="panel flex flex-wrap items-center gap-3 p-3 text-sm">
+        <ListVideo size={16} className="text-accent" aria-hidden />
+        <span className="mr-auto">Playing tagged moment {queue!.index + 1} of {queue!.list.length} · <span className="text-pin">{formatClock(current.time_s)}</span> {current.category}</span>
+        <Button variant="ghost" aria-label="Stop tagged playback" onClick={() => setQueue(undefined)}><Square size={14} /> Stop</Button>
+      </div>}
       {own && status.data?.progress && <div role="progressbar" aria-label="Download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(status.data.progress.fraction * 100)} className="h-2 overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full bg-gradient-to-r from-ok to-accent" style={{ width: `${Math.max(2, status.data.progress.fraction * 100)}%` }} /></div>}
       {own && status.data?.busy && <p role="status" className="text-sm text-accent">{status.data.message}</p>}
-      {own && !status.data?.busy && status.data?.state === "done" && <p role="status" className="text-sm text-ok">{status.data.message} It is listed under Downloaded.</p>}
+      {own && !status.data?.busy && status.data?.state === "done" && <p role="status" className="text-sm text-ok">{status.data.message} It is listed under Downloaded.{status.data.download_url && <> <a href={status.data.download_url} className="font-semibold text-accent underline">Save the highlights</a></>}</p>}
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       {highlights.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>
-          {match.available && shown.length > 0 && <Button variant="primary" disabled={busy} onClick={() => navigate("/clips/reel/new", { state: {
-            source: "veo", name: label ? `${label}${type ? ` · ${type.toLowerCase()}` : ""}` : undefined,
-            items: [{ match_id: id, moment_ids: shown.map(h => h.id) }] } })}><Clapperboard size={16} /> Make highlight reel ({shown.length})</Button>}</div>
-        <p className="text-xs text-fg-muted">{shown.length} highlights{type ? ` of type ${type}` : ""}. Click one to watch it; N and B step through them.</p>
+          {chosen.length > 0 && <Button variant="primary" disabled={!stream} title={stream ? undefined : "Available once the video is ready"} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
+          {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? "selected moments" : type ? `${type.toLowerCase()} moments` : "all moments"}</Button>}
+          {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => navigate("/clips/reel/new", { state: {
+            source: "veo", name: label ? `${label}${type && !selected.length ? ` · ${type.toLowerCase()}` : ""}` : undefined,
+            items: [{ match_id: id, moment_ids: chosen.map(h => h.id) }] } })}><Clapperboard size={16} /> Make highlight reel ({chosen.length})</Button>}</div>
+        <p className="text-xs text-fg-muted">{shown.length} highlights{type ? ` of type ${type}` : ""}{selected.length ? ` · ${selected.length} ticked` : ""}. Tick highlights to play, download or make a reel of just those. Click one to watch it; N and B step through them. Downloads are cut from the full match saved on this computer (downloaded first if needed).</p>
+        {selected.length > 0 && <button type="button" className="text-xs text-accent underline" onClick={() => setSelected([])}>Clear ticks</button>}
         <ul ref={list} aria-label="Veo highlights" className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
-          {shown.map(h => <li key={h.id} data-moment={h.id} aria-current={focus?.id === h.id ? true : undefined}
-            className={`tile ${focus?.id === h.id ? "border-ok bg-ok/10 ring-2 ring-inset ring-ok" : ""}`}>
-            <button type="button" disabled={!stream} onClick={() => watch(h)} className="flex w-full items-center gap-3 p-3 text-left disabled:cursor-default">
+          {shown.map(h => <li key={h.id} data-moment={h.id} aria-current={active?.id === h.id ? true : undefined}
+            className={`tile flex items-center gap-1 pl-3 ${active?.id === h.id ? "border-ok bg-ok/10 ring-2 ring-inset ring-ok" : ""}`}>
+            <input type="checkbox" aria-label={`Select ${h.category} at ${formatClock(h.time_s)}`} checked={selected.includes(h.id)}
+              onChange={e => setSelected(s => e.target.checked ? [...s, h.id] : s.filter(x => x !== h.id))} />
+            <button type="button" disabled={!stream} onClick={() => watch(h)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left disabled:cursor-default">
               <span className="min-w-0 flex-1"><span className="text-xs text-pin">{formatClock(h.time_s)}</span>
                 <span className="block truncate text-sm uppercase">{h.category}</span>
                 {(h.ai || h.note) && <span className="flex items-center gap-1 truncate text-xs text-fg-subtle">{h.ai && <><Sparkles size={11} aria-hidden />Veo AI</>}{h.note && <span className="text-fg-muted">{h.note}</span>}</span>}</span>
@@ -205,5 +242,9 @@ export function VeoMatchFull({ id }: { id: string }) {
         </ul>
       </section>}
     </div>
+    {asking && <DownloadChoice count={chosen.length} onCancel={() => setAsking(false)} onChoose={combined => {
+      setAsking(false);
+      action.mutate({ name: "moments", label, extra: { moment_ids: chosen.map(h => h.id), combined } });
+    }} />}
   </div>;
 }

@@ -9,13 +9,16 @@ and nothing else reads Veo's video. The reel is then joined with the title cards
 
 from __future__ import annotations
 
+import re
 import secrets
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.connectors.hudl_batch import _ffmpeg, assemble_reel
 from app.connectors.hudl_capture import CaptureError
+from app.services.publish import publish_new
 
 if TYPE_CHECKING:
     from ._connection import VeoConnection
@@ -41,6 +44,52 @@ def _cut(source: Path, start: float, length: float, target: Path) -> None:
         raise CaptureError("A highlight could not be cut from the saved match; nothing was saved.")
 
 
+def _prepare(
+    connection: VeoConnection, identity: str, wanted: list[str], match_label: str | None
+) -> tuple[dict[str, Any], list[dict[str, Any]], Path, Path]:
+    """The match, its chosen highlights in match order, the saved full match (downloaded
+    first when missing) and the download folder."""
+    item = connection._match(identity) or {}
+    chosen = sorted(
+        (m for m in item.get("moments") or [] if isinstance(m, dict) and m.get("id") in wanted),
+        key=lambda m: float(m.get("time_s") or 0),
+    )
+    if not chosen:
+        raise CaptureError("None of those highlights is in the Veo cache. Refresh matches first.")
+    if len(chosen) > MAX_HIGHLIGHTS:
+        raise CaptureError(f"Choose at most {MAX_HIGHLIGHTS} highlights at a time.")
+    folder = connection._folder()
+    source = connection._saved_match(identity, folder)
+    if source is None:
+        connection._report(
+            message="Downloading the full Veo match first; the clips are cut from it…"
+        )
+        url = connection._videos.get(identity) or connection._read_video(identity)
+        source = connection._download(identity, url, match_label)
+    return item, chosen, source, folder
+
+
+def _cut_all(
+    connection: VeoConnection, chosen: list[dict[str, Any]], source: Path, scratch: Path
+) -> list[Path]:
+    clips = []
+    for number, moment in enumerate(chosen, start=1):
+        connection._report(
+            state="working",
+            message=f"Cutting highlight {number} of {len(chosen)}…",
+            progress={
+                "done": number - 1,
+                "total": len(chosen),
+                "fraction": (number - 1) / len(chosen),
+            },
+        )
+        target = scratch / f"clip-{number:04}.mp4"
+        length = float(moment.get("duration_s") or 0) or DEFAULT_LENGTH
+        _cut(source, float(moment.get("time_s") or 0), length, target)
+        clips.append(target)
+    return clips
+
+
 def make_reel(
     connection: VeoConnection, identity: str, name: str | None, reel: dict[str, Any]
 ) -> None:
@@ -48,26 +97,10 @@ def make_reel(
 
     cards = connection.cards
     try:
-        item = connection._match(identity) or {}
         wanted = [str(i) for i in reel.get("moment_ids") or []]
-        chosen = sorted(
-            (m for m in item.get("moments") or [] if isinstance(m, dict) and m.get("id") in wanted),
-            key=lambda m: float(m.get("time_s") or 0),
+        item, chosen, source, folder = _prepare(
+            connection, identity, wanted, reel.get("match_label")
         )
-        if not chosen:
-            raise CaptureError(
-                "None of those highlights is in the Veo cache. Refresh matches first."
-            )
-        if len(chosen) > MAX_HIGHLIGHTS:
-            raise CaptureError(f"Choose at most {MAX_HIGHLIGHTS} highlights for one reel.")
-        folder = connection._folder()
-        source = connection._saved_match(identity, folder)
-        if source is None:
-            connection._report(
-                message="Downloading the full Veo match first; the reel is cut from it…"
-            )
-            url = connection._videos.get(identity) or connection._read_video(identity)
-            source = connection._download(identity, url, reel.get("match_label"))
         label = file_label(name, item.get("title"))
         reels = folder / "reels"
         reels.mkdir(parents=True, exist_ok=True)
@@ -75,20 +108,7 @@ def make_reel(
             scratch = Path(scratch_name)
             card = {key: cards.path(str(reel[key])) if reel.get(key) else None for key in CARDS}
             parts = [p for p in (card["opening_card"], card["match_card"]) if p is not None]
-            for number, moment in enumerate(chosen, start=1):
-                connection._report(
-                    state="working",
-                    message=f"Cutting highlight {number} of {len(chosen)}…",
-                    progress={
-                        "done": number - 1,
-                        "total": len(chosen),
-                        "fraction": (number - 1) / len(chosen),
-                    },
-                )
-                target = scratch / f"clip-{number:04}.mp4"
-                length = float(moment.get("duration_s") or 0) or DEFAULT_LENGTH
-                _cut(source, float(moment.get("time_s") or 0), length, target)
-                parts.append(target)
+            parts += _cut_all(connection, chosen, source, scratch)
             if card["closing_card"] is not None:
                 parts.append(card["closing_card"])
             output = reels / f"{label} ({secrets.token_hex(4)}).mp4"
@@ -111,3 +131,53 @@ def make_reel(
     finally:
         if cards is not None:
             cards.discard(reel.get(key) for key in CARDS)
+
+
+def _clip_name(number: int, moment: dict[str, Any]) -> str:
+    seconds = int(float(moment.get("time_s") or 0))
+    kind = (
+        re.sub(r"[^\w &'-]", " ", str(moment.get("category") or "Highlight")).strip() or "Highlight"
+    )
+    return f"{number:02} {seconds // 60}-{seconds % 60:02} {' '.join(kind.split())[:60]}.mp4"
+
+
+def save_moments(
+    connection: VeoConnection, identity: str, name: str | None, request: dict[str, Any]
+) -> None:
+    """The ticked highlights as one video (match order) or a ZIP of one file each, in
+    moments/, never replacing a file; listed in the download index like Hudl's."""
+    from ._connection import file_label
+
+    wanted = [str(i) for i in request.get("moment_ids") or []]
+    combined = bool(request.get("combined"))
+    item, chosen, source, folder = _prepare(
+        connection, identity, wanted, request.get("match_label")
+    )
+    label = f"{file_label(name, item.get('title'))} moments"
+    moments = folder / "moments"
+    moments.mkdir(parents=True, exist_ok=True)
+    suffix = ".mp4" if combined else ".zip"
+    output = moments / f"{label} ({secrets.token_hex(4)}){suffix}"
+    with tempfile.TemporaryDirectory(prefix=".veo-reel-", dir=moments) as scratch_name:
+        scratch = Path(scratch_name)
+        clips = _cut_all(connection, chosen, source, scratch)
+        connection._report(message="Saving the highlights…", progress=None)
+        if combined:
+            assemble_reel(clips, output, metadata=["-metadata", f"title={label}"])
+        else:
+            packed = scratch / "moments.zip"
+            with zipfile.ZipFile(packed, "x", zipfile.ZIP_STORED) as archive:
+                for number, (clip, moment) in enumerate(zip(clips, chosen, strict=True), start=1):
+                    archive.write(clip, _clip_name(number, moment))
+            publish_new(packed, output)
+    if connection.index is not None:
+        connection.index.record(
+            "moments", identity, item.get("title"), output, folder, chosen, combined=combined
+        )
+    connection._report(
+        state="done",
+        progress=None,
+        match_id=identity,
+        filename=f"moments/{output.name}",
+        message=f"{len(chosen)} highlights saved in the moments folder.",
+    )

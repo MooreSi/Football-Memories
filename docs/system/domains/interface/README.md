@@ -167,3 +167,8 @@ U10 v Stoke City reads 12-9.
 - Club crests: "Find the crest on the web" opens a Google image search for
   "<club> FC crest" (side code and age dropped) in a new tab; the dashed box takes
   a pasted (⌘V) or dropped image.
+
+- Veo match page tick boxes (owner request 2026-11-13): ticked highlights drive
+  Play Tagged (back to back, `taggedPlaylist`/`advanceTagged`), Download (Hudl's
+  `DownloadChoice`: one video or separate files) and Make highlight reel; with none
+  ticked, the highlights shown (after the type filter) are used.

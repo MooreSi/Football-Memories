@@ -93,15 +93,54 @@ function posts(fn: ReturnType<typeof vi.mocked<typeof fetch>>) {
     .map(([input, init]) => ({ url: String(input), body: JSON.parse(String(init?.body ?? "null")) }));
 }
 
-it("makes a highlight reel from the highlights shown, through Reel Studio", async () => {
+// Owner request 2026-11-13: tick boxes, as on a Hudl match. Ticked highlights are what
+// Play Tagged plays, the reel uses and Download saves; with none ticked, all shown.
+it("makes a highlight reel from the ticked highlights, else the ones shown", async () => {
   stub(ready);
   renderWithProviders(<App />, "/veo/veo-a");
   const user = userEvent.setup();
   const rail = await screen.findByRole("navigation", { name: "Highlight types" });
   await user.click(within(rail).getByRole("button", { name: /GOAL\s*2/ }));
-  await user.click(screen.getByRole("button", { name: /Make highlight reel \(2\)/ }));
+  expect(screen.getByRole("button", { name: /Make highlight reel \(2\)/ })).toBeInTheDocument();
+  await user.click(screen.getByRole("checkbox", { name: "Select GOAL at 31:40" }));
+  await user.click(screen.getByRole("button", { name: /Make highlight reel \(1\)/ }));
   expect(await screen.findByText("HIGHLIGHT REEL STUDIO")).toBeInTheDocument();
   const stored = JSON.parse(sessionStorage.getItem("fm.reel.selection")!);
-  expect(stored).toMatchObject({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h2", "h3"] }] });
+  expect(stored).toMatchObject({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h3"] }] });
   sessionStorage.clear();
+});
+
+it("plays the ticked highlights back to back", async () => {
+  stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("checkbox", { name: "Select SHOT ON GOAL at 1:04" }));
+  await user.click(screen.getByRole("checkbox", { name: "Select GOAL at 31:40" }));
+  await user.click(screen.getByRole("button", { name: /Play Tagged \(2\)/ }));
+  const playing = screen.getByRole("status", { name: "Tagged playback" });
+  expect(playing).toHaveTextContent(/1 of 2.*1:04.*SHOT ON GOAL/);
+  const video = screen.getByLabelText("Veo match video") as HTMLVideoElement;
+  Object.defineProperty(video, "currentTime", { configurable: true, writable: true, value: 85 });
+  video.dispatchEvent(new Event("timeupdate"));
+  await vi.waitFor(() => expect(screen.getByRole("status", { name: "Tagged playback" })).toHaveTextContent(/2 of 2.*31:40.*GOAL/));
+  await user.click(screen.getByRole("button", { name: "Stop tagged playback" }));
+  expect(screen.queryByRole("status", { name: "Tagged playback" })).toBeNull();
+});
+
+it("downloads the ticked highlights as one video or separate files", async () => {
+  const calls = stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("checkbox", { name: "Select GOAL at 5:00" }));
+  await user.click(screen.getByRole("button", { name: "Download selected moments" }));
+  await user.click(screen.getByRole("button", { name: /Separate files/ }));
+  await vi.waitFor(() => expect(calls.filter(c => c.url === `${H}/veo/action`)).toHaveLength(1));
+  expect(calls.find(c => c.url === `${H}/veo/action`)!.body).toMatchObject({ action: "moments", match_id: "veo-a", moment_ids: ["h2"], combined: false });
+});
+
+it("links the saved highlights once the helper has cut them", async () => {
+  stub({ ...ready, state: "done", filename: "moments/RJ moments (ab12cd34).zip", message: "1 highlights saved in the moments folder.",
+    download_url: `${H}/files/scope/moments/RJ%20moments%20(ab12cd34).zip` });
+  renderWithProviders(<App />, "/veo/veo-a");
+  expect(await screen.findByRole("link", { name: /Save the highlights/ })).toHaveAttribute("href", `${H}/files/scope/moments/RJ%20moments%20(ab12cd34).zip`);
 });

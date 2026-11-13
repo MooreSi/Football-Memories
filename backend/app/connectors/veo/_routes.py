@@ -22,7 +22,7 @@ class VeoCredentials(BaseModel):
 
 
 class VeoAction(BaseModel):
-    action: Literal["test", "refresh", "watch", "download", "reel", "disconnect"]
+    action: Literal["test", "refresh", "watch", "download", "reel", "moments", "disconnect"]
     match_id: str | None = Field(default=None, max_length=200)
     name: str | None = Field(default=None, max_length=200)
     # Owner request 2026-11-13: a highlight reel from one Veo match.
@@ -31,6 +31,7 @@ class VeoAction(BaseModel):
     match_card: str | None = Field(default=None, max_length=64)
     closing_card: str | None = Field(default=None, max_length=64)
     match_label: str | None = Field(default=None, max_length=200)
+    combined: bool = True  # moments: one video, else a ZIP of one file each
 
 
 @router.get("/account")
@@ -44,7 +45,7 @@ def account(request: Request) -> dict[str, object]:
     link = (
         f"http://127.0.0.1:8766/files/{state.file_scope}/{quote(filename, safe='/')}"
         if isinstance(filename, str)
-        and filename.startswith("reels/")
+        and filename.startswith(("reels/", "moments/"))
         and status.get("state") == "done"
         else None
     )
@@ -72,7 +73,7 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
     state = request.app.state
     if not (state.veo_configured or state.veo_store.configured()):
         raise CaptureError("Save the Veo email and password first.")
-    if body.action == "reel":
+    if body.action in {"reel", "moments"}:
         if not body.match_id or not body.moment_ids:
             raise CaptureError("Choose the Veo highlights for the reel first.")
         reel = {
@@ -81,8 +82,9 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
             "match_card": body.match_card,
             "closing_card": body.closing_card,
             "match_label": body.match_label,
+            **({"combined": body.combined} if body.action == "moments" else {}),
         }
-        state.veo.start("reel", body.match_id, name=body.name, reel=reel)
+        state.veo.start(body.action, body.match_id, name=body.name, reel=reel)
     elif body.action in {"watch", "download"}:
         if not body.match_id:
             raise CaptureError("Select a Veo match first.")

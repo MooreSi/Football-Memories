@@ -525,3 +525,14 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   is never "Northgate Rovers").
 - The owner's example "Norton Lindsay" is spelt "Norton Lindsey" on the web and is
   on neither Wikipedia nor Commons, so it still needs the paste in Club crests.
+
+## Veo moment downloads, and what else Veo's app reads (2026-11-13)
+
+- `veo/_reels.save_moments`: ticked highlights as one video (`assemble_reel`, no
+  cards) or a ZIP of one clip each (`NN M-SS TYPE.mp4`), in `moments/`, published
+  with `publish_new`, index kind `moments`. Same source rule as reels.
+- Veo's public web-app code lists many more read paths (stats, events, lineup,
+  roster, heatmaps, AI insights, and the `/api/mes/` analytics service with
+  momentum, tracking and physical data). The app sends the same Bearer token to
+  both. None is called yet: the list, what is known and the proposed one-off check
+  are in owner decision [009](../../../owner-decisions/009-veo-analytics-reads.md).
