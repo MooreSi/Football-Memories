@@ -19,6 +19,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   outer shadow) and follows the clicked moment too; Continue watching capped at 3.
   **Veo connection not built**: waiting on owner decision 006 (permission,
   credentials, scope); nothing signed in to Veo. Browser-checked via the stand-in.
+  Deployed 2026-11-13 (Docker rebuilt, health ok; helper unchanged, not restarted).
 
 - **Drawing board (spec 240, D-034, owner request 2026-11-13):** toolbar under the
   match video (above Match insights): Draw on video, Note / draw on a moment,
