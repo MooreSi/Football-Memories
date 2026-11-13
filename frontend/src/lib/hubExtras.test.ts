@@ -16,15 +16,17 @@ it("groups the clubs played with how often and the latest match", () => {
 const t = (id: string, category: string, time_s: number, duration_s = 10) => ({ id, category, time_s, duration_s });
 const library = [
   { id: "a", title: "260901 U11 v Rovers (H)", age_group: "U11", capture_key: "a", moments: [
-    t("a1", "Sam Example", 100), t("ag", "GOAL", 105), t("a2", "Sam Example", 300), t("ac", "CHANCE", 302), t("a3", "Sam Example", 500),
+    t("a1", "Sam Example", 100), t("ag", "RIVERSIDE GOAL", 105), t("a2", "Sam Example", 300), t("ac", "RIVERSIDE CHANCE", 302), t("a3", "Sam Example", 500),
+    t("og", "OPPOSITION GOAL", 1500), t("oc", "OPPOSITION CHANCE", 1600),
   ] },
   { id: "b", title: "261001 U11 v Town (A)", age_group: "U11", capture_key: "b", thumbnail_url: "/thumb-b", moments: [
-    t("b1", "Sam Example", 50), t("bs", "OPPOSITION SHOT ON TARGET", 52), t("bv", "SAVE", 55), t("b2", "Sam Example", 900), t("bg", "GOAL", 905),
+    t("b1", "Sam Example", 50), t("bs", "OPPOSITION SHOT ON TARGET", 52), t("bv", "SAVE", 55), t("b2", "Sam Example", 900), t("bg", "RIVERSIDE GOAL", 905),
+    t("bo", "OPPOSITION GOAL", 2000),
   ] },
 ];
 
 it("ranks a player's Hudl moments by the play they overlapped, newest first on a tie", () => {
-  const top = rankHudlMoments(library, "Sam Example", 5);
+  const top = rankHudlMoments(library, "Sam Example", 5, "Riverside");
   expect(top.map((m) => [m.moment_id, m.reason])).toEqual([
     ["b2", "Team goal"], ["a1", "Team goal"], ["b1", "Save"], ["a2", "Chance"],
   ]);
@@ -32,6 +34,14 @@ it("ranks a player's Hudl moments by the play they overlapped, newest first on a
 });
 
 it("leaves out moments that overlapped nothing notable, and limits the count", () => {
-  expect(rankHudlMoments(library, "Sam Example", 2).map((m) => m.moment_id)).toEqual(["b2", "a1"]);
-  expect(rankHudlMoments(library, "Nobody Here", 5)).toEqual([]);
+  expect(rankHudlMoments(library, "Sam Example", 2, "Riverside").map((m) => m.moment_id)).toEqual(["b2", "a1"]);
+  expect(rankHudlMoments(library, "Nobody Here", 5, "Riverside")).toEqual([]);
+});
+
+it("never counts a goalkeeper code, a goal kick or a goal conceded as a team goal", () => {
+  const match = { id: "c", title: "261101 U11 v City (H)", age_group: "U11", capture_key: "c", moments: [
+    t("c1", "Sam Example", 10), t("k", "1 GOAL KEEPER", 10), t("c2", "Sam Example", 100), t("gk", "RIVERSIDE GOAL KICK", 100),
+    t("c3", "Sam Example", 200), t("og", "OPPOSITION GOAL", 200), t("rg", "RIVERSIDE GOAL", 5000),
+  ] };
+  expect(rankHudlMoments([match], "Sam Example", 5, "Riverside")).toEqual([]);
 });

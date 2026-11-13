@@ -1,8 +1,8 @@
 import type { HudlMatch, HudlMoment } from "../api/hudl";
 import { clubKey } from "./clubs";
-import { codeKey, sameCode } from "./codes";
+import { sameCode } from "./codes";
+import { codeSides, type Placed } from "./matchProfile";
 import { fixtureDate, fixtureParts } from "./hudlFixture";
-import { looksLikePlayer } from "./hudlPlayer";
 import type { MatchCount } from "./records";
 
 // Owner request 2026-11-13: an opponent map and top moments on the player hub.
@@ -25,15 +25,16 @@ export type RankedMoment = {
   opponent: string; date: string; href: string; thumbnail: string | null;
 };
 
-const OPPOSITION = /^(?:OPP|OPPOSITION|THEIR)\b/;
-/** What a situation code says about the play, best first; codes that say nothing are 0. */
-function weigh(code: string): [number, string] {
-  const key = codeKey(code);
-  if (looksLikePlayer(key)) return [0, ""];
-  const theirs = OPPOSITION.test(key);
-  if (/\bGOAL\b/.test(key) && !/GOAL KICK/.test(key)) return theirs ? [0, ""] : [5, "Team goal"];
-  if (/\bSAVE/.test(key)) return [4, "Save"];
-  if (/CHANCE|SHOT|ON TARGET/.test(key)) return theirs ? [2, "Shot faced"] : [3, "Chance"];
+/** What a situation code says about the play, best first, by side (codeSides, as the
+ *  match insights read them): our GOAL, a save, our chance or shot, a shot faced.
+ *  Goal kicks, "1 GOAL KEEPER", goals conceded and codes of no side count for nothing. */
+function weigh(placed: Placed): [number, string] {
+  const { side, stem } = placed;
+  if (stem === "GOAL") return side === "ours" ? [5, "Team goal"] : [0, ""];
+  if (/^SAVES?$/.test(stem) && side !== "theirs") return [4, "Save"];
+  if (stem === "CHANCE" || /^SHOTS?\b/.test(stem) || /ON TARGET/.test(stem)) {
+    return side === "ours" ? [3, "Chance"] : side === "theirs" ? [2, "Shot faced"] : [0, ""];
+  }
   return [0, ""];
 }
 
@@ -41,20 +42,21 @@ const overlaps = (a: HudlMoment, b: HudlMoment) => a.time_s < b.time_s + b.durat
 
 /** The player's Hudl moments ranked by the play they overlapped (goal, save, chance,
  *  shot faced); a tie goes to the newer match, then the later moment. */
-export function rankHudlMoments(library: HudlMatch[] | undefined, name: string, limit: number): RankedMoment[] {
+export function rankHudlMoments(library: HudlMatch[] | undefined, name: string, limit: number, club: string | null = null): RankedMoment[] {
   const ranked: RankedMoment[] = [];
   for (const match of library ?? []) {
     const all = match.moments ?? [];
     const others = all.filter((m) => !sameCode(m.category, name));
+    const place = codeSides(all, club);
     const date = fixtureDate(match.title);
     const iso = date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : "";
     for (const mine of all.filter((m) => sameCode(m.category, name))) {
       let best: [number, string] = [0, ""];
-      for (const other of others) if (overlaps(mine, other)) { const w = weigh(other.category); if (w[0] > best[0]) best = w; }
+      for (const other of others) if (overlaps(mine, other)) { const w = weigh(place(other.category)); if (w[0] > best[0]) best = w; }
       if (best[0] === 0) continue;
       ranked.push({
         match_id: match.id, moment_id: mine.id, reason: best[1], score: best[0], time_s: mine.time_s,
-        opponent: fixtureParts(match.title)?.opponent ?? match.title, date: iso,
+        opponent: fixtureParts(match.title, club)?.opponent ?? match.title, date: iso,
         href: `/hudl/${encodeURIComponent(match.id)}?moment=${encodeURIComponent(mine.id)}`, thumbnail: match.thumbnail_url ?? null,
       });
     }

@@ -16,7 +16,7 @@ const day = (date: string) => (date ? `${Number(date.slice(8, 10))} ${MONTHS[Num
 /** Owner request 2026-11-13: the player's top five moments, favourites first, then the
  *  Hudl moments that overlapped a team goal, a save, a chance or a shot faced. One
  *  click makes them a reel (Hudl moments in the Reel Studio; imported ones as a reel). */
-export function TopMoments({ playerId, name, library }: { playerId: number; name: string; library: HudlMatch[] | undefined }) {
+export function TopMoments({ playerId, name, library, club = null }: { playerId: number; name: string; library: HudlMatch[] | undefined; club?: string | null }) {
   const navigate = useNavigate();
   const first = name.trim().split(/\s+/)[0] || name;
   const favourites = useQuery({ queryKey: ["player", playerId, "top-favourites"], queryFn: () => api.playerMoments(playerId, { favourites: true }) });
@@ -24,7 +24,7 @@ export function TopMoments({ playerId, name, library }: { playerId: number; name
     ...(favourites.data?.items ?? []).slice().sort((a, b) => b.match_date.localeCompare(a.match_date)).map((m) => ({
       key: `f-${m.event_id}`, reason: "Favourite", opponent: m.opponent, date: m.match_date, time_s: m.time_s,
       href: `/matches/${m.match_id}?moment=${m.event_id}`, thumbnail: m.thumbnail_url, event_id: m.event_id })),
-    ...rankHudlMoments(library, name, 5).map((m) => ({
+    ...rankHudlMoments(library, name, 5, club).map((m) => ({
       key: `h-${m.match_id}-${m.moment_id}`, reason: m.reason, opponent: m.opponent, date: m.date, time_s: m.time_s,
       href: m.href, thumbnail: m.thumbnail, hudl: { match_id: m.match_id, moment_id: m.moment_id } })),
   ].slice(0, 5);

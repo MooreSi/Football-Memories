@@ -37,12 +37,13 @@ it("shows each club played with its crest, how often, and links to the latest ma
 
 const library = [{ id: "b", title: "261001 U11 v Town (A)", age_group: "U11", capture_key: "b", moments: [
   { id: "b1", category: "Sam Example", time_s: 50, duration_s: 10 }, { id: "bv", category: "SAVE", time_s: 55, duration_s: 5 },
-  { id: "b2", category: "Sam Example", time_s: 900, duration_s: 10 }, { id: "bg", category: "GOAL", time_s: 905, duration_s: 5 },
+  { id: "b2", category: "Sam Example", time_s: 900, duration_s: 10 }, { id: "bg", category: "RIVERSIDE GOAL", time_s: 905, duration_s: 5 },
+  { id: "bo", category: "OPPOSITION GOAL", time_s: 2000, duration_s: 5 },
 ] }];
 
 it("plays the top moments and makes them into a reel in one click", async () => {
   stubFetch({ "/api/players/5/moments": { total: 0, items: [] } });
-  mount(<TopMoments playerId={5} name="Sam Example" library={library} />);
+  mount(<TopMoments playerId={5} name="Sam Example" library={library} club="Riverside" />);
   const panel = await screen.findByRole("region", { name: "Top 5 moments" });
   const cards = within(within(panel).getByRole("list", { name: "Top moments" })).getAllByRole("listitem");
   expect(cards).toHaveLength(2);
