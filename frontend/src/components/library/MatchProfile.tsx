@@ -6,8 +6,10 @@ import { radarPoints } from "../../lib/player";
 // stays distinct for the common colour-vision deficiencies. Each fill is 22% opaque so
 // the overlap reads as a third tone and neither shape hides the other; the opposition
 // outline is also dashed, so the two never rely on colour alone.
-const OURS = "#22d3ee";
-const THEIRS = "#fb923c";
+import { OURS, THEIRS } from "../../lib/teamColours";
+import type { Possession } from "../../lib/insights";
+import { PossessionBar } from "../match/MatchInsights";
+export { OURS, THEIRS };
 
 type Shape = { side: "ours" | "theirs" | "all"; values: number[]; colour: string; dashed?: boolean };
 
@@ -107,8 +109,9 @@ function Bars({ kinds }: { kinds: Kind[] }) {
 
 /** Library left column: what happened in the match on screen (replaces "Most tagged").
  *  With codes that say whose they are, our team and the opposition get a shape each. */
-export function MatchProfile({ kinds, team, scope, ours, theirs }: {
+export function MatchProfile({ kinds, team, scope, ours, theirs, possession, seasonPossession, links }: {
   kinds: Kind[]; team: { axes: Axis[]; neutral: Kind[] } | null; scope: string; ours: string; theirs: string;
+  possession?: Possession | null; seasonPossession?: (Possession & { matches: number }) | null; links?: React.ReactNode;
 }) {
   const top = kinds.slice(0, 6);
   const axes = team?.axes.slice(0, 6) ?? [];
@@ -119,10 +122,14 @@ export function MatchProfile({ kinds, team, scope, ours, theirs }: {
         <Radar size={16} className="text-fg-subtle" aria-hidden />
       </div>
       <p className="mb-2 text-xs text-fg-subtle">{scope}</p>
+      {/* Spec 230: time on the ball from tag lengths; the radar below still counts tags. */}
+      {possession && <div className="mb-4"><PossessionBar value={possession} ours={ours} theirs={theirs} /></div>}
       {team && axes.length >= 3 ? <TeamRadar axes={axes} neutral={team.neutral} ours={ours} theirs={theirs} />
         : top.length >= 3 ? <SingleRadar kinds={top} />
         : top.length > 0 ? <Bars kinds={top} />
         : <p className="text-sm text-fg-muted">No tags yet.</p>}
+      {seasonPossession && <p className="mt-3 text-xs text-fg-muted">Possession across {seasonPossession.matches} {seasonPossession.matches === 1 ? "match" : "matches"} in this view: <span style={{ color: OURS }}>{seasonPossession.oursPct}%</span> v <span style={{ color: THEIRS }}>{seasonPossession.theirsPct}%</span></p>}
+      {links && <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">{links}</div>}
     </section>
   );
 }

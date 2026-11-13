@@ -24,7 +24,13 @@ from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_downloads import DownloadFolder
 from app.connectors.hudl_keychain import secret_store
-from app.connectors.hudl_metadata import MatchCache, age_group, capture_key, season_label
+from app.connectors.hudl_metadata import (
+    MatchCache,
+    age_group,
+    canonical_moments,
+    capture_key,
+    season_label,
+)
 
 ORIGINS = {
     "http://127.0.0.1:8765",
@@ -293,7 +299,7 @@ def create_companion(output: Path) -> FastAPI:
                 "season_label": season_label(item["title"]),
                 "capture_key": capture_key(item["id"]),
                 **_images(request, item["id"]),
-                **request.app.state.details.read(item["id"]),
+                **canonical_moments(request.app.state.details.read(item["id"])),
             }
             for item in request.app.state.catalogue.items()
         ]

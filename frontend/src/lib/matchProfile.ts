@@ -25,7 +25,7 @@ export function matchProfile(moments: HudlMoment[]): Kind[] {
   return [...situations(moments)].map(([name, count]) => ({ name, count })).sort(byCount);
 }
 
-function sentence(stem: string): string {
+export function sentence(stem: string): string {
   const s = stem.toLowerCase();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -38,23 +38,26 @@ function clubPrefixes(club: string | null): Set<string> {
   return new Set([words.join(" "), ...words, initials, `${initials}FC`]);
 }
 
-/** Splits a match's codes into our team and the opposition, paired by situation.
- *  "OPPOSITION X" / "OPP X" are theirs. A prefix P is ours when "P X" exists for some
- *  opposition X and P names our club, or P pairs with two or more opposition codes
- *  (which rules out one-offs like CONTESTED POSSESSION). Everything else is neutral. */
-export function teamProfile(moments: HudlMoment[], club: string | null): { axes: Axis[]; neutral: Kind[] } {
+export type Side = "ours" | "theirs" | "neutral";
+export type Placed = { side: Side; stem: string };
+
+/** Whose each code is. "OPPOSITION X" / "OPP X" are theirs. A prefix P is ours when
+ *  "P X" exists for some opposition X and P names our club, or P pairs with two or more
+ *  opposition codes (which rules out one-offs like CONTESTED POSSESSION). Everything else
+ *  is neutral, with the whole code as its stem. */
+export function codeSides(moments: HudlMoment[], club: string | null): (code: string) => Placed {
   const counts = situations(moments);
-  const theirs = new Map<string, number>();
-  for (const [code, n] of counts) {
+  const theirs = new Set<string>();
+  for (const code of counts.keys()) {
     const stem = THEIRS.exec(code)?.[1].toUpperCase();
-    if (stem) theirs.set(stem, (theirs.get(stem) ?? 0) + n);
+    if (stem) theirs.add(stem);
   }
   const named = clubPrefixes(club);
   const pairs = new Map<string, Set<string>>();
   for (const code of counts.keys()) {
     if (THEIRS.test(code)) continue;
     const upper = code.toUpperCase();
-    for (const stem of theirs.keys()) {
+    for (const stem of theirs) {
       if (upper.length > stem.length + 1 && upper.endsWith(` ${stem}`)) {
         const prefix = upper.slice(0, -(stem.length + 1));
         pairs.set(prefix, (pairs.get(prefix) ?? new Set()).add(stem));
@@ -64,17 +67,27 @@ export function teamProfile(moments: HudlMoment[], club: string | null): { axes:
   const prefixes = [...new Set([...named].filter((p) => p.includes(" ") || p.endsWith("FC")).concat(
     [...pairs].filter(([p, stems]) => named.has(p) || stems.size >= 2).map(([p]) => p),
   ))].sort((a, b) => b.length - a.length);
+  return (code) => {
+    const upper = code.toUpperCase().trim();
+    const stem = THEIRS.exec(upper)?.[1];
+    if (stem) return { side: "theirs", stem };
+    const prefix = prefixes.find((p) => upper.startsWith(`${p} `));
+    return prefix ? { side: "ours", stem: upper.slice(prefix.length + 1) } : { side: "neutral", stem: upper };
+  };
+}
 
+/** Splits a match's codes into our team and the opposition, paired by situation (see codeSides). */
+export function teamProfile(moments: HudlMoment[], club: string | null): { axes: Axis[]; neutral: Kind[] } {
+  const counts = situations(moments);
+  const place = codeSides(moments, club);
   const ours = new Map<string, number>();
+  const theirs = new Map<string, number>();
   const neutral: Kind[] = [];
   for (const [code, n] of counts) {
-    if (THEIRS.test(code)) continue;
-    const upper = code.toUpperCase();
-    const prefix = prefixes.find((p) => upper.startsWith(`${p} `));
-    if (prefix) {
-      const stem = upper.slice(prefix.length + 1);
-      ours.set(stem, (ours.get(stem) ?? 0) + n);
-    } else neutral.push({ name: code, count: n });
+    const { side, stem } = place(code);
+    if (side === "theirs") theirs.set(stem, (theirs.get(stem) ?? 0) + n);
+    else if (side === "ours") ours.set(stem, (ours.get(stem) ?? 0) + n);
+    else neutral.push({ name: code, count: n });
   }
   const axes = [...new Set([...ours.keys(), ...theirs.keys()])]
     .map((stem) => ({ name: sentence(stem), ours: ours.get(stem) ?? 0, theirs: theirs.get(stem) ?? 0 }))

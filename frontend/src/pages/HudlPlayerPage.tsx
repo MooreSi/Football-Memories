@@ -6,6 +6,7 @@ import { api } from '../api/client';
 import { hudlAgeGroups, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { TaggedPlayerPicker } from '../components/player/TaggedPlayerPicker';
 import { Button } from '../components/ui/Button';
+import { sameCode } from '../lib/codes';
 
 /** Every cached Hudl match where the chosen player code is tagged. */
 export function HudlPlayerPage() {
@@ -16,7 +17,7 @@ export function HudlPlayerPage() {
   const navigate = useNavigate();
   const {age}=useArchiveFilters();
   const all = (library.data || []).filter(m=>!age||hudlAgeGroups(m).includes(age));
-  const matches = all.filter(m => m.moments?.some(t => t.category === name));
+  const matches = all.filter(m => m.moments?.some(t => sameCode(t.category, name)));
   const indexed = all.filter(m => m.tag_status || m.moments?.length).length;
   const unreadable = all.filter(m => m.tag_status === 'unavailable').length;
   const hub = useMutation({
@@ -40,6 +41,6 @@ export function HudlPlayerPage() {
     </div>}
     {sync.isError && <p role="alert" className="text-danger">{sync.error.message}</p>}
     <TaggedPlayerPicker />
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{matches.map(m => <Link key={m.id} to={`/hudl/${encodeURIComponent(m.id)}?player=${encodeURIComponent(name)}`} className="panel overflow-hidden">{m.thumbnail_url && <img crossOrigin="anonymous" src={m.thumbnail_url} alt="" className="aspect-video w-full object-cover" />}<div className="space-y-2 p-4"><h2 className="font-semibold">{m.title}</h2><p className="text-sm text-fg-muted">{m.moments?.filter(t => t.category === name).length} tagged moments</p><p className="text-sm text-accent">Watch / download player moments →</p></div></Link>)}</div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{matches.map(m => <Link key={m.id} to={`/hudl/${encodeURIComponent(m.id)}?player=${encodeURIComponent(name)}`} className="panel overflow-hidden">{m.thumbnail_url && <img crossOrigin="anonymous" src={m.thumbnail_url} alt="" className="aspect-video w-full object-cover" />}<div className="space-y-2 p-4"><h2 className="font-semibold">{m.title}</h2><p className="text-sm text-fg-muted">{m.moments?.filter(t => sameCode(t.category, name)).length} tagged moments</p><p className="text-sm text-accent">Watch / download player moments →</p></div></Link>)}</div>
   </div>;
 }

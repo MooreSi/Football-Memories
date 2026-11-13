@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Brand } from "./BrandMark";
 import { UpdateBadge } from "./settings/UpdateSettings";
+import { AlertsBell } from "./AlertsBell";
 
 // Only screens that work are listed (brief section 19). Layout follows reference 1:
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
@@ -78,6 +79,7 @@ export function AppShell() {
             <PillNav />
           </div>
           <UpdateBadge />
+          <AlertsBell />
           <GlobalSearch />
         </div>
       </header>

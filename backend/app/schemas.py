@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -426,3 +426,40 @@ class ScoreCorrectionIn(BaseModel):
         if (self.ours is None) != (self.theirs is None):
             raise ValueError("give both scores, or neither to clear the correction")
         return self
+
+
+class NoteShapeIn(BaseModel):
+    """Spec 230: one line or arrow drawn over the video, in 0..1 frame coordinates."""
+
+    kind: Literal["arrow", "line"]
+    x1: float = Field(ge=0, le=1)
+    y1: float = Field(ge=0, le=1)
+    x2: float = Field(ge=0, le=1)
+    y2: float = Field(ge=0, le=1)
+    colour: str = Field(default="#facc15", pattern=r"^#[0-9a-fA-F]{6}$")
+
+
+class MomentNoteIn(BaseModel):
+    """Spec 230: the owner's note and drawing on one tagged moment; empty clears it."""
+
+    moment_id: str = Field(min_length=1, max_length=300)
+    match_id: str = Field(min_length=1, max_length=300)
+    time_s: float = Field(ge=0, le=86_400)
+    text: str = Field(default="", max_length=2000)
+    shapes: list[NoteShapeIn] = Field(default_factory=list, max_length=40)
+
+
+class WatchingIn(BaseModel):
+    """Spec 230: how far into a match the owner has watched."""
+
+    match_id: str = Field(min_length=1, max_length=300)
+    position_s: float = Field(ge=0, le=86_400)
+    duration_s: float = Field(ge=0, le=86_400)
+
+
+class AlertsSeenIn(BaseModel):
+    """Spec 230: what the owner has already been told about (matches, player moments)."""
+
+    matches: list[Annotated[str, Field(max_length=300)]] = Field(max_length=5000)
+    player: str | None = Field(default=None, max_length=200)
+    counts: dict[str, Annotated[int, Field(ge=0)]] = Field(default_factory=dict, max_length=5000)

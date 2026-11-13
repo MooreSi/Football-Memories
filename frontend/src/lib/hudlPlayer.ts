@@ -1,6 +1,7 @@
 import type { HudlMatch, HudlMoment } from "../api/hudl";
 import type { PlayerProfile } from "../api/types";
 import { fixtureDate, fixtureParts } from "./hudlFixture";
+import { sameCode } from "./codes";
 
 export type HudlPlayerMatch = {
   id: string; title: string; opponent: string; date: string | null; season: string; age: string;
@@ -19,7 +20,7 @@ export function hudlPlayerMatches(library: HudlMatch[] | undefined, name: string
       id: m.id, title: m.title, opponent: fixtureParts(m.title, club)?.opponent ?? m.title,
       date: iso(fixtureDate(m.title)), season: m.season_label || "Unclassified", age: m.age_group,
       thumbnail_url: m.thumbnail_url,
-      moments: (m.moments ?? []).filter((t) => t.category === name).sort((a, b) => a.time_s - b.time_s),
+      moments: (m.moments ?? []).filter((t) => sameCode(t.category, name)).sort((a, b) => a.time_s - b.time_s),
     }))
     .filter((m) => m.moments.length > 0)
     .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));

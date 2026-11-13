@@ -18,6 +18,7 @@ from app.api.player_routes import router as player_router
 from app.api.reel_routes import router as reel_router
 from app.api.routes import router
 from app.api.settings_routes import router as settings_router
+from app.api.viewer_routes import router as viewer_router
 from app.config import Settings
 from app.db import make_session_factory
 from app.logging_setup import configure_logging
@@ -117,4 +118,5 @@ def create_app(
     app.include_router(settings_router)
     app.include_router(backup_router)
     app.include_router(reel_router)
+    app.include_router(viewer_router)
     return app

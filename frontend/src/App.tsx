@@ -19,6 +19,8 @@ import { ReelsPage } from "./pages/ReelsPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { HudlMatchPage } from "./pages/HudlMatchPage";
 import { HudlPlayerPage } from "./pages/HudlPlayerPage";
+import { OpponentsPage } from "./pages/OpponentsPage";
+import { ReportPage } from "./pages/ReportPage";
 import { Compass } from "lucide-react";
 
 export function App() {
@@ -28,6 +30,9 @@ export function App() {
         <Route index element={<LibraryPage />} />
         <Route path="hudl/:id" element={<HudlMatchPage />} />
         <Route path="player/hudl/:name" element={<HudlPlayerPage />} />
+        <Route path="opponents" element={<OpponentsPage />} />
+        <Route path="report/match/:id" element={<ReportPage kind="match" />} />
+        <Route path="report/season" element={<ReportPage kind="season" />} />
         <Route path="matches/:id" element={<MatchDetailPage />} />
         <Route path="clips" element={<ClipExplorerPage />} />
         <Route path="downloaded" element={<DownloadedPage />} />

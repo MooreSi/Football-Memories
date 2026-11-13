@@ -13,12 +13,15 @@ import { StatTile } from "../components/library/StatTile";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
+import { PlayerInsights } from "../components/player/PlayerInsights";
+import { useHomeClub } from "../lib/useHomeClub";
 
 /** Layout follows reference 03: card left, teams/numbers/teammates beside it (dates column and moments feed removed as duplicates, 2026-11-11),
  *  per-match bars below (the tag radar moved to the Library as the Match Profile, 2026-11-11) */
 export function PlayerHubPage() {
   const id = Number(useParams().id);
   const remote = useHudlLibrary();
+  const home = useHomeClub();
   const qc = useQueryClient();
   const profile = useQuery({ queryKey: ["player", id], queryFn: () => api.player(id), enabled: Number.isFinite(id) });
   const makePrimary = useMutation({
@@ -115,6 +118,8 @@ export function PlayerHubPage() {
           </ul>
         </section>
       )}
+
+      <PlayerInsights library={remote.data} name={p.display_name} club={p.club_name || home} />
 
       <MemoriesTimeline playerId={p.id} categories={p.categories.map((c) => c.name)} hudl={hudl} />
     </div>

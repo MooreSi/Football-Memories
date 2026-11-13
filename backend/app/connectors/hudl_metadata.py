@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import math
 import os
@@ -14,6 +15,29 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from app.connectors.hudl_capture import Moment
+
+
+def canonical_code(code: str) -> str:
+    """Spec 230: one spelling per tag code. Coaches' exports mix "&amp;" with "&",
+    double spaces and "Chris Demo" with "CHRIS DEMO"; counted apart they split one
+    player or situation in two. Upper case is the majority form in real caches."""
+    return " ".join(html.unescape(code).split()).upper()
+
+
+def canonical_moments(details: dict[str, Any]) -> dict[str, Any]:
+    """The cached details with every moment's code in its canonical spelling."""
+    moments = details.get("moments")
+    if not isinstance(moments, list):
+        return details
+    return {
+        **details,
+        "moments": [
+            {**m, "category": canonical_code(m["category"])}
+            if isinstance(m, dict) and isinstance(m.get("category"), str)
+            else m
+            for m in moments
+        ],
+    }
 
 
 def age_group(title: str) -> str:

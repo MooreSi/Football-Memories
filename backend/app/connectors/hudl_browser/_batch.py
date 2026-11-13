@@ -95,6 +95,7 @@ def _run_batch(
 ) -> None:
     from app.connectors import hudl_exports
     from app.connectors.hudl_batch import assemble_reel
+    from app.connectors.hudl_metadata import canonical_code
 
     card_ids = [i.get("card_id") for i in items] + (
         [reel.get("opening_card"), reel.get("closing_card")] if reel else []
@@ -103,8 +104,13 @@ def _run_batch(
         plans = []
         for item in items:
             available = connection.details.read(item["match_id"]).get("moments", [])
-            ids, codes = set(item.get("moment_ids") or []), set(item.get("codes") or [])
-            chosen = [m for m in available if (m["id"] in ids if ids else m["category"] in codes)]
+            ids = set(item.get("moment_ids") or [])
+            codes = {canonical_code(c) for c in item.get("codes") or []}
+            chosen = [
+                m
+                for m in available
+                if (m["id"] in ids if ids else canonical_code(m["category"]) in codes)
+            ]
             if chosen:
                 plans.append((item["match_id"], chosen, item.get("card_id")))
         if not plans:

@@ -20,6 +20,8 @@ import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
 import { fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
 import { useHomeClub } from "../lib/useHomeClub";
 import { looksLikePlayer } from "../lib/hudlPlayer";
+import { possession, possessionTotals } from "../lib/insights";
+import { ContinueWatching } from "../components/library/ContinueWatching";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
 
@@ -112,7 +114,14 @@ export function LibraryPage() {
           <StatTile label="Players" icon={Users} value={String(overview?.players ?? "-")} unit="tagged" />
         </div>
         </section>
-        <MatchProfile kinds={profileKinds} team={profileTeams} ours={club || "Home"} theirs={opponent} scope={shown ? fixtureLabel(shown.title, club, ageGroup || hudlAgeGroups(shown)[0]) : "All matches"} />
+        <MatchProfile kinds={profileKinds} team={profileTeams} ours={club || "Home"} theirs={opponent} scope={shown ? fixtureLabel(shown.title, club, ageGroup || hudlAgeGroups(shown)[0]) : "All matches"}
+          possession={shown ? possession(shown.moments ?? [], club) : null}
+          seasonPossession={heroMatches.length > 1 ? possessionTotals(heroMatches.map((m) => m.moments ?? []), club) : null}
+          links={remote.data?.length ? <>
+            {shown && <Link className="text-accent hover:underline" to={`/report/match/${encodeURIComponent(shown.id)}`}>Share match report</Link>}
+            <Link className="text-accent hover:underline" to="/report/season">Share season report</Link>
+            <Link className="text-accent hover:underline" to="/opponents">Opponents</Link>
+          </> : undefined} />
       </aside>
 
       {/* Right: latest match + recent moments (reference 1 right column) */}
@@ -125,6 +134,7 @@ export function LibraryPage() {
       <div className="dashboard-centre min-w-0 space-y-6">
         {heroMatches.length > 0 ? <HudlHero key={ageGroup} matches={heroMatches} club={club} age={ageGroup} index={Math.min(heroIndex, heroMatches.length - 1)} onIndex={setHeroIndex} />
           : featured.length > 0 && <FeaturedHero matches={featured} />}
+        <ContinueWatching library={remote.data} club={club} />
 
         <section aria-label="All matches" className="match-collection panel p-5">
           <div className="mb-4 flex flex-wrap items-center gap-3">

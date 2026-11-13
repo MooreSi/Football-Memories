@@ -411,3 +411,13 @@ read safely from a copy: `pct exec 102`, copy `com.plexapp.plugins.library.db`
 to /tmp, open with `Plex SQLite -readonly`.
 Before this, a moment export or reel on the share failed after encoding with a
 bare `OSError` at the link. Verified on the real share with a throwaway folder.
+
+## One spelling per tag code (spec 230, 2026-11-13)
+
+Coaches' exports mix spellings of the same code: `REGROUPING &amp; COMPACTNESS`
+next to `REGROUPING & COMPACTNESS`, `Chris Demo` next to `CHRIS DEMO` (seen in
+the owner's cache, 2026-11-13). `/library` serves every moment through
+`hudl_metadata.canonical_code` (HTML entities decoded, spaces collapsed, upper
+case); the batch exporter compares codes the same way. `MatchCache.read` and the
+files on disk stay verbatim (an existing test pins it), so the merge can be
+changed without touching the cache. Moment ids are unchanged.

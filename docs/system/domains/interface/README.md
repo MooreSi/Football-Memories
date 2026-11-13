@@ -89,3 +89,26 @@ reading ours as 0 would be wrong. Corrections (`/api/scores`, stored as
 Latest/Selected panel (in place of "vs") and the match page (with editor; not
 in the Clips embed). Owner's data: 139 of 286 matches have goal tags; latest
 U10 v Stoke City reads 12-9.
+
+## Match insights (spec 230, 2026-11-13)
+
+- Analytics are pure functions in `frontend/src/lib/insights.ts` over the cached
+  Hudl moments: possession (tag lengths), momentum, involvement, journey,
+  partnerships, phases. `codeSides` in `matchProfile.ts` decides whose a code is.
+- Overlap means "tagged during": wording must never claim he made the action.
+- Real tags carry many `END HALF` marks in festival videos (several short games
+  in one recording), so the momentum chart can show several half lines.
+- Opponents repeat (festivals: 19 Liverpool meetings, many on one day), so
+  lists of meetings show dates.
+- Code matching for players is case-insensitive (`lib/codes.ts`): a hub created
+  as "Pat Example" finds "PAT EXAMPLE" tags.
+- Notes, continue watching and the alerts snapshot are stored by the backend in
+  `preferences` (`/api/notes`, `/api/watching`, `/api/alerts/seen`). Responses
+  that are not the expected shape are treated as empty (an existing score test
+  stubs every unknown URL with `{accepted: true}`, which caught this).
+- Reports are drawn as one SVG with no external images, so the canvas is never
+  tainted and "Save image" can make a PNG.
+- UI checks without touching Hudl: open the dev app as `app.localhost`, which
+  makes it use `/helper` instead of 127.0.0.1:8766, and proxy that to a stand-in
+  serving a saved `/library`. Opening the app against the real helper starts the
+  app-open check (D-023).

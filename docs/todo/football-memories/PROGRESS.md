@@ -11,6 +11,22 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Spec 230 match insights (owner request 2026-11-13)
+
+| Item | Status |
+|---|---|
+| Duplicate tag spellings merged (entities, spacing, case) | done (helper serves one spelling; cache files untouched; batch by code matches every spelling; tests) |
+| Possession % from tag lengths, per match and per Library view | done (tests; browser-checked on real cached tags: 53/47 one match, 52/48 over 119) |
+| Momentum timeline, click to seek | done (tests; rendered on real tags; seek not tried on a real stream) |
+| Player involvement ("during"), journey by season, partnerships | done (tests; browser-checked on real tags for Pat Example on the dev database) |
+| Head-to-head on the match page and an Opponents page | done (tests; browser-checked) |
+| Phases of play ("Attacks ending in a chance"), playable/downloadable/reel via the possession tag's id | done (tests; listed on real tags; playback not tried on a real stream) |
+| Clip notes and drawings | done (tests; editor not tried over a real stream: needs the live helper) |
+| Shareable report (PNG + print to PDF) | done (tests; PNG drawn in the browser from real data) |
+| Alerts bell (new matches / new player moments) | done (tests; on the dev database it reported the one match the catalogue refresh added) |
+| Continue watching | done (tests; no real watch rows yet) |
+| Not deployed | Docker images not rebuilt, helper not restarted on the new code (see HANDOFF) |
+
 ## Owner request 2026-11-13: opponents and crests
 
 | Item | Status |
@@ -209,6 +225,21 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-13 Match insights (spec 230, branch spec-230-match-insights)
+
+- Backend `uv run pytest`: 461 passed on SQLite and 461 on Postgres (sequential);
+  ruff check and mypy clean.
+- Frontend `npm test`: 72 files / 287 tests passed; typecheck and build clean.
+- ruff format --check clean, alembic check: no drift. Network-block test ran (3).
+- Browser: dev backend + dev database, with a stand-in helper serving a copy of
+  the real cached library (no Hudl client), reached via `app.localhost` so the
+  page used the `/helper` proxy. Checked match insights, attacks list, player hub
+  panels, Library possession, Opponents, match report PNG, 375px (no overflow).
+- Opening the dev app first against the real helper started its normal app-open
+  check (catalogue refresh + tag sweep, D-023, read-only). Nothing else touched Hudl.
+- Not checked: notes editor and momentum seek over a real stream; alerts and
+  continue watching on the owner's own database; Docker deploy.
 
 ### 2026-11-11 One reel per match (spec 200, main)
 

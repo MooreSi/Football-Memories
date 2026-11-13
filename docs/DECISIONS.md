@@ -4,6 +4,20 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-031 (2026-11-13) Insights from tag lengths, times and overlaps (spec 230)
+Tag codes are merged where the helper serves its cache (`canonical_code`:
+entities decoded, spaces collapsed, upper case); files on disk stay verbatim and
+batch-by-code compares canonical forms. Possession is summed tag length per side,
+contested time reported apart. Momentum weights (attacking-third entry 1,
+penalty-area entry 2, chance 3, goal 5) are this app's choice. A player's
+involvement is overlap with situation tags and is always worded "during". A phase
+of play is one of our possession tags containing a chance or goal; using that
+tag's own id lets Play Tagged, downloads and reels work unchanged. Notes,
+watch positions and the alerts snapshot live in `preferences` (keys hashed, as
+Hudl moment ids are longer than a key), so backups carry them with no schema
+change. The Match Profile radar still counts possession tags (an existing test
+pins it); time-based possession sits above it. Owner question 005.
+
 ## D-030 (2026-11-11) Match Profile per team; player hub de-duplicated
 The Match Profile draws our team (cyan #22d3ee, solid) and the opposition
 (orange #fb923c, dashed), each 22% opaque so the overlap reads as a third tone.

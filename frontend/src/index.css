@@ -99,3 +99,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Spec 230: printing a report prints only the report card. */
+@media print {
+  .app-header, .no-print { display: none !important; }
+  .app-surface, body { background: #fff !important; }
+  .report-card svg { max-width: 100% !important; box-shadow: none !important; }
+}

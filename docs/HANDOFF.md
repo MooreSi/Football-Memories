@@ -11,7 +11,23 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-11)
+## Current state (2026-11-13)
+
+- **Match insights (spec 230, branch `spec-230-match-insights`, owner request
+  2026-11-13):** duplicate tag spellings merged where the helper serves its
+  cache; possession % from tag lengths (match page, Library); momentum timeline
+  (click to seek); player hub "On the pitch during", football journey by season,
+  "Plays alongside most", attacks he was in; head-to-head on the match page and
+  `/opponents`; "Attacks ending in a chance" as playable/downloadable clips;
+  notes and arrows over the video; `/report/match/:id` and `/report/season`
+  (PNG or print to PDF); alerts bell; Continue watching. See
+  [230-match-insights.md](todo/football-memories/230-match-insights.md).
+  **Not deployed:** after merging, rebuild Docker (`docker compose up -d --build
+  frontend backend`) and restart the helper (needed for the spelling merge; it
+  ends its in-memory Hudl session). Not tried over a real stream: notes editor,
+  momentum seek. Owner question [005](owner-decisions/005-insight-choices.md).
+
+## Earlier state (2026-11-11)
 
 - **Opponents and crests (2026-11-13, owner report):** Chelsea, Manchester City,
   "The Hammers", "Bluebirds" and others showed initials. Two causes: Wikipedia
@@ -241,7 +257,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   has a match picker (newest Hudl match for the selected age group); Library
   Latest match and Recent moments follow that match; photo crop/resize dialog
   and nginx upload limit fixed (was 1 MB). Browser-checked: Library latest
-  panel (U11 Stoke, Lawson Moore moments). **Not live-verified:** minimized
+  panel (U11 Stoke, Pat Example moments). **Not live-verified:** minimized
   sign-in against Hudl, export progress on a real export, smoothness of real
   moment transitions, photo crop with a real phone photo.
 - **D-020 (2026-11-10, owner request):** match page "Play Tagged" plays the
@@ -356,10 +372,13 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
+0. **Spec 230:** merge `spec-230-match-insights`, rebuild Docker and restart the
+   helper; then, with the owner, try a note and a momentum click on a real
+   stream. Owner question 005 (radar possession point, weights, upper case).
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
    "season highlights" shortcut once playlists exist.
-2. Per-clip timing override (brief section 9) and playback history on the server.
-3. Clip Explorer leftovers: notes and custom local tags on moments; crossfade
+2. Per-clip timing override (brief section 9). (Playback history on the server: done in spec 230 for Hudl matches; not for imported matches.)
+3. Clip Explorer leftovers: notes on imported moments (Hudl moments have them, spec 230) and custom local tags; crossfade
    transitions. Single-clip export now uses the reel renderer with one item.
 4. Playwright e2e for import → play → filter → playlist.
 5. Phase 5/6: persistent jobs, clip export and highlight reels with ffmpeg,
