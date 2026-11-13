@@ -1,6 +1,6 @@
 # 240: Drawing board on the match video
 
-**Status:** Shipped on main (not yet deployed)
+**Status:** Shipped (main, deployed 2026-11-13)
 **Sensitive:** no. Draws over the app's own stream; stores vector drawings in
 `preferences` (spec 230 notes). No Hudl request, credential or library file.
 
@@ -55,4 +55,4 @@ is an export of the saved data, not the record.
 - [x] suite green: backend 464 (SQLite) and 464 (Postgres); frontend 324; ruff, mypy, alembic, typecheck, build clean
 - [x] browser check through the stand-in helper and a scratch SQLite backend: all tools, save, reload, PNG from poster and from a playing frame, phone width
 - [ ] real Hudl stream: not tried
-- [ ] deployed to the Docker app: not done
+- [x] deployed: Docker rebuilt 2026-11-13, health ok, served bundle and API schema checked

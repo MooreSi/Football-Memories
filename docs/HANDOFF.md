@@ -20,8 +20,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   `frame:<match>:<seconds>`); PNG export of frame + drawing. Browser-checked
   through the synthetic stand-in helper and a scratch SQLite backend (no Hudl,
   no owner data): every tool drawn, saved, reloaded, PNG made from the poster and
-  from a playing frame, phone width. Not yet deployed to the Docker app; not
-  tried on a real Hudl stream.
+  from a playing frame, phone width. Deployed 2026-11-13 (Docker rebuilt;
+  helper not restarted, unchanged). Not tried on a real Hudl stream.
 
 - **Release 0.3 (2026-11-13):** versions 0.3.0, CHANGELOG, README rewritten for
   the new features, ten screenshots in `docs/screenshots/` taken from made-up
