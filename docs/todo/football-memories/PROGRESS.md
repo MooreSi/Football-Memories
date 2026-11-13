@@ -44,6 +44,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | Recent matches: 20 matches, blue gradient bars | done (tests; browser-checked) |
 | Connections: Import from folder removed, Veo beside Hudl; Connect; Veo Disconnect and status | done (tests; browser-checked) |
 | My Player: Records and streaks (best match, best month, above-average run, next milestone, personal best) | done (tests; browser-checked on real data) |
+| My Player: Season story (a few sentences per season, change on last season, match of the month links) | done (tests; browser-checked on real data) |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 
