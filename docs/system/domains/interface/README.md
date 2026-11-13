@@ -144,3 +144,17 @@ U10 v Stoke City reads 12-9.
 - Report cards embed crests as data URLs (fetched from `/api/team-logo`) so the
   PNG export never hits a tainted canvas; `lib/reportLayout.ts` moves a value
   under its label when both do not fit on one line.
+
+## Veo match page (owner request 2026-11-13)
+
+- A Veo card opens `/veo/:id` (`pages/VeoMatchFullPage`), laid out like a Hudl
+  match: highlight-type rail, score, Download full match, player with Next/Previous
+  (N/B) and the drawing board, Match insights, highlight tiles. This replaced the
+  earlier same-day request that sent Veo cards to the Clip explorer, which still
+  lists Veo matches (`VeoMatchView`, embedded).
+- Opening the page starts Watch once, like Hudl's stream (one Veo read if the
+  helper has no video address in memory). Expired matches start nothing.
+- Veo highlights have a type and time but no team (`lib/veoInsights`), so the
+  stats count both teams and say so: goals, shots, first goal, busiest 5 minutes,
+  per half, a 5-minute bar chart that seeks. No possession or player stats.
+

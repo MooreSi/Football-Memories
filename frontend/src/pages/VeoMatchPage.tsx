@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Download, Play, Sparkles } from "lucide-react";
 import { useVeoLibrary, useVeoStatus, veoExpiry, veoRequest } from "../api/veo";
 import { Button } from "../components/ui/Button";
@@ -13,11 +13,6 @@ const HALF = ["1st half", "2nd half", "Extra time 1", "Extra time 2"];
 /** Spec 260: one cached Veo match at /veo/:id (also used directly by tests). */
 export function VeoMatchPage() {
   return <VeoMatchView id={useParams().id!} />;
-}
-
-/** Owner request 2026-11-13: /veo/:id links open the match in the Clip explorer. */
-export function VeoOpenInClips() {
-  return <Navigate replace to={`/clips?match=${encodeURIComponent(useParams().id!)}`} />;
 }
 
 /** One cached Veo match; Watch and Download run in the desktop helper. */

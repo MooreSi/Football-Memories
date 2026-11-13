@@ -1,0 +1,94 @@
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, expect, it, vi } from "vitest";
+import { renderWithProviders, stubFetch } from "../test/render";
+import { App } from "../App";
+
+// Owner request 2026-11-13: a Veo card opens a full match page like a Hudl match
+// (player, highlights rail, next moment, the stats Veo allows). Synthetic data only.
+const H = "http://127.0.0.1:8766";
+const match = {
+  id: "veo-a", source: "veo", title: "261108 RJ vs Northgate CB", age_group: "U11", season_label: "2026/27",
+  available: true, home_or_away: "home", duration_s: 3300, score: { ours: 2, theirs: 1 }, halves: [[0, 1500], [1800, 3300]],
+  moments: [
+    { id: "h1", category: "SHOT ON GOAL", time_s: 64, duration_s: 20, ai: true },
+    { id: "h2", category: "GOAL", time_s: 300, duration_s: 20 },
+    { id: "h3", category: "GOAL", time_s: 1900, duration_s: 20 },
+  ],
+};
+const ready = { configured: true, busy: false, state: "ready", message: "Veo video ready.", summary: null, match_id: "veo-a", stream_url: `${H}/veo/stream/tok` };
+const idle = { configured: true, busy: false, state: "ready", message: "", summary: null };
+afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); });
+
+function stub(status: object) {
+  return routes([match], status);
+}
+
+it("opens a Veo card's match on its own page with the player and highlights", async () => {
+  stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  expect(await screen.findByRole("heading", { level: 1, name: /RJ vs Northgate CB/ })).toBeInTheDocument();
+  expect(screen.getByText(/VEO MATCH/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Download full match/ })).toBeInTheDocument();
+  const video = await screen.findByLabelText("Veo match video");
+  expect(video).toHaveAttribute("src", `${H}/veo/stream/tok`);
+  const rail = screen.getByRole("navigation", { name: "Highlight types" });
+  expect(within(rail).getByRole("button", { name: /ALL HIGHLIGHTS\s*3/ })).toBeInTheDocument();
+  expect(within(rail).getByRole("button", { name: /GOAL\s*2/ })).toBeInTheDocument();
+});
+
+it("filters the highlights by type from the rail", async () => {
+  stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const rail = await screen.findByRole("navigation", { name: "Highlight types" });
+  await userEvent.setup().click(within(rail).getByRole("button", { name: /GOAL\s*2/ }));
+  const list = screen.getByRole("list", { name: "Veo highlights" });
+  expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+});
+
+it("shows the match stats Veo allows, and says they count both teams", async () => {
+  stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const stats = await screen.findByRole("region", { name: "Match insights" });
+  expect(within(stats).getByText("Goals tagged").closest("div")).toHaveTextContent("2");
+  expect(within(stats).getByText("Shots on goal").closest("div")).toHaveTextContent("1");
+  expect(within(stats).getByText("First goal").closest("div")).toHaveTextContent("5:00");
+  expect(within(stats).getByText(/both teams/)).toBeInTheDocument();
+  expect(within(stats).getByRole("group", { name: "Highlights by 5 minutes" })).toBeInTheDocument();
+});
+
+it("starts Watch on opening, once, when this match is not already playing", async () => {
+  const calls = stub(idle);
+  renderWithProviders(<App />, "/veo/veo-a");
+  await screen.findByRole("heading", { level: 1, name: /RJ vs Northgate CB/ });
+  await vi.waitFor(() => expect(calls.filter(c => c.url === `${H}/veo/action`)).toHaveLength(1));
+  expect(calls.find(c => c.url === `${H}/veo/action`)!.body).toEqual({ action: "watch", match_id: "veo-a" });
+});
+
+it("does not start Watch for an expired match", async () => {
+  const calls = stubExpired();
+  renderWithProviders(<App />, "/veo/veo-a");
+  expect(await screen.findByText(/Veo no longer has the video/)).toBeInTheDocument();
+  expect(calls.filter(c => c.url === `${H}/veo/action`)).toHaveLength(0);
+  expect(screen.queryByRole("button", { name: /Download full match/ })).toBeNull();
+});
+
+function stubExpired() {
+  return routes([{ ...match, available: false }], idle);
+}
+
+/** Stubbed helper and app; returns the POST calls made (url and JSON body). */
+function routes(library: object[], status: object) {
+  stubFetch({ [`${H}/veo/library`]: library, [`${H}/veo/account`]: status, [`${H}/veo/action`]: { accepted: true },
+    [`${H}/library`]: [], [`${H}/account`]: { configured: false, state: "idle", busy: false },
+    "/api/settings/home-teams": { hudl: null, veo: null }, "/api/notes": [] });
+  const fn = vi.mocked(fetch);
+  return {
+    filter: (keep: (c: { url: string; body: unknown }) => boolean) => posts(fn).filter(keep),
+    find: (keep: (c: { url: string; body: unknown }) => boolean) => posts(fn).find(keep),
+  };
+}
+function posts(fn: ReturnType<typeof vi.mocked<typeof fetch>>) {
+  return fn.mock.calls.filter(([, init]) => init?.method === "POST")
+    .map(([input, init]) => ({ url: String(input), body: JSON.parse(String(init?.body ?? "null")) }));
+}

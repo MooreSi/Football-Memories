@@ -39,8 +39,11 @@ it("offers Veo matches even with no Hudl matches", async () => {
   expect(await screen.findByRole("region", { name: "Selected Veo match" })).toBeInTheDocument();
 });
 
-it("sends an old /veo/ link to the Clip explorer", async () => {
+// Owner request 2026-11-13 (later the same day): /veo/:id is a full match page again,
+// like a Hudl match; the Clip explorer still lists Veo matches in its picker.
+it("opens a /veo/ link on the Veo match page, not the Clip explorer", async () => {
   stub();
   renderWithProviders(<App />, "/veo/veo-a");
-  expect(await screen.findByRole("region", { name: "Selected Veo match" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: /RJ vs Northgate CB/ })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Selected Veo match" })).toBeNull();
 });

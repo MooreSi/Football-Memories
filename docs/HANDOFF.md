@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Veo playback fix and Veo match page (owner report 2026-11-13):** the owner
+  uses Safari at `http://192.168.0.53:8765`; Veo's stream and poster links were
+  left as 127.0.0.1:8766 (Hudl's are rewritten to `/helper`), so the helper refused
+  them. Fixed in `api/veo.ts`. Veo cards now open `/veo/:id`, a full match page
+  like Hudl's (`VeoMatchFullPage`, stats from `lib/veoInsights`, both teams). Helper
+  restarted twice during the check (ends in-memory Hudl/Veo sessions; it now runs
+  the unchanged code). Frontend redeployed. Not yet tried by the owner on a real
+  Veo match. Posters: the owner's last Refresh (21:15) predates the poster code,
+  so Refresh matches once.
+
 - **Owner follow-ups after the first Veo download (2026-11-13):** Veo posters saved
   on Refresh; crests ignore side codes/colours and the owner can add crests
   (Settings > Connections > Club crests; decision 008 open on other sources);

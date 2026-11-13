@@ -489,3 +489,17 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
 - The Keychain item is `FootballMemories.Veo` (Hudl's stays `FootballMemories.Hudl`);
   Windows target `FootballMemories/Veo`. Changing `hudl_keychain.swift` rebuilds
   the small Keychain helper, so macOS may ask once to allow it access to the Hudl item.
+
+## Veo playback over the network (owner report 2026-11-13)
+
+- The owner opens the app in Safari at `http://192.168.0.53:8765` (seen in the
+  frontend's nginx log), not 127.0.0.1. There the page reaches the helper via
+  `/helper` (nginx sets Host/Origin), and every 127.0.0.1:8766 link the helper
+  writes must be rewritten with `localiseHelperUrls`. Hudl's were; Veo's stream
+  and poster links were not, so `<video>` asked 127.0.0.1:8766 with a LAN Origin,
+  the helper answered 403 and Safari showed "cannot play". `veoRequest` now
+  localises. Any new helper link must go through the same rewrite.
+- Checked on a synthetic stand-in, not assumed: Safari sends an Origin header on a
+  cross-origin `<video crossorigin>` request, and plays a 206 answer capped
+  shorter than the Range it asked for (the helper caps at 8 MB). Neither was the cause.
+

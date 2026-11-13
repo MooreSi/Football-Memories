@@ -20,7 +20,7 @@ it("lists cached Veo matches with links, score and expiry, filtered like All mat
   stubFetch({ [LIB]: matches });
   renderWithProviders(<VeoLibrary filters={{ age: "U11", season: "", search: "" }} />);
   const a = await screen.findByRole("link", { name: /Rovers/ });
-  expect(a).toHaveAttribute("href", "/clips?match=veo-a"); // owner request: Veo opens in the Clip explorer
+  expect(a).toHaveAttribute("href", "/veo/veo-a"); // owner request 2026-11-13: a Veo card opens its full match page, like Hudl
   expect(a).toHaveTextContent("3–1");
   expect(a).toHaveTextContent("1 highlight");
   expect(within(screen.getByRole("link", { name: /Town/ })).getByText("Video expires soon on Veo")).toBeInTheDocument();

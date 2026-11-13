@@ -31,7 +31,7 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
       const expiry = veoExpiry(m);
       const highlights = m.moments?.length ?? 0;
       return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
-        <Link to={`/clips?match=${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
+        <Link to={`/veo/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
           <div className="relative grid aspect-video place-items-center overflow-hidden bg-ink-800 text-fg-subtle">
             {m.poster_url ? <img crossOrigin="anonymous" src={m.poster_url} alt={m.title} loading="lazy" className="absolute inset-0 size-full object-cover" />
               : <span className="grid place-items-center gap-1"><Film size={28} aria-hidden /></span>}

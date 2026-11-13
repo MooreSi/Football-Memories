@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Veo playback fix and Veo match page (owner report 2026-11-13)
+
+- done: Veo video would not play in Safari over the network (stream/poster links
+  not rewritten to `/helper`); `veoRequest` now rewrites them. Test red first.
+- done: a Veo card opens a full match page like Hudl's, with the stats Veo's
+  highlights allow (both teams). Browser-checked on a synthetic stand-in.
+- not checked: a real Veo match playing in the owner's Safari (owner to try).
+
 ## Owner follow-ups 2026-11-13
 
 | Item | Status |
