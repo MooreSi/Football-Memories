@@ -220,6 +220,7 @@ def create_companion(output: Path) -> FastAPI:
         index=app.state.account.index,
         folder=lambda: app.state.downloads.folder,
     )
+    app.state.veo.cards = app.state.account.cards  # title cards for Veo reels
     app.state.veo_configured = None
     app.state.account.output = app.state.capture.output = app.state.downloads.folder
     app.state.account_configured = None

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Activity, Download, Play, SkipBack, SkipForward, Sparkles } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Activity, Clapperboard, Download, Play, SkipBack, SkipForward, Sparkles } from "lucide-react";
 import { type VeoHighlight, type VeoMatch, useVeoLibrary, useVeoStatus, veoExpiry, veoRequest } from "../api/veo";
 import { Button } from "../components/ui/Button";
 import { MatchDrawing } from "../components/match/MatchDrawing";
@@ -97,6 +97,7 @@ export function VeoMatchFull({ id }: { id: string }) {
   const [drawing, setDrawing] = useState(false);
   const started = useRef(false);
   const list = useRef<HTMLUListElement>(null);
+  const navigate = useNavigate();
   const action = useMutation({
     mutationFn: ({ name, label }: { name: "watch" | "download"; label?: string }) =>
       veoRequest("/action", { action: name, match_id: id, ...(label ? { name: label } : {}) }),
@@ -188,7 +189,10 @@ export function VeoMatchFull({ id }: { id: string }) {
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       {highlights.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
-        <h2 className="text-xl font-semibold">Veo highlights</h2>
+        <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>
+          {match.available && shown.length > 0 && <Button variant="primary" disabled={busy} onClick={() => navigate("/clips/reel/new", { state: {
+            source: "veo", name: label ? `${label}${type ? ` · ${type.toLowerCase()}` : ""}` : undefined,
+            items: [{ match_id: id, moment_ids: shown.map(h => h.id) }] } })}><Clapperboard size={16} /> Make highlight reel ({shown.length})</Button>}</div>
         <p className="text-xs text-fg-muted">{shown.length} highlights{type ? ` of type ${type}` : ""}. Click one to watch it; N and B step through them.</p>
         <ul ref={list} aria-label="Veo highlights" className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
           {shown.map(h => <li key={h.id} data-moment={h.id} aria-current={focus?.id === h.id ? true : undefined}

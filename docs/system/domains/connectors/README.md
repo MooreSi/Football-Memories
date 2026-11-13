@@ -503,3 +503,25 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   cross-origin `<video crossorigin>` request, and plays a 206 answer capped
   shorter than the Range it asked for (the helper caps at 8 MB). Neither was the cause.
 
+## Veo highlight reels (owner request 2026-11-13)
+
+- `veo/_reels.py`: a reel is cut from the full match saved on this computer (the
+  download index names it). If it is not saved, the reel first runs the normal
+  Download (one video read, `.part`, verify, never overwrite), so nothing but
+  `_client` reads Veo's video and the archive keeps the whole match. Cuts are
+  `-ss time_s -t duration_s` (20 s when Veo gives none) re-encoded, then
+  `assemble_reel` with the cards. Output `reels/<name> (<hex>).mp4`, index kind
+  `reel`; `/veo/account` adds `download_url` for a finished `reels/` file.
+- Open: whether Veo's `time_s` is the start of the action or its middle. Cuts
+  start at `time_s`; if reels open late, pad before it.
+
+## Crest lookups beyond Wikipedia titles (owner request 2026-11-13)
+
+- Order: official club images, Wikipedia exact titles (F.C., A.F.C., as written),
+  Wikipedia search ("<club> football club", up to two results read), Commons file
+  search. All paced 1 s through `_paced_fetch`; a miss is remembered a day.
+- `_same_club`: a result is used only if its words, ignoring F.C., crest words,
+  years and a place in brackets, are exactly the club's ("Northgate United F.C."
+  is never "Northgate Rovers").
+- The owner's example "Norton Lindsay" is spelt "Norton Lindsey" on the web and is
+  on neither Wikipedia nor Commons, so it still needs the paste in Club crests.

@@ -52,6 +52,7 @@ class VeoConnection:
         self._media_lock = threading.Lock()
         self._downloading = False
         self._sleep = sleep
+        self.cards: Any = None  # the helper's title-card store, for reels
         self.posters = directory / "posters"
         self.loader = loader
         self.directory = directory
@@ -91,13 +92,19 @@ class VeoConnection:
         with self._lock:
             self._state.update(values)
 
-    def start(self, action: str, match_id: str | None = None, name: str | None = None) -> None:
+    def start(
+        self,
+        action: str,
+        match_id: str | None = None,
+        name: str | None = None,
+        reel: dict[str, Any] | None = None,
+    ) -> None:
         if action == "disconnect":
             self.disconnect()
             return
-        if action not in {"test", "refresh", "watch", "download"}:
+        if action not in {"test", "refresh", "watch", "download", "reel"}:
             raise CaptureError("Choose Connect, Refresh, Watch or Download.")
-        if action in {"watch", "download"}:
+        if action in {"watch", "download", "reel"}:
             item = self._match(match_id)
             if item is None or not item.get("available") or not item.get("slug"):
                 raise CaptureError("Veo has no video for this match.")
@@ -105,12 +112,14 @@ class VeoConnection:
             if self._busy:
                 raise CaptureError("A Veo operation is already running.")
             self._busy = True
-            self._downloading = action == "download"
+            self._downloading = action in {"download", "reel"}
             message = "Signing in to Veo…"
             if action in {"watch", "download"} and match_id in self._videos:
                 message = "Preparing the Veo video…"
+            if action == "reel":
+                message = "Preparing the highlight reel…"
             self._state.update(state="working", message=message, progress=None)
-        self._run(lambda: self._perform(action, match_id, name))
+        self._run(lambda: self._perform(action, match_id, name, reel))
 
     def disconnect(self) -> None:
         """Forget the in-memory video addresses and stream; the saved account and the
@@ -133,8 +142,19 @@ class VeoConnection:
     def _match(self, identity: str | None) -> dict[str, Any] | None:
         return next((i for i in self.library() if i.get("id") == identity), None)
 
-    def _perform(self, action: str, match_id: str | None = None, name: str | None = None) -> None:
+    def _perform(
+        self,
+        action: str,
+        match_id: str | None = None,
+        name: str | None = None,
+        reel: dict[str, Any] | None = None,
+    ) -> None:
         try:
+            if action == "reel" and match_id:
+                from ._reels import make_reel
+
+                make_reel(self, match_id, name, reel or {})
+                return
             if action in {"watch", "download"} and match_id:
                 url = self._videos.get(match_id) or self._read_video(match_id)
                 if action == "watch":
@@ -344,7 +364,15 @@ class VeoConnection:
                 return str(entry["file"])
         return None
 
-    def _download(self, identity: str, url: str, name: str | None = None) -> None:
+    def _saved_match(self, identity: str, folder: Path) -> Path | None:
+        """The full match file already on this computer, if the index lists one."""
+        done = self._downloaded(identity, folder)
+        if done is None:
+            return None
+        path = Path(done) if Path(done).is_absolute() else folder / done
+        return path if path.is_file() else None
+
+    def _download(self, identity: str, url: str, name: str | None = None) -> Path:
         item = self._match(identity) or {}
         folder = self._folder()
         folder.mkdir(parents=True, exist_ok=True)
@@ -356,7 +384,7 @@ class VeoConnection:
                 match_id=identity,
                 message="This Veo match is already downloaded. Nothing was replaced.",
             )
-            return
+            return Path(done) if Path(done).is_absolute() else folder / done
         # Owner request 2026-11-13: "<match> <date>.mp4". Never another file's name.
         stem = " ".join(p for p in (file_label(name, item.get("title")), title_date(item)) if p)
         target, number = folder / f"{stem}.mp4", 2
@@ -401,6 +429,7 @@ class VeoConnection:
             match_id=identity,
             message=f"Downloaded {item.get('title') or 'the Veo match'} to the download folder.",
         )
+        return target
 
     def _write(self, library: list[dict[str, Any]]) -> None:
         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)

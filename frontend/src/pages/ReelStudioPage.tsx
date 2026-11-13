@@ -3,6 +3,7 @@ import { Clapperboard, Download, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus, hudlAgeGroups } from "../api/hudl";
+import { useVeoLibrary, useVeoStatus, veoRequest } from "../api/veo";
 import { TeamBadge } from "../components/TeamBadge";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -13,9 +14,11 @@ import {
 } from "../lib/reelCards";
 import { timeLeft } from "../lib/taggedPlayback";
 import { useHomeClub } from "../lib/useHomeClub";
+import { useVeoTeam } from "../lib/useHomeTeams";
 
 export type ReelItem = { match_id: string; moment_ids?: string[]; codes?: string[] };
-export type ReelSelection = { items: ReelItem[]; name?: string; per_match?: boolean };
+/** `source: "veo"`: one Veo match, cut by the helper from the saved full match (owner request 2026-11-13). */
+export type ReelSelection = { items: ReelItem[]; name?: string; per_match?: boolean; source?: "veo" };
 const KEY = "fm.reel.selection";
 
 function storedSelection(): ReelSelection | null {
@@ -76,12 +79,23 @@ export function ReelStudioPage() {
 }
 
 function Studio({ selection }: { selection: ReelSelection }) {
-  const library = useHudlLibrary();
-  const status = useHudlStatus();
+  const isVeo = selection.source === "veo";
+  const hudlLibrary = useHudlLibrary();
+  const veoLibrary = useVeoLibrary();
+  const library = isVeo ? veoLibrary : hudlLibrary;
+  const hudlStatus = useHudlStatus();
+  const veoStatus = useVeoStatus();
+  const status = isVeo ? veoStatus : hudlStatus;
   const qc = useQueryClient();
-  const club = useHomeClub();
-  const rows = selection.items.map((item) => {
-    const match = library.data?.find((m) => m.id === item.match_id);
+  // The team is named per source: Veo's name for the owner's club may differ from Hudl's.
+  const hudlClub = useHomeClub();
+  const veoTeam = useVeoTeam();
+  const club = isVeo ? veoTeam : hudlClub;
+  const blocked = isVeo ? Boolean(veoStatus.data?.busy) : hudlBlocked(hudlStatus.data);
+  const ageOf = (m: { age_group?: string; age_groups?: string[] }) => isVeo
+    ? (m.age_group && m.age_group !== "Unclassified" ? m.age_group : undefined) : hudlAgeGroups(m as Parameters<typeof hudlAgeGroups>[0])[0];
+  const rows = (isVeo ? selection.items.slice(0, 1) : selection.items).map((item) => {
+    const match = (library.data as { id: string; title: string; season_label?: string; age_group?: string; age_groups?: string[]; moments?: { id: string; category: string }[] }[] | undefined)?.find((m) => m.id === item.match_id);
     const moments = (match?.moments ?? []).filter((m) => item.moment_ids?.length ? item.moment_ids.includes(m.id) : item.codes?.includes(m.category));
     return { item, match, moments };
   });
@@ -91,7 +105,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
   // Derived until edited, so the club and library can load first.
   const name = edited ?? (selection.name || (rows.length === 1 && rows[0].match ? fixtureLabel(rows[0].match.title, club, "") : "Highlights"));
   // Spec 200: one file per match, each opened by its match card (no opening card).
-  const [separate, setSeparate] = useState(Boolean(selection.per_match));
+  const [separate, setSeparate] = useState(Boolean(selection.per_match) && !isVeo);
   const [openingOn, setOpening] = useState(true);
   const opening = openingOn && !separate;
   const [openingTitle, setOpeningTitle] = useState<string | null>(null);
@@ -108,7 +122,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
 
   const defaultSubtitle = [seasons.join(" & "), `${rows.length} ${rows.length === 1 ? "match" : "matches"}`, `${totalMoments} moments`].filter(Boolean).join(" · ");
   const openingCard: CardSpec = { kind: "opening", title: openingTitle ?? name, subtitle: subtitle ?? defaultSubtitle };
-  const matchCards = rows.map((r) => r.match ? matchCard(r.match.title, club, { age: hudlAgeGroups(r.match)[0], moments: r.moments.length }) : { kind: "match" as const, title: r.item.match_id });
+  const matchCards = rows.map((r) => r.match ? matchCard(r.match.title, club, { age: ageOf(r.match), moments: r.moments.length }) : { kind: "match" as const, title: r.item.match_id });
   const closingCard: CardSpec = { kind: "closing", title: closingText || " ", subtitle: club || undefined };
   const cards = useMemo(() => [
     ...(opening ? [{ card: openingCard, theme: openingTheme, label: "Opening" }] : []),
@@ -139,6 +153,13 @@ function Studio({ selection }: { selection: ReelSelection }) {
       for (const card of matchCards) { if (perMatch) { step(); ids.push(await upload(card, matchTheme)); } else ids.push(null); }
       if (closing) step();
       const closingId = closing ? await upload(closingCard, closingTheme) : null;
+      if (isVeo) {
+        setPhase("Cutting the highlights and assembling the reel…");
+        await veoRequest("/action", { action: "reel", match_id: rows[0].item.match_id, moment_ids: rows[0].moments.map((m) => m.id), name,
+          match_label: rows[0].match ? fixtureLabel(rows[0].match.title, club, "") : undefined,
+          opening_card: openingId, match_card: ids[0] ?? null, closing_card: closingId });
+        return;
+      }
       setPhase("Fetching moments and assembling the reel…");
       await hudlRequest("/account/batch", {
         items: selection.items.map((item, i) => ({ ...item, ...(ids[i] ? { card_id: ids[i] } : {}) })),
@@ -146,27 +167,33 @@ function Studio({ selection }: { selection: ReelSelection }) {
         reel: { name, opening_card: openingId, closing_card: closingId, ...(separate ? { per_match: true } : {}) },
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["hudl-account"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [isVeo ? "veo-account" : "hudl-account"] }),
     onError: () => setPhase(""),
   });
 
-  const progress = status.data?.progress;
-  const finished = status.data?.state === "done" && status.data.download_kind === "reel" && status.data.download_url;
-  const savedMany = separate && make.isSuccess && status.data?.state === "done" && !status.data.busy && !status.data.match_id;
+  const hudlProgress = isVeo ? undefined : hudlStatus.data?.progress;
+  const veoProgress = isVeo && veoStatus.data?.busy ? veoStatus.data.progress : undefined;
+  const progress = hudlProgress ?? (veoProgress ? { step: 1, steps: 1, label: veoStatus.data!.message, fraction: veoProgress.fraction, eta_s: null } : undefined);
+  const finishedUrl = isVeo
+    ? (veoStatus.data?.state === "done" && make.isSuccess && veoStatus.data.filename?.startsWith("reels/") ? veoStatus.data.download_url : undefined)
+    : (hudlStatus.data?.state === "done" && hudlStatus.data.download_kind === "reel" ? hudlStatus.data.download_url : undefined);
+  const finished = Boolean(finishedUrl);
+  const savedMany = separate && make.isSuccess && hudlStatus.data?.state === "done" && !hudlStatus.data.busy && !hudlStatus.data.match_id;
   const makeLabel = separate ? `Make ${rows.length} highlight ${rows.length === 1 ? "reel" : "reels"}` : "Make highlight reel";
 
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <Link to="/clips" className="text-sm text-fg-muted hover:text-fg">← Clips</Link>
+          {isVeo ? <Link to={`/veo/${encodeURIComponent(rows[0]?.item.match_id ?? "")}`} className="text-sm text-fg-muted hover:text-fg">← Veo match</Link>
+            : <Link to="/clips" className="text-sm text-fg-muted hover:text-fg">← Clips</Link>}
           <p className="screen-eyebrow mt-3">HIGHLIGHT REEL STUDIO</p>
           <input aria-label="Reel name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)}
             className="mt-1 block w-full max-w-2xl bg-transparent text-3xl font-semibold tracking-tight outline-none focus:ring-1 focus:ring-accent/50" />
           <p className="mt-1 text-sm text-fg-muted">{totalMoments} moments from {rows.length} {rows.length === 1 ? "match" : "matches"} · encoded at the best source quality</p>
           {totalMoments > 150 && !separate && <p className="mt-1 text-sm text-warn">That is a long reel. Pick a player or code, or tick the moments you want, for a shorter one.</p>}
         </div>
-        <Button variant="primary" disabled={make.isPending || hudlBlocked(status.data) || totalMoments === 0} onClick={() => make.mutate()}>
+        <Button variant="primary" disabled={make.isPending || blocked || totalMoments === 0} onClick={() => make.mutate()}>
           <Sparkles size={16} aria-hidden /> {makeLabel}
         </Button>
       </header>
@@ -181,7 +208,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
           </>}
           {status.data?.state === "error" && phase && <p role="alert" className="text-sm text-danger">{status.data.message}</p>}
           {finished && <div className="flex flex-wrap items-center gap-3"><p className="text-sm text-ok">{status.data!.message}</p>
-            <a href={status.data!.download_url} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#2563eb] to-accent-strong px-4 text-sm font-semibold text-white"><Download size={14} aria-hidden /> Save reel</a>
+            <a href={finishedUrl ?? undefined} className="inline-flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#2563eb] to-accent-strong px-4 text-sm font-semibold text-white"><Download size={14} aria-hidden /> Save reel</a>
             <Link to="/downloaded" className="text-sm text-accent underline">All downloads</Link></div>}
           {savedMany && !finished && <div className="flex flex-wrap items-center gap-3"><p role="status" className="text-sm text-ok">{status.data!.message}</p>
             <Link to="/downloaded" className="text-sm text-accent underline">See them in Downloaded</Link></div>}
@@ -212,7 +239,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
         </section>
 
         <aside className="space-y-4">
-          <fieldset className="tile space-y-2 p-4">
+          {!isVeo && <fieldset className="tile space-y-2 p-4">
             <legend className="sr-only">Save as</legend>
             <p className="text-sm font-semibold">Save as</p>
             <div className="grid grid-cols-2 gap-2">
@@ -225,7 +252,11 @@ function Studio({ selection }: { selection: ReelSelection }) {
               ))}
             </div>
             {separate && <p className="text-xs text-fg-muted">Each file starts with its match card and ends with the closing card.</p>}
-          </fieldset>
+          </fieldset>}
+          {isVeo && !veoTeam && <p role="note" aria-label="Veo team name" className="rounded-xl border border-warn/30 bg-warn/5 p-4 text-xs text-fg-muted">
+            The cards say “Home” because your team's Veo name is not set. Veo may name your club differently from Hudl:
+            add it in <Link to="/settings/connections" className="text-accent underline">Settings → Connections → Veo</Link>.</p>}
+          {isVeo && <p className="tile p-4 text-xs text-fg-muted">The desktop helper cuts these Veo highlights from the full match saved on this computer. If it is not saved yet, it downloads the full match first (it stays in your download folder).</p>}
           {!separate && <div className="tile space-y-3 p-4">
             <label className="flex items-center justify-between text-sm font-semibold">Opening card
               <input type="checkbox" checked={opening} onChange={(e) => setOpening(e.target.checked)} aria-label="Opening card" /></label>

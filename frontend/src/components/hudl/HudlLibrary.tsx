@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { connectionShown } from "../../lib/connections";
 import { Link } from "react-router-dom";
 import { CircleDashed, Film, FolderArchive, RefreshCw } from "lucide-react";
 import { downloadState, hudlAgeGroups, hudlBlocked, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../../api/hudl";
@@ -38,6 +39,8 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
     && (!season || (m.season_label || "Unclassified") === season)
     && (!filters?.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
 
+  // Owner request 2026-11-13: Settings > Connections > Show Hudl chooses this library.
+  if (!connectionShown("hudl")) return null;
   return <section aria-label="Hudl match library" className="space-y-4 border-t border-line pt-5">
     <div className="flex flex-wrap items-center gap-3">
       <div className="mr-auto"><h3 className="text-sm font-semibold">Connected Hudl</h3>

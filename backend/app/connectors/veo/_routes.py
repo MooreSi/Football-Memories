@@ -4,6 +4,7 @@ apply to these too; the password only passes through to the secret store."""
 from __future__ import annotations
 
 from typing import Literal
+from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import FileResponse
@@ -21,9 +22,15 @@ class VeoCredentials(BaseModel):
 
 
 class VeoAction(BaseModel):
-    action: Literal["test", "refresh", "watch", "download", "disconnect"]
+    action: Literal["test", "refresh", "watch", "download", "reel", "disconnect"]
     match_id: str | None = Field(default=None, max_length=200)
     name: str | None = Field(default=None, max_length=200)
+    # Owner request 2026-11-13: a highlight reel from one Veo match.
+    moment_ids: list[str] = Field(default_factory=list, max_length=150)
+    opening_card: str | None = Field(default=None, max_length=64)
+    match_card: str | None = Field(default=None, max_length=64)
+    closing_card: str | None = Field(default=None, max_length=64)
+    match_label: str | None = Field(default=None, max_length=200)
 
 
 @router.get("/account")
@@ -31,8 +38,19 @@ def account(request: Request) -> dict[str, object]:
     state = request.app.state
     if getattr(state, "veo_configured", None) is None:
         state.veo_configured = state.veo_store.configured()
+    status = state.veo.status()
+    filename = status.get("filename")
+    # A finished reel is listed in the download index, so /files serves it.
+    link = (
+        f"http://127.0.0.1:8766/files/{state.file_scope}/{quote(filename, safe='/')}"
+        if isinstance(filename, str)
+        and filename.startswith("reels/")
+        and status.get("state") == "done"
+        else None
+    )
     return {
-        **state.veo.status(),
+        **status,
+        "download_url": link,
         "configured": state.veo_configured,
         "secret_store": getattr(state.veo_store, "label", "secret store"),
     }
@@ -54,7 +72,18 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
     state = request.app.state
     if not (state.veo_configured or state.veo_store.configured()):
         raise CaptureError("Save the Veo email and password first.")
-    if body.action in {"watch", "download"}:
+    if body.action == "reel":
+        if not body.match_id or not body.moment_ids:
+            raise CaptureError("Choose the Veo highlights for the reel first.")
+        reel = {
+            "moment_ids": body.moment_ids,
+            "opening_card": body.opening_card,
+            "match_card": body.match_card,
+            "closing_card": body.closing_card,
+            "match_label": body.match_label,
+        }
+        state.veo.start("reel", body.match_id, name=body.name, reel=reel)
+    elif body.action in {"watch", "download"}:
         if not body.match_id:
             raise CaptureError("Select a Veo match first.")
         if body.action == "download" and body.name:

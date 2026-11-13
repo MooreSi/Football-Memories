@@ -158,3 +158,12 @@ U10 v Stoke City reads 12-9.
   stats count both teams and say so: goals, shots, first goal, busiest 5 minutes,
   per half, a 5-minute bar chart that seeks. No possession or player stats.
 
+## Show Hudl / Show Veo, Veo reels, crest search (owner requests 2026-11-13)
+
+- The Connections switches choose which libraries All matches and the Clip
+  explorer list (`connectionShown`); they never remove the Hudl or Veo box.
+- Reel Studio takes `{ source: "veo" }` (one match): cards use the Veo team name
+  (`useVeoTeam`), never Hudl's; with none set it says so and links to Settings.
+- Club crests: "Find the crest on the web" opens a Google image search for
+  "<club> FC crest" (side code and age dropped) in a new tab; the dashed box takes
+  a pasted (⌘V) or dropped image.

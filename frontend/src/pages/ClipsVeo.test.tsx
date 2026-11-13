@@ -47,3 +47,13 @@ it("opens a /veo/ link on the Veo match page, not the Clip explorer", async () =
   expect(await screen.findByRole("heading", { level: 1, name: /RJ vs Northgate CB/ })).toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Selected Veo match" })).toBeNull();
 });
+
+// Owner request 2026-11-13: Show Hudl off leaves only Veo (and imported) in the picker.
+it("leaves Hudl matches out of the picker when Settings has Show Hudl off", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  stub();
+  renderWithProviders(<Routes><Route path="/clips" element={<ClipExplorerPage />} /></Routes>, "/clips?match=veo-a");
+  const picker = await screen.findByRole("combobox", { name: "Match" });
+  await vi.waitFor(() => expect(within(picker).getByRole("option", { name: /RJ vs Northgate CB/ })).toBeInTheDocument());
+  expect(within(picker).queryByRole("option", { name: /U11 v Stoke/ })).toBeNull();
+});

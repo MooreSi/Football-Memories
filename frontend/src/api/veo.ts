@@ -7,7 +7,7 @@ export type VeoSummary = { clubs: number; matches: number; with_video: number; e
 export type VeoStatus = {
   configured: boolean; busy: boolean; state: string; message: string; secret_store?: string;
   summary: VeoSummary | null; progress?: { done: number; total: number; fraction: number } | null; library_checked_at?: number | null;
-  match_id?: string | null; stream_url?: string | null; filename?: string | null;
+  match_id?: string | null; stream_url?: string | null; filename?: string | null; download_url?: string | null;
 };
 
 export async function veoRequest<T>(path: string, body?: unknown): Promise<T> {

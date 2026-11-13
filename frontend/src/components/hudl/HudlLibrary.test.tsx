@@ -31,3 +31,13 @@ it('marks matches whose full match and/or moments are already downloaded', async
  const c=screen.getByRole('link',{name:/U10 vs Town/});
  expect(within(c).getByRole('img',{name:'Not downloaded yet'})).toBeInTheDocument();
 });
+// Owner request 2026-11-13: Settings > Connections > Show Hudl off hides this library.
+it('shows nothing when Settings has Show Hudl off', async()=>{
+ localStorage.setItem('fm.connections.hidden',JSON.stringify(['hudl']));
+ stubFetch({'http://127.0.0.1:8766/library':[{id:'a',title:'U10 vs Rovers',age_group:'U10'}]});
+ renderWithProviders(<HudlLibrary/>);
+ await new Promise(r=>setTimeout(r,50));
+ expect(screen.queryByRole('region',{name:'Hudl match library'})).toBeNull();
+ expect(screen.queryByRole('link',{name:/U10 vs Rovers/})).toBeNull();
+ localStorage.clear();
+});

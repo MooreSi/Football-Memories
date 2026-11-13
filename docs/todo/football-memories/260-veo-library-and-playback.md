@@ -1,6 +1,6 @@
 # 260: Veo matches in the Library, playback and download
 
-**Status:** Building (tasks 1-3 built; task 4 todo)
+**Status:** Built (tasks 1-4); owner to try playback, download and a reel
 **Sensitive:** YES: requests to Veo and its video CDN (tasks 2-4), files written to the
 library (task 3). `/safe-change` governs. Authorized by owner decision 006 / D-035
 (scope: list, metadata, stream, download, as Hudl).
@@ -84,4 +84,8 @@ check above, then the owner plays one match and downloads one.
 - [x] tasks 2-3: suite green (backend 522 SQLite and Postgres, frontend 347); 27 new
   tests, each red first; video address never in status, cache or messages (tested)
 - [ ] tasks 2-3: owner watches one match and downloads one (not done)
-- [ ] task 4: not built
+- [x] task 4 (owner request 2026-11-13): Reel Studio takes one Veo match; the helper
+  cuts the chosen highlights (time_s for duration_s, 20 s when none) from the saved
+  full match, downloading it first if needed, then `assemble_reel`. Tests: real
+  ffmpeg on synthetic video, existing files byte-identical, no Veo request when
+  the match is saved. Not tried on a real Veo match.

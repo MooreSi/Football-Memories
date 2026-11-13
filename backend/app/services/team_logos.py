@@ -22,6 +22,7 @@ _HOSTS = {
     "images.gc.avfcservices.co.uk",
     "images.gc.stokecityfcservices.co.uk",
     "en.wikipedia.org",
+    "commons.wikimedia.org",
     "upload.wikimedia.org",
     "thumb.wikimedia.org",
 }
@@ -173,6 +174,108 @@ def _wikipedia_crest(name: str) -> str | None:
     return None
 
 
+def _words(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", text.casefold().replace("_", " ")))
+
+
+_GENERIC = {
+    "f",
+    "c",
+    "a",
+    "fc",
+    "afc",
+    "football",
+    "club",
+    "crest",
+    "logo",
+    "badge",
+    "emblem",
+    "svg",
+    "png",
+    "jpg",
+    "file",
+}
+
+
+def _same_club(name: str, text: str) -> bool:
+    """`text` names exactly this club: "Riverside Juniors F.C. (Warwickshire)" is
+    Riverside Juniors; "Northgate United F.C." is not "Northgate Rovers". F.C., crest
+    words, years and a place in brackets are ignored."""
+    club = _words(club_name(name))
+    found = {w for w in _words(re.sub(r"\([^)]*\)", " ", text)) - _GENERIC if not w.isdigit()}
+    return bool(club) and found == club
+
+
+def _wikipedia_search(name: str) -> str | None:
+    """Owner request 2026-11-13: a club whose page has another title (a county in
+    brackets, "Juniors F.C."). Only results naming this club are read, and their image
+    must still say it is a club's crest."""
+    query = urlencode(
+        {
+            "action": "query",
+            "format": "json",
+            "list": "search",
+            "srlimit": 5,
+            "srsearch": f"{_written(name)} football club",
+        }
+    )
+    hits = json.loads(_paced_fetch(f"https://en.wikipedia.org/w/api.php?{query}"))
+    titles = [
+        str(h.get("title")) for h in hits.get("query", {}).get("search", []) if isinstance(h, dict)
+    ]
+    for title in [t for t in titles if _same_club(name, t)][:2]:
+        query = urlencode(
+            {
+                "action": "query",
+                "format": "json",
+                "prop": "pageimages",
+                "piprop": "thumbnail|name",
+                "pithumbsize": 250,
+                "pilicense": "any",
+                "titles": title,
+            }
+        )
+        data = json.loads(_paced_fetch(f"https://en.wikipedia.org/w/api.php?{query}"))
+        for page in data.get("query", {}).get("pages", {}).values():
+            source = page.get("thumbnail", {}).get("source")
+            if (
+                "missing" not in page
+                and source
+                and _is_crest(page.get("pageimage", ""), source, True)
+            ):
+                return str(source)
+    return None
+
+
+def _commons_crest(name: str) -> str | None:
+    """A crest file on Wikimedia Commons named for this club and as a crest, logo or badge."""
+    query = urlencode(
+        {
+            "action": "query",
+            "format": "json",
+            "generator": "search",
+            "gsrnamespace": 6,
+            "gsrlimit": 8,
+            "gsrsearch": f"{_written(name)} crest OR logo OR badge",
+            "prop": "imageinfo",
+            "iiprop": "url",
+            "iiurlwidth": 250,
+        }
+    )
+    data = json.loads(_paced_fetch(f"https://commons.wikimedia.org/w/api.php?{query}"))
+    for page in data.get("query", {}).get("pages", {}).values():
+        title = str(page.get("title", ""))
+        info = (page.get("imageinfo") or [{}])[0]
+        thumb = str(info.get("thumburl") or "")
+        if (
+            any(w in title.casefold() for w in _CLUB_WORDS)
+            and _same_club(name, title.removeprefix("File:"))
+            and thumb.endswith(".png")
+        ):
+            return thumb
+    return None
+
+
 def cached_crest(name: str, directory: Path) -> Path | None:
     identity = club_name(name)
     key = hashlib.sha256(identity.encode()).hexdigest()
@@ -184,7 +287,12 @@ def cached_crest(name: str, directory: Path) -> Path | None:
         if _MISSES.get(key, 0) > now or _PAUSED_UNTIL[0] > now:
             return None
         try:
-            url = logo_candidate(name) or _wikipedia_crest(name)
+            url = (
+                logo_candidate(name)
+                or _wikipedia_crest(name)
+                or _wikipedia_search(name)
+                or _commons_crest(name)
+            )
             if not url:
                 raise ValueError("No club crest found")
             image = _paced_fetch(url)

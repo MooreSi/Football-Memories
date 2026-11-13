@@ -92,3 +92,16 @@ function posts(fn: ReturnType<typeof vi.mocked<typeof fetch>>) {
   return fn.mock.calls.filter(([, init]) => init?.method === "POST")
     .map(([input, init]) => ({ url: String(input), body: JSON.parse(String(init?.body ?? "null")) }));
 }
+
+it("makes a highlight reel from the highlights shown, through Reel Studio", async () => {
+  stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  const rail = await screen.findByRole("navigation", { name: "Highlight types" });
+  await user.click(within(rail).getByRole("button", { name: /GOAL\s*2/ }));
+  await user.click(screen.getByRole("button", { name: /Make highlight reel \(2\)/ }));
+  expect(await screen.findByText("HIGHLIGHT REEL STUDIO")).toBeInTheDocument();
+  const stored = JSON.parse(sessionStorage.getItem("fm.reel.selection")!);
+  expect(stored).toMatchObject({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h2", "h3"] }] });
+  sessionStorage.clear();
+});

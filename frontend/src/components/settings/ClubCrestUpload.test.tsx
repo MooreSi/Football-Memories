@@ -27,3 +27,35 @@ it("needs a name and an image before saving", () => {
   renderWithProviders(<ClubCrestUpload />);
   expect(screen.getByRole("button", { name: "Save crest" })).toBeDisabled();
 });
+
+// Owner request 2026-11-13: finding a grassroots crest should be quick. The app cannot
+// search Google itself (its terms forbid it), so it opens the search and takes a paste.
+it("opens an image search for the club and its sides' common name", async () => {
+  stubFetch({});
+  const user = userEvent.setup();
+  renderWithProviders(<ClubCrestUpload />);
+  expect(screen.queryByRole("link", { name: /Find the crest on the web/ })).toBeNull();
+  await user.type(screen.getByLabelText("Club name"), "Norton Lindsay CB");
+  const link = screen.getByRole("link", { name: /Find the crest on the web/ });
+  expect(link).toHaveAttribute("target", "_blank");
+  expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+  const url = new URL(link.getAttribute("href")!);
+  expect(url.origin + url.pathname).toBe("https://www.google.com/search");
+  expect(url.searchParams.get("q")).toBe("Norton Lindsay FC crest");
+  expect(url.searchParams.get("udm")).toBe("2"); // Images
+});
+
+it("takes a crest pasted from the clipboard", async () => {
+  stubFetch({ "/api/team-logo": { saved: "Norton Lindsay" } });
+  const user = userEvent.setup();
+  renderWithProviders(<ClubCrestUpload />);
+  await user.type(screen.getByLabelText("Club name"), "Norton Lindsay");
+  const image = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], "image.png", { type: "image/png" });
+  const zone = screen.getByRole("button", { name: /Paste or drop the crest here/ });
+  zone.focus();
+  await user.paste({ files: [image], items: [{ kind: "file", type: "image/png", getAsFile: () => image }] } as unknown as DataTransfer);
+  expect(await screen.findByText(/image\.png ready/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Save crest" }));
+  const post = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === "POST");
+  expect(((post?.[1]?.body as FormData).get("file") as File).name).toBe("image.png");
+});

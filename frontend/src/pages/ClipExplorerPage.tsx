@@ -31,7 +31,7 @@ export function ClipExplorerPage() {
   const [params] = useSearchParams();
   const [chosen, setChosen] = useState<string | null>(params.get("match"));
   const {age,season}=useArchiveFilters();
-  const all = latestFirst(library.data ?? []);
+  const all = connectionShown("hudl") ? latestFirst(library.data ?? []) : [];
   const veo = connectionShown("veo") ? latestFirst(veoLibrary.data ?? []) : [];
   const forAge = all.filter((m) => (!age || hudlAgeGroups(m).includes(age)) && (!season || m.season_label===season));
   const fallback = forAge[0]?.id ?? "imported";

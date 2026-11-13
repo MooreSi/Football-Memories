@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Connections switches, Veo reels, crest search (owner requests 2026-11-13)
+
+- done: Show Hudl / Show Veo only choose the libraries listed (Library, Clips);
+  the boxes stay on Connections.
+- done: Veo highlight reels (spec 260 task 4) through Reel Studio, Veo team name.
+- partial: crests: Wikipedia search and Commons added, plus a web image search
+  link and paste in Club crests. Decision 008 still open for other sources.
+- not checked: a real Veo reel on the owner's account.
+
 ## Veo playback fix and Veo match page (owner report 2026-11-13)
 
 - done: Veo video would not play in Safari over the network (stream/poster links

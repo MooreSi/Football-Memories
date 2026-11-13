@@ -280,3 +280,111 @@ def test_an_uploaded_crest_replaces_the_cached_one_and_is_served_first(
         with pytest.raises(ValueError):
             save_crest("Riverside Juniors", bad, tmp_path)
     assert cached_crest("Riverside Juniors", tmp_path).read_bytes() == jpeg  # type: ignore[union-attr]
+
+
+# Owner request 2026-11-13: "do a better job of searching for grassroots crests".
+# After the exact page titles, Wikipedia's own search and Wikimedia Commons crest files
+# are tried (both allow automated reads; Google's image search does not).
+
+
+def _search(*titles: str) -> bytes:
+    import json
+
+    return json.dumps({"query": {"search": [{"title": t} for t in titles]}}).encode()
+
+
+def _commons(*files: tuple[str, str]) -> bytes:
+    import json
+
+    pages = {str(i): {"title": t, "imageinfo": [{"thumburl": u}]} for i, (t, u) in enumerate(files)}
+    return json.dumps({"query": {"pages": pages}}).encode()
+
+
+def _lookups(monkeypatch, search: bytes, pages: dict[str, str], commons: bytes):  # noqa: ANN202
+    from urllib.parse import parse_qs, urlsplit
+
+    asked: list[str] = []
+    downloads: list[str] = []
+
+    def fetch(url):
+        query = parse_qs(urlsplit(url).query)
+        if "commons.wikimedia.org" in url:
+            asked.append("commons")
+            return commons
+        if "api.php" in url and query.get("list") == ["search"]:
+            asked.append("search")
+            return search
+        if "api.php" in url:
+            title = query["titles"][0]
+            asked.append(title)
+            return _wiki(pages[title]) if title in pages else _wiki(None, missing=True)
+        downloads.append(url)
+        return b"\x89PNG\r\n\x1a\nfound"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    return asked, downloads
+
+
+def test_wikipedia_search_finds_a_club_whose_page_has_another_title(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    crest = "https://upload.wikimedia.org/wikipedia/en/thumb/a/ab/Riverside_Juniors_FC_logo.svg/250px-x.png"
+    asked, downloads = _lookups(
+        monkeypatch,
+        _search("Riverside Juniors F.C. (Warwickshire)", "Riverside (river)"),
+        {"Riverside Juniors F.C. (Warwickshire)": crest},
+        _commons(),
+    )
+    assert cached_crest("Riverside Juniors CB", tmp_path) is not None
+    assert downloads == [crest]
+    assert asked[-2:] == [
+        "search",
+        "Riverside Juniors F.C. (Warwickshire)",
+    ]  # the river page is never read
+
+
+def test_a_search_hit_for_another_club_is_not_used(tmp_path, monkeypatch) -> None:
+    """ "Northgate Rovers" must not take Northgate United's crest."""
+    from app.services.team_logos import cached_crest
+
+    asked, downloads = _lookups(
+        monkeypatch,
+        _search("Northgate United F.C."),
+        {"Northgate United F.C.": "https://upload.wikimedia.org/x/Northgate_United_FC_crest.png"},
+        _commons(),
+    )
+    assert cached_crest("Northgate Rovers", tmp_path) is None
+    assert downloads == [] and "Northgate United F.C." not in asked
+
+
+def test_a_commons_crest_file_is_used_when_wikipedia_has_none(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    crest = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Riverside_Juniors_FC_crest.svg/250px-x.png"
+    _, downloads = _lookups(
+        monkeypatch,
+        _search(),
+        {},
+        _commons(
+            ("File:Riverside Juniors church.jpg", "https://upload.wikimedia.org/c/church.jpg"),
+            ("File:Northgate FC crest.svg", "https://upload.wikimedia.org/c/northgate.png"),
+            ("File:Riverside Juniors FC crest.svg", crest),
+        ),
+    )
+    assert cached_crest("Riverside Juniors", tmp_path) is not None
+    assert downloads == [crest]  # not the church photo, not another club's crest
+
+
+def test_a_commons_file_without_crest_words_is_not_used(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    _, downloads = _lookups(
+        monkeypatch,
+        _search(),
+        {},
+        _commons(
+            ("File:Riverside Juniors playing field.svg", "https://upload.wikimedia.org/c/field.png")
+        ),
+    )
+    assert cached_crest("Riverside Juniors", tmp_path) is None
+    assert downloads == []

@@ -13,6 +13,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Connections switches, Veo reels, crest search (owner requests 2026-11-13):**
+  Show Hudl/Show Veo now only choose the libraries listed (Library and Clips),
+  never the Connections boxes. Veo match page has Make highlight reel → Reel
+  Studio (`source: "veo"`, Veo team name on cards; note when unset). Helper
+  `veo/_reels.py` cuts from the saved full match, downloading it first if needed.
+  Crests: Wikipedia search + Commons fallbacks (`team_logos.py`), and Club crests
+  has "Find the crest on the web" plus paste/drop. Decision 008 partly answered.
+  Not tried on the real account; the owner's Veo team name is not set yet.
+
 - **Veo playback fix and Veo match page (owner report 2026-11-13):** the owner
   uses Safari at `http://192.168.0.53:8765`; Veo's stream and poster links were
   left as 127.0.0.1:8766 (Hudl's are rewritten to `/helper`), so the helper refused

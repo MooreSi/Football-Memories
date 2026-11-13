@@ -19,20 +19,20 @@ function open() {
   return renderWithProviders(<ConnectionsPage embedded />);
 }
 
-it("shows Hudl and Veo, and hides each one with its switch until shown again", async () => {
+// Owner request 2026-11-13 (later): the switches choose which libraries are shown;
+// they no longer remove the Hudl or Veo box from this page.
+it("keeps both boxes on Connections whichever switch is off, and remembers the choice", async () => {
   const view = open(); const user = userEvent.setup();
   expect(await screen.findByRole("region", { name: "Hudl" })).toBeInTheDocument();
+  await user.click(screen.getByRole("switch", { name: /Show Veo/ }));
+  await user.click(screen.getByRole("switch", { name: /Show Hudl/ }));
+  expect(screen.getByRole("switch", { name: /Show Veo/ })).toHaveAttribute("aria-checked", "false");
   expect(screen.getByRole("region", { name: "Veo" })).toBeInTheDocument();
-  await user.click(screen.getByRole("switch", { name: "Show Veo" }));
-  expect(screen.queryByRole("region", { name: "Veo" })).toBeNull();
   expect(screen.getByRole("region", { name: "Hudl" })).toBeInTheDocument();
-  await user.click(screen.getByRole("switch", { name: "Show Hudl" }));
-  expect(screen.queryByRole("region", { name: "Hudl" })).toBeNull();
   expect(screen.queryByRole("region", { name: "Local import" })).toBeNull(); // removed from Connections, owner request
+  expect(JSON.parse(localStorage.getItem("fm.connections.hidden")!)).toEqual(["veo", "hudl"]);
   view.unmount();
   open();
-  expect(await screen.findByRole("switch", { name: "Show Hudl" })).toHaveAttribute("aria-checked", "false");
-  expect(screen.queryByRole("region", { name: "Hudl" })).toBeNull();
-  await user.click(screen.getByRole("switch", { name: "Show Hudl" }));
+  expect(await screen.findByRole("switch", { name: /Show Hudl/ })).toHaveAttribute("aria-checked", "false");
   expect(screen.getByRole("region", { name: "Hudl" })).toBeInTheDocument();
 });
