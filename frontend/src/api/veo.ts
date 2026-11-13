@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { HUDL } from "./hudl";
 
 /** Spec 250: the desktop helper's Veo routes (same helper and origin rules as Hudl). */
@@ -14,4 +15,22 @@ export async function veoRequest<T>(path: string, body?: unknown): Promise<T> {
   const data = await response.json().catch(() => ({ detail: "The desktop helper is not running." }));
   if (!response.ok) throw new Error(data.detail || "Veo request failed.");
   return data as T;
+}
+
+/** Spec 260: one Veo match from the helper's cache (no remote media URL is ever in it). */
+export type VeoHighlight = { id: string; category: string; time_s: number; duration_s: number; ai?: boolean; note?: string };
+export type VeoMatch = {
+  id: string; source: "veo"; title: string; team?: string | null; age_group: string; age_groups?: string[]; season_label?: string;
+  duration_s?: number; available: boolean; expiration_status?: string | null; home_or_away?: string | null;
+  score?: { ours: number; theirs: number } | null; halves?: number[][]; moments?: VeoHighlight[];
+};
+export function useVeoLibrary() {
+  return useQuery<VeoMatch[]>({ queryKey: ["veo-library"], queryFn: () => veoRequest("/library"), retry: false, refetchInterval: 30000 });
+}
+export function veoAgeGroups(match: VeoMatch): string[] {
+  return match.age_groups?.length ? match.age_groups : [match.age_group || "Unclassified"];
+}
+export function veoExpiry(match: VeoMatch): string | null {
+  if (!match.available || match.expiration_status === "expired") return "Video expired on Veo";
+  return match.expiration_status === "expires-soon" ? "Video expires soon on Veo" : null;
 }

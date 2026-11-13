@@ -9,6 +9,7 @@ import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
+import { HIDDEN_KEY, readHidden } from "../lib/connections";
 
 const LABELS: Record<string, string> = {
   list_teams: "List teams",
@@ -20,11 +21,6 @@ const LABELS: Record<string, string> = {
   import_files: "Import files",
 };
 
-// Owner request 2026-11-13: show or hide the Hudl and Veo connections (this browser only).
-const HIDDEN_KEY = "fm.connections.hidden";
-function readHidden(): string[] {
-  try { const v = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]"); return Array.isArray(v) ? v.filter((x) => typeof x === "string") : []; } catch { return []; }
-}
 
 function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
   return <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}

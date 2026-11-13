@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-13)
 
+- **Spec 260, Veo Library and playback ([260](todo/football-memories/260-veo-library-and-playback.md)):**
+  task 1 built: "Connected Veo" section under All matches (`components/veo/VeoLibrary`,
+  same filters, expiry badge, hidden by Show Veo off via `lib/connections`) and
+  `/veo/:id` (`pages/VeoMatchPage`: score, halves, highlights). Veo items stay
+  out of Hudl's `/library` on purpose. Tasks 2-3 (watch, download) wait on an
+  owner-approved check of how c.veocdn.com serves one MP4. Owner's Veo cache is
+  empty until they select Refresh matches.
+
 - **Veo Test fix (owner report 2026-11-13):** first real Test said "Veo signed
   this session out". Two owner-approved read-only sign-in checks showed Veo
   authorizes reads with a token header from localStorage, not a cookie.

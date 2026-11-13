@@ -19,6 +19,7 @@ import { ReelsPage } from "./pages/ReelsPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { HudlMatchPage } from "./pages/HudlMatchPage";
 import { HudlPlayerPage } from "./pages/HudlPlayerPage";
+import { VeoMatchPage } from "./pages/VeoMatchPage";
 import { OpponentsPage } from "./pages/OpponentsPage";
 import { ReportPage } from "./pages/ReportPage";
 import { Compass } from "lucide-react";
@@ -29,6 +30,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route index element={<LibraryPage />} />
         <Route path="hudl/:id" element={<HudlMatchPage />} />
+        <Route path="veo/:id" element={<VeoMatchPage />} />
         <Route path="player/hudl/:name" element={<HudlPlayerPage />} />
         <Route path="opponents" element={<OpponentsPage />} />
         <Route path="report/match/:id" element={<ReportPage kind="match" />} />

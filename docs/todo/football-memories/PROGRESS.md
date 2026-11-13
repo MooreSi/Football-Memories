@@ -19,7 +19,17 @@ no additional code or live capture needed. App/helper run the verified source.
 | Next / previous tagged moment (buttons, N/B, media keys) | done (tests; browser-checked buttons and N; media keys not tried) |
 | Green outline complete, follows the clicked moment | done (tests; browser-checked) |
 | Continue watching: last three | done (test) |
-| Veo connection and Hudl/Veo show-hide toggles | partial: phase 1 done (save, test, refresh, toggles; spec 250); phase 2 (Library, stream, download) todo |
+| Veo connection and Hudl/Veo show-hide toggles | partial: phase 1 done (save, test, refresh, toggles; spec 250); Test passes on the owner's account |
+
+## Spec 260 Veo Library, playback and download
+
+| Item | Status |
+|---|---|
+| 1. Connected Veo in All matches, `/veo/:id` page (details, halves, highlights) | done (6 tests; browser-checked desktop and phone on a synthetic stand-in; owner's cache empty until Refresh) |
+| 2. Watch (stream through the helper, Range) | blocked: owner-approved CDN check of one match |
+| 3. Full-match MP4 download | blocked: same check |
+| 4. Highlight clips | todo (after 3) |
+| Veo in insights / player hub | todo: owner decision 007 (Veo tags are event types, not players) |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 
