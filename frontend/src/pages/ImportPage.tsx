@@ -10,6 +10,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
 import { formatBytes } from "../lib/format";
+import { VideoDropZone } from "../components/import/VideoDropZone";
 
 function guessSeason(isoDate: string): string {
   const d = new Date(`${isoDate}T00:00:00`);
@@ -65,13 +66,14 @@ export function ImportPage() {
       </PageHeader>
 
       <p className="mb-6 max-w-3xl text-sm text-fg-muted">
-        Put match videos you have downloaded (for example through Hudl's own download feature) into the import
-        folder. Optional: add <code className="text-fg">&lt;same name&gt;.tags.csv</code> with tagged moments. The
+        Add a match video below (drop it on the box or choose it), or put videos you have downloaded into the
+        import folder. Optional: add <code className="text-fg">&lt;same name&gt;.tags.csv</code> with tagged moments. The
         original file is copied and verified; it is never moved or deleted.
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <section aria-label="Files in the import folder">
+        <section aria-label="Files in the import folder" className="space-y-4">
+          <VideoDropZone onUploaded={(file) => { setSelected(file.filename); void qc.invalidateQueries({ queryKey: ["inbox"] }); }} />
           {inbox.isPending ? (
             <Spinner label="Reading import folder" />
           ) : inbox.isError ? (
@@ -80,7 +82,7 @@ export function ImportPage() {
             </EmptyState>
           ) : inbox.data.length === 0 ? (
             <EmptyState icon={FolderInput} title="The import folder is empty">
-              Copy a video file (.mp4, .mov, .mkv) into the import folder configured on the server, then refresh.
+              Add a video above, or copy one (.mp4, .mov, .mkv) into the import folder, then refresh.
             </EmptyState>
           ) : (
             <ul className="space-y-2">

@@ -72,6 +72,9 @@ no additional code or live capture needed. App/helper run the verified source.
 | My Player: Top 5 moments (favourites, then Hudl moments in a team goal, save, chance or shot faced; Make a reel) | done (tests) |
 | My Player: Opponent map (clubs played, crests, how often, latest match) | done (tests) |
 | Veo match page: Team stats from Veo's match report and events (us v opponent, goals/shots timeline); decision 009 | done (tests); real account on next Refresh |
+| Show Hudl off: Library hero, latest match, overview, profile and recent moments from Veo; Clips opens the newest Veo match | done (tests; browser-checked) |
+| My Player: Teams narrower, totals 2 x 2 | done (browser-checked) |
+| Import: drop or choose a video, saved to the import folder's uploaded/ (never replaces) | done (tests; browser-checked without uploading) |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 

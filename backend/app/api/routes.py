@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -27,7 +27,7 @@ from app.schemas import (
     StatsOut,
     TagCount,
 )
-from app.services import library, players
+from app.services import library, players, uploads
 from app.services.importer import (
     VIDEO_EXTENSIONS,
     DuplicateMedia,
@@ -97,10 +97,45 @@ def inbox(settings: Cfg) -> list[InboxFile]:
         for p in sorted(root.iterdir())
         if p.is_file() and not p.is_symlink() and p.suffix.lower() in VIDEO_EXTENSIONS
     ]
+    # Owner request 2026-11-14: videos added on the Import page, in uploaded/.
+    folder = uploads.upload_folder(settings)
+    if folder.is_dir() and not folder.is_symlink():
+        files += [
+            p
+            for p in sorted(folder.iterdir())
+            if p.is_file()
+            and not p.is_symlink()
+            and not p.name.startswith(".")
+            and p.suffix.lower() in VIDEO_EXTENSIONS
+        ]
     return [
-        InboxFile(filename=p.name, size_bytes=p.stat().st_size, has_tags=sidecar_for(p).is_file())
+        InboxFile(
+            filename=p.relative_to(root).as_posix(),
+            size_bytes=p.stat().st_size,
+            has_tags=sidecar_for(p).is_file(),
+        )
         for p in files
     ]
+
+
+@router.put("/imports/upload", response_model=InboxFile, status_code=status.HTTP_201_CREATED)
+async def upload_video(
+    request: Request, settings: Cfg, filename: str = Query(max_length=255)
+) -> InboxFile:
+    try:
+        saved = await uploads.save_upload(settings, filename, request.stream())
+    except uploads.UploadRefused as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except OSError as exc:
+        raise HTTPException(
+            status.HTTP_507_INSUFFICIENT_STORAGE,
+            detail="The video could not be saved (the disk may be full). Nothing was kept.",
+        ) from exc
+    return InboxFile(
+        filename=saved.relative_to(settings.import_root).as_posix(),
+        size_bytes=saved.stat().st_size,
+        has_tags=False,
+    )
 
 
 @router.post("/imports", response_model=MatchSummary, status_code=status.HTTP_201_CREATED)

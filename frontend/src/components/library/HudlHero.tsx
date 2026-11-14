@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { type HudlMatch, hudlAgeGroups } from "../../api/hudl";
 import { fixtureDate, fixtureLabel, fixtureParts } from "../../lib/hudlFixture";
+import { matchLink } from "../../lib/veoAsHudl";
 import { matchScore, useScoreCorrections } from "../../lib/matchScore";
 import { TeamBadge } from "../TeamBadge";
 import { Badge } from "../ui/Badge";
@@ -23,7 +24,7 @@ export function HudlHero({ matches, club, age, index, onIndex }: { matches: Hudl
   const venue = parts?.venue;
   const home = club || "Home";
   const moments = m.moments?.length ?? 0;
-  const link = `/hudl/${encodeURIComponent(m.id)}`;
+  const link = matchLink(m);
   const score = matchScore(m, club, corrections.data);
   return (
     <section aria-label="Featured match" className="featured-hero relative overflow-hidden">
@@ -33,7 +34,7 @@ export function HudlHero({ matches, club, age, index, onIndex }: { matches: Hudl
         <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-transparent" />
         {parts && (
           <div role="group" aria-label={score ? `${home} ${score.ours}, ${parts.opponent} ${score.theirs}` : `${home} vs ${parts.opponent}`}
-            title={score ? (score.source === "corrected" ? "Corrected score" : "Score from the goal tags") : undefined}
+            title={score ? (score.source === "corrected" ? "Corrected score" : score.source === "veo" ? "Score from Veo" : "Score from the goal tags") : undefined}
             className="hero-crests absolute top-5 left-5 flex items-center gap-2 rounded-full border border-white/10 bg-ink-950/55 p-1.5 pr-2 backdrop-blur-md">
             <TeamBadge name={home} size="sm" tone="home" />
             {score ? <span className="px-1 text-sm font-semibold tabular-nums">{score.ours}–{score.theirs}</span>
@@ -48,7 +49,7 @@ export function HudlHero({ matches, club, age, index, onIndex }: { matches: Hudl
               {group && <Badge tone="violet">{group}</Badge>}
               {m.season_label && m.season_label !== "Unclassified" && <Badge>{m.season_label}</Badge>}
               {venue && <Badge>{venue}</Badge>}
-              <Badge>Hudl</Badge>
+              <Badge>{m.source === "veo" ? "Veo" : "Hudl"}</Badge>
             </div>
             <h2 className="hero-title font-semibold tracking-tight">{fixtureLabel(m.title, club, group)}</h2>
             <p className="mt-2 text-sm text-fg-muted">

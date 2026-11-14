@@ -13,6 +13,18 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-14)
 
+- **Veo-only Library and Clips, Teams panel, Import upload (owner requests 2026-11-14):**
+  with Show Hudl off and Show Veo on, the Library's hero (poster), latest match
+  (Veo's score), overview, match profile and recent moments use Veo matches
+  (`lib/veoAsHudl.ts`, links to `/veo/:id`); Clips opens the newest Veo match.
+  My Player: Teams is narrow and the four totals are a 2 x 2 grid (Teams spans
+  both when editing). Import: drop a video on the box or Choose a video; `PUT
+  /api/imports/upload` streams it to `<import folder>/uploaded/` (`.part`, then
+  `publish_new` with a ` (2)` name if taken; never replaces). Docker mounts only
+  that subfolder writable; `/inbox` stays read-only. nginx streams it (50 GB cap).
+  Browser-checked on the live app except a real upload (no file was written into
+  the owner's import folder).
+
 - **Veo team stats (owner yes 2026-11-14, decision 009):** `_client` now also allows
   `GET /api/mes/v2/<uuid>/match-events` (nothing else under `/api/mes/`). Refresh
   reads the match report and events once per match with video and keeps

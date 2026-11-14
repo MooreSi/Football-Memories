@@ -4,7 +4,7 @@ import { teamProfile } from "./matchProfile";
 
 /** Spec 210: a match's score, from the coaches' goal tags or the owner's correction. */
 export type Score = { ours: number; theirs: number };
-export type MatchScore = Score & { source: "tags" | "corrected" };
+export type MatchScore = Score & { source: "tags" | "corrected" | "veo" };
 export type Corrections = Record<string, Score>;
 
 /** Our goals and theirs from the tags ("ASTON VILLA GOAL" vs "OPPOSITION GOAL"), paired
@@ -28,9 +28,11 @@ export function taggedScore(moments: HudlMoment[] | undefined, club: string | nu
   return { ours, theirs: goal.theirs };
 }
 
-export function matchScore(match: Pick<HudlMatch, "id" | "moments">, club: string | null, corrections: Corrections | undefined): MatchScore | null {
+export function matchScore(match: Pick<HudlMatch, "id" | "moments" | "source" | "score">, club: string | null, corrections: Corrections | undefined): MatchScore | null {
   const fixed = corrections?.[match.id];
   if (fixed) return { ...fixed, source: "corrected" };
+  // A Veo match carries Veo's own score; its highlights have no team to count from.
+  if (match.source === "veo") return match.score ? { ...match.score, source: "veo" } : null;
   const tagged = taggedScore(match.moments, club);
   return tagged && { ...tagged, source: "tags" };
 }

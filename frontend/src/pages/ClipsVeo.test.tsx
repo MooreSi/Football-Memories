@@ -57,3 +57,14 @@ it("leaves Hudl matches out of the picker when Settings has Show Hudl off", asyn
   await vi.waitFor(() => expect(within(picker).getByRole("option", { name: /RJ vs Northgate CB/ })).toBeInTheDocument());
   expect(within(picker).queryByRole("option", { name: /U11 v Stoke/ })).toBeNull();
 });
+
+// Owner request 2026-11-14: with Show Hudl off, Clips opens the newest Veo match.
+it("opens the newest Veo match by default when Hudl is hidden", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  stub();
+  renderWithProviders(<Routes><Route path="/clips" element={<ClipExplorerPage />} /></Routes>, "/clips");
+  const picker = await screen.findByRole("combobox", { name: "Match" });
+  await vi.waitFor(() => expect(picker).toHaveValue("veo-a"));
+  expect(screen.getByRole("region", { name: "Selected Veo match" })).toBeInTheDocument();
+  expect(within(picker).queryByRole("group", { name: /Hudl/ })).toBeNull();
+});

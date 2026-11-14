@@ -43,7 +43,7 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
   const photoError = (upload.error ?? removePhoto.error) as Error | null;
 
   return (
-    <div className="h-full">
+    <div className={editing ? "profile-editing h-full" : "h-full"}>
       <section aria-label="Teams and numbers" className="panel h-full space-y-5 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Teams</h2>
@@ -53,8 +53,7 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {player.teams.length === 0 && <span className="text-sm text-fg-muted">Import a match to add team history.</span>}
+        {player.teams.length > 0 && <div className="flex flex-wrap gap-2">
           {player.teams.map((t) => (
             <Chip key={`${t.team_name}-${t.season_label}`}>
               <Shield size={15} className="text-accent" aria-hidden />
@@ -64,7 +63,7 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
               </span>
             </Chip>
           ))}
-        </div>
+        </div>}
 
         {editing ? (
           <form
@@ -149,8 +148,8 @@ export function ProfilePanel({ player }: { player: PlayerProfile }) {
             </div>
           </form>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
               <h3 className="mb-2 text-sm font-medium text-fg-muted">Plays for</h3>
               {player.club_name ? (
                 <Chip>

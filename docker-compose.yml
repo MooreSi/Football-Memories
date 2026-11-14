@@ -28,6 +28,8 @@ services:
     volumes:
       - ${FM_HOST_ARCHIVE:-./data/archive}:/archive
       - ${FM_HOST_INBOX:-./data/inbox}:/inbox:ro
+      # Owner request 2026-11-14: videos added on the Import page; only this subfolder is writable.
+      - ${FM_HOST_INBOX:-./data/inbox}/uploaded:/inbox/uploaded
     depends_on:
       db:
         condition: service_healthy

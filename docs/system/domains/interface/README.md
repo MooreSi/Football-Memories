@@ -172,3 +172,16 @@ U10 v Stoke City reads 12-9.
   Play Tagged (back to back, `taggedPlaylist`/`advanceTagged`), Download (Hudl's
   `DownloadChoice`: one video or separate files) and Make highlight reel; with none
   ticked, the highlights shown (after the type filter) are used.
+
+### Import upload (owner request 2026-11-14)
+
+- The Import page's drop box sends the file with XHR `PUT /api/imports/upload?filename=`
+  (raw body, progress shown). The backend writes `<import root>/uploaded/.<hex>.part`,
+  then `publish_new` to the cleaned name, or `<stem> (2).<ext>` and so on; it never
+  replaces a file. Listed and imported as `uploaded/<name>`; the upload is kept.
+- Docker: `/inbox` stays `:ro`; only `${FM_HOST_INBOX}/uploaded` is mounted writable on
+  top of it. nginx has its own `location = /api/imports/upload` (50 GB, request
+  buffering off) because the general `/api/` limit is 210 MB.
+- Show Hudl off with Show Veo on: `LibraryPage` maps Veo matches through
+  `veoAsHudl` into the Hudl hero/latest panels; `matchScore` returns Veo's score
+  (`source: "veo"`) for them.

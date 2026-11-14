@@ -23,6 +23,10 @@ import { useHomeClub } from "../lib/useHomeClub";
 import { looksLikePlayer } from "../lib/hudlPlayer";
 import { possession, possessionTotals, withPossessionTime } from "../lib/insights";
 import { ContinueWatching } from "../components/library/ContinueWatching";
+import { useVeoLibrary } from "../api/veo";
+import { connectionShown } from "../lib/connections";
+import { veoAsHudl } from "../lib/veoAsHudl";
+import { useVeoTeam } from "../lib/useHomeTeams";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
 
@@ -47,7 +51,13 @@ export function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
   const {age:ageGroup,setAge:setAgeGroup,season:seasonLabel,setSeason:setSeasonLabel} = useArchiveFilters();
-  const remote = useHudlLibrary();
+  const hudlLibrary = useHudlLibrary();
+  const veoLibrary = useVeoLibrary();
+  // Owner request 2026-11-14: Show Hudl off with Show Veo on puts Veo matches in the
+  // hero, latest match, overview and match profile.
+  const veoOnly = !connectionShown("hudl") && connectionShown("veo");
+  const remote = connectionShown("hudl") ? hudlLibrary
+    : { ...hudlLibrary, data: veoOnly ? veoLibrary.data?.map(veoAsHudl) : [] };
   const q = useDebounced(search.trim(), 250);
 
   useEffect(() => setSearch(params.get("q") ?? ""), [params]);
@@ -74,7 +84,9 @@ export function LibraryPage() {
   const featured = latest.data?.items ?? [];
   const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
   // Our side: the player's "Plays for", else the newest imported team (owner report 2026-11-12).
-  const club = useHomeClub();
+  const hudlClub = useHomeClub();
+  const veoTeam = useVeoTeam();
+  const club = veoOnly ? veoTeam || hudlClub : hudlClub;
   // Owner request 2026-11-11: the right panel and the Match Profile follow the match shown
   // in the hero; the overview counts the selected age group and season.
   const [heroIndex, setHeroIndex] = useState(0);
@@ -118,7 +130,7 @@ export function LibraryPage() {
         <MatchProfile kinds={profileKinds} team={profileTeams} ours={club || "Home"} theirs={opponent} scope={shown ? fixtureLabel(shown.title, club, ageGroup || hudlAgeGroups(shown)[0]) : "All matches"}
           possession={shown ? possession(shown.moments ?? [], club) : null}
           seasonPossession={heroMatches.length > 1 ? possessionTotals(heroMatches.map((m) => m.moments ?? []), club) : null}
-          links={remote.data?.length ? <>
+          links={remote.data?.length && !veoOnly ? <>
             {shown && <Link className="text-accent hover:underline" to={`/report/match/${encodeURIComponent(shown.id)}`}>Share match report</Link>}
             <Link className="text-accent hover:underline" to="/report/season">Share season report</Link>
             <Link className="text-accent hover:underline" to="/opponents">Opponents</Link>
@@ -135,7 +147,7 @@ export function LibraryPage() {
       <div className="dashboard-centre min-w-0 space-y-6">
         {heroMatches.length > 0 ? <HudlHero key={ageGroup} matches={heroMatches} club={club} age={ageGroup} index={Math.min(heroIndex, heroMatches.length - 1)} onIndex={setHeroIndex} />
           : featured.length > 0 && <FeaturedHero matches={featured} />}
-        <ContinueWatching library={remote.data} club={club} />
+        {!veoOnly && <ContinueWatching library={remote.data} club={club} />}
 
         <section aria-label="All matches" className="match-collection panel p-5">
           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -163,7 +175,7 @@ export function LibraryPage() {
             <label><span className="sr-only">Age group</span><select className="field w-auto rounded-full" aria-label="Age group" value={ageGroup} onChange={e=>setAgeGroup(e.target.value)}><option value="">All age groups</option>{ageGroups.map(age=><option key={age}>{age}</option>)}</select></label>
             {!matches.isPending && (
               <span className="text-xs text-fg-muted">
-                {total} offline · {remoteCount} Hudl
+                {total} offline · {remoteCount} {veoOnly ? "Veo" : "Hudl"}
               </span>
             )}
           </div>

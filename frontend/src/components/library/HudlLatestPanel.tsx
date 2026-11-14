@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
 import { formatClock } from "../../lib/format";
 import { fixtureDate, fixtureParts } from "../../lib/hudlFixture";
+import { matchLink } from "../../lib/veoAsHudl";
 import { matchScore, useScoreCorrections } from "../../lib/matchScore";
 import { FixtureCrests } from "../FixtureCrests";
 
@@ -17,7 +18,8 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
   const moments = match.moments ?? [];
   // Owner request 2026-11-11: read the game from kick-off (times are video time, H:MM:SS).
   const recent = [...moments].sort((a, b) => a.time_s - b.time_s).slice(0, 8);
-  const link = `/hudl/${encodeURIComponent(match.id)}`;
+  const link = matchLink(match);
+  const veo = match.source === "veo";
   const corrections = useScoreCorrections();
   const score = matchScore(match, club, corrections.data);
   return (
@@ -32,13 +34,13 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
             <FixtureCrests home={home} away={parts.opponent} middle={<>
               {score ? <>
                 <p className="text-3xl font-semibold tabular-nums">{score.ours}–{score.theirs}</p>
-                <p className="text-[11px] text-fg-subtle">{score.source === "corrected" ? "Corrected" : "From tags"}</p>
+                <p className="text-[11px] text-fg-subtle">{score.source === "corrected" ? "Corrected" : veo ? "From Veo" : "From tags"}</p>
               </> : <p className="text-2xl font-semibold text-fg-muted">vs</p>}
               {date && <p className="mt-1 whitespace-nowrap rounded-full bg-ok/15 px-2 py-0.5 text-[11px] text-ok">{date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</p>}
             </>} />
           </div>
         ) : <p className="mt-4 text-center font-medium">{match.title}</p>}
-        <p className="mt-4 text-center text-xs text-fg-muted">{moments.length ? `${moments.length} tagged moments` : "Tags not indexed yet"}</p>
+        <p className="mt-4 text-center text-xs text-fg-muted">{moments.length ? `${moments.length} ${veo ? "highlights" : "tagged moments"}` : veo ? "No highlights on Veo" : "Tags not indexed yet"}</p>
         <Link to={link} className="mt-4 flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] text-base font-semibold text-white shadow-[0_14px_34px_-12px_rgb(37_99_235/0.95)] hover:brightness-110">
           <Play size={17} aria-hidden /> Watch now
         </Link>
@@ -48,12 +50,12 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
         <h2 className="mb-1 text-lg font-semibold">Recent moments</h2>
         <p className="mb-3 text-xs text-fg-subtle">From kick-off · {moments.length} tagged in this match</p>
         {recent.length === 0 ? (
-          <p className="text-sm text-fg-muted">Moments appear here once this match's tags are indexed. Open the match or Refresh Hudl.</p>
+          <p className="text-sm text-fg-muted">{veo ? "Veo marked no highlights in this match." : "Moments appear here once this match's tags are indexed. Open the match or Refresh Hudl."}</p>
         ) : (
           <ul className="divide-y divide-white/5">
             {recent.map((m) => (
               <li key={m.id}>
-                <Link to={`${link}?moment=${encodeURIComponent(m.id)}`} className="flex items-center gap-3 rounded-lg py-2.5 hover:bg-white/5">
+                <Link to={veo ? link : `${link}?moment=${encodeURIComponent(m.id)}`} className="flex items-center gap-3 rounded-lg py-2.5 hover:bg-white/5">
                   <span className="rounded-md bg-ink-950 px-1.5 py-0.5 font-mono text-[11px] text-pin">{formatClock(m.time_s)}</span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{m.category}</span>
                 </Link>

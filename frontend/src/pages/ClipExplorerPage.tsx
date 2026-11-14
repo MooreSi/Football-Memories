@@ -34,16 +34,19 @@ export function ClipExplorerPage() {
   const all = connectionShown("hudl") ? latestFirst(library.data ?? []) : [];
   const veo = connectionShown("veo") ? latestFirst(veoLibrary.data ?? []) : [];
   const forAge = all.filter((m) => (!age || hudlAgeGroups(m).includes(age)) && (!season || m.season_label===season));
-  const fallback = forAge[0]?.id ?? "imported";
-  const isVeo = Boolean(chosen && veo.some((m) => m.id === chosen));
-  const selected = chosen && (chosen === "imported" || isVeo || all.some((m) => m.id === chosen)) ? chosen : fallback;
+  // Owner request 2026-11-14: with Hudl hidden, the newest Veo match opens.
+  const veoForAge = veo.filter((m) => (!age || (m.age_groups?.length ? m.age_groups : [m.age_group]).includes(age)) && (!season || m.season_label === season));
+  const fallback = forAge[0]?.id ?? (all.length ? undefined : (veoForAge[0] ?? veo[0])?.id) ?? "imported";
+  const valid = (id: string | null) => Boolean(id && (id === "imported" || veo.some((m) => m.id === id) || all.some((m) => m.id === id)));
+  const selected = valid(chosen) ? chosen! : fallback;
+  const isVeo = veo.some((m) => m.id === selected);
   const picker = (
       <label className="panel flex flex-wrap items-center gap-3 p-4 text-sm text-fg-muted">
         Match
         <select aria-label="Match" className="field w-auto max-w-full rounded-full" value={selected} onChange={(e) => setChosen(e.target.value)}>
-          <optgroup label={age ? `Hudl · ${age} (newest first)` : "Hudl (newest first)"}>
+          {all.length > 0 && <optgroup label={age ? `Hudl · ${age} (newest first)` : "Hudl (newest first)"}>
             {forAge.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
-          </optgroup>
+          </optgroup>}
           {age && forAge.length < all.length && (
             <optgroup label="Hudl · other age groups">
               {all.filter((m) => !forAge.includes(m)).map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
@@ -52,7 +55,7 @@ export function ClipExplorerPage() {
           {veo.length > 0 && <optgroup label="Veo (newest first)">
             {veo.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
           </optgroup>}
-          <option value="imported">No Hudl match (imported clips only)</option>
+          <option value="imported">{all.length ? "No Hudl match (imported clips only)" : "Imported clips only"}</option>
         </select>
       </label>
   );
