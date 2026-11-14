@@ -58,8 +58,17 @@ it("disconnects a connected account without forgetting it", async () => {
   expect(body("/veo/action")).toEqual({ action: "disconnect" });
 });
 
-it("offers no Disconnect before it is connected", async () => {
-  stubFetch({ [`${BASE}/veo/account`]: { ...idle, configured: true } });
+// Owner request 2026-11-14 (replaces "no Disconnect before it is connected"): the Veo
+// box always has Disconnect once an account is saved, even after the helper restarts.
+it("offers Disconnect whenever a Veo account is saved", async () => {
+  stubFetch({ [`${BASE}/veo/account`]: { ...idle, configured: true }, [`${BASE}/veo/action`]: { accepted: true } });
+  renderWithProviders(<VeoAccount />);
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Disconnect" }));
+  expect(body("/veo/action")).toEqual({ action: "disconnect" });
+});
+
+it("offers no Disconnect with no Veo account saved", async () => {
+  stubFetch({ [`${BASE}/veo/account`]: { ...idle, configured: false } });
   renderWithProviders(<VeoAccount />);
   await screen.findByRole("button", { name: "Connect" });
   expect(screen.queryByRole("button", { name: "Disconnect" })).toBeNull();

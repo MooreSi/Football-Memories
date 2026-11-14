@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-14)
 
+- **Release 0.4 (owner request 2026-11-14):** versions 0.4.0, CHANGELOG 0.4, README
+  with Veo, drawing board, My Player and import; new screenshots `reel.png`,
+  `veo-match.png`, `connections.png`, `import.png`, refreshed `library.png` and
+  `player.png`, all from made-up data (player "Sam Example", club Riverside,
+  drawn pitches, invented crests) served by a throwaway stand-in helper and a
+  separate throwaway database, both removed afterwards. Also: Veo Disconnect
+  whenever an account is saved; Connections shows the home-network address
+  (helper `GET /network`, `connectors/lan_address.py`: Bonjour name and private
+  IPv4, read locally); the Your player card shows the club crest; My Player
+  totals are centred, larger numbers.
+
 - **Veo-only Library and Clips, Teams panel, Import upload (owner requests 2026-11-14):**
   with Show Hudl off and Show Veo on, the Library's hero (poster), latest match
   (Veo's score), overview, match profile and recent moments use Veo matches

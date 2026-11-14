@@ -46,7 +46,7 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
         <Button type="submit" variant="primary" disabled={busy}>{save.isPending ? "Saving…" : "Save"}</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate("test")}>Connect</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate("refresh")}><RefreshCw size={14} /> Refresh matches</Button>
-        {["ready", "done"].includes(q.data.state) && <Button type="button" disabled={busy} onClick={() => action.mutate("disconnect")}>Disconnect</Button>}
+        {q.data.configured && <Button type="button" disabled={busy} onClick={() => action.mutate("disconnect")}>Disconnect</Button>}
       </div>
     </form>
     {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in.</p>}

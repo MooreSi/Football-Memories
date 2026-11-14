@@ -12,6 +12,7 @@ import { Spinner } from "../components/ui/Spinner";
 import { HIDDEN_KEY, readHidden } from "../lib/connections";
 import { HomeTeamField } from "../components/settings/HomeTeamField";
 import { ClubCrestUpload } from "../components/settings/ClubCrestUpload";
+import { LanAddress } from "../components/settings/LanAddress";
 
 const LABELS: Record<string, string> = {
   list_teams: "List teams",
@@ -53,6 +54,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
         </EmptyState>
       ) : (
         <div className="space-y-4">
+        <LanAddress />
         <div className="flex flex-wrap gap-2" aria-label="Connections shown">
           <Toggle label="Show Hudl matches" on={shown("hudl")} onChange={(on) => show("hudl", on)} />
           <Toggle label="Show Veo matches" on={shown("veo")} onChange={(on) => show("veo", on)} />

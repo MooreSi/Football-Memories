@@ -2,30 +2,47 @@
 
 ## Unreleased
 
-### New
-- **Drawing board** on every match, under the video: pen, arrow, dashed run,
-  curved arrow, line, spotlight ring, shaded zone, text labels and numbered
-  player markers, in six colours and three widths, with undo, redo, eraser and
-  keyboard shortcuts. Draw on any frame or on a tagged moment; drawings are
-  saved with their note, replay over the video at their time and are listed
-  under the video. **Screenshot** downloads a PNG of the frame with its drawing.
-- **Move tool** in the drawing board: drag any mark to a new place.
-- **Next / previous tagged moment** under the video: the buttons, the N and B
-  keys, or the keyboard's media next/previous keys (Mac and Windows).
+## 0.4 (2026-11-14)
 
-- **Veo connection** in Settings > Connections: save your Veo account (kept
-  in the Keychain on Mac or Credential Manager on Windows), test it and read
-  your Veo matches, their details and highlights. Show or hide the Hudl and
-  Veo connections with the switches at the top.
+### New
+- **Veo connection**: save your Veo account (kept in the Keychain on Mac or
+  Credential Manager on Windows), connect, and read your Veo matches with their
+  highlights and posters. Veo matches sit beside Hudl ones in All matches and Clips.
+- **Veo match page**: watch a Veo match through the desktop helper on this
+  computer or any device on your Wi-Fi, step through the highlights (N and B),
+  tick highlights to play back to back, download them as one video or separate
+  files, or download the full match.
+- **Veo team stats**: Veo's own detected events split by team (goals, attempts,
+  corners, fouls, free kicks, throw-ins, goal kicks) and a goals-and-shots
+  timeline; click a dot to watch from there.
+- **Highlight reels from Veo matches**, with the Veo team name on the cards.
+- **Drawing board** on every match: pen, arrows, runs, zones, labels and player
+  markers in six colours, with undo, a move tool and a PNG screenshot. Drawings
+  are saved and replay over the video.
+- **Next / previous tagged moment** buttons, the N and B keys, and the keyboard's
+  media keys.
+- **My Player**: records and streaks, a season story, a milestones timeline, the
+  top 5 moments (make them into a reel in one click) and an opponent map.
+- **Import a video from the browser**: drop a match video on the Import page or
+  choose it from a folder; it is saved in the import folder, never replacing a file.
+- **Home network address** on Settings > Connections, for phones and tablets.
+- **Show Hudl / Show Veo** switches choose which matches the Library and Clips
+  list. With only Veo shown, the Library's featured match, latest match,
+  overview and recent moments come from Veo.
+
+### Better
+- Club crests: a wider search (Wikipedia search and Wikimedia Commons), a "find
+  the crest on the web" link, and paste or drop a crest image in Settings.
+- The Your player card shows the club crest; My Player's Teams panel is narrower
+  and the totals are larger.
+- Veo has a Disconnect button whenever an account is saved.
 
 ### Fixed
-- **Next / previous moment** goes to the moment after (or before) the one
-  outlined, in match order, even when the video has played on past later
-  moments; moments at the same second are no longer skipped.
-- After skipping from a moment you clicked, that moment no longer keeps a
-  second outline (the browser's keyboard focus ring).
-- The green outline on the playing moment is drawn all the way round, and a
-  moment you click is outlined too.
+- Veo matches now play in Safari and on other devices on the home network.
+- Next / previous moment goes to the moment after (or before) the one
+  outlined, in match order; moments at the same second are no longer skipped.
+- A moment you skipped from no longer keeps a second outline, and the green
+  outline on the playing moment is drawn all the way round.
 - Continue watching shows only the last three matches.
 
 ## 0.3 (2026-11-13)

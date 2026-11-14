@@ -3,10 +3,10 @@
 A private, local-first archive of a young player's football: every match,
 every tagged moment and every highlight, kept safely on your own computer.
 
-Connect your Hudl account (with your own permission to automate and download),
-stream matches at the best available quality, jump straight to tagged moments,
-download the ones that matter and turn them into shareable highlight reels with
-animated title cards. Nothing is uploaded anywhere.
+Connect your Hudl and Veo accounts (with your own permission to automate and
+download), stream matches at the best available quality, jump straight to tagged
+moments and highlights, download the ones that matter and turn them into
+shareable highlight reels with animated title cards. Nothing is uploaded anywhere.
 
 ![Match Library](docs/screenshots/library.png)
 
@@ -16,13 +16,19 @@ animated title cards. Nothing is uploaded anywhere.
   scores, a Match Profile and possession for the match on show. **Continue
   watching** picks up where you stopped; icons show what you have downloaded.
 - **Match page**: watch the whole game or only the tagged moments, filter by
-  moment type or player, and play tagged moments back to back. **Match
-  insights** show possession, a minute-by-minute momentum chart (click a bar to
-  watch it) and your record against the opponent. **Attacks ending in a chance**
-  turns each attack into one clip. Add a **note or arrows** to any moment.
-- **My Player**: a player card in seven finishes, a memories timeline, and what
-  your player was on the pitch during, his football journey season by season,
-  and who he plays alongside most.
+  moment type or player, play tagged moments back to back and step through them
+  with N and B. **Match insights** show possession, a minute-by-minute momentum
+  chart (click a bar to watch it) and your record against the opponent.
+  **Attacks ending in a chance** turns each attack into one clip. A **drawing
+  board** puts arrows, runs, zones and player markers over any frame, saved and
+  replayed with the video.
+- **Veo matches**: your Veo recordings beside your Hudl ones, with their
+  highlights and posters. Watch them on any device at home, tick highlights to
+  play, download or make into a reel, and see **team stats** from Veo's own
+  event detection (goals, attempts, corners, fouls and more, for each side).
+- **My Player**: a player card in seven finishes, records and streaks, a season
+  story, milestones, the top 5 moments, an opponent map, a memories timeline,
+  what your player was on the pitch during and who he plays alongside most.
 - **Opponents**: your record against every club for one team, followed as it
   moves up an age group each season, split by season with every game.
 - **Reports**: a match or season report with club crests, saved as an image or
@@ -31,12 +37,20 @@ animated title cards. Nothing is uploaded anywhere.
   separate clips, one video, or straight into a highlight reel. **Batch download**
   does the same across many matches in one go.
 - **Highlight reels**: six animated card styles, each match with its own opening
-  card filled in automatically with both crests, the opponent and the date.
+  card filled in automatically with both crests, the opponent and the date, from
+  Hudl or Veo matches.
+- **Import**: drop a match video on the Import page (or choose it from a folder)
+  and add the details; the original file is copied and verified.
 - **Downloaded**: every full match, moment set and reel on this computer, with
   Play, Save and Delete, and an optional folder for Plex and other media players.
 - **Alerts**: a bell for new matches and new moments of your player.
-- **Phones and tablets**: open the app from any device on your home Wi-Fi.
+- **Phones and tablets**: open the app from any device on your home Wi-Fi;
+  Settings > Connections shows the address to use.
 - **Updates**: Settings > Update checks GitHub and updates in one click.
+
+| Highlight reel studio | Veo match and team stats |
+|---|---|
+| ![Highlight reel studio](docs/screenshots/reel.png) | ![Veo match page](docs/screenshots/veo-match.png) |
 
 | Match page | Match insights |
 |---|---|
@@ -45,6 +59,10 @@ animated title cards. Nothing is uploaded anywhere.
 | Player hub | On the pitch during, journey and partnerships |
 |---|---|
 | ![Player hub](docs/screenshots/player.png) | ![Player insights](docs/screenshots/player-insights.png) |
+
+| Connections (Hudl, Veo, home network) | Import a match |
+|---|---|
+| ![Connections](docs/screenshots/connections.png) | ![Import](docs/screenshots/import.png) |
 
 | Opponents | Clips |
 |---|---|
@@ -117,6 +135,14 @@ Windows it is the minimised "Football Memories Hudl helper" window) while you us
 
 Hudl's terms forbid automated access without permission. Use this only for an
 account and footage you have permission to automate and download.
+
+### Connecting Veo
+
+In the same place, enter your Veo email and password, press **Save**, then
+**Connect** and **Refresh matches**. The password is kept the same way as
+Hudl's. The app only reads your Veo match list, highlights and videos; it never
+changes anything on Veo. **Disconnect** forgets the open session; your account
+stays saved.
 
 ## Good to know
 

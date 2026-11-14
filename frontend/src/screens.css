@@ -123,6 +123,9 @@
 .profile-top > .profile-editing { grid-column: 2 / -1; }
 .profile-top:has(> .profile-editing) .profile-stats { grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: none; }
 .profile-stats .tile { background: #292a2ed9; border-color: #ffffff0b; }
+/* The wider 2 x 2 totals read as headline numbers rather than small text in big boxes. */
+.profile-stats [data-stat-value] { font-size: clamp(28px, 14cqi, 64px); line-height: 1; }
+.profile-stats .tile > div:last-child { margin-block: auto; text-align: center; }
 .profile-details svg polygon[fill="none"] { stroke: #ffffff20; }
 .profile-details svg polygon:not([fill="none"]) { fill: #8998f548; stroke: #a6b1ff; }
 [data-screen="profile"] :focus-visible { outline-color: var(--color-accent); }

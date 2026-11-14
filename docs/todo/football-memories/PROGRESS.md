@@ -75,6 +75,8 @@ no additional code or live capture needed. App/helper run the verified source.
 | Show Hudl off: Library hero, latest match, overview, profile and recent moments from Veo; Clips opens the newest Veo match | done (tests; browser-checked) |
 | My Player: Teams narrower, totals 2 x 2 | done (browser-checked) |
 | Import: drop or choose a video, saved to the import folder's uploaded/ (never replaces) | done (tests; browser-checked without uploading) |
+| Veo Disconnect whenever an account is saved; home-network address on Connections; crest on Your player | done (tests; browser-checked) |
+| Release 0.4: version, changelog, README, screenshots (synthetic data) | done |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 

@@ -31,6 +31,7 @@ from app.connectors.hudl_metadata import (
     capture_key,
     season_label,
 )
+from app.connectors.lan_address import lan_address
 
 ORIGINS = {
     "http://127.0.0.1:8765",
@@ -284,6 +285,7 @@ def create_companion(output: Path) -> FastAPI:
         return JSONResponse({"detail": str(error)}, status_code=400)
 
     app.include_router(veo_router)
+    app.state.lan_address = lan_address
 
     @app.get("/account")
     def account_status(request: Request) -> dict[str, object]:
@@ -644,6 +646,11 @@ def create_companion(output: Path) -> FastAPI:
         return Response(
             content=content, media_type=media_type, headers={"Cache-Control": "no-store"}
         )
+
+    @app.get("/network")
+    def network(request: Request) -> dict[str, str | None]:
+        """Owner request 2026-11-14: this computer's home-network address, for phones."""
+        return dict(request.app.state.lan_address())
 
     @app.get("/status")
     def status(request: Request) -> dict[str, str | None]:

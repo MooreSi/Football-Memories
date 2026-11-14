@@ -50,6 +50,9 @@ export function YourPlayerCard() {
           <p className="text-base leading-tight font-semibold break-words">{p.display_name}</p>
           <p className="mt-0.5 text-xs text-fg-muted">{[p.position, p.teams[0]?.team_name].filter(Boolean).join(" · ") || "Player hub"}</p>
         </div>
+        {/* Owner request 2026-11-14: the club crest to the right of the name. */}
+        {p.club_name && <img src={`/api/team-logo?name=${encodeURIComponent(p.club_name)}`} alt={`${p.club_name} crest`}
+          className="size-11 shrink-0 object-contain drop-shadow-[0_3px_6px_#0008]" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
       </div>
       <p className="mt-3 text-xs text-fg-subtle">{p.totals.moments + hudlMoments} moments in {p.totals.matches + hudl.length} matches</p>
     </Link>
