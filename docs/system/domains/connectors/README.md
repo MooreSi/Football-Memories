@@ -536,3 +536,15 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   momentum, tracking and physical data). The app sends the same Bearer token to
   both. None is called yet: the list, what is known and the proposed one-off check
   are in owner decision [009](../../../owner-decisions/009-veo-analytics-reads.md).
+
+## Veo analytics reads: what the owner's account returns (check 2026-11-14)
+
+- Results table in decision [009](../../../owner-decisions/009-veo-analytics-reads.md).
+  Short version: `analysis/matches/<slug>/match-report/` and
+  `/api/mes/v2/<identifier>/match-events` answer 200 with the same Bearer token and
+  give events **with a team side** (own/opponent) and own-v-opponent key stats;
+  `/api/mes/` uses the match `identifier` (the uuid in our `veo-<uuid>` id), not
+  the slug. Paid analytics (`stats/`, AI insights) answer 403; momentum and
+  quality 404; `x`/`z` positions are null on this account.
+- The check ran from a one-off script outside the repo using `_client.session`;
+  the client itself still allows `/api/app/` GETs only.

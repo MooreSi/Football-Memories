@@ -1,6 +1,6 @@
 # 009: Reading Veo's analytics and match data the app does not use yet
 
-**Status:** open
+**Status:** answered 2026-11-14 (check run; using the results is a separate request)
 **Raised by:** owner request 2026-11-13 ("is there anything else that Veo doesn't publish
 that is available to use? ai data, match analytics etc.")
 
@@ -62,4 +62,32 @@ The check shows what the subscription allows. Then, per source that answers:
 Veo's own stats, momentum and events on the Veo match page and in insights; the
 lineup for player names (helps decision 007); the owner's club crest from Veo.
 
-ANSWER:
+ANSWER: 2026-11-14, owner: "Yes, run the check".
+
+## Result of the check (2026-11-14)
+
+One sign-in, 14 GETs 1 s apart, on one match with video (28 highlights, 4-2). No
+POST, no match page, nothing changed on Veo; no refusal stopped the run. Only
+status codes, field names, counts and event-type labels were kept.
+
+| Path | Status | What it holds |
+|---|---|---|
+| `matches/<slug>/` | 200 | match record: `opponent_short_name`, team colours, formations, `duration`; `opponent_club_name` was empty |
+| `feature-processing-status/` | 200 | `followcam`, `interactive`, `ai_detection`, `analytics`, `player_spotlight` (values not kept), `match_report.available` |
+| `analysis/matches/<slug>/match-report/` | 200 | **team-sided events** (28: goals and shots, each with `team`, period and video time), **key stats own v opponent** (goals, total attempts, corners, fouls, free kicks; full time and per period), scorers by side with times (no names), home and away team with `crest_url` for the owner's side, lineup block |
+| `/api/mes/v2/<id>/match-events` | 200 | **101 events with `team`**: corner kicks, fouls, free kicks, goals, goal kicks, kick-offs, out of play, shots, throw-ins; `x`/`z` (pitch position) empty |
+| `/api/mes/v2/<id>/ui/score` | 200 | `{own, opponent}` |
+| `lineup/`, `roster/` | 200 | empty (no players entered on Veo) |
+| `stats/` | 403 | refused (Analytics subscription, most likely) |
+| `coach-assist/.../insights/` | 403 | refused (Veo's AI insights are not on this account) |
+| `match-momentum`, `quality` | 404 | not produced for this match |
+| `events/`, `player-moments` | 400 | need parameters Veo's app sends; not tried further |
+| `analysis/heatmap/` | 405 | not a GET |
+
+What this means: on this account Veo gives, for free, every detected event with
+**which team** it was (the highlights list has no side), plus own-v-opponent key
+stats and the owner's club crest. Pitch positions, heatmaps, tracking, player stats,
+momentum and AI insights are not available (paid Analytics, or not processed).
+
+Using these reads needs `_client` to allow GETs under `/api/mes/v2/` and the
+match-report path (today it allows `/api/app/` only). That is the next request.

@@ -11,7 +11,14 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-13)
+## Current state (2026-11-14)
+
+- **Veo data check run (decision 009, owner yes 2026-11-14):** match report and
+  `/api/mes/v2/<id>/match-events` answer on the owner's account with team-sided
+  events (101 on the match checked: shots, goals, corners, fouls, free kicks,
+  throw-ins...) and own-v-opponent key stats; paid analytics and AI insights 403.
+  Nothing uses them yet; next would be allowing those GETs in `_client` and
+  showing team-split stats on the Veo match page.
 
 - **Veo tick boxes and Veo data research (owner request 2026-11-13):** Veo
   highlights have tick boxes; Play Tagged, Download selected moments (helper action
