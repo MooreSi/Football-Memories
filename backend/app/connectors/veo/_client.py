@@ -1,7 +1,8 @@
 """The one module that talks to Veo (spec 250, D-035).
 
 Normal-user sign-in in an ephemeral Chrome context (headless, as D-022 for Hudl),
-then GET-only reads of Veo's own web-app JSON under /api/app/, one at a time and
+then GET-only reads of Veo's own web-app JSON under /api/app/ (plus one match's
+events from its analytics service, decision 009), one at a time and
 at least a second apart. No retries: a refusal, rate limit or challenge stops the
 run and is shown to the owner. Cookies stay in the browser context's memory; no
 storage state, response body or URL is written or logged here.
@@ -29,7 +30,12 @@ CHALLENGE = (
     'iframe[src*="captcha"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"], '
     'input[autocomplete="one-time-code"], input[name="otp"], input[name="code"]'
 )
-_PATH = re.compile(r"^/api/app/[A-Za-z0-9_\-./?=&%:+]*$")
+_PATH = re.compile(
+    r"^/api/app/[A-Za-z0-9_\-./?=&%:+]*$"
+    # Decision 009 (owner, 2026-11-14): one match's events from Veo's analytics
+    # service, and nothing else under /api/mes/ (no tracking or player data).
+    r"|^/api/mes/v2/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/match-events$"
+)
 
 Http = Callable[[str], tuple[int, dict[str, str], Any]]
 

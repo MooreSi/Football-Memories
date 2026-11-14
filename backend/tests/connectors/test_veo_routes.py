@@ -277,12 +277,22 @@ def test_moments_action_passes_the_ticked_highlights_and_gets_a_save_link(tmp_pa
     store.saved.append(("parent@example.test", SECRET))
     app.state.veo_store, app.state.veo = store, ReelConnection()
     client = TestClient(app, base_url="http://127.0.0.1:8766")
-    body = {"action": "moments", "match_id": "veo-a", "name": "Norton Lindsay v Town",
-            "moment_ids": ["h1", "h2"], "combined": False}
+    body = {
+        "action": "moments",
+        "match_id": "veo-a",
+        "name": "Norton Lindsay v Town",
+        "moment_ids": ["h1", "h2"],
+        "combined": False,
+    }
     assert client.post("/veo/action", json=body, headers=APP).status_code == 202
     _, _, request = app.state.veo.reels[0]
     assert request is not None
     assert (request["moment_ids"], request["combined"]) == (["h1", "h2"], False)
-    app.state.veo.state = {"state": "done", "busy": False, "message": "", "summary": None,
-                           "filename": "moments/Norton Lindsay v Town moments (ab12cd34).zip"}
+    app.state.veo.state = {
+        "state": "done",
+        "busy": False,
+        "message": "",
+        "summary": None,
+        "filename": "moments/Norton Lindsay v Town moments (ab12cd34).zip",
+    }
     assert "/moments/" in client.get("/veo/account", headers=APP).json()["download_url"]

@@ -100,3 +100,57 @@ def videos() -> list[dict[str, Any]]:
             "url": "https://c.veocdn.com/synthetic/match.mp4",
         }
     ]
+
+
+# Owner-approved check 2026-11-14 (decision 009): the match report and the events
+# service, field names and types as seen; every value is made up.
+def match_report(own_side: str = "home") -> dict[str, Any]:
+    def pair(own: int, opponent: int) -> dict[str, Any]:
+        return {"full_time": {"own": own, "opponent": opponent}, "periods": []}
+
+    return {
+        "match": {"match_id": "m", "slug": "s", "title": "t", "kick_off": "k", "videos": []},
+        "teams": {
+            "own_side": own_side,
+            "home": {"name": "Riverside", "crest_url": "https://c.veocdn.com/synthetic/crest.png"},
+            "away": {"name": "Northgate", "crest_url": None},
+        },
+        "events": [],
+        "overview": {
+            "key_stats": {
+                "goals": pair(3, 1),
+                "total_attempts": pair(9, 4),
+                "corners": pair(2, 5),
+                "fouls": pair(1, 3),
+                "free_kicks": pair(4, 2),
+            }
+        },
+    }
+
+
+def match_events(own: str = "home", opponent: str = "away") -> dict[str, Any]:
+    def event(kind: str, team: str, seconds: int, period: int = 1) -> dict[str, Any]:
+        return {
+            "id": f"e-{kind}-{seconds}",
+            "matchId": "m",
+            "team": team,
+            "eventType": kind,
+            "videoTimeMs": seconds * 1000,
+            "periodId": period,
+            "periodTimeMs": seconds * 1000,
+            "outcome": None,
+            "x": None,
+            "z": None,
+            "attributes": [],
+        }
+
+    return {
+        "events": [
+            event("FootballKickOff", own, 51),
+            event("FootballShot", own, 120),
+            event("FootballGoal", own, 125),
+            event("FootballCornerKick", opponent, 400),
+            event("FootballShot", opponent, 410),
+            event("FootballGoal", opponent, 1700, 2),
+        ]
+    }

@@ -71,6 +71,7 @@ no additional code or live capture needed. App/helper run the verified source.
 | My Player: Milestones timeline (first match, seasons, new age groups, moment and match counts, new bests, first team goal with the player on) | done (tests; browser-checked on real data) |
 | My Player: Top 5 moments (favourites, then Hudl moments in a team goal, save, chance or shot faced; Make a reel) | done (tests) |
 | My Player: Opponent map (clubs played, crests, how often, latest match) | done (tests) |
+| Veo match page: Team stats from Veo's match report and events (us v opponent, goals/shots timeline); decision 009 | done (tests); real account on next Refresh |
 
 ## Spec 240 drawing board (owner request 2026-11-13)
 

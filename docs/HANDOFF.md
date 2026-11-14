@@ -13,6 +13,18 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-14)
 
+- **Veo team stats (owner yes 2026-11-14, decision 009):** `_client` now also allows
+  `GET /api/mes/v2/<uuid>/match-events` (nothing else under `/api/mes/`). Refresh
+  reads the match report and events once per match with video and keeps
+  `team_data` (own v opponent stats, events with side and time; no names or
+  addresses) in library.json, reused on later refreshes; a 400/403/404/405 keeps
+  None and is not asked again, 401/429/5xx stop the refresh. The Veo match page
+  shows a Team stats panel (us v opponent table, goals/shots timeline that seeks).
+  Not yet run on the real account: the next Refresh makes 2 extra GETs per match.
+  The event `team` value was not recorded by the check; the parser accepts
+  own/opponent or home/away (matched to `own_side`); if Veo uses something else,
+  sides show as unknown and the page counts nothing for them.
+
 - **Veo data check run (decision 009, owner yes 2026-11-14):** match report and
   `/api/mes/v2/<id>/match-events` answer on the owner's account with team-sided
   events (101 on the match checked: shots, goals, corners, fouls, free kicks,

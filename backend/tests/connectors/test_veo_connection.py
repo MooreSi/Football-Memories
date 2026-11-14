@@ -16,6 +16,8 @@ from tests.connectors.veo_fixtures.synthetic import (
     EXPIRED_ID,
     detail,
     highlights,
+    match_events,
+    match_report,
     periods,
     recording,
     videos,
@@ -27,8 +29,9 @@ EXPIRED = recording(EXPIRED_ID, expiration_status="expired")
 
 
 class FakeApi:
-    def __init__(self, refuse: str | None = None) -> None:
+    def __init__(self, refuse: str | None = None, status: int = 429) -> None:
         self.refuse = refuse
+        self.status = status
         self.paths: list[str] = []
         slug = ACTIVE["slug"]
         self.pages = {
@@ -48,12 +51,15 @@ class FakeApi:
             f"/api/app/matches/{slug}/videos/": ({}, videos()),
             f"/api/app/matches/{slug}/highlights/?include_ai=true": ({}, highlights()),
             f"/api/app/matches/{slug}/periods/": ({}, periods()),
+            # Decision 009: the match report and the events service (team-split data).
+            f"/api/app/analysis/matches/{slug}/match-report/": ({}, match_report()),
+            f"/api/mes/v2/{ACTIVE_ID}/match-events": ({}, match_events()),
         }
 
     def get(self, path: str) -> tuple[dict[str, str], Any]:
         self.paths.append(path)
         if self.refuse and path.startswith(self.refuse):
-            raise VeoRefused(429)
+            raise VeoRefused(self.status)
         return self.pages[path]
 
 
@@ -129,3 +135,47 @@ def test_saving_new_credentials_forgets_the_old_account_library(tmp_path: Path) 
     veo.start("refresh")
     veo.reset()
     assert veo.library() == [] and veo.status()["summary"] is None
+
+
+# Decision 009 (owner, 2026-11-14): Refresh also keeps Veo's team-split stats and
+# events for each match with video, read once and reused on later refreshes.
+def test_refresh_keeps_the_team_split_data_and_reads_it_once(tmp_path: Path) -> None:
+    api = FakeApi()
+    veo = connection(tmp_path, api)
+    veo.start("refresh")
+    item = next(i for i in veo.library() if i["id"] == f"veo-{ACTIVE_ID}")
+    assert item["team_data"]["stats"]["total_attempts"] == {"own": 9, "opponent": 4}
+    assert [e["side"] for e in item["team_data"]["events"]].count("opponent") == 3
+    assert "veocdn" not in (tmp_path / "library.json").read_text()
+    again = FakeApi()
+    connection(tmp_path, again).start("refresh")
+    assert not any("match-report" in p or "/api/mes/" in p for p in again.paths)
+    item = next(i for i in veo.library() if i["id"] == f"veo-{ACTIVE_ID}")
+    assert item["team_data"]["stats"]["goals"] == {"own": 3, "opponent": 1}
+
+
+@pytest.mark.parametrize("status", [400, 403, 404])
+def test_a_match_without_team_data_is_skipped_and_not_asked_again(
+    tmp_path: Path, status: int
+) -> None:
+    api = FakeApi(refuse="/api/app/analysis/", status=status)
+    veo = connection(tmp_path, api)
+    veo.start("refresh")
+    assert veo.status()["state"] == "ready"
+    item = next(i for i in veo.library() if i["id"] == f"veo-{ACTIVE_ID}")
+    assert item["team_data"] is None
+    assert not any("/api/mes/" in p for p in api.paths)  # nothing more for that match
+    again = FakeApi()
+    connection(tmp_path, again).start("refresh")
+    assert not any("match-report" in p for p in again.paths)
+
+
+@pytest.mark.parametrize("status", [401, 429, 500])
+def test_a_sign_out_or_slow_down_on_team_data_stops_the_refresh(
+    tmp_path: Path, status: int
+) -> None:
+    api = FakeApi(refuse="/api/mes/", status=status)
+    veo = connection(tmp_path, api)
+    veo.start("refresh")
+    assert veo.status()["state"] == "error"
+    assert sum(p.startswith("/api/mes/") for p in api.paths) == 1

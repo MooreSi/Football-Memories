@@ -240,3 +240,22 @@ def test_reads_send_the_header_and_a_refusal_never_carries_it(
         refused.get("/api/app/user/")
     assert "FAKE_VEO_TOKEN" not in str(error.value) + repr(error.value) + caplog.text
     assert "FAKE_VEO_TOKEN" in TOKEN  # negative control: the marker is really in the token
+
+
+# Decision 009 (owner, 2026-11-14): Veo's events service for one match is the only read
+# allowed outside /api/app/; the rest of /api/mes/ (tracking, player data) stays out.
+def test_allows_only_the_events_read_of_the_analytics_service() -> None:
+    match = "11111111-2222-3333-4444-555555555555"
+    allowed = f"https://app.veo.co/api/mes/v2/{match}/match-events"
+    http = FakeHttp({allowed: (200, {}, {"events": []})})
+    veo, _ = api(http)
+    assert veo.get(f"/api/mes/v2/{match}/match-events")[1] == {"events": []}
+    for path in (
+        f"/api/mes/v2/{match}/player-tracking",
+        f"/api/mes/v2/{match}/match-events?x=1",
+        "/api/mes/v2/-/team-stats",
+        f"/api/mes/v2/{match}/../match-events",
+    ):
+        with pytest.raises(CaptureError):
+            veo.get(path)
+    assert http.calls == [allowed]

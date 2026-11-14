@@ -18,7 +18,8 @@ from typing import Any
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_metadata import capture_key
 
-from ._parse import ACTIVE, best_video, library_item, next_page
+from ._client import VeoRefused
+from ._parse import ACTIVE, best_video, library_item, next_page, team_data
 
 MAX_PAGES = 100
 
@@ -231,6 +232,7 @@ class VeoConnection:
             for r in recordings
             if r.get("is_accessible") and r.get("expiration_status") in ACTIVE and r.get("slug")
         ]
+        known = {i.get("id"): i for i in self.library()}
         library: list[dict[str, Any]] = []
         done = 0
         for r in recordings:
@@ -252,7 +254,15 @@ class VeoConnection:
             self._remember(f"veo-{r['identifier']}", videos)
             _, highlights = api.get(f"/api/app/matches/{slug}/highlights/?include_ai=true")
             _, periods = api.get(f"/api/app/matches/{slug}/periods/")
-            library.append(library_item(r, detail, highlights, periods, videos))
+            item = library_item(r, detail, highlights, periods, videos)
+            if item["available"]:
+                previous = known.get(item["id"]) or {}
+                item["team_data"] = (
+                    previous["team_data"]
+                    if "team_data" in previous
+                    else self._team_data(api, slug, str(r["identifier"]))
+                )
+            library.append(item)
         self._write(library)
         moments = sum(len(i["moments"]) for i in library)
         with_video = sum(1 for i in library if i["available"])
@@ -272,6 +282,19 @@ class VeoConnection:
                 f"{moments} highlights."
             ),
         )
+
+    def _team_data(self, api: Any, slug: str, identifier: str) -> dict[str, Any] | None:
+        """Decision 009: Veo's match report and its events for one match, read once.
+        A match Veo has no report for (400/403/404/405) is kept as None and not asked
+        again; a sign-out, slow-down or server error stops the refresh as usual."""
+        try:
+            _, report = api.get(f"/api/app/analysis/matches/{slug}/match-report/")
+            _, events = api.get(f"/api/mes/v2/{identifier}/match-events")
+        except VeoRefused as refused:
+            if refused.status in {400, 403, 404, 405}:
+                return None
+            raise
+        return team_data(report, events)
 
     def poster(self, identity: str) -> Path | None:
         path = self.posters / f"{capture_key(identity)}.jpg"

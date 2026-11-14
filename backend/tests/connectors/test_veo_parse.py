@@ -1,11 +1,17 @@
 """Spec 250: Veo recordings, details and highlights become the helper's library items."""
 
-from app.connectors.veo._parse import library_item, next_page
+import json
+
+import pytest
+
+from app.connectors.veo._parse import library_item, next_page, team_data
 from tests.connectors.veo_fixtures.synthetic import (
     ACTIVE_ID,
     EXPIRED_ID,
     detail,
     highlights,
+    match_events,
+    match_report,
     periods,
     recording,
     videos,
@@ -62,3 +68,39 @@ def test_the_next_page_comes_from_the_link_header_only() -> None:
     assert next_page(link) == 3
     assert next_page('<https://app.veo.co/x/?page=2>; rel="prev"') is None
     assert next_page(None) is None
+
+
+# Decision 009: Veo's team-sided events and key stats, kept as own v opponent.
+@pytest.mark.parametrize(
+    ("own", "opponent", "side"),
+    [("home", "away", "home"), ("away", "home", "away"), ("own", "opponent", "home")],
+)
+def test_team_data_splits_events_and_stats_by_side(own: str, opponent: str, side: str) -> None:
+    data = team_data(match_report(side), match_events(own, opponent))
+    assert data["stats"] == {
+        "goals": {"own": 3, "opponent": 1},
+        "total_attempts": {"own": 9, "opponent": 4},
+        "corners": {"own": 2, "opponent": 5},
+        "fouls": {"own": 1, "opponent": 3},
+        "free_kicks": {"own": 4, "opponent": 2},
+    }
+    assert data["events"][:3] == [
+        {"type": "KICK OFF", "side": "own", "time_s": 51.0, "period": 1},
+        {"type": "SHOT", "side": "own", "time_s": 120.0, "period": 1},
+        {"type": "GOAL", "side": "own", "time_s": 125.0, "period": 1},
+    ]
+    assert [e["side"] for e in data["events"][3:]] == ["opponent"] * 3
+    assert "veocdn" not in json.dumps(data)  # no remote address is kept
+
+
+def test_team_data_copes_with_missing_parts() -> None:
+    assert team_data(None, None) == {"stats": {}, "events": []}
+    odd = {
+        "events": [
+            {"eventType": "FootballShot", "team": "?", "videoTimeMs": 5000},
+            {"team": "home"},
+        ]
+    }
+    assert team_data({"teams": {"own_side": "home"}}, odd)["events"] == [
+        {"type": "SHOT", "side": None, "time_s": 5.0, "period": None}
+    ]

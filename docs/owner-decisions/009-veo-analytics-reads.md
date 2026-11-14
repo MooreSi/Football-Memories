@@ -91,3 +91,8 @@ momentum and AI insights are not available (paid Analytics, or not processed).
 
 Using these reads needs `_client` to allow GETs under `/api/mes/v2/` and the
 match-report path (today it allows `/api/app/` only). That is the next request.
+
+**Built 2026-11-14 (owner: "Yes, add them"):** `_client` allows only
+`/api/mes/v2/<uuid>/match-events` beyond `/api/app/`. Refresh reads the report and
+events once per match with video and caches the team-split result; the Veo match
+page shows it as Team stats.

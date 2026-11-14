@@ -104,6 +104,55 @@ def library_item(
     }
 
 
+STATS = ("goals", "total_attempts", "corners", "fouls", "free_kicks")
+
+
+def _side(team: object, own_side: object) -> str | None:
+    if team in ("own", "opponent"):
+        return str(team)
+    if team in ("home", "away") and own_side in ("home", "away"):
+        return "own" if team == own_side else "opponent"
+    return None
+
+
+def _event_name(kind: str) -> str:
+    words = re.findall(r"[A-Z][a-z]*|[a-z]+|\d+", kind.removeprefix("Football"))
+    return " ".join(words).upper()[:40] or "EVENT"
+
+
+def team_data(report: Any, events: Any) -> dict[str, Any]:
+    """Decision 009: Veo's match report key stats and its events service, as own v
+    opponent. Counts, types, sides and times only; no names, ids or addresses."""
+    report = report if isinstance(report, dict) else {}
+    own_side = (report.get("teams") or {}).get("own_side")
+    key_stats = (report.get("overview") or {}).get("key_stats") or {}
+    stats: dict[str, Any] = {}
+    for name in STATS:
+        full = (key_stats.get(name) or {}).get("full_time") if isinstance(key_stats, dict) else None
+        if isinstance(full, dict) and all(
+            isinstance(full.get(k), int) for k in ("own", "opponent")
+        ):
+            stats[name] = {"own": full["own"], "opponent": full["opponent"]}
+    found = (events or {}).get("events") if isinstance(events, dict) else None
+    items: list[dict[str, Any]] = []
+    for event in found or []:
+        if not isinstance(event, dict) or not isinstance(event.get("eventType"), str):
+            continue
+        millis = _number(event.get("videoTimeMs"))
+        if millis is None:
+            continue
+        period = event.get("periodId")
+        items.append(
+            {
+                "type": _event_name(event["eventType"]),
+                "side": _side(event.get("team"), own_side),
+                "time_s": millis / 1000,
+                "period": period if isinstance(period, int) else None,
+            }
+        )
+    return {"stats": stats, "events": sorted(items, key=lambda e: e["time_s"])}
+
+
 def next_page(link: str | None) -> int | None:
     """The page number of Veo's rel="next" link, or None on the last page."""
     for part in (link or "").split(","):

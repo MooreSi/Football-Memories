@@ -144,3 +144,45 @@ it("links the saved highlights once the helper has cut them", async () => {
   renderWithProviders(<App />, "/veo/veo-a");
   expect(await screen.findByRole("link", { name: /Save the highlights/ })).toHaveAttribute("href", `${H}/files/scope/moments/RJ%20moments%20(ab12cd34).zip`);
 });
+
+// Decision 009 (owner, 2026-11-14): Veo's own team-split stats and events, read at
+// Refresh, shown as us v them with the goals and shots on a timeline.
+const teamData = {
+  stats: { goals: { own: 2, opponent: 1 }, total_attempts: { own: 7, opponent: 3 }, corners: { own: 1, opponent: 4 } },
+  events: [
+    { type: "SHOT", side: "own", time_s: 60, period: 1 }, { type: "GOAL", side: "own", time_s: 300, period: 1 },
+    { type: "SHOT", side: "opponent", time_s: 900, period: 1 }, { type: "GOAL", side: "opponent", time_s: 1900, period: 2 },
+    { type: "THROW IN", side: "own", time_s: 1000, period: 1 },
+  ],
+};
+
+it("shows Veo's team-split stats, us v the opponent", async () => {
+  routes([{ ...match, team_data: teamData }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const team = await screen.findByRole("region", { name: "Team stats" });
+  expect(within(team).getByRole("columnheader", { name: "Us" })).toBeInTheDocument();
+  expect(within(team).getByRole("columnheader", { name: "Opponent" })).toBeInTheDocument();
+  const attempts = within(team).getByRole("row", { name: /Attempts/ });
+  expect(attempts).toHaveTextContent(/7.*Attempts.*3/);
+  expect(within(team).getByRole("row", { name: /Corners/ })).toHaveTextContent(/1.*Corners.*4/);
+  expect(within(team).getByRole("row", { name: /Throw-ins/ })).toHaveTextContent(/1.*Throw-ins.*0/);
+});
+
+it("jumps to a goal or shot from the team timeline", async () => {
+  routes([{ ...match, team_data: teamData }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const team = await screen.findByRole("region", { name: "Team stats" });
+  const line = within(team).getByRole("group", { name: "Goals and shots by team" });
+  expect(within(line).getAllByRole("button")).toHaveLength(4);
+  const video = await screen.findByLabelText("Veo match video") as HTMLVideoElement;
+  Object.defineProperty(video, "readyState", { configurable: true, value: 4 });
+  await userEvent.setup().click(within(line).getByRole("button", { name: "Opponent GOAL at 31:40" }));
+  expect(video.currentTime).toBe(1900);
+});
+
+it("shows no team stats for a match Veo gave none for", async () => {
+  routes([{ ...match, team_data: null }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  await screen.findByRole("region", { name: "Match insights" });
+  expect(screen.queryByRole("region", { name: "Team stats" })).toBeNull();
+});

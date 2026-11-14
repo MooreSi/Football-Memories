@@ -11,6 +11,7 @@ import { advanceTagged, needsSeek, nextMoment, taggedPlaylist } from "../lib/tag
 import { DownloadChoice } from "./HudlMatchPage";
 import { useVeoTeam } from "../lib/useHomeTeams";
 import { SPELL, veoInsights } from "../lib/veoInsights";
+import { teamSplit } from "../lib/veoTeamSplit";
 import { useNotes, useSaveNote } from "../lib/viewerState";
 
 const HALF = ["1st half", "2nd half", "Extra time 1", "Extra time 2"];
@@ -80,6 +81,58 @@ function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) =
       <div className="flex justify-between text-[11px] text-fg-subtle"><span>0:00</span><span>{formatClock(s.spells.length * SPELL)}</span></div>
     </div>
     <p className="text-xs text-fg-subtle">Veo marks the type and time of each highlight but not the team, so these count both teams. Click a bar to watch from there.</p>
+  </section>;
+}
+
+/** Decision 009 (owner, 2026-11-14): Veo's own stats and events with the team each
+ *  belongs to, read at Refresh. Shown only when Veo gave them for this match. */
+function VeoTeamStats({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) => void }) {
+  const ownName = useVeoTeam() || "Us";
+  const rows = teamSplit(match.team_data);
+  if (!rows.length) return null;
+  const key = (match.team_data?.events ?? []).filter(e => e.side && (e.type === "GOAL" || e.type === "SHOT"));
+  const end = Math.max(match.duration_s ?? 0, ...key.map(e => e.time_s + 1), 1);
+  const side = (s: "own" | "opponent") => (s === "own" ? ownName : "Opponent");
+  return <section aria-label="Team stats" className="panel space-y-5 p-5">
+    <h2 className="flex items-center gap-2 text-xl font-semibold"><Activity size={18} className="text-accent" aria-hidden /> Team stats</h2>
+    <table className="w-full text-sm tabular-nums">
+      <thead><tr className="text-xs text-fg-subtle">
+        <th scope="col" className="w-1/4 pb-2 text-left font-medium">{ownName}</th>
+        <th scope="col" className="pb-2 font-medium"><span className="sr-only">Stat</span></th>
+        <th scope="col" className="w-1/4 pb-2 text-right font-medium">Opponent</th>
+      </tr></thead>
+      <tbody>{rows.map(r => {
+        const total = Math.max(1, r.own + r.opponent);
+        return <tr key={r.label} className="border-t border-white/5">
+          <td className="py-2 text-left text-lg font-semibold">{r.own}</td>
+          <td className="py-2"><div className="text-center text-fg-muted">{r.label}</div>
+            <div aria-hidden className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-white/5">
+              <span className="block bg-accent" style={{ width: `${(r.own / total) * 100}%` }} />
+              <span className="ml-auto block bg-fg-subtle/60" style={{ width: `${(r.opponent / total) * 100}%` }} />
+            </div></td>
+          <td className="py-2 text-right text-lg font-semibold">{r.opponent}</td>
+        </tr>;
+      })}</tbody>
+    </table>
+    {key.length > 0 && <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-fg-muted"><span>Goals and shots through the match</span>
+        <span className="text-xs"><span className="text-ok">●</span> Goal · <span className="text-accent">●</span> Shot</span></div>
+      <div role="group" aria-label="Goals and shots by team" className="space-y-1">
+        {(["own", "opponent"] as const).map(s => <div key={s} className="flex items-center gap-3">
+          <span className="w-24 shrink-0 truncate text-xs text-fg-subtle">{side(s)}</span>
+          <div className="relative h-6 flex-1 rounded-sm bg-white/5">
+            {key.filter(e => e.side === s).map(e => {
+              const label = `${side(s)} ${e.type} at ${formatClock(e.time_s)}`;
+              return <button key={`${e.type}-${e.time_s}`} type="button" aria-label={label} title={label} onClick={() => onSeek(e.time_s)}
+                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-bg hover:scale-125 ${e.type === "GOAL" ? "h-4 w-4 bg-ok" : "h-3 w-3 bg-accent"}`}
+                style={{ left: `${(e.time_s / end) * 100}%` }} />;
+            })}
+          </div>
+        </div>)}
+      </div>
+      <div className="flex justify-between pl-[6.75rem] text-[11px] text-fg-subtle"><span>0:00</span><span>{formatClock(end)}</span></div>
+    </div>}
+    <p className="text-xs text-fg-subtle">From Veo's own event detection, which marks the team. Click a dot to watch from there.</p>
   </section>;
 }
 
@@ -219,6 +272,7 @@ export function VeoMatchFull({ id }: { id: string }) {
       {own && status.data?.busy && <p role="status" className="text-sm text-accent">{status.data.message}</p>}
       {own && !status.data?.busy && status.data?.state === "done" && <p role="status" className="text-sm text-ok">{status.data.message} It is listed under Downloaded.{status.data.download_url && <> <a href={status.data.download_url} className="font-semibold text-accent underline">Save the highlights</a></>}</p>}
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
+      <VeoTeamStats match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       {highlights.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>

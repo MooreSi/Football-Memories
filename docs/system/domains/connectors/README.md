@@ -548,3 +548,17 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   quality 404; `x`/`z` positions are null on this account.
 - The check ran from a one-off script outside the repo using `_client.session`;
   the client itself still allows `/api/app/` GETs only.
+
+### Veo team-split data in use (2026-11-14)
+
+- `_client._PATH` allows `/api/app/...` and exactly `/api/mes/v2/<uuid>/match-events`.
+- Refresh calls `_team_data` for each available match not already cached (key
+  `team_data` present in the previous library.json, even when None). 400/403/404/405
+  give None (not asked again); other refusals stop the refresh, no retry.
+- `_parse.team_data` keeps key stats (`goals`, `total_attempts`, `corners`, `fouls`,
+  `free_kicks`, full time) and events as `{type, side, time_s, period}`. Event type
+  `FootballCornerKick` becomes `CORNER KICK`. Side: `own`/`opponent` as given, or
+  `home`/`away` against the report's `teams.own_side`; anything else is None.
+  The real `team` values were not recorded by the check: confirm on first use.
+- A match refreshed while Veo is still processing keeps whatever it got then;
+  there is no re-read yet.
