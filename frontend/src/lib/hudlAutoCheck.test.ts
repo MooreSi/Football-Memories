@@ -31,3 +31,11 @@ it("starts the sweep when indexed matches still lack a full-quality snapshot", (
   expect(autoCheck(status, [{ ...base, id: "a", poster_url: null, poster_checked_at: Date.now() / 1000 - 60 }], Date.now())).toBeNull();
   expect(autoCheck(status, [{ ...base, id: "a", poster_url: null, tag_status: "unavailable" }], Date.now())).toBeNull();
 });
+
+// Owner request 2026-11-15: the check now also runs on returning to the app, so a
+// failed sign-in must not be retried on every return: one try per six hours.
+it("does not look for new matches again within six hours of the last try", () => {
+  const stale = { ...ready, catalogue_checked_at: null };
+  expect(autoCheck(stale, indexed, now, now - 3600 * 1000)).toBeNull();
+  expect(autoCheck(stale, indexed, now, now - 7 * 3600 * 1000)).toBe("refresh");
+});

@@ -21,6 +21,12 @@ page per match; after that only new matches are visited.
   player page. Opening the app (owner request, D-023) re-reads the match list
   when it is over 6 hours old, otherwise indexes matches still lacking tags.
   No server background sync; nothing runs on a timer.
+- Owner request 2026-11-15 ("it should automatically show new matches", Veo and
+  Hudl): coming back to the app's tab also re-reads a list over 6 hours old, and
+  Veo's list follows the same rule (not on a Veo match page or Clips, where it would
+  stop the video). Each browser waits 6 hours after a try, so a failed sign-in is
+  not repeated on every return. Still no timer. A shorter interval is the owner's
+  call: it means more sign-ins to Hudl and Veo.
 - One match at a time, about 2.5 s pause after each page settles.
 - A video whose page or tags cannot be read is saved as unavailable (with the
   reason) and skipped for 7 days. Sign-in or 401/403/429 refusals stop at once;

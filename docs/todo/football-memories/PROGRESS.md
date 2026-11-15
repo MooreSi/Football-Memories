@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## New matches appear on their own; Veo events filters (owner request 2026-11-15)
+
+`done`: Veo list re-read on opening/returning to the app when over 6 h old (not on
+a Veo match page or Clips); Hudl also re-checks on returning; one try per 6 h per
+browser. Veo highlights panel filters by highlight type and Veo event. Tests:
+`AutoCheck.test.tsx`, `veoAutoCheck.test.ts`, `hudlAutoCheck.test.ts`,
+`VeoMatchFullPage.test.tsx`.
+
 ## Reel score and team stats cards, Hudl team stats (owner request 2026-11-15)
 
 - done: score tick box on the match title card; team stats card with a chosen

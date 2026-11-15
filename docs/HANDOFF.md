@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **New matches appear on their own (owner request 2026-11-15):** `useVeoAutoCheck`
+  (AppShell) refreshes Veo when its list is over 6 h old, on opening the app and on
+  coming back to the tab (`useReturns`), never on `/veo/` or `/clips`.
+  `useHudlAutoCheck` now also re-checks on coming back (list re-read only; the tag
+  sweep stays once per load). Each browser waits 6 h after a try
+  (`fm.{veo,hudl}.autocheck.tried`). Decision 003 records it; a shorter interval is
+  open for the owner. Veo highlights panel also has Highlights / Veo events filters.
+
 - **Reel score and team stats cards, Hudl team stats (owner request 2026-11-15):**
   reel studio "Show the score" (match card shows the score instead of VS; Veo score,
   Hudl `matchScore`) and an opt-in "Team stats card" after each match's moments,

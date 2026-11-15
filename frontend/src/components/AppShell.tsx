@@ -1,4 +1,5 @@
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
+import { useVeoAutoCheck } from "./veo/useVeoAutoCheck";
 import { useVeoClubCrest } from "../lib/useVeoClubCrest";
 import { Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -68,6 +69,7 @@ function GlobalSearch() {
 export function AppShell() {
   const { pathname } = useLocation();
   useHudlAutoCheck();
+  useVeoAutoCheck();
   useVeoClubCrest();
   const screen = pathname.startsWith("/player") ? "profile"
     : (pathname.startsWith("/matches/") || pathname.startsWith("/hudl/")) || pathname.startsWith("/clips") ? "analysis"
