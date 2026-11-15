@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Veo Opponents and fuller crests (owner requests 2026-11-15):** with Hudl hidden and
+  Veo shown, `/opponents` is built from Veo matches, one club at a time (Club picker,
+  `?club=` from the Library match profile's new Opponents link; Season or all seasons).
+  Opening an opponent shows Veo's stats summed over the meetings that have them (Shots
+  on goal, Corners, Fouls, Free kicks, Penalties) and links each game to `/veo/<id>`.
+  Across all seasons the Club list is long: older Veo titles put the home side first
+  ("Redditch United vs RCW"), so opponents appear as clubs; an open question for the
+  owner. Crests: `lib/crestTrim.ts` crops a crest file's plain margin in the browser
+  (canvas; the file is never changed); a round crest then fills 94% of the badge, a
+  square or shield one 74%; the report uses the same crop. No canvas (the test DOM)
+  shows the crest as before; a load that never finishes falls back after 4 s.
 - **Reports and crests (owner request 2026-11-15):** a Veo match report shows Veo's
   team stats (attempts as "Shots on goal", Penalties always, 0 - 0 when none); the
   season card lists games Won / Drawn / Lost with scores (`Report.results`). Crests

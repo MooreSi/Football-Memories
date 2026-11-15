@@ -140,7 +140,7 @@ export function LibraryPage() {
           links={remote.data?.length ? <>
             {shown && <Link className="text-accent hover:underline" to={`/report/match/${encodeURIComponent(shown.id)}`}>Share match report</Link>}
             <Link className="text-accent hover:underline" to="/report/season">Share season report</Link>
-            {!veoOnly && <Link className="text-accent hover:underline" to="/opponents">Opponents</Link>}
+            <Link className="text-accent hover:underline" to={veoOnly && club ? `/opponents?club=${encodeURIComponent(club)}` : "/opponents"}>Opponents</Link>
           </> : undefined} />
       </aside>
 

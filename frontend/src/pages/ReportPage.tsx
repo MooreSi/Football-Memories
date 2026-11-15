@@ -19,6 +19,7 @@ import { type Report, matchReport, seasonReport } from "../lib/report";
 import { useHomeClub } from "../lib/useHomeClub";
 import { fixtureParts } from "../lib/hudlFixture";
 import { initials } from "../components/TeamBadge";
+import { trimCrest } from "../lib/crestTrim";
 import { REPORT_MARGIN, REPORT_WIDTH, ROW_FONT, VALUE_LINE, VALUE_SIZE, fitTitle, layoutRows, wrapText } from "../lib/reportLayout";
 import { usePrimaryPlayerName } from "../lib/usePrimaryPlayerName";
 
@@ -33,14 +34,18 @@ function useCrest(name: string | null) {
       const res = await fetch(`/api/team-logo?name=${encodeURIComponent(name!)}`);
       if (!res.ok) return null;
       const blob = await res.blob();
-      return await new Promise<string | null>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => ok(null); r.readAsDataURL(blob); });
+      const url = await new Promise<string | null>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => ok(null); r.readAsDataURL(blob); });
+      // Owner report 2026-11-15: crests looked small; crop the file's plain margin.
+      const trimmed = url ? await trimCrest(url) : null;
+      return url ? { url: trimmed?.url ?? url, square: trimmed ? !trimmed.round : false } : null;
     },
   });
 }
 
-function Crest({ cx, cy, r, name, src, tone }: { cx: number; cy: number; r: number; name: string; src?: string | null; tone: "home" | "away" }) {
-  // Owner request 2026-11-15: the crest fills its circle (clipped to it), not a small inset.
-  const inset = r * 0.94;
+function Crest({ cx, cy, r, name, src, square, tone }: { cx: number; cy: number; r: number; name: string; src?: string | null; square?: boolean; tone: "home" | "away" }) {
+  // Owner request 2026-11-15: the crest fills its circle (clipped to it), not a small inset;
+  // a square or shield crest sits a little smaller, so its corners stay inside.
+  const inset = r * (square ? 0.72 : 0.94);
   const clip = `crest-clip-${Math.round(cx)}-${Math.round(cy)}`;
   return <g data-crest={src ? "image" : "initials"}>
     <circle cx={cx} cy={cy} r={r} fill={src ? "#ffffff" : tone === "home" ? "#22d3ee" : "#cbd5e1"} stroke="#ffffff33" strokeWidth={4} />
@@ -61,15 +66,15 @@ function Rows({ rows }: { rows: ReturnType<typeof layoutRows> }) {
 }
 
 /** The report as one self-contained SVG (crests embedded), so it can become a PNG. */
-export function ReportCard({ report, crests = {} }: { report: Report; crests?: { ours?: string | null; theirs?: string | null } }) {
+export function ReportCard({ report, crests = {} }: { report: Report; crests?: { ours?: string | null; theirs?: string | null; square?: { ours?: boolean; theirs?: boolean } } }) {
   const match = report.kind === "match";
   const mid = W / 2;
   let y: number;
   const head: React.ReactNode[] = [];
   if (match) {
     head.push(<text key="e" x={mid} y={110} textAnchor="middle" fill="#22d3ee" fontSize={28} fontWeight={700} letterSpacing={6}>{report.eyebrow}</text>);
-    head.push(<Crest key="c1" cx={230} cy={260} r={95} name={report.ours} src={crests.ours} tone="home" />);
-    head.push(<Crest key="c2" cx={W - 230} cy={260} r={95} name={report.theirs} src={crests.theirs} tone="away" />);
+    head.push(<Crest key="c1" cx={230} cy={260} r={95} name={report.ours} src={crests.ours} square={crests.square?.ours} tone="home" />);
+    head.push(<Crest key="c2" cx={W - 230} cy={260} r={95} name={report.theirs} src={crests.theirs} square={crests.square?.theirs} tone="away" />);
     head.push(<text key="s" x={mid} y={290} textAnchor="middle" fill="#fff" fontSize={report.headline ? 96 : 56} fontWeight={800}>{report.headline ?? "v"}</text>);
     const names = [report.ours, report.theirs].map((n, i) => {
       const lines = wrapText(n, 32, 300).slice(0, 2);
@@ -80,7 +85,7 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
     y = 560;
   } else {
     head.push(<text key="e" x={REPORT_MARGIN} y={120} fill="#22d3ee" fontSize={28} fontWeight={700} letterSpacing={6}>{report.eyebrow}</text>);
-    head.push(<Crest key="c1" cx={REPORT_MARGIN + 75} cy={235} r={75} name={report.ours} src={crests.ours} tone="home" />);
+    head.push(<Crest key="c1" cx={REPORT_MARGIN + 75} cy={235} r={75} name={report.ours} src={crests.ours} square={crests.square?.ours} tone="home" />);
     const size = fitTitle(report.title, 60, 28, W - REPORT_MARGIN * 2 - 190);
     head.push(<text key="t" x={REPORT_MARGIN + 180} y={225} fill="#fff" fontSize={size} fontWeight={800}>{report.title}</text>);
     head.push(<text key="s" x={REPORT_MARGIN + 180} y={275} fill="#94a3b8" fontSize={30}>{report.subtitle}</text>);
@@ -236,7 +241,7 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
         <Button onClick={() => window.print()}><Printer size={16} /> Print / Save as PDF</Button>
       </header>
       {error && <p role="alert" className="text-danger">{error}</p>}
-      <div ref={card} className="report-card flex justify-center"><ReportCard report={report} crests={{ ours: ours.data, theirs: theirs.data }} /></div>
+      <div ref={card} className="report-card flex justify-center"><ReportCard report={report} crests={{ ours: ours.data?.url, theirs: theirs.data?.url, square: { ours: ours.data?.square, theirs: theirs.data?.square } }} /></div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { clubKey, resolveClub } from "../lib/clubs";
+import { trimCrest } from "../lib/crestTrim";
 /** Actual cached club crests, with initials when an identity cannot be resolved. */
 export function initials(name: string): string {
   const words = name.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
@@ -27,6 +28,17 @@ function TeamIdentity({ name, size = "md", tone = "home" }: { name: string; size
   const resolved = resolveClub(name);
   const query = clubKey(resolved) === clubKey(name) ? name : resolved;
   const src = `/api/team-logo?name=${encodeURIComponent(query)}${attempt ? `&try=${attempt}` : ""}`;
+  // Owner report 2026-11-15: crests looked small. The crest is cropped to itself (its
+  // file's plain margin removed); a round crest then fills the disc, and a square or
+  // shield one sits a little smaller so its corners stay inside.
+  const [trimmed, setTrimmed] = useState<{ url: string; round: boolean } | null>(null);
+  useEffect(() => {
+    if (failed) return;
+    let live = true;
+    void trimCrest(src).then((t) => { if (live) setTrimmed(t); });
+    return () => { live = false; };
+  }, [src, failed]);
+  const fit = !trimmed ? "absolute inset-[16%] size-[68%]" : trimmed.round ? "absolute inset-[3%] size-[94%]" : "absolute inset-[13%] size-[74%]";
   // Owner request 2026-11-11: every real crest sits on the same plain disc with the
   // same inset, so tall, wide and round crests all fit inside the circle alike.
   // Only the initials fallback is coloured by home/away.
@@ -40,8 +52,8 @@ function TeamIdentity({ name, size = "md", tone = "home" }: { name: string; size
       data-crest
       className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full font-bold shadow-[0_8px_24px_-8px_rgb(0_0_0/0.8)] ring-2 ring-white/15 ${failed ? fallback : "bg-[radial-gradient(circle_at_35%_30%,#ffffff,#e6e9f0)]"} ${SIZES[size]}`}
     >
-      {!failed ? <img src={src} alt=""
-        onError={() => setFailed(true)} className="absolute inset-[16%] size-[68%] object-contain" /> : initials(name)}
+      {!failed ? <img src={trimmed?.url ?? src} alt=""
+        onError={() => setFailed(true)} className={`${fit} object-contain`} /> : initials(name)}
     </span>
   );
 }

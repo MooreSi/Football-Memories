@@ -91,3 +91,12 @@ it("lists the Veo team events first in recent moments, then the highlights", asy
   ]);
   expect(recent).toHaveTextContent("4 tagged in this match");
 });
+
+it("links the Veo match profile to Opponents for the match's own club", async () => {
+  // Owner request 2026-11-15: "add opponents to the match profile for veo".
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  render(veo, "Riverside Juniors");
+  const profile = await screen.findByRole("region", { name: "Match profile" });
+  expect(await within(profile).findByRole("link", { name: "Opponents" }))
+    .toHaveAttribute("href", "/opponents?club=Riverside%20Juniors");
+});
