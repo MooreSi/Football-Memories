@@ -129,7 +129,9 @@ def long_video(tmp_path_factory: pytest.TempPathFactory) -> Path:
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
          "-f", "lavfi", "-i", "testsrc=size=640x360:rate=25",
          "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "90",
-         "-c:v", "libx264", "-b:v", "2M", "-x264-params", "nal-hrd=cbr", "-minrate", "2M", "-maxrate", "2M", "-bufsize", "1M", "-pix_fmt", "yuv420p", "-c:a", "aac", str(path)],
+         "-c:v", "libx264", "-b:v", "2M", "-x264-params", "nal-hrd=cbr",
+         "-minrate", "2M", "-maxrate", "2M", "-bufsize", "1M",
+         "-pix_fmt", "yuv420p", "-c:a", "aac", str(path)],
         check=True,
     )  # fmt: skip
     return path
