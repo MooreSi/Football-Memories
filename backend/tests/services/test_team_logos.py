@@ -127,8 +127,8 @@ def test_a_photo_is_never_taken_as_a_crest(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr("app.services.team_logos._fetch", fetch)
     assert cached_crest("Nowhere Town", tmp_path) is None
     assert all(
-        "api.php" in c.args[0] for c in fetch.call_args_list
-    )  # the photo is never downloaded
+        "api.php" in c.args[0] or "thesportsdb.com/api/" in c.args[0] for c in fetch.call_args_list
+    )  # only lookups: the photo is never downloaded
 
 
 def _rate_limited(url, retry_after="30"):
@@ -300,7 +300,13 @@ def _commons(*files: tuple[str, str]) -> bytes:
     return json.dumps({"query": {"pages": pages}}).encode()
 
 
-def _lookups(monkeypatch, search: bytes, pages: dict[str, str], commons: bytes):  # noqa: ANN202
+def _lookups(  # noqa: ANN202
+    monkeypatch,
+    search: bytes,
+    pages: dict[str, str],
+    commons: bytes,
+    sportsdb: bytes = b'{"teams":null}',
+):
     from urllib.parse import parse_qs, urlsplit
 
     asked: list[str] = []
@@ -308,6 +314,9 @@ def _lookups(monkeypatch, search: bytes, pages: dict[str, str], commons: bytes):
 
     def fetch(url):
         query = parse_qs(urlsplit(url).query)
+        if "thesportsdb.com/api/" in url:
+            asked.append(f"sportsdb:{query['t'][0]}")
+            return sportsdb
         if "commons.wikimedia.org" in url:
             asked.append("commons")
             return commons
@@ -457,6 +466,8 @@ def test_a_plain_image_counts_only_on_a_football_club_page(
     def fetch(url):
         if "api.php" in url:
             return _club_page(image, description)
+        if "thesportsdb.com/api/" in url:
+            return _sportsdb()
         downloads.append(url)
         return b"\x89PNG\r\n\x1a\nimage"
 
@@ -480,3 +491,94 @@ def test_a_search_hit_with_athletic_or_juniors_added_is_the_same_club(
     )
     assert cached_crest("Hill & Dale", tmp_path) is not None
     assert downloads == [crest]
+
+
+# Owner request 2026-11-15 ("Yes, add it"): TheSportsDB's free public search has
+# non-league clubs Wikipedia has no crest for (Racing Club Warwick). Its free tier allows
+# 30 requests a minute.
+def _sportsdb(*teams: dict[str, str]) -> bytes:
+    import json
+
+    return json.dumps({"teams": list(teams) or None}).encode()
+
+
+def test_thesportsdb_badge_is_used_when_wikipedia_has_no_crest(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    badge = "https://r2.thesportsdb.com/images/media/team/badge/abc123.png"
+    asked, downloads = _lookups(
+        monkeypatch,
+        _search(),
+        {},
+        _commons(),
+        _sportsdb({"strTeam": "Riverside Juniors", "strSport": "Soccer", "strBadge": badge}),
+    )
+    assert cached_crest("Riverside Juniors CB", tmp_path) is not None
+    assert downloads == [badge + "/small"]
+    assert "sportsdb:Riverside Juniors" in asked
+    assert "commons" not in asked  # the named badge comes before a Commons file search
+
+
+def test_a_thesportsdb_team_of_another_sport_or_club_is_not_used(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    _, downloads = _lookups(
+        monkeypatch,
+        _search(),
+        {},
+        _commons(),
+        _sportsdb(
+            {
+                "strTeam": "Riverside Juniors",
+                "strSport": "Rugby",
+                "strBadge": "https://r2.thesportsdb.com/r.png",
+            },
+            {
+                "strTeam": "Riverside United",
+                "strSport": "Soccer",
+                "strBadge": "https://r2.thesportsdb.com/u.png",
+            },
+            {
+                "strTeam": "Riverside Juniors",
+                "strSport": "Soccer",
+                "strBadge": "https://evil.example/x.png",
+            },
+        ),
+    )
+    assert cached_crest("Riverside Juniors", tmp_path) is None
+    assert downloads == []
+
+
+def test_thesportsdb_is_asked_at_most_once_every_two_seconds(tmp_path, monkeypatch, clock) -> None:
+    from app.services.team_logos import cached_crest
+
+    at: list[float] = []
+    asked, _ = _lookups(monkeypatch, _search(), {}, _commons(), _sportsdb())
+    real = team_logos._fetch
+
+    def timed(url):
+        if "thesportsdb.com" in url:
+            at.append(clock.now)
+        return real(url)
+
+    monkeypatch.setattr("app.services.team_logos._fetch", timed)
+    cached_crest("Riverside Juniors", tmp_path)
+    cached_crest("Northgate Rovers", tmp_path)
+    assert len(at) == 2 and at[1] - at[0] >= 2.0
+
+
+def test_a_club_with_club_in_its_name_is_matched(tmp_path, monkeypatch) -> None:
+    """ "Racing Club Warwick" was never matched: "club" was dropped from the found name
+    but kept in the asked one."""
+    from app.services.team_logos import cached_crest
+
+    badge = "https://r2.thesportsdb.com/images/media/team/badge/sc1.png"
+    _, downloads = _lookups(
+        monkeypatch,
+        _search(),
+        {},
+        _commons(),
+        _sportsdb({"strTeam": "Sporting Club Riverside", "strSport": "Soccer", "strBadge": badge}),
+    )
+    assert cached_crest("Sporting Club Riverside", tmp_path) is not None
+    assert downloads == [badge + "/small"]

@@ -282,6 +282,12 @@ matched helper output. Prior archive files unchanged; no new full match capture.
   Bournemouth", which is not a page. The last lookup, the name as written, may be
   a city or country, so its image must name a club (FC, crest, logo, badge):
   "Tokyo" as written is the city with a flag SVG.
+- TheSportsDB (2026-11-15): `searchteams.php?t=` on the free key `123` returns
+  `{"teams": null}` or teams with `strTeam`, `strTeamAlternate`, `strSport`
+  ("Soccer"), `strBadge` (r2.thesportsdb.com PNG; `/small` gives about 40 KB).
+  Free tier: 30 requests a minute, 429 then wait a minute; asked every 2.5 s. It
+  has many non-league clubs (Racing Club Warwick, Tamworth) but not every
+  grassroots one (Bolehall Swifts is not there).
 
 ## hudl_browser package layout (2026-11-11)
 `_account.py` passed the 800-line ceiling and was split (rule 70): batch and

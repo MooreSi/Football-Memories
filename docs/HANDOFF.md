@@ -22,10 +22,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   JPEG never), and a search hit may add Athletic/Juniors/Youth/JFC. `resolveClub` no
   longer turns "AFC Birmingham" into Birmingham City. Wikipedia rate-limits after
   about a dozen quick requests (429); the 1 s pacing and pause handle it.
-  **Open for the owner:** TheSportsDB (free key 123, has non-league clubs such as
-  Racing Club Warwick and Tamworth) as another source needs the crest tests' fake
-  network to recognise its URL (they count any non-Wikipedia URL as a download), so
-  it waits for a yes. The Veo account crest (Racing Club Warwick's) was saved as
+  **TheSportsDB added (owner: "Yes, add it"):** free public team search (key 123)
+  after the Wikipedia search, before Commons; football teams only, named as the club,
+  badge only from r2.thesportsdb.com (`/small`, PNG). Asked at most every 2.5 s (free
+  tier: 30 a minute). Two older crest tests' fakes now answer its URL with "no team"
+  (owner-approved test change). `_same_club` now ignores generic words ("club") on
+  both sides, so "Racing Club Warwick" can match at all. Live: found Racing Club
+  Warwick, Tamworth, Solihull Moors, Coleshill Town; not Bolehall Swifts (Wikipedia
+  has it). **Still open:** the Veo account crest (Racing Club Warwick's) was saved as
   Norton Lindsay's by `useVeoClubCrest`; changing that rule and replacing the saved
   file also waits for the owner.
 

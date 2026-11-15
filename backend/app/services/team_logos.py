@@ -25,6 +25,8 @@ _HOSTS = {
     "commons.wikimedia.org",
     "upload.wikimedia.org",
     "thumb.wikimedia.org",
+    "www.thesportsdb.com",
+    "r2.thesportsdb.com",
 }
 _LOCK = threading.Lock()
 _MISSES: dict[str, float] = {}
@@ -34,6 +36,9 @@ _MISSES: dict[str, float] = {}
 _PAUSED_UNTIL: list[float] = [0.0]
 _LAST_REQUEST: list[float] = [0.0]
 _GAP_S = 1.0
+# TheSportsDB's free tier allows 30 requests a minute; ask it at most every 2.5 s.
+_SPORTSDB_GAP_S = 2.5
+_LAST_SPORTSDB: list[float] = [0.0]
 _NO_CREST_S = 86400.0
 
 
@@ -91,9 +96,13 @@ def logo_candidate(name: str) -> str | None:
 def _paced_fetch(url: str) -> bytes:
     """One request at a time (callers hold _LOCK), spaced out as Wikipedia asks."""
     wait = _LAST_REQUEST[0] + _GAP_S - time.monotonic()
+    if urlsplit(url).hostname == "www.thesportsdb.com":
+        wait = max(wait, _LAST_SPORTSDB[0] + _SPORTSDB_GAP_S - time.monotonic())
     if wait > 0:
         time.sleep(wait)
     _LAST_REQUEST[0] = time.monotonic()
+    if urlsplit(url).hostname == "www.thesportsdb.com":
+        _LAST_SPORTSDB[0] = _LAST_REQUEST[0]
     try:
         return _fetch(url)
     except HTTPError as error:
@@ -224,7 +233,7 @@ def _same_club(name: str, text: str) -> bool:
     """`text` names exactly this club: "Riverside Juniors F.C. (Warwickshire)" is
     Riverside Juniors; "Northgate United F.C." is not "Northgate Rovers". F.C., crest
     words, years and a place in brackets are ignored."""
-    club = _words(club_name(name))
+    club = _words(club_name(name)) - _GENERIC
     found = {w for w in _words(re.sub(r"\([^)]*\)", " ", text)) - _GENERIC if not w.isdigit()}
     # Owner request 2026-11-15: "Blaby & Whetstone" is "Blaby & Whetstone Athletic F.C.";
     # words that name a club's form, not another club, may be added.
@@ -304,6 +313,28 @@ def _commons_crest(name: str) -> str | None:
     return None
 
 
+def _sportsdb_crest(name: str) -> str | None:
+    """Owner request 2026-11-15: TheSportsDB's free public team search (key "123", as its
+    documentation gives) has non-league clubs Wikipedia has no crest for. Only a football
+    team named exactly as this club is used, and only a badge on TheSportsDB's own host."""
+    query = urlencode({"t": _written(club_name(name))})
+    url = f"https://www.thesportsdb.com/api/v1/json/123/searchteams.php?{query}"
+    data = json.loads(_paced_fetch(url))
+    for team in data.get("teams") or []:
+        if not isinstance(team, dict) or team.get("strSport") != "Soccer":
+            continue
+        badge = str(team.get("strBadge") or "")
+        names = [str(team.get(k) or "") for k in ("strTeam", "strTeamAlternate")]
+        if (
+            urlsplit(badge).scheme == "https"
+            and urlsplit(badge).hostname == "r2.thesportsdb.com"
+            and badge.endswith(".png")
+            and any(n and _same_club(name, n) for n in names)
+        ):
+            return f"{badge}/small"
+    return None
+
+
 def cached_crest(name: str, directory: Path) -> Path | None:
     identity = club_name(name)
     key = hashlib.sha256(identity.encode()).hexdigest()
@@ -319,6 +350,7 @@ def cached_crest(name: str, directory: Path) -> Path | None:
                 logo_candidate(name)
                 or _wikipedia_crest(name)
                 or _wikipedia_search(name)
+                or _sportsdb_crest(name)
                 or _commons_crest(name)
             )
             if not url:
