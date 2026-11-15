@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 import secrets
+import socket
 import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -41,23 +42,42 @@ def range_relay(fetch: Fetch) -> Iterator[tuple[str, RelayState]]:
             if not found:
                 self.send_error(416)
                 return
+            # One answer for the whole range asked, filled read by read (each at most
+            # 8 MB through `_client`) while ffmpeg keeps reading. A capped answer made
+            # ffmpeg stop early (real-match check 2026-11-15: 13.6 s of a 15 s clip).
+            first = int(found[1])
             try:
-                start, total, body = fetch(int(found[1]), int(found[2]) if found[2] else None)
+                start, total, body = fetch(first, int(found[2]) if found[2] else None)
             except Exception as error:  # noqa: BLE001 (kept for the job; ffmpeg then stops)
                 state.failure = error
                 self.send_error(502)
                 return
+            last = min(int(found[2]), total - 1) if found[2] else total - 1
             state.bytes += len(body)
             self.send_response(206)
             self.send_header("Content-Type", "video/mp4")
             self.send_header("Accept-Ranges", "bytes")
-            self.send_header("Content-Range", f"bytes {start}-{start + len(body) - 1}/{total}")
-            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Content-Range", f"bytes {start}-{last}/{total}")
+            self.send_header("Content-Length", str(last - start + 1))
             self.end_headers()
+            # A small send buffer, so the relay reads ahead of ffmpeg by little more
+            # than one read (local sockets otherwise buffer several MB).
+            self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 131_072)
+            at = start
             try:
-                self.wfile.write(body)
-            except OSError:  # ffmpeg closes early once it has what it needs
-                pass
+                while True:
+                    self.wfile.write(body)
+                    at += len(body)
+                    if at > last or not body or state.failure is not None:
+                        return
+                    try:
+                        _, _, body = fetch(at, last)
+                    except Exception as error:  # noqa: BLE001
+                        state.failure = error
+                        return
+                    state.bytes += len(body)
+            except OSError:  # ffmpeg closes once it has what it needs
+                return
 
         def log_message(self, *args: object) -> None:  # never log requests or paths
             pass

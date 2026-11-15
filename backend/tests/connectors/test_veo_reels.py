@@ -122,7 +122,17 @@ def test_reel_from_a_downloaded_match_needs_no_veo_request(
 
 @pytest.fixture(scope="module")
 def long_video(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    return _video(tmp_path_factory.mktemp("veo-long") / "long.mp4", 90)
+    """90 s at about 2 Mbit/s (~22 MB): big enough that what the local connection
+    buffers before ffmpeg hangs up is a small part of it, as with a real match."""
+    path = tmp_path_factory.mktemp("veo-long") / "long.mp4"
+    subprocess.run(
+        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+         "-f", "lavfi", "-i", "testsrc=size=640x360:rate=25",
+         "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "90",
+         "-c:v", "libx264", "-b:v", "2M", "-x264-params", "nal-hrd=cbr", "-minrate", "2M", "-maxrate", "2M", "-bufsize", "1M", "-pix_fmt", "yuv420p", "-c:a", "aac", str(path)],
+        check=True,
+    )  # fmt: skip
+    return path
 
 
 class ChunkedMedia(FakeMedia):
@@ -271,3 +281,23 @@ def test_a_team_event_downloads_like_a_highlight(tmp_path: Path, match_video: Pa
     assert status["state"] == "done", status["message"]
     info = probe(folder / status["filename"])
     assert 14.0 < info.duration_s < 16.0  # from 2 s (10 s before the corner), 15 s long
+
+
+# Real-match check 2026-11-15: a 15 s clip came out 13.6 s, because ffmpeg took the end
+# of one capped answer for the end of the file. A clip longer than one answer must
+# come out whole.
+def test_a_clip_longer_than_one_read_comes_out_whole(tmp_path: Path, long_video: Path) -> None:
+    media = ChunkedMedia(long_video.read_bytes())
+    veo, _, _, folder, _ = _ready(tmp_path, media)
+    library = veo.library()
+    for item in library:
+        if item["id"] == IDENTITY:
+            item["moments"] = [
+                {"id": "h-8", "category": "GOAL", "time_s": 20.0, "duration_s": 40.0}
+            ]
+    veo._write(library)
+    veo.start("moments", IDENTITY, name="x", reel={"moment_ids": ["h-8"], "combined": True})
+    status = veo.status()
+    assert status["state"] == "done", status["message"]
+    assert 39.0 < probe(folder / status["filename"]).duration_s < 41.0
+    assert media.downloads == []

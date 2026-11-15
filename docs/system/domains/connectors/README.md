@@ -623,8 +623,11 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   saved. `_ranges.range_relay` serves a random 127.0.0.1 address for the job only;
   each Range ffmpeg asks for is one `media_range` read through `_client` (Veo host
   only, no redirects, at most 8 MB). ffmpeg reads the MP4 index, then only the parts
-  its clips need (checked: a 15 s clip from a 40 MB file read about 25 MB with 8 MB
-  answers; ffmpeg copes with short 206 answers). `-rw_timeout 60 s` so a stalled
+  its clips need. **Gotcha (real match, 2026-11-15):** answering each request with
+  one capped 8 MB read made ffmpeg stop early (13.6 s of a 15 s clip). The relay now
+  answers the whole range asked, filled read by read while ffmpeg reads, with a
+  128 KB send buffer so it reads ahead by about one read. Real check: a 15 s clip
+  from the 2.4 GB match read 25 MB in 2.4 s. `-rw_timeout 60 s` so a stalled
   read ends the job. A refusal is kept and reported; nothing is retried. A match
   already saved is still cut from the local file.
 - **Gotcha (owner report 2026-11-15):** after a full download the index writes the
