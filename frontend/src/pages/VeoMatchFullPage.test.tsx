@@ -250,3 +250,28 @@ it("shows the record against this opponent from the Veo matches", async () => {
   expect(h2h).toHaveTextContent("2 played · W 1 D 0 L 1 · goals 2-3");
   expect(within(h2h).getByRole("link", { name: /2026-10-01.*0-2/ })).toHaveAttribute("href", "/veo/veo-b");
 });
+
+// Owner request 2026-11-15: "Veo highlights should show Veo Events so you can filter
+// by these". The panel has its own filters for highlights and Veo events, kept in
+// step with the rail.
+it("filters the highlights panel by Veo events, in step with the rail", async () => {
+  routes([{ ...match, team_data: teamData, team_moments: teamMoments }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  const panel = await screen.findByRole("region", { name: "Veo highlight moments" });
+  const events = within(panel).getByRole("group", { name: "Veo events" });
+  expect(within(events).getAllByRole("button").map(b => b.textContent)).toEqual(["All events 3", "OUR CORNER 1", "OPPONENT CORNER 1", "OUR FOUL 1"]);
+  await user.click(within(events).getByRole("button", { name: /^OUR FOUL\s*1/ }));
+  const list = within(panel).getByRole("list", { name: "Veo highlights" });
+  expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+  expect(within(list).getByText("OUR FOUL")).toBeInTheDocument();
+  const rail = screen.getByRole("navigation", { name: "Highlight types" });
+  expect(within(rail).getByRole("button", { name: /OUR FOUL\s*1/ })).toHaveAttribute("aria-pressed", "true");
+  await user.click(within(events).getByRole("button", { name: /All events/ }));
+  expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+  const kinds = within(panel).getByRole("group", { name: "Highlight types" });
+  await user.click(within(kinds).getByRole("button", { name: /^GOAL\s*2/ }));
+  expect(within(list).getAllByRole("listitem")).toHaveLength(5);
+  await user.click(within(kinds).getByRole("button", { name: /^All highlights/ }));
+  expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+});
