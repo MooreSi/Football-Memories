@@ -7,6 +7,7 @@ import { useVeoLibrary } from "../api/veo";
 import { connectionShown } from "../lib/connections";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
 import { useVeoTeam } from "../lib/useHomeTeams";
+import { veoClubNames, veoClubOf } from "../lib/veoClubs";
 import { OURS, THEIRS } from "../lib/teamColours";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
@@ -165,7 +166,6 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const corrections = useScoreCorrections();
   const hudlClub = useHomeClub();
   const veoTeam = useVeoTeam();
-  const club = veoOnly ? veoTeam || hudlClub : hudlClub;
   const { name } = usePrimaryPlayerName();
   // Owner report 2026-11-13: a season report is one team in one season, never every
   // age group mixed; the team is the one chosen on Opponents (it moves up each season).
@@ -175,6 +175,19 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const veoSeasons = [...new Set((library.data ?? []).map((m) => m.season_label || "Unclassified"))].sort().reverse();
   const seasonsOfTeam = veoOnly ? veoSeasons.map((x) => ({ season: x, age: "Veo" })) : team === null ? [] : teamSeasons(library.data, team);
   const shownSeason = seasonsOfTeam.some((x) => x.season === season) ? season : seasonsOfTeam[0]?.season ?? "";
+  // Owner request 2026-11-15: one Veo account films more than one club, so a Veo
+  // season report is one club in one season (the Veo team first, else the most filmed).
+  const [veoClub, setVeoClub] = useState("");
+  const known = veoClubNames(veoLibrary.data ?? [], veoTeam);
+  const clubOfId = new Map((veoLibrary.data ?? []).map((m) => [m.id, veoClubOf(m, known)]));
+  const counts = new Map<string, number>();
+  for (const m of library.data ?? []) if ((m.season_label || "Unclassified") === shownSeason) { const c = clubOfId.get(m.id) ?? "Other"; counts.set(c, (counts.get(c) ?? 0) + 1); }
+  const veoClubs = [...counts.keys()].sort((a, b) => (counts.get(b)! - counts.get(a)!) || a.localeCompare(b));
+  const shownClub = counts.has(veoClub) ? veoClub : veoTeam && counts.has(veoTeam) ? veoTeam : veoClubs[0] ?? "";
+  const matchClub = kind === "match" && id ? clubOfId.get(id) : undefined;
+  const club = !veoOnly ? hudlClub
+    : kind === "season" ? shownClub || veoTeam || hudlClub
+    : matchClub && matchClub !== "Other" ? matchClub : veoTeam || hudlClub;
   const card = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
   const shownMatch = kind === "match" ? library.data?.find((m) => m.id === id) : undefined;
@@ -183,7 +196,7 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   if (library.isPending) return <Spinner label="Loading matches" />;
   const match = kind === "match" ? library.data?.find((m) => m.id === id) : undefined;
   if (kind === "match" && !match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">This match is not cached.</p></div>;
-  const scope = veoOnly ? (library.data ?? []).filter((m) => (m.season_label || "Unclassified") === shownSeason)
+  const scope = veoOnly ? (library.data ?? []).filter((m) => (m.season_label || "Unclassified") === shownSeason && (clubOfId.get(m.id) ?? "Other") === shownClub)
     : team === null ? library.data ?? [] : (library.data ?? []).filter((m) => inCohort(m, team) && m.season_label === shownSeason);
   const report = match ? matchReport(match, club, corrections.data, name)
     : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name);
@@ -198,6 +211,8 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
           {kind === "season" && veoOnly && <div className="mt-3 flex flex-wrap gap-3">
             <label className="text-xs text-fg-muted">Season<select className="field mt-1 w-auto" aria-label="Season" value={shownSeason} onChange={(e) => setSeason(e.target.value)}>
               {veoSeasons.map((x) => <option key={x} value={x}>{x}</option>)}</select></label>
+            <label className="text-xs text-fg-muted">Club<select className="field mt-1 w-auto" aria-label="Club" value={shownClub} onChange={(e) => setVeoClub(e.target.value)}>
+              {veoClubs.map((x) => <option key={x} value={x}>{x} ({counts.get(x)})</option>)}</select></label>
           </div>}
           {kind === "season" && !veoOnly && team !== null && <div className="mt-3 flex flex-wrap gap-3">
             <label className="text-xs text-fg-muted">Age group<select className="field mt-1 w-auto" aria-label="Age group" value={ageIn(team, shownSeason)}

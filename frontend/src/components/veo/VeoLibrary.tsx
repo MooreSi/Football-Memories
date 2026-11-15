@@ -8,6 +8,7 @@ import { Button } from "../ui/Button";
 import { ScoreBadge } from "../hudl/HudlLibrary";
 import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
 import { useVeoTeam } from "../../lib/useHomeTeams";
+import { veoClubNames, veoClubOf } from "../../lib/veoClubs";
 
 export type VeoFilters = { age: string; season: string; search: string };
 
@@ -15,7 +16,7 @@ export type VeoFilters = { age: string; season: string; search: string };
 export function VeoLibrary({ filters }: { filters: VeoFilters }) {
   const shown = connectionShown("veo");
   const library = useVeoLibrary();
-  const club = useVeoTeam();
+  const veoTeam = useVeoTeam();
   // Owner request 2026-11-15: Refresh Veo here, like Refresh Hudl (the same action as
   // Settings → Connections → Veo → Refresh matches).
   const status = useVeoStatus();
@@ -31,6 +32,7 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
   useEffect(() => setCount(12), [filters.age, filters.season, filters.search]);
   if (!shown) return null;
   const all = library.data ?? [];
+  const known = veoClubNames(all, veoTeam);
   const matches = all.filter(m => (!filters.age || veoAgeGroups(m).includes(filters.age))
     && (!filters.season || (m.season_label || "Unclassified") === filters.season)
     && (!filters.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
@@ -54,6 +56,9 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
       const expiry = veoExpiry(m);
       const highlights = m.moments?.length ?? 0;
       const date = fixtureDate(m.title);
+      // Owner request 2026-11-15: the account films more than one club; name the one the title names.
+      const named = veoClubOf(m, known);
+      const club = named === "Other" ? veoTeam : named;
       return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
         <Link to={`/veo/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
           <div className="relative grid aspect-video place-items-center overflow-hidden bg-ink-800 text-fg-subtle">

@@ -98,3 +98,17 @@ it("shows each Veo match's date and the crest and score pill, like a Hudl card",
   expect(a).toHaveTextContent("1st September 2026");
   expect(await within(a).findByRole("group", { name: "Riverside U11 3, Rovers 1" })).toBeInTheDocument();
 });
+
+// Owner request 2026-11-15: the account films two clubs; each card names the club its title names.
+it("names the club each Veo title names on its score pill", async () => {
+  const two = [
+    { ...matches[0], id: "veo-a", title: "260901 RJ vs Rovers", team: "Hill Town" },
+    { ...matches[0], id: "veo-b", title: "260902 HT vs Town", team: null },
+  ];
+  stubFetch({ [LIB]: two, "/api/settings/home-teams": { hudl: null, veo: "Riverside Juniors" } });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  const a = await screen.findByRole("link", { name: /Rovers/ });
+  expect(await within(a).findByRole("group", { name: /^Riverside Juniors \d+, Rovers/ })).toBeInTheDocument();
+  const b = screen.getByRole("link", { name: /Town/ });
+  expect(within(b).getByRole("group", { name: /^Hill Town \d+, Town/ })).toBeInTheDocument();
+});

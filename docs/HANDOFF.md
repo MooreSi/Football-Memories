@@ -13,6 +13,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Veo season report split by club (owner request 2026-11-15):** the Veo account
+  films Norton Lindsay ("NL ...") and Racing Club Warwick ("RCW ...", "Racing ...").
+  `lib/veoClubs.ts` gives each Veo match the club its title names first (full name,
+  initials or first word, against the Veo team setting and Veo's `team` values);
+  Veo's `team` field is only a fallback because it is sometimes wrong. The Veo-only
+  season report has a Club picker (Veo team first); the Veo match report and the
+  Veo library cards name the match's own club. Still using the Veo team setting:
+  the Veo match pages, reels, Downloaded and the Library hero/profile.
+
 - **New matches appear on their own (owner request 2026-11-15):** `useVeoAutoCheck`
   (AppShell) refreshes Veo when its list is over 6 h old, on opening the app and on
   coming back to the tab (`useReturns`), never on `/veo/` or `/clips`.
