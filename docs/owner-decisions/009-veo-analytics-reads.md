@@ -105,3 +105,22 @@ enabled and there is no map data to show. Per-side totals (`teams/{Own,Opponent}
 stats`, GET) answered and are now read; the club crest from the report is saved.
 Details: `docs/system/domains/connectors/README.md`. If the owner adds Veo's
 Analytics subscription, the check can be run again.
+
+**Physical and tracking check 2026-11-15 (owner: "Yes, run the check"):** one sign-in,
+five GETs 1 s apart on the same match, no POST, nothing changed on Veo. Only status
+codes and field names were kept.
+
+| Path | Status | What it holds |
+|---|---|---|
+| `matches/<slug>/` | 200 | match record; `ras_status` (Veo's player-tracking processing state) is null |
+| `/api/mes/v2/-/physical-metrics?matchIds=<id>` | 403 | refused (paid Analytics, most likely) |
+| `/api/mes/v2/<id>/physical-metrics-detail` | 200 | empty list |
+| `/api/mes/v2/<id>/teams/Own/physical-stats` | 200 | empty list |
+| `/api/mes/v2/<id>/player-tracking?start=0` | 404 | not produced for this match |
+
+Speed zones (`speed-zone-distribution`) are a POST that asks Veo to compute them, so
+it was not sent. What this means: this account has no physical metrics or player
+tracking for its matches (tracking was never processed, and the cross-match read is
+refused). Event metrics stay as built: team-sided events and key stats. If Veo's
+Analytics subscription is added and a match is processed for tracking, the same five
+reads show whether data then appears.

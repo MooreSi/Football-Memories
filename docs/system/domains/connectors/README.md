@@ -640,3 +640,10 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   match details into the file with `ffmpeg -c copy`, which reads and rewrites the
   whole file; on the SMB share a 2.4 GB match took minutes at "100%". The helper now
   says "Writing the match details into the saved file…" during that step.
+
+## Veo physical and tracking reads (2026-11-15)
+- One-off check (decision 009): `physical-metrics?matchIds` 403; per-match
+  `physical-metrics-detail` and `teams/Own/physical-stats` 200 with `[]`;
+  `player-tracking?start=0` 404; the match record's `ras_status` is null (tracking
+  never processed). `speed-zone-distribution` is a POST (compute), not sent.
+  Veo's web app shows physical stats only with `analysis.read_match_playerphysicalstats`.
