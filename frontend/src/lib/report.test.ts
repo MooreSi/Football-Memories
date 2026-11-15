@@ -39,3 +39,24 @@ it("counts a season's games played, won, drawn and lost, and those without a sco
   expect(seasonReport([a, b, draw, loss], "U11", "Aston Villa", {}, null).record).toEqual({ played: 4, won: 1, drawn: 1, lost: 1, unscored: 1 });
   expect(matchReport(a, "Aston Villa", {}, null).record).toBeNull();
 });
+
+// Owner request 2026-11-15: the season report lists the games won and lost.
+it("lists a season's games won, drawn and lost, newest first, with the scores", () => {
+  const win: HudlMatch = { id: "w", source: "veo", title: "261129 U11 v Leek Town", age_group: "U11", capture_key: "w", score: { ours: 3, theirs: 0 }, moments: [] };
+  const loss: HudlMatch = { id: "l", source: "veo", title: "261122 U11 v Crewe", age_group: "U11", capture_key: "l", score: { ours: 0, theirs: 3 }, moments: [] };
+  expect(seasonReport([a, b, win, loss], "U11", "Aston Villa", {}, null).results).toEqual({
+    won: ["Leek Town 3-0", "Derby County 2-1"], drawn: [], lost: ["Crewe Alexandra 0-3"],
+  });
+  expect(matchReport(a, "Aston Villa", {}, null).results).toBeNull();
+});
+
+// Owner request 2026-11-15: a Veo match report carries Veo's team stats, penalties included.
+it("puts Veo's team stats on a Veo match report, shots on goal and penalties included", () => {
+  const veo: HudlMatch = { id: "v", source: "veo", title: "261115 RJ vs Northgate", age_group: "U11", capture_key: "v", score: { ours: 1, theirs: 4 }, moments: [] };
+  const rows = [{ label: "Goals", own: 1, opponent: 4 }, { label: "Attempts", own: 10, opponent: 28 }, { label: "Corners", own: 5, opponent: 8 }, { label: "Fouls", own: 6, opponent: 3 }];
+  const r = matchReport(veo, "Riverside Juniors", {}, null, rows);
+  expect(r.lines).toEqual([
+    { label: "Goals", value: "1 - 4" }, { label: "Shots on goal", value: "10 - 28" }, { label: "Corners", value: "5 - 8" },
+    { label: "Fouls", value: "6 - 3" }, { label: "Penalties", value: "0 - 0" },
+  ]);
+});

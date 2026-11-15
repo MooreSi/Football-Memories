@@ -8,6 +8,7 @@ import { connectionShown } from "../lib/connections";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
 import { useVeoTeam } from "../lib/useHomeTeams";
 import { veoClubNames, veoClubOf } from "../lib/veoClubs";
+import { teamSplit } from "../lib/veoTeamSplit";
 import { OURS, THEIRS } from "../lib/teamColours";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
@@ -38,10 +39,13 @@ function useCrest(name: string | null) {
 }
 
 function Crest({ cx, cy, r, name, src, tone }: { cx: number; cy: number; r: number; name: string; src?: string | null; tone: "home" | "away" }) {
-  const inset = r * 0.68;
+  // Owner request 2026-11-15: the crest fills its circle (clipped to it), not a small inset.
+  const inset = r * 0.94;
+  const clip = `crest-clip-${Math.round(cx)}-${Math.round(cy)}`;
   return <g data-crest={src ? "image" : "initials"}>
-    <circle cx={cx} cy={cy} r={r} fill={src ? "#f1f4f9" : tone === "home" ? "#22d3ee" : "#cbd5e1"} stroke="#ffffff33" strokeWidth={4} />
-    {src ? <image href={src} x={cx - inset} y={cy - inset} width={inset * 2} height={inset * 2} preserveAspectRatio="xMidYMid meet" />
+    <circle cx={cx} cy={cy} r={r} fill={src ? "#ffffff" : tone === "home" ? "#22d3ee" : "#cbd5e1"} stroke="#ffffff33" strokeWidth={4} />
+    {src ? <><clipPath id={clip}><circle cx={cx} cy={cy} r={r - 2} /></clipPath>
+      <image href={src} x={cx - inset} y={cy - inset} width={inset * 2} height={inset * 2} preserveAspectRatio="xMidYMid meet" clipPath={`url(#${clip})`} /></>
       : <text x={cx} y={cy + r * 0.22} textAnchor="middle" fontSize={r * 0.62} fontWeight={800} fill="#0b1220">{initials(name)}</text>}
   </g>;
 }
@@ -114,6 +118,11 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
   } else y += 40;
   const rows = layoutRows(report.lines, y);
   y = rows.length ? rows[rows.length - 1].bottom : y;
+  // Owner request 2026-11-15: the games won, drawn and lost, listed under the totals.
+  const listed = (["won", "drawn", "lost"] as const).filter((k) => report.results?.[k].length);
+  const resultRows = layoutRows(listed.map((k) => ({ label: `${k[0].toUpperCase()}${k.slice(1)} (${report.results![k].length})`,
+    value: report.results![k].join(", ") })), y + 20);
+  y = resultRows.length ? resultRows[resultRows.length - 1].bottom : y;
   let player = null;
   if (report.player) {
     const top = y + 30;
@@ -129,6 +138,7 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
       {head}
       {possession}
       <Rows rows={rows} />
+      {resultRows.map((row, i) => <g key={listed[i]} data-results={listed[i]}><Rows rows={[row]} /></g>)}
       {player}
       <text x={REPORT_MARGIN} y={H - 60} fill="#64748b" fontSize={26}>Football Memories · from the coaches' tags</text>
     </svg>
@@ -198,7 +208,8 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   if (kind === "match" && !match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">This match is not cached.</p></div>;
   const scope = veoOnly ? (library.data ?? []).filter((m) => (m.season_label || "Unclassified") === shownSeason && (clubOfId.get(m.id) ?? "Other") === shownClub)
     : team === null ? library.data ?? [] : (library.data ?? []).filter((m) => inCohort(m, team) && m.season_label === shownSeason);
-  const report = match ? matchReport(match, club, corrections.data, name)
+  const veoRows = match && veoOnly ? teamSplit(veoLibrary.data?.find((m) => m.id === match.id)?.team_data) : undefined;
+  const report = match ? matchReport(match, club, corrections.data, name, veoRows)
     : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name);
   const ageOptions = team === null ? [] : [...new Set([...agesIn(library.data, shownSeason), ageIn(team, shownSeason)])].sort((x, y) => x.localeCompare(y, undefined, { numeric: true }));
   const file = `${report.title} ${report.subtitle}`.replace(/[^\w -]+/g, "").trim() || "report";

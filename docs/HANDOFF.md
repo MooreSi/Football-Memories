@@ -13,6 +13,22 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Reports and crests (owner request 2026-11-15):** a Veo match report shows Veo's
+  team stats (attempts as "Shots on goal", Penalties always, 0 - 0 when none); the
+  season card lists games Won / Drawn / Lost with scores (`Report.results`). Crests
+  fill their circle (clipped). Crest lookup (`team_logos.py`): lower-case words are
+  capitalised for the page title ("Bolehall swifts"), a football club page's PNG/SVG
+  counts as its crest whatever its file name (short description says football club;
+  JPEG never), and a search hit may add Athletic/Juniors/Youth/JFC. `resolveClub` no
+  longer turns "AFC Birmingham" into Birmingham City. Wikipedia rate-limits after
+  about a dozen quick requests (429); the 1 s pacing and pause handle it.
+  **Open for the owner:** TheSportsDB (free key 123, has non-league clubs such as
+  Racing Club Warwick and Tamworth) as another source needs the crest tests' fake
+  network to recognise its URL (they count any non-Wikipedia URL as a download), so
+  it waits for a yes. The Veo account crest (Racing Club Warwick's) was saved as
+  Norton Lindsay's by `useVeoClubCrest`; changing that rule and replacing the saved
+  file also waits for the owner.
+
 - **Veo season report split by club (owner request 2026-11-15):** the Veo account
   films Norton Lindsay ("NL ...") and Racing Club Warwick ("RCW ...", "Racing ...").
   `lib/veoClubs.ts` gives each Veo match the club its title names first (full name,

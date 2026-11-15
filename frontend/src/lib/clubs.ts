@@ -119,11 +119,14 @@ export function clubKey(name: string): string {
 export function resolveClub(name: string): string {
   const k = clubKey(name);
   if (!k) return name.trim();
-  if (ALIASES[k]) return ALIASES[k];
+  // "AFC Birmingham" is not Birmingham City: a name written with AFC only resolves to
+  // a club whose full name has it too (owner report 2026-11-15).
+  const afc = /^\s*a\.?f\.?c\.?\s/i.test(name);
+  if (ALIASES[k] && (!afc || /^AFC\b/.test(ALIASES[k]))) return ALIASES[k];
   const full = FULL.find((club) => club.toLowerCase() === k);
   if (full) return full;
   // A cut-off name ("Shrewsbury Tow"): only when it is long enough to be one club.
-  if (k.length >= 8) {
+  if (k.length >= 8 && !afc) {
     const prefixed = FULL.filter((club) => club.toLowerCase().startsWith(k));
     if (prefixed.length === 1) return prefixed[0];
   }

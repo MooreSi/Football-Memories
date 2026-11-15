@@ -52,3 +52,34 @@ it("splits the Veo season report by club, starting on the Veo team", async () =>
   expect(card).toHaveTextContent("W1 D1 L1");
   expect(card.querySelector('[data-record="PLAYED"]')).toHaveTextContent("3");
 });
+
+// Owner request 2026-11-15: the season card lists the games won and lost.
+it("lists the games won and lost on the season card", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  stubFetch({
+    [`${H}/library`]: [], [`${H}/account`]: { configured: true, state: "ready", busy: false },
+    [`${H}/veo/library`]: [veo("v1", "261108 RJ vs Northgate CB", "2026/27", 4, 2), veo("v3", "261025 RJ vs City", "2026/27", 0, 2)],
+    [`${H}/veo/account`]: { configured: true, state: "ready", busy: false, message: "", summary: null },
+    "/api/settings/home-teams": { hudl: null, veo: "RJ" }, "/api/preferences": { primary_player_id: null }, "/api/players": [], "/api/scores": {},
+  });
+  renderWithProviders(<Routes><Route path="/report/season" element={<ReportPage kind="season" />} /></Routes>, "/report/season");
+  const card = await screen.findByRole("img", { name: /2026\/27/ });
+  expect(card.querySelector('[data-results="won"]')).toHaveTextContent(/Won \(1\).*Northgate CB 4-2/);
+  expect(card.querySelector('[data-results="lost"]')).toHaveTextContent(/Lost \(1\).*City 0-2/);
+  expect(card.querySelector('[data-results="drawn"]')).toBeNull();
+});
+
+// Owner request 2026-11-15: a Veo match report shows Veo's team stats.
+it("shows Veo's team stats on a Veo match report", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  const teamData = { stats: { goals: { own: 4, opponent: 2 }, total_attempts: { own: 9, opponent: 5 }, corners: { own: 3, opponent: 1 }, fouls: { own: 2, opponent: 4 } }, events: [] };
+  stubFetch({
+    [`${H}/library`]: [], [`${H}/account`]: { configured: true, state: "ready", busy: false },
+    [`${H}/veo/library`]: [{ ...veo("v1", "261108 RJ vs Northgate CB", "2026/27", 4, 2), team_data: teamData }],
+    [`${H}/veo/account`]: { configured: true, state: "ready", busy: false, message: "", summary: null },
+    "/api/settings/home-teams": { hudl: null, veo: "RJ" }, "/api/preferences": { primary_player_id: null }, "/api/players": [], "/api/scores": {},
+  });
+  renderWithProviders(<Routes><Route path="/report/match/:id" element={<ReportPage kind="match" />} /></Routes>, "/report/match/v1");
+  const card = await screen.findByRole("img", { name: /RJ v Northgate CB/ });
+  for (const text of ["Shots on goal9 - 5", "Corners3 - 1", "Fouls2 - 4", "Penalties0 - 0"]) expect(card).toHaveTextContent(text);
+});

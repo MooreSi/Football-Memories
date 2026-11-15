@@ -388,3 +388,95 @@ def test_a_commons_file_without_crest_words_is_not_used(tmp_path, monkeypatch) -
     )
     assert cached_crest("Riverside Juniors", tmp_path) is None
     assert downloads == []
+
+
+# Owner request 2026-11-15: grassroots clubs were missed. "Bolehall swifts" (lower case)
+# asked for a page title that does not exist, and its page image, a plain
+# "Bolehall_Swifts.png", was refused for not saying crest, logo or FC.
+def _club_page(image: str, description: str) -> bytes:
+    import json
+
+    page = {
+        "pageimage": image.rsplit("/", 1)[-1],
+        "thumbnail": {"source": image},
+        "pageprops": {"wikibase-shortdesc": description},
+    }
+    return json.dumps({"query": {"pages": {"1": page}}}).encode()
+
+
+def test_a_lower_case_name_asks_for_the_capitalised_page_title(tmp_path, monkeypatch) -> None:
+    from urllib.parse import parse_qs, urlsplit
+
+    from app.services.team_logos import cached_crest
+
+    asked = []
+    crest = "https://upload.wikimedia.org/wikipedia/en/1/1a/Riverside_Swifts.png"
+
+    def fetch(url):
+        if "api.php" in url:
+            title = parse_qs(urlsplit(url).query)["titles"][0]
+            asked.append(title)
+            if title == "Riverside Swifts F.C.":
+                return _club_page(crest, "Association football club in England")
+            return _wiki(None, missing=True)
+        return b"\x89PNG\r\n\x1a\nswifts"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert cached_crest("Riverside swifts", tmp_path) is not None
+    assert asked == ["Riverside Swifts F.C."]
+
+
+@pytest.mark.parametrize(
+    ("image", "description", "found"),
+    [
+        (
+            "https://upload.wikimedia.org/wikipedia/en/1/1a/Riverside_Swifts.png",
+            "Association football club in England",
+            True,
+        ),
+        (
+            "https://upload.wikimedia.org/wikipedia/en/1/1a/Riverside_Swifts.png",
+            "Village in Staffordshire, England",
+            False,
+        ),
+        (
+            "https://upload.wikimedia.org/wikipedia/commons/1/1a/Riverside_ground.jpg",
+            "Association football club in England",
+            False,
+        ),
+    ],
+)
+def test_a_plain_image_counts_only_on_a_football_club_page(
+    tmp_path, monkeypatch, image, description, found
+) -> None:
+    """A club page's PNG or SVG is its crest; a photo never is, nor a village's image."""
+    from app.services.team_logos import cached_crest
+
+    downloads = []
+
+    def fetch(url):
+        if "api.php" in url:
+            return _club_page(image, description)
+        downloads.append(url)
+        return b"\x89PNG\r\n\x1a\nimage"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    assert (cached_crest("Riverside Swifts", tmp_path) is not None) is found
+    assert downloads == ([image] if found else [])
+
+
+def test_a_search_hit_with_athletic_or_juniors_added_is_the_same_club(
+    tmp_path, monkeypatch
+) -> None:
+    """ "Blaby & Whetstone" is "Blaby & Whetstone Athletic F.C." on Wikipedia."""
+    from app.services.team_logos import cached_crest
+
+    crest = "https://upload.wikimedia.org/wikipedia/en/a/ab/Hill_and_Dale_Athletic_FC_logo.png"
+    _, downloads = _lookups(
+        monkeypatch,
+        _search("Hill & Dale Athletic F.C."),
+        {"Hill & Dale Athletic F.C.": crest},
+        _commons(),
+    )
+    assert cached_crest("Hill & Dale", tmp_path) is not None
+    assert downloads == [crest]

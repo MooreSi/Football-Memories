@@ -127,12 +127,26 @@ def _fetch(url: str) -> bytes:
 _CLUB_WORDS = ("crest", "logo", "badge", "emblem")
 
 
-def _is_crest(image: str, url: str, strict: bool = False) -> bool:
+_PICTURE = re.compile(r"\.(?:png|svg)(?:$|[/?])", re.I)
+
+
+def _club_page(page: dict[str, object]) -> bool:
+    """The page says it is a football club ("Association football club in England")."""
+    props = page.get("pageprops")
+    text = str(props.get("wikibase-shortdesc", "")) if isinstance(props, dict) else ""
+    return re.search(r"football club|association football", text, re.I) is not None
+
+
+def _is_crest(image: str, url: str, strict: bool = False, club_page: bool = False) -> bool:
     """Club crests on Wikipedia are SVG logos (Liverpool_FC.svg) or named crest/logo/badge.
     Photos (stadiums, players) are JPEGs without those words and are never used.
     `strict` (a page found under the name as written, which may be a city or country)
     also needs the file to say it is a club's: FC, AFC, crest, logo, badge."""
     lowered = f"{image} {url}".lower()
+    # Owner request 2026-11-15: a football club page's PNG or SVG is its crest, whatever
+    # the file is called ("Bolehall_Swifts.png"); a photo (JPEG) never is.
+    if club_page and _PICTURE.search(image or url):
+        return True
     named = any(w in lowered for w in _CLUB_WORDS)
     if strict:
         return named or re.search(r"(?:^|[^a-z])a?fc(?:[^a-z]|$)", image.lower()) is not None
@@ -143,8 +157,13 @@ def _written(name: str) -> str:
     """The name as the page would title it: "AFC Bournemouth" keeps its capitals; a name
     typed all in lower case is title-cased."""
     name = re.sub(r"\b(?:u\s*\d{1,2}s?|under[ -]?\d{1,2}|f\.?c\.?)(?=\s|$)", "", name, flags=re.I)
-    name = " ".join(_without_side(name.strip(" .").split()))
-    return name if name != name.lower() else name.title()
+    words = _without_side(name.strip(" .").split())
+    # Owner request 2026-11-15: "Bolehall swifts" is the page "Bolehall Swifts F.C.";
+    # a word typed in lower case is capitalised, a word with capitals ("AFC") is kept.
+    return " ".join(w[0].upper() + w[1:] if w.islower() and w not in _SMALL else w for w in words)
+
+
+_SMALL = {"and", "of", "the", "de", "la"}
 
 
 def _wikipedia_crest(name: str) -> str | None:
@@ -156,7 +175,7 @@ def _wikipedia_crest(name: str) -> str | None:
             {
                 "action": "query",
                 "format": "json",
-                "prop": "pageimages",
+                "prop": "pageimages|pageprops",
                 "piprop": "thumbnail|name",
                 "pithumbsize": 250,
                 "pilicense": "any",
@@ -169,7 +188,11 @@ def _wikipedia_crest(name: str) -> str | None:
         for page in data.get("query", {}).get("pages", {}).values():
             source = page.get("thumbnail", {}).get("source")
             image = page.get("pageimage", "")
-            if "missing" not in page and source and _is_crest(image, source, strict):
+            if (
+                "missing" not in page
+                and source
+                and _is_crest(image, source, strict, _club_page(page))
+            ):
                 return str(source)
     return None
 
@@ -203,7 +226,12 @@ def _same_club(name: str, text: str) -> bool:
     words, years and a place in brackets are ignored."""
     club = _words(club_name(name))
     found = {w for w in _words(re.sub(r"\([^)]*\)", " ", text)) - _GENERIC if not w.isdigit()}
-    return bool(club) and found == club
+    # Owner request 2026-11-15: "Blaby & Whetstone" is "Blaby & Whetstone Athletic F.C.";
+    # words that name a club's form, not another club, may be added.
+    return bool(club) and club <= found and found - club <= _FORM_WORDS
+
+
+_FORM_WORDS = {"athletic", "juniors", "junior", "youth", "jfc", "yfc"}
 
 
 def _wikipedia_search(name: str) -> str | None:
@@ -228,7 +256,7 @@ def _wikipedia_search(name: str) -> str | None:
             {
                 "action": "query",
                 "format": "json",
-                "prop": "pageimages",
+                "prop": "pageimages|pageprops",
                 "piprop": "thumbnail|name",
                 "pithumbsize": 250,
                 "pilicense": "any",
@@ -241,7 +269,7 @@ def _wikipedia_search(name: str) -> str | None:
             if (
                 "missing" not in page
                 and source
-                and _is_crest(page.get("pageimage", ""), source, True)
+                and _is_crest(page.get("pageimage", ""), source, True, _club_page(page))
             ):
                 return str(source)
     return None
