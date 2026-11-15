@@ -583,9 +583,15 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   limit). `_client.media_crest` reads only that host; `shrink_crest` (ffmpeg) scales
   it to fit 512 px. Saved once as `.veo-account/crest.png` with the club's names in
   `club.json`; the address is not stored. Helper `GET /veo/club`, `GET /veo/crest`.
-  The frontend (`useVeoClubCrest`, in AppShell) gives it to each name with no crest
-  in TeamLogos; an existing crest (web or owner) is never replaced. The owner's
-  club already had a cleaner Wikipedia crest; Veo's image carries a watermark.
+  The frontend (`useVeoClubCrest`, in AppShell) gives it to the **Veo home team set
+  in Settings** when that team has no crest; an existing crest is kept.
+  **Gotcha (real account, 2026-11-15):** the report's names are not the owner's
+  team: `club.name` was another club ("... Academy blue") and `teams.home.name` the
+  placeholder "Own team", while `crest_url` was the owner's club crest. The first
+  version used those names and saved the crest under them; the two files were
+  removed the same day. `club.json` is kept but no longer used by the app.
+  At the owner's request Veo's crest also replaced the Wikipedia crest for the
+  owner's club (Racing Club Warwick) and was given to the Veo home team.
 - **Refused or absent (maps and POSTs):** `POST matches/<slug>/analysis/heatmap/`
   403 (own outfield players; the ball category 400); `POST /api/mes/v2/<id>/heatmap`
   404; `POST /api/mes/v2/-/team-stats` 403; `POST .../passing-network` 422;

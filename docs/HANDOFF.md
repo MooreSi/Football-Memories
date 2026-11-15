@@ -18,8 +18,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   cache version `team_data.v = 2` re-reads once). Per-side totals from
   `teams/{Own,Opponent}/stats` (missed shots, penalties, out of play) on the Team
   stats table. Club crest from the match report saved once by the helper
-  (`/veo/club`, `/veo/crest`), given by `useVeoClubCrest` only to club names with no
-  crest. Maps and POSTs: Veo refused them all on this account (403/404/422, no
+  (`/veo/club`, `/veo/crest`), given by `useVeoClubCrest` to the Veo home team
+  (Settings) when it has no crest; Veo's report names are unreliable (see connectors). Maps and POSTs: Veo refused them all on this account (403/404/422, no
   positions), so none were built or enabled; see decision 009 follow-up.
 
 - **All matches Hudl cards (owner request 2026-11-15):** crests and score pill at the
