@@ -19,8 +19,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   initials or first word, against the Veo team setting and Veo's `team` values);
   Veo's `team` field is only a fallback because it is sometimes wrong. The Veo-only
   season report has a Club picker (Veo team first); the Veo match report and the
-  Veo library cards name the match's own club. Still using the Veo team setting:
-  the Veo match pages, reels, Downloaded and the Library hero/profile.
+  Veo library cards name the match's own club. `lib/useVeoClub.ts` (`useVeoClubOf`)
+  does the same for the Veo match pages (label, team stats, momentum, record against,
+  now only that club's matches), reels, Downloaded and the Library hero/latest/profile.
+  It names a club only from the known list and only when the Veo team is set
+  (unset keeps the raw title / "Us", as tests require).
+- **Recent moments for Veo (owner request 2026-11-15):** the Library's Recent moments
+  panel lists Veo's team events first (match order), then the highlights; the count
+  and "See all" include both (`HudlLatestPanel` `teamMoments`).
 
 - **New matches appear on their own (owner request 2026-11-15):** `useVeoAutoCheck`
   (AppShell) refreshes Veo when its list is over 6 h old, on opening the app and on

@@ -27,7 +27,7 @@ import { useVeoLibrary } from "../api/veo";
 import { connectionShown } from "../lib/connections";
 import { veoAsHudl } from "../lib/veoAsHudl";
 import { teamSplit } from "../lib/veoTeamSplit";
-import { useVeoTeam } from "../lib/useHomeTeams";
+import { useVeoClubOf } from "../lib/useVeoClub";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
 
@@ -86,13 +86,14 @@ export function LibraryPage() {
   const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
   // Our side: the player's "Plays for", else the newest imported team (owner report 2026-11-12).
   const hudlClub = useHomeClub();
-  const veoTeam = useVeoTeam();
-  const club = veoOnly ? veoTeam || hudlClub : hudlClub;
+  const veoClubOf = useVeoClubOf();
   // Owner request 2026-11-11: the right panel and the Match Profile follow the match shown
   // in the hero; the overview counts the selected age group and season.
   const [heroIndex, setHeroIndex] = useState(0);
   useEffect(() => setHeroIndex(0), [ageGroup, seasonLabel]);
   const shown = heroMatches[Math.min(heroIndex, heroMatches.length - 1)];
+  // Owner request 2026-11-15: the Veo account films more than one club; name the shown match's.
+  const club = veoOnly ? veoClubOf(shown && veoLibrary.data?.find(m => m.id === shown.id)) || hudlClub : hudlClub;
   const profileKinds = shown ? matchProfile(shown.moments ?? []) : s?.top_tags ?? [];
   // Owner request 2026-11-15: a Veo match's profile is Veo's team events, us v them
   // (its highlights carry no side).
@@ -145,7 +146,7 @@ export function LibraryPage() {
 
       {/* Right: latest match + recent moments (reference 1 right column) */}
       <div className="dashboard-latest">
-        {shown ? <HudlLatestPanel match={shown} club={club} age={ageGroup} latest={heroIndex === 0} />
+        {shown ? <HudlLatestPanel match={shown} club={club} age={ageGroup} latest={heroIndex === 0} teamMoments={veoShown?.team_moments} />
           : <LatestMatchPanel match={featured[0]} moments={s?.recent_moments ?? []} />}
       </div>
 

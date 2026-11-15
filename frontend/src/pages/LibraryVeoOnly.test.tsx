@@ -16,12 +16,12 @@ const veo = [
   { id: "veo-b", source: "veo", title: "261025 RJ vs Town", age_group: "U11", age_groups: ["U11"], season_label: "2026/27", available: true, duration_s: 3000, moments: [] },
 ];
 
-function render(veoMatches: unknown[] = veo) {
+function render(veoMatches: unknown[] = veo, veoTeam: string | null = null) {
   stubFetch({
     "/api/matches": { total: 0, page: 1, page_size: 24, items: [] },
     "/api/stats": { matches: 0, moments: 0, footage_seconds: 0, teams: 0, players: 0, top_tags: [], recent_moments: [] },
     "/api/preferences": { primary_player_id: null }, "/api/teams": [], "/api/seasons": [], "/api/notes": [],
-    "/api/settings/home-teams": { hudl: null, veo: null },
+    "/api/settings/home-teams": { hudl: null, veo: veoTeam },
     [`${H}/library`]: hudl, [`${H}/account`]: { configured: true, state: "ready", busy: false },
     [`${H}/veo/library`]: veoMatches, [`${H}/veo/account`]: { configured: true, state: "ready", busy: false, message: "", summary: null },
   });
@@ -63,4 +63,31 @@ it("profiles the Veo match from its team events and offers the season report", a
   expect(await within(profile).findByRole("img", { name: /Corners 3 v 2/ })).toBeInTheDocument();
   expect(within(profile).getByRole("img", { name: /Fouls 2 v 8/ })).toBeInTheDocument();
   expect(within(profile).getByRole("link", { name: "Share season report" })).toHaveAttribute("href", "/report/season");
+});
+
+// Owner request 2026-11-15: the account films two clubs; the hero and latest match name the club the title names.
+it("names the club the shown Veo match's title names", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  render([{ ...veo[0], title: "261108 HT vs Northgate CB", team: "Hill Town" }, veo[1]], "Riverside Juniors");
+  const hero = await screen.findByRole("region", { name: "Featured match" });
+  expect(await within(hero).findByText(/Hill Town vs\. Northgate CB/)).toBeInTheDocument();
+  expect(within(screen.getByRole("region", { name: "Latest match" })).getAllByText(/Hill Town/).length).toBeGreaterThan(0);
+});
+
+// Owner request 2026-11-15: a Veo match's recent moments start with Veo's team events, then the highlights.
+it("lists the Veo team events first in recent moments, then the highlights", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  const teamMoments = [
+    { id: "t2", category: "OPPONENT CORNER", side: "opponent", time_s: 890, duration_s: 15, team: true },
+    { id: "t1", category: "OUR CORNER", side: "own", time_s: 390, duration_s: 15, team: true },
+  ];
+  render([{ ...veo[0], team_moments: teamMoments }, veo[1]]);
+  await screen.findByText(/tagged in this match/);
+  const recent = screen.getAllByRole("region", { name: "Recent moments" }).find((r) => /tagged in this match/.test(r.textContent ?? ""))!;
+  const rows = within(recent).getAllByRole("listitem").map((r) => r.textContent);
+  expect(rows).toEqual([
+    expect.stringMatching(/6:30.*OUR CORNER/), expect.stringMatching(/14:50.*OPPONENT CORNER/),
+    expect.stringMatching(/1:04.*SHOT ON GOAL/), expect.stringMatching(/5:00.*GOAL/),
+  ]);
+  expect(recent).toHaveTextContent("4 tagged in this match");
 });

@@ -125,3 +125,16 @@ it("labels a Veo download with the Veo team name from Settings", async () => {
   expect(within(veo).getByRole("link", { name: "Open match" })).toHaveAttribute("href", "/veo/veo-a");
   expect(screen.queryByRole("article", { name: /Aston Example vs\. Northgate/ })).toBeNull();
 });
+
+// Owner request 2026-11-15: the account films two clubs; a download names the club its title names.
+it("labels a Veo download with the club its title names", async () => {
+  stubFetch({
+    [`${H}/downloads/index`]: [{ kind: "match", match_id: "veo-a", matches: ["veo-a"], title: "261108 HT vs Northgate CB", file: "x.mp4",
+      url: `${H}/files/s/x.mp4`, moment_count: 0, codes: [], combined: false, created: 0, size: 1, modified: 0 }],
+    [`${H}/library`]: library,
+    [`${H}/veo/library`]: [{ id: "veo-a", source: "veo", title: "261108 HT vs Northgate CB", team: "Hill Town", age_group: "Unclassified", available: true, moments: [] }],
+    "/api/settings/home-teams": { hudl: "Aston Example", veo: "Riverside Juniors" },
+  });
+  renderWithProviders(<DownloadedPage />);
+  expect(await screen.findByRole("article", { name: /Hill Town vs\. Northgate CB/ })).toBeInTheDocument();
+});

@@ -275,3 +275,13 @@ it("filters the highlights panel by Veo events, in step with the rail", async ()
   await user.click(within(kinds).getByRole("button", { name: /^All highlights/ }));
   expect(within(list).getAllByRole("listitem")).toHaveLength(3);
 });
+
+// Owner request 2026-11-15: the account films two clubs; team stats name the club the title names.
+it("names the club the title names in the team stats", async () => {
+  stubFetch({ [`${H}/veo/library`]: [{ ...match, title: "261108 HT vs Northgate CB", team: "Hill Town", team_data: teamData }],
+    [`${H}/veo/account`]: ready, [`${H}/veo/action`]: { accepted: true }, [`${H}/library`]: [], [`${H}/account`]: { configured: false, state: "idle", busy: false },
+    "/api/settings/home-teams": { hudl: null, veo: "Riverside Juniors" }, "/api/notes": [] });
+  renderWithProviders(<App />, "/veo/veo-a");
+  const team = await screen.findByRole("region", { name: "Team stats" });
+  expect(await within(team).findByRole("columnheader", { name: "Hill Town" })).toBeInTheDocument();
+});

@@ -9,7 +9,7 @@ import { formatClock } from "../lib/format";
 import { fixtureLabel } from "../lib/hudlFixture";
 import { advanceTagged, needsSeek, nextMoment, taggedPlaylist } from "../lib/taggedPlayback";
 import { DownloadChoice } from "./HudlMatchPage";
-import { useVeoTeam } from "../lib/useHomeTeams";
+import { useVeoClubOf } from "../lib/useVeoClub";
 import { SPELL, veoInsights } from "../lib/veoInsights";
 import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSplit";
 import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsights";
@@ -47,14 +47,16 @@ function VeoPlayer({ url, seek, onTime, poster }: { url: string; seek?: { time: 
 /** Owner request 2026-11-13: what Veo's highlights allow (types and times, no team). */
 function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) => void }) {
   const s = veoInsights(match.moments ?? [], match.halves, match.duration_s);
-  const ownName = useVeoTeam() || "Us";
+  const clubOf = useVeoClubOf();
+  const ownName = clubOf(match) || "Us";
   // Owner request 2026-11-15: momentum as on a Hudl match, from Veo's team events.
   const flow = veoMomentum(match.team_data?.events ?? [], match.halves, match.duration_s);
   // Owner request 2026-11-15: the record against this opponent across the Veo matches.
   const library = useVeoLibrary();
-  const club = useVeoTeam();
+  const club = clubOf(match);
   const opponent = fixtureParts(match.title, club)?.opponent;
-  const record = opponent ? recordAgainst(library.data?.map(veoAsHudl), club, undefined, opponent) : null;
+  // Only this club's matches: the account films more than one club.
+  const record = opponent ? recordAgainst(library.data?.filter(m => clubOf(m) === club).map(veoAsHudl), club, undefined, opponent) : null;
   if (!match.moments?.length && !flow.minutes.length && !record) return null;
   const peak = Math.max(1, ...s.spells.map(x => x.goals + x.shots + x.other));
   const tiles: [string, string][] = [
@@ -105,7 +107,7 @@ function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) =
 /** Decision 009 (owner, 2026-11-14): Veo's own stats and events with the team each
  *  belongs to, read at Refresh. Shown only when Veo gave them for this match. */
 function VeoTeamStats({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) => void }) {
-  const ownName = useVeoTeam() || "Us";
+  const ownName = useVeoClubOf()(match) || "Us";
   const rows = teamSplit(match.team_data);
   if (!rows.length) return null;
   const key = (match.team_data?.events ?? []).filter(e => e.side && (e.type === "GOAL" || e.type === "SHOT"));
@@ -141,7 +143,7 @@ export function VeoMatchFull({ id }: { id: string }) {
   const library = useVeoLibrary();
   const status = useVeoStatus();
   const qc = useQueryClient();
-  const team = useVeoTeam();
+  const clubOf = useVeoClubOf();
   const notes = useNotes(id);
   const saveNote = useSaveNote();
   // Owner request 2026-11-15: several types at once (highlights and team events).
@@ -239,6 +241,7 @@ export function VeoMatchFull({ id }: { id: string }) {
   if (library.isError) return <div className="panel space-y-3 p-6"><Link to="/">← Library</Link><p role="alert" className="text-sm text-danger">Veo matches unavailable. Start the desktop helper.</p></div>;
   if (!match) return <div className="panel space-y-3 p-6"><Link to="/">← Library</Link><p className="text-sm text-fg-muted">This match is not in the Veo cache. Select Refresh matches in Settings → Connections → Veo.</p></div>;
   const age = match.age_group && match.age_group !== "Unclassified" ? match.age_group : "";
+  const team = clubOf(match);
   const label = team ? fixtureLabel(match.title, team, age) : undefined;
   const expiry = veoExpiry(match);
   const where = match.home_or_away === "home" ? "Home" : match.home_or_away === "away" ? "Away" : null;

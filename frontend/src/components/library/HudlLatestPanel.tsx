@@ -11,13 +11,17 @@ import { FixtureCrests } from "../FixtureCrests";
  *  group. The Hudl library query refetches, so a newly uploaded match replaces it. */
 /** Spec 190 follow-up (owner request 2026-11-11): the panel and its moments follow the
  *  match shown in the hero, and list every tagged moment of that game. */
-export function HudlLatestPanel({ match, club, age, latest = true }: { match: HudlMatch; club: string | null; age: string; latest?: boolean }) {
+export function HudlLatestPanel({ match, club, age, latest = true, teamMoments = [] }: { match: HudlMatch; club: string | null; age: string; latest?: boolean;
+  /** Owner request 2026-11-15: Veo's team events, listed before the highlights. */
+  teamMoments?: { id: string; category: string; time_s: number }[] }) {
   const parts = fixtureParts(match.title, club);
   const date = fixtureDate(match.title);
   const home = club || "Home";
   const moments = match.moments ?? [];
   // Owner request 2026-11-11: read the game from kick-off (times are video time, H:MM:SS).
-  const recent = [...moments].sort((a, b) => a.time_s - b.time_s).slice(0, 8);
+  const byTime = (a: { time_s: number }, b: { time_s: number }) => a.time_s - b.time_s;
+  const listed = [...[...teamMoments].sort(byTime), ...[...moments].sort(byTime)];
+  const recent = listed.slice(0, 8);
   const link = matchLink(match);
   const veo = match.source === "veo";
   const corrections = useScoreCorrections();
@@ -48,7 +52,7 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
 
       <section aria-label="Recent moments" className="panel p-5">
         <h2 className="mb-1 text-lg font-semibold">Recent moments</h2>
-        <p className="mb-3 text-xs text-fg-subtle">From kick-off · {moments.length} tagged in this match</p>
+        <p className="mb-3 text-xs text-fg-subtle">{teamMoments.length ? "Team events, then highlights" : "From kick-off"} · {listed.length} tagged in this match</p>
         {recent.length === 0 ? (
           <p className="text-sm text-fg-muted">{veo ? "Veo marked no highlights in this match." : "Moments appear here once this match's tags are indexed. Open the match or Refresh Hudl."}</p>
         ) : (
@@ -63,8 +67,8 @@ export function HudlLatestPanel({ match, club, age, latest = true }: { match: Hu
             ))}
           </ul>
         )}
-        {moments.length > recent.length && (
-          <Link to={link} className="mt-3 block text-center text-sm text-accent hover:underline">See all {moments.length} moments</Link>
+        {listed.length > recent.length && (
+          <Link to={link} className="mt-3 block text-center text-sm text-accent hover:underline">See all {listed.length} moments</Link>
         )}
       </section>
     </div>

@@ -12,7 +12,7 @@ import { Spinner } from "../components/ui/Spinner";
 import { formatBytes } from "../lib/format";
 import { fixtureDate, fixtureLabel, fixtureParts, ukDate } from "../lib/hudlFixture";
 import { useHomeClub } from "../lib/useHomeClub";
-import { useVeoTeam } from "../lib/useHomeTeams";
+import { useVeoClubOf } from "../lib/useVeoClub";
 import { useVeoLibrary } from "../api/veo";
 
 type Filter = "all" | "match" | "moments";
@@ -34,7 +34,7 @@ export function DownloadedPage() {
   const index = useDownloadIndex();
   const library = useHudlLibrary();
   const hudlClub = useHomeClub();
-  const veoTeam = useVeoTeam();
+  const veoClubOf = useVeoClubOf();
   const veoLibrary = useVeoLibrary();
   const [filter, setFilter] = useState<Filter>("all");
   const [playing, setPlaying] = useState<DownloadEntry | null>(null);
@@ -85,8 +85,8 @@ export function DownloadedPage() {
         <div className="grid gap-5 lg:grid-cols-2">
           {[...groups].map(([key, list]) => {
             const isVeo = key.startsWith("veo-");
-            const club = isVeo ? veoTeam : hudlClub;
             const veoMatch = isVeo ? veoLibrary.data?.find((m) => m.id === key) : undefined;
+            const club = isVeo ? veoClubOf(veoMatch ?? { title: list[0].title ?? "" }) : hudlClub;
             const match = isVeo ? undefined : library.data?.find((m) => m.id === key);
             const title = match?.title ?? veoMatch?.title ?? list[0].title ?? "Downloaded files";
             const age = match ? hudlAgeGroups(match)[0] : veoMatch?.age_group && veoMatch.age_group !== "Unclassified" ? veoMatch.age_group : "";

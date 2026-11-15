@@ -6,7 +6,7 @@ import { useVeoLibrary, useVeoStatus, veoExpiry, veoRequest } from "../api/veo";
 import { Button } from "../components/ui/Button";
 import { formatClock } from "../lib/format";
 import { fixtureLabel } from "../lib/hudlFixture";
-import { useVeoTeam } from "../lib/useHomeTeams";
+import { useVeoClubOf } from "../lib/useVeoClub";
 
 const HALF = ["1st half", "2nd half", "Extra time 1", "Extra time 2"];
 
@@ -21,7 +21,7 @@ export function VeoMatchView({ id, embedded = false }: { id: string; embedded?: 
   const status = useVeoStatus();
   const qc = useQueryClient();
   const video = useRef<HTMLVideoElement>(null);
-  const team = useVeoTeam();
+  const clubOf = useVeoClubOf();
   const action = useMutation({
     mutationFn: ({ name, label }: { name: "watch" | "download"; label?: string }) =>
       veoRequest("/action", { action: name, match_id: id, ...(label ? { name: label } : {}) }),
@@ -37,6 +37,7 @@ export function VeoMatchView({ id, embedded = false }: { id: string; embedded?: 
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const expiry = veoExpiry(match);
   const age = match.age_group && match.age_group !== "Unclassified" ? match.age_group : "";
+  const team = clubOf(match);
   const label = team ? fixtureLabel(match.title, team, age) : undefined;
   const own = status.data?.match_id === id;
   const busy = Boolean(status.data?.busy) || action.isPending;

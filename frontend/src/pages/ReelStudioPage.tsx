@@ -18,6 +18,7 @@ import { type VeoTeamData, teamSplit } from "../lib/veoTeamSplit";
 import { timeLeft } from "../lib/taggedPlayback";
 import { useHomeClub } from "../lib/useHomeClub";
 import { useVeoTeam } from "../lib/useHomeTeams";
+import { useVeoClubOf } from "../lib/useVeoClub";
 
 export type ReelItem = { match_id: string; moment_ids?: string[]; codes?: string[] };
 /** `source: "veo"`: one Veo match, cut by the helper from the saved full match (owner request 2026-11-13). */
@@ -93,7 +94,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
   // The team is named per source: Veo's name for the owner's club may differ from Hudl's.
   const hudlClub = useHomeClub();
   const veoTeam = useVeoTeam();
-  const club = isVeo ? veoTeam : hudlClub;
+  const veoClubOf = useVeoClubOf();
   const blocked = isVeo ? Boolean(veoStatus.data?.busy) : hudlBlocked(hudlStatus.data);
   const ageOf = (m: { age_group?: string; age_groups?: string[] }) => isVeo
     ? (m.age_group && m.age_group !== "Unclassified" ? m.age_group : undefined) : hudlAgeGroups(m as Parameters<typeof hudlAgeGroups>[0])[0];
@@ -103,6 +104,8 @@ function Studio({ selection }: { selection: ReelSelection }) {
     const moments = (match?.moments ?? []).filter((m) => item.moment_ids?.length ? item.moment_ids.includes(m.id) : item.codes?.includes(m.category));
     return { item, match, moments };
   });
+  // Owner request 2026-11-15: a Veo reel is one match; name the club its title names.
+  const club = isVeo ? veoClubOf(rows[0]?.match as { title: string; team?: string | null } | undefined) : hudlClub;
   const totalMoments = rows.reduce((n, r) => n + r.moments.length, 0);
   const seasons = [...new Set(rows.map((r) => r.match?.season_label).filter(Boolean))];
   const [edited, setName] = useState<string | null>(null);

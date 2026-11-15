@@ -131,3 +131,13 @@ it("adds a team stats card after the highlights for the chosen time", async () =
   expect(call[3]).toBe(10);
   expect(posts().find(p => p.url === `${H}/veo/action`)!.body.stats_card).toMatch(/^card-/);
 });
+
+// Owner request 2026-11-15: the account films two clubs; a Veo reel names the club its title names.
+it("names a Veo reel with the club the match title names", async () => {
+  stubFetch({ [`${H}/veo/library`]: [{ ...veo[0], title: "261108 RCW vs Northgate CB", team: "Racing Club Warwick" }], [`${H}/veo/account`]: idle,
+    [`${H}/library`]: [], [`${H}/account`]: { state: "ready", busy: false, configured: true },
+    "/api/settings/home-teams": { hudl: "Aston Villa", veo: "Norton Lindsay" }, "/api/notes": [],
+    "/api/preferences": { primary_player_id: null }, "/api/matches": { total: 0, page: 1, page_size: 1, items: [] } });
+  studio({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h1"] }] });
+  await vi.waitFor(() => expect(screen.getByRole("textbox", { name: "Reel name" })).toHaveValue("Racing Club Warwick vs. Northgate CB"));
+});

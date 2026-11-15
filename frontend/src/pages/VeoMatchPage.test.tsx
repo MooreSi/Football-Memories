@@ -100,3 +100,11 @@ it("names the download with the Veo team from Settings", async () => {
   await userEvent.setup().click(screen.getByRole("button", { name: "Download full match" }));
   expect(sent()).toContainEqual({ action: "download", match_id: "veo-a", name: "Riverside Juniors vs. Rovers U11" });
 });
+
+// Owner request 2026-11-15: the account films two clubs; the page names the club the title names.
+it("names the club the title names, not only the Veo team setting", async () => {
+  stubFetch({ [LIB]: [{ ...match, title: "260901 HT vs Rovers", team: "Hill Town" }], [ACTION]: { accepted: true }, [STATUS]: idle,
+    "/api/settings/home-teams": { hudl: null, veo: "Riverside Juniors" } });
+  open("veo-a");
+  expect(await screen.findByRole("heading", { name: /Hill Town vs\. Rovers/ })).toBeInTheDocument();
+});
