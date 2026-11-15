@@ -26,6 +26,7 @@ import { ContinueWatching } from "../components/library/ContinueWatching";
 import { useVeoLibrary } from "../api/veo";
 import { connectionShown } from "../lib/connections";
 import { veoAsHudl } from "../lib/veoAsHudl";
+import { teamSplit } from "../lib/veoTeamSplit";
 import { useVeoTeam } from "../lib/useHomeTeams";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
@@ -93,7 +94,12 @@ export function LibraryPage() {
   useEffect(() => setHeroIndex(0), [ageGroup, seasonLabel]);
   const shown = heroMatches[Math.min(heroIndex, heroMatches.length - 1)];
   const profileKinds = shown ? matchProfile(shown.moments ?? []) : s?.top_tags ?? [];
-  const profileTeams = shown ? withPossessionTime(teamProfile(shown.moments ?? [], club), possession(shown.moments ?? [], club)) : null;
+  // Owner request 2026-11-15: a Veo match's profile is Veo's team events, us v them
+  // (its highlights carry no side).
+  const veoShown = shown?.source === "veo" ? veoLibrary.data?.find(m => m.id === shown.id) : undefined;
+  const veoAxes = teamSplit(veoShown?.team_data).map(r => ({ name: r.label, ours: r.own, theirs: r.opponent }));
+  const profileTeams = veoAxes.length ? { axes: veoAxes, neutral: [] }
+    : shown ? withPossessionTime(teamProfile(shown.moments ?? [], club), possession(shown.moments ?? [], club)) : null;
   const opponent = shown ? fixtureParts(shown.title, club)?.opponent ?? "Opposition" : "Opposition";
   const scoped = Boolean(remote.data?.length);
   const scopedMoments = heroMatches.reduce((n, m) => n + (m.moments?.length ?? 0), 0) + items.reduce((n, m) => n + m.event_count, 0);
@@ -130,10 +136,10 @@ export function LibraryPage() {
         <MatchProfile kinds={profileKinds} team={profileTeams} ours={club || "Home"} theirs={opponent} scope={shown ? fixtureLabel(shown.title, club, ageGroup || hudlAgeGroups(shown)[0]) : "All matches"}
           possession={shown ? possession(shown.moments ?? [], club) : null}
           seasonPossession={heroMatches.length > 1 ? possessionTotals(heroMatches.map((m) => m.moments ?? []), club) : null}
-          links={remote.data?.length && !veoOnly ? <>
+          links={remote.data?.length ? <>
             {shown && <Link className="text-accent hover:underline" to={`/report/match/${encodeURIComponent(shown.id)}`}>Share match report</Link>}
             <Link className="text-accent hover:underline" to="/report/season">Share season report</Link>
-            <Link className="text-accent hover:underline" to="/opponents">Opponents</Link>
+            {!veoOnly && <Link className="text-accent hover:underline" to="/opponents">Opponents</Link>}
           </> : undefined} />
       </aside>
 

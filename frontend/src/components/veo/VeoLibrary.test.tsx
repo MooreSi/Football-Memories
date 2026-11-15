@@ -89,3 +89,12 @@ it("offers no refresh until a Veo account is saved", async () => {
   expect(await screen.findByText(/No Veo matches cached yet/)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Refresh Veo/ })).toBeDisabled();
 });
+
+// Owner request 2026-11-15: Veo cards like Hudl's, with the date and the crest/score pill.
+it("shows each Veo match's date and the crest and score pill, like a Hudl card", async () => {
+  stubFetch({ [LIB]: matches, "/api/settings/home-teams": { hudl: null, veo: "Riverside U11" } });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  const a = await screen.findByRole("link", { name: /Rovers/ });
+  expect(a).toHaveTextContent("1st September 2026");
+  expect(await within(a).findByRole("group", { name: "Riverside U11 3, Rovers 1" })).toBeInTheDocument();
+});

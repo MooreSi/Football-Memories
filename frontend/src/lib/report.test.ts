@@ -31,3 +31,11 @@ it("adds up a season, counting only scored matches as results", () => {
   ]);
   expect(r.player?.lines[0]).toEqual({ label: "Matches tagged", value: "1" });
 });
+
+// Owner request 2026-11-15: the season report shows games played, won, drawn and lost.
+it("counts a season's games played, won, drawn and lost, and those without a score", () => {
+  const draw: HudlMatch = { id: "d", source: "veo", title: "261115 U11 v Leek Town", age_group: "U11", capture_key: "d", score: { ours: 1, theirs: 1 }, moments: [] };
+  const loss: HudlMatch = { id: "l", source: "veo", title: "261122 U11 v Crewe", age_group: "U11", capture_key: "l", score: { ours: 0, theirs: 3 }, moments: [] };
+  expect(seasonReport([a, b, draw, loss], "U11", "Aston Villa", {}, null).record).toEqual({ played: 4, won: 1, drawn: 1, lost: 1, unscored: 1 });
+  expect(matchReport(a, "Aston Villa", {}, null).record).toBeNull();
+});

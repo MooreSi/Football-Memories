@@ -16,14 +16,14 @@ const veo = [
   { id: "veo-b", source: "veo", title: "261025 RJ vs Town", age_group: "U11", age_groups: ["U11"], season_label: "2026/27", available: true, duration_s: 3000, moments: [] },
 ];
 
-function render() {
+function render(veoMatches: unknown[] = veo) {
   stubFetch({
     "/api/matches": { total: 0, page: 1, page_size: 24, items: [] },
     "/api/stats": { matches: 0, moments: 0, footage_seconds: 0, teams: 0, players: 0, top_tags: [], recent_moments: [] },
     "/api/preferences": { primary_player_id: null }, "/api/teams": [], "/api/seasons": [], "/api/notes": [],
     "/api/settings/home-teams": { hudl: null, veo: null },
     [`${H}/library`]: hudl, [`${H}/account`]: { configured: true, state: "ready", busy: false },
-    [`${H}/veo/library`]: veo, [`${H}/veo/account`]: { configured: true, state: "ready", busy: false, message: "", summary: null },
+    [`${H}/veo/library`]: veoMatches, [`${H}/veo/account`]: { configured: true, state: "ready", busy: false, message: "", summary: null },
   });
   renderWithProviders(<LibraryPage />);
 }
@@ -50,4 +50,17 @@ it("keeps Hudl in the hero while Hudl is shown", async () => {
   render();
   const hero = await screen.findByRole("region", { name: "Featured match" });
   expect(within(hero).getByText(/Stoke/)).toBeInTheDocument();
+});
+
+// Owner request 2026-11-15: the Veo match profile shows Veo's team events, us v them,
+// and the season report is offered with only Veo shown.
+it("profiles the Veo match from its team events and offers the season report", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  const withData = { ...veo[0], team_data: { stats: { goals: { own: 4, opponent: 2 }, total_attempts: { own: 12, opponent: 10 }, corners: { own: 3, opponent: 2 },
+    fouls: { own: 2, opponent: 8 } }, events: [] } };
+  render([withData, veo[1]]);
+  const profile = await screen.findByRole("region", { name: "Match profile" });
+  expect(await within(profile).findByRole("img", { name: /Corners 3 v 2/ })).toBeInTheDocument();
+  expect(within(profile).getByRole("img", { name: /Fouls 2 v 8/ })).toBeInTheDocument();
+  expect(within(profile).getByRole("link", { name: "Share season report" })).toHaveAttribute("href", "/report/season");
 });

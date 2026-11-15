@@ -3,6 +3,10 @@ import { Download, Printer } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useHudlLibrary } from "../api/hudl";
+import { useVeoLibrary } from "../api/veo";
+import { connectionShown } from "../lib/connections";
+import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
+import { useVeoTeam } from "../lib/useHomeTeams";
 import { OURS, THEIRS } from "../lib/teamColours";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
@@ -77,6 +81,22 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
     head.push(<text key="s" x={REPORT_MARGIN + 180} y={275} fill="#94a3b8" fontSize={30}>{report.subtitle}</text>);
     if (report.headline) head.push(<text key="h" x={REPORT_MARGIN} y={390} fill="#fff" fontSize={56} fontWeight={800}>{report.headline}</text>);
     y = report.headline ? 440 : 360;
+    // Owner request 2026-11-15: games played, won, drawn and lost.
+    if (report.record) {
+      const r = report.record;
+      const gap = 24, box = (W - REPORT_MARGIN * 2 - gap * 3) / 4;
+      const cells: [string, number, string][] = [["PLAYED", r.played, "#fff"], ["WON", r.won, "#4ade80"], ["DRAWN", r.drawn, "#facc15"], ["LOST", r.lost, "#f87171"]];
+      head.push(<g key="rec">{cells.map(([label, n, colour], i) => {
+        const x = REPORT_MARGIN + i * (box + gap);
+        return <g key={label} data-record={label}>
+          <rect x={x} y={y} width={box} height={150} rx={22} fill="rgb(255 255 255 / 0.06)" stroke="rgb(255 255 255 / 0.12)" />
+          <text x={x + box / 2} y={y + 82} textAnchor="middle" fill={colour} fontSize={64} fontWeight={800}>{n}</text>
+          <text x={x + box / 2} y={y + 124} textAnchor="middle" fill="#94a3b8" fontSize={24} fontWeight={700} letterSpacing={3}>{label}</text>
+        </g>;
+      })}</g>);
+      y += 150;
+      if (r.unscored) { head.push(<text key="unscored" x={REPORT_MARGIN} y={y + 40} fill="#94a3b8" fontSize={24}>{r.unscored} {r.unscored === 1 ? "game has" : "games have"} no score yet</text>); y += 40; }
+    }
   }
   let possession = null;
   if (report.possession) {
@@ -136,15 +156,24 @@ async function savePng(svg: SVGSVGElement, name: string) {
 /** /report/match/:id and /report/season (the Library's age group and season). */
 export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const id = useParams().id;
-  const library = useHudlLibrary();
+  // Owner request 2026-11-15: with Hudl hidden and Veo shown, reports use the Veo
+  // matches (Veo's own score) and the Veo team name, as the Library does.
+  const veoOnly = !connectionShown("hudl") && connectionShown("veo");
+  const hudl = useHudlLibrary();
+  const veoLibrary = useVeoLibrary();
+  const library = veoOnly ? { ...veoLibrary, data: veoLibrary.data?.map(veoAsHudl) } : hudl;
   const corrections = useScoreCorrections();
-  const club = useHomeClub();
+  const hudlClub = useHomeClub();
+  const veoTeam = useVeoTeam();
+  const club = veoOnly ? veoTeam || hudlClub : hudlClub;
   const { name } = usePrimaryPlayerName();
   // Owner report 2026-11-13: a season report is one team in one season, never every
   // age group mixed; the team is the one chosen on Opponents (it moves up each season).
   const [team, setTeam] = useTeamChoice(library.data);
   const [season, setSeason] = useState("");
-  const seasonsOfTeam = team === null ? [] : teamSeasons(library.data, team);
+  // Veo matches seldom name an age group, so a Veo season report is chosen by season only.
+  const veoSeasons = [...new Set((library.data ?? []).map((m) => m.season_label || "Unclassified"))].sort().reverse();
+  const seasonsOfTeam = veoOnly ? veoSeasons.map((x) => ({ season: x, age: "Veo" })) : team === null ? [] : teamSeasons(library.data, team);
   const shownSeason = seasonsOfTeam.some((x) => x.season === season) ? season : seasonsOfTeam[0]?.season ?? "";
   const card = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
@@ -154,18 +183,23 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   if (library.isPending) return <Spinner label="Loading matches" />;
   const match = kind === "match" ? library.data?.find((m) => m.id === id) : undefined;
   if (kind === "match" && !match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">This match is not cached.</p></div>;
-  const scope = team === null ? library.data ?? [] : (library.data ?? []).filter((m) => inCohort(m, team) && m.season_label === shownSeason);
+  const scope = veoOnly ? (library.data ?? []).filter((m) => (m.season_label || "Unclassified") === shownSeason)
+    : team === null ? library.data ?? [] : (library.data ?? []).filter((m) => inCohort(m, team) && m.season_label === shownSeason);
   const report = match ? matchReport(match, club, corrections.data, name)
-    : seasonReport(scope, team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name);
+    : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name);
   const ageOptions = team === null ? [] : [...new Set([...agesIn(library.data, shownSeason), ageIn(team, shownSeason)])].sort((x, y) => x.localeCompare(y, undefined, { numeric: true }));
   const file = `${report.title} ${report.subtitle}`.replace(/[^\w -]+/g, "").trim() || "report";
   return (
     <div className="report-page space-y-5">
       <header className="no-print flex flex-wrap items-end gap-3">
-        <div className="mr-auto"><Link to={match ? `/hudl/${encodeURIComponent(match.id)}` : "/"} className="text-sm text-fg-muted">← Back</Link>
+        <div className="mr-auto"><Link to={match ? matchLink(match) : "/"} className="text-sm text-fg-muted">← Back</Link>
           <h1 className="mt-3 text-2xl font-semibold">Share a {kind} report</h1>
           <p className="text-sm text-fg-muted">Save it as an image for family, or print it to PDF.</p>
-          {kind === "season" && team !== null && <div className="mt-3 flex flex-wrap gap-3">
+          {kind === "season" && veoOnly && <div className="mt-3 flex flex-wrap gap-3">
+            <label className="text-xs text-fg-muted">Season<select className="field mt-1 w-auto" aria-label="Season" value={shownSeason} onChange={(e) => setSeason(e.target.value)}>
+              {veoSeasons.map((x) => <option key={x} value={x}>{x}</option>)}</select></label>
+          </div>}
+          {kind === "season" && !veoOnly && team !== null && <div className="mt-3 flex flex-wrap gap-3">
             <label className="text-xs text-fg-muted">Age group<select className="field mt-1 w-auto" aria-label="Age group" value={ageIn(team, shownSeason)}
               onChange={(e) => { const t = cohortOf(e.target.value, shownSeason); if (t !== null) { setTeam(t); setSeason(shownSeason); } }}>
               {ageOptions.map((x) => <option key={x}>{x}</option>)}</select></label>

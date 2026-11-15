@@ -90,7 +90,7 @@ export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; c
 
 /** Owner request 2026-11-15: both crests and the score, bottom right of the thumbnail.
  *  Only when the score is known and the title names the opponent. */
-function ScoreBadge({ title, club, score }: { title: string; club: string | null; score: { ours: number; theirs: number } | null }) {
+export function ScoreBadge({ title, club, score }: { title: string; club: string | null; score: { ours: number; theirs: number } | null }) {
   const parts = fixtureParts(title, club);
   if (!score || !parts) return null;
   const home = club || "Home";

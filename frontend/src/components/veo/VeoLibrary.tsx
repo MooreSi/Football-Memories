@@ -5,6 +5,9 @@ import { Clock3, Film, RefreshCw } from "lucide-react";
 import { useVeoLibrary, useVeoStatus, veoAgeGroups, veoExpiry, veoRequest } from "../../api/veo";
 import { connectionShown } from "../../lib/connections";
 import { Button } from "../ui/Button";
+import { ScoreBadge } from "../hudl/HudlLibrary";
+import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
+import { useVeoTeam } from "../../lib/useHomeTeams";
 
 export type VeoFilters = { age: string; season: string; search: string };
 
@@ -12,6 +15,7 @@ export type VeoFilters = { age: string; season: string; search: string };
 export function VeoLibrary({ filters }: { filters: VeoFilters }) {
   const shown = connectionShown("veo");
   const library = useVeoLibrary();
+  const club = useVeoTeam();
   // Owner request 2026-11-15: Refresh Veo here, like Refresh Hudl (the same action as
   // Settings → Connections → Veo → Refresh matches).
   const status = useVeoStatus();
@@ -49,18 +53,21 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
     <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, count).map(m => {
       const expiry = veoExpiry(m);
       const highlights = m.moments?.length ?? 0;
+      const date = fixtureDate(m.title);
       return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
         <Link to={`/veo/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
           <div className="relative grid aspect-video place-items-center overflow-hidden bg-ink-800 text-fg-subtle">
             {m.poster_url ? <img crossOrigin="anonymous" src={m.poster_url} alt={m.title} loading="lazy" className="absolute inset-0 size-full object-cover" />
               : <span className="grid place-items-center gap-1"><Film size={28} aria-hidden /></span>}
-            {m.score && <span className="absolute right-2.5 bottom-2.5 rounded-lg bg-ink-950/85 px-2.5 py-1 text-lg font-semibold tabular-nums text-fg">{m.score.ours}–{m.score.theirs}</span>}
+            {/* Owner request 2026-11-15: the crest and score pill, as on a Hudl card. */}
+            {m.score && (club && fixtureParts(m.title, club) ? <ScoreBadge title={m.title} club={club} score={m.score} />
+              : <span className="absolute right-2.5 bottom-2.5 rounded-lg bg-ink-950/85 px-2.5 py-1 text-lg font-semibold tabular-nums text-fg">{m.score.ours}–{m.score.theirs}</span>)}
             <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{veoAgeGroups(m).join(" / ")} · Veo</span>
             {expiry && <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-warn"><Clock3 size={12} aria-hidden />{expiry}</span>}
           </div>
           <div className="space-y-2 p-4"><h3 className="text-sm font-semibold leading-snug">{m.title}</h3>
             <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
-            <p className="text-xs text-fg-muted">{highlights} {highlights === 1 ? "highlight" : "highlights"}</p></div>
+            <p className="text-xs text-fg-muted">{date ? ordinalDate(date) : "Undated"} · {highlights} {highlights === 1 ? "highlight" : "highlights"}</p></div>
         </Link>
       </article>;
     })}</div>
