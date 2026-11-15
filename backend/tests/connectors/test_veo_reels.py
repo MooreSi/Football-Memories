@@ -303,3 +303,41 @@ def test_a_clip_longer_than_one_read_comes_out_whole(tmp_path: Path, long_video:
     assert status["state"] == "done", status["message"]
     assert 39.0 < probe(folder / status["filename"]).duration_s < 41.0
     assert media.downloads == []
+
+
+# Owner request 2026-11-15: the team stats card plays after the highlights, before the
+# closing card, and is removed once used.
+def test_reel_puts_the_team_stats_card_after_the_highlights(
+    tmp_path: Path, match_video: Path
+) -> None:
+    from unittest.mock import patch
+
+    media = FakeMedia()
+    veo, _, _, folder, index = _ready(tmp_path, media)
+    _seed_download(veo, folder, index, match_video)
+    match_card, stats, closing = (_card(veo, tmp_path) for _ in range(3))
+    card_names = [veo.cards.path(c).name for c in (match_card, stats, closing)]
+    seen: list[list[Path]] = []
+
+    def fake_assemble(parts, output, **kwargs):  # noqa: ANN001, ANN003, ANN202
+        seen.append(list(parts))
+        output.write_bytes(match_video.read_bytes())
+
+    with patch("app.connectors.veo._reels.assemble_reel", side_effect=fake_assemble):
+        veo.start(
+            "reel",
+            IDENTITY,
+            name="R",
+            reel={
+                "moment_ids": ["h-1", "h-2"],
+                "match_card": match_card,
+                "stats_card": stats,
+                "closing_card": closing,
+            },
+        )
+    assert veo.status()["state"] == "done", veo.status()["message"]
+    names = [p.name for p in seen[0]]
+    assert names[0] == card_names[0]
+    assert names[1:3] == ["clip-0001.mp4", "clip-0002.mp4"]
+    assert names[3:] == card_names[1:]
+    assert not veo.cards.path(stats).exists()

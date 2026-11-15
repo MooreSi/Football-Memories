@@ -2,7 +2,7 @@ import { Overlay } from '../components/ui/Overlay';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Route, Share2, SkipBack, SkipForward, Square, StickyNote } from 'lucide-react';
+import { Activity, Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Route, Share2, SkipBack, SkipForward, Square, StickyNote } from 'lucide-react';
 import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
@@ -12,6 +12,8 @@ import { formatClock } from '../lib/format';
 import { advanceTagged, needsSeek, nextMoment, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 import { markHudlMomentWatched } from '../lib/hudlWatched';
 import { MatchInsights } from '../components/match/MatchInsights';
+import { TeamStatsTable } from '../components/match/TeamStatsTable';
+import { hudlTeamStats } from '../lib/hudlTeamStats';
 import { MatchDrawing } from '../components/match/MatchDrawing';
 import { looksLikePlayer } from '../lib/hudlPlayer';
 import { phases } from '../lib/insights';
@@ -214,6 +216,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       {own && <p role="status" className={`text-sm ${status.data?.state === 'error' ? 'text-danger' : 'text-fg-muted'}`}>{status.data?.message}</p>}
       {action.isError && <p role="alert" className="text-danger">{action.error.message}</p>}
       {own && status.data?.download_url && <div className="panel flex flex-wrap items-center gap-4 p-4"><a className="font-semibold text-accent underline" href={status.data.download_url}>{downloadLabel(status.data.filename,status.data.download_kind)}</a>{status.data.download_kind!=='moments' && !status.data.filename?.startsWith('hudl-moments-') && !status.data.filename?.endsWith('.zip') && <Link to="/import" className="text-sm text-fg-muted underline">{match.tag_status === 'unsynced' ? 'Import offline match' : 'Import offline match and tags'}</Link>}<Button onClick={() => action.mutate({ action: 'stream', match_id: id })} disabled={busy}>Resume stream</Button></div>}
+      {!embedded && <HudlTeamStats moments={moments} club={club} />}
       {!embedded && <MatchInsights match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
       <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
         <div className="flex flex-wrap items-end gap-3">
@@ -234,4 +237,15 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}
   </div>;
+}
+
+/** Owner request 2026-11-15: team stats on a Hudl match, from the tags that name a side. */
+function HudlTeamStats({ moments, club }: { moments: HudlMoment[]; club: string | null }) {
+  const rows = hudlTeamStats(moments, club);
+  if (!rows.length) return null;
+  return <section aria-label="Team stats" className="panel space-y-5 p-5">
+    <h2 className="flex items-center gap-2 text-xl font-semibold"><Activity size={18} className="text-accent" aria-hidden /> Team stats</h2>
+    <TeamStatsTable rows={rows} ours={club || 'Us'} />
+    <p className="text-xs text-fg-subtle">Counted from Hudl's tags that name a side; possession from the possession tags' lengths.</p>
+  </section>;
 }

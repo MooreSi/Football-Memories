@@ -12,6 +12,7 @@ vi.mock("../lib/reelCards", async (original) => ({
   loadCrest: vi.fn(async () => null),
 }));
 import { ReelStudioPage } from "./ReelStudioPage";
+import { recordCard } from "../lib/reelCards";
 import { VeoMatchFull } from "./VeoMatchFullPage";
 
 // Owner request 2026-11-13: highlight reels from Veo matches, named with the Veo
@@ -92,4 +93,41 @@ it("asks for the Veo team name when Settings has none, rather than borrowing Hud
   const note = await screen.findByRole("note", { name: "Veo team name" });
   expect(within(note).getByRole("link", { name: /Settings/ })).toHaveAttribute("href", "/settings/connections");
   expect(screen.queryByText(/Aston Villa/)).toBeNull();
+});
+
+// Owner request 2026-11-15: the score on the match title card (a tick box), and a team
+// stats card after the highlights, shown for as long as the owner picks.
+it("puts the score on the match card unless unticked", async () => {
+  stub();
+  const base = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, init) => String(input) === `${H}/veo/library`
+    ? new Response(JSON.stringify([{ ...veo[0], score: { ours: 3, theirs: 1 } }]), { status: 200 }) : base(input, init));
+  studio({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h1"] }] });
+  const user = userEvent.setup();
+  const tick = await screen.findByRole("checkbox", { name: "Show the score" });
+  expect(tick).toBeChecked();
+  await vi.waitFor(() => expect(screen.getByRole("textbox", { name: "Reel name" })).toHaveValue("Norton Lindsay vs. Northgate CB"));
+  await user.click(screen.getByRole("button", { name: /Make highlight reel/ }));
+  await vi.waitFor(() => expect(posts().some(p => p.url === `${H}/veo/action`)).toBe(true));
+  const cards = vi.mocked(recordCard).mock.calls.map(c => c[0]);
+  expect(cards.find(c => c.kind === "match")).toMatchObject({ score: { ours: 3, theirs: 1 } });
+});
+
+it("adds a team stats card after the highlights for the chosen time", async () => {
+  stub();
+  const base = vi.mocked(fetch).getMockImplementation()!;
+  const teamData = { stats: { goals: { own: 2, opponent: 1 }, corners: { own: 5, opponent: 3 } }, events: [] };
+  vi.mocked(fetch).mockImplementation(async (input, init) => String(input) === `${H}/veo/library`
+    ? new Response(JSON.stringify([{ ...veo[0], team_data: teamData }]), { status: 200 }) : base(input, init));
+  studio({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h1"] }] });
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("checkbox", { name: "Team stats card" }));
+  await user.selectOptions(screen.getByRole("combobox", { name: "Show the team stats for" }), "10");
+  await vi.waitFor(() => expect(screen.getByRole("textbox", { name: "Reel name" })).toHaveValue("Norton Lindsay vs. Northgate CB"));
+  await user.click(screen.getByRole("button", { name: /Make highlight reel/ }));
+  await vi.waitFor(() => expect(posts().some(p => p.url === `${H}/veo/action`)).toBe(true));
+  const call = vi.mocked(recordCard).mock.calls.find(c => c[0].kind === "stats")!;
+  expect(call[0].stats).toEqual([{ label: "Goals", own: 2, opponent: 1 }, { label: "Corners", own: 5, opponent: 3 }]);
+  expect(call[3]).toBe(10);
+  expect(posts().find(p => p.url === `${H}/veo/action`)!.body.stats_card).toMatch(/^card-/);
 });

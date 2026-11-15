@@ -1,3 +1,4 @@
+import { OURS, THEIRS } from "./teamColours";
 /** Animated highlight-reel title cards (spec 190, owner request 2026-11-10).
  *
  *  Cards are drawn on a 1920x1080 canvas frame by frame: `drawCard(ctx, card, theme, t)`
@@ -10,7 +11,7 @@ import { fixtureDate, fixtureParts, ukDate } from "./hudlFixture";
 export const W = 1920;
 export const H = 1080;
 
-export type CardKind = "opening" | "match" | "closing";
+export type CardKind = "opening" | "match" | "closing" | "stats";
 export interface CardSpec {
   kind: CardKind;
   title: string;
@@ -20,6 +21,10 @@ export interface CardSpec {
   away?: string;
   date?: string;
   detail?: string;
+  /** Owner request 2026-11-15: the final score on a match card (when ticked). */
+  score?: { ours: number; theirs: number };
+  /** Owner request 2026-11-15: a team stats card's rows, us v them. */
+  stats?: { label: string; own: number; opponent: number }[];
 }
 export type ThemeId = "floodlights" | "kickoff" | "gold" | "neon" | "matchday" | "minimal";
 export const THEMES: { id: ThemeId; label: string; blurb: string }[] = [
@@ -30,10 +35,12 @@ export const THEMES: { id: ThemeId; label: string; blurb: string }[] = [
   { id: "matchday", label: "Matchday poster", blurb: "Bold stripes and a date stamp" },
   { id: "minimal", label: "Clean", blurb: "Calm type, growing underline" },
 ];
-export const CARD_SECONDS: Record<CardKind, number> = { opening: 4, match: 3.5, closing: 3.5 };
+export const CARD_SECONDS: Record<CardKind, number> = { opening: 4, match: 3.5, closing: 3.5, stats: 8 };
+/** The choices for how long the team stats card stays on screen. */
+export const STATS_SECONDS = [4, 6, 8, 10, 12, 15, 20];
 
 /** A match card from a Hudl title such as "261108 U11 v Stoke (A)". */
-export function matchCard(title: string, club: string | null, extra: { age?: string; moments?: number } = {}): CardSpec {
+export function matchCard(title: string, club: string | null, extra: { age?: string; moments?: number; score?: { ours: number; theirs: number } | null } = {}): CardSpec {
   const parts = fixtureParts(title, club);
   const date = fixtureDate(title);
   const home = club || "Home";
@@ -41,7 +48,12 @@ export function matchCard(title: string, club: string | null, extra: { age?: str
   const detail = [extra.age, parts?.venue, extra.moments ? `${extra.moments} ${extra.moments === 1 ? "moment" : "moments"}` : ""]
     .filter(Boolean).join("  ·  ");
   return { kind: "match", title: parts ? `${home} v ${away}` : title, home, away: parts ? away : undefined,
-    date: date ? ukDate(date) : undefined, detail };
+    date: date ? ukDate(date) : undefined, detail, ...(extra.score ? { score: extra.score } : {}) };
+}
+
+/** Owner request 2026-11-15: a team stats card for one match (at most 9 rows fit). */
+export function statsCard(match: CardSpec, rows: { label: string; own: number; opponent: number }[]): CardSpec {
+  return { kind: "stats", title: "Team stats", subtitle: match.title, home: match.home, away: match.away, stats: rows.slice(0, 9) };
 }
 
 // ---------- maths and helpers ----------
@@ -296,9 +308,9 @@ export function drawCard(ctx: CanvasRenderingContext2D | null, card: CardSpec, t
     ctx.save();
     ctx.translate(W / 2, 400); ctx.scale(pop, pop);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = `900 120px ${FONT}`; ctx.fillStyle = palette.accent;
+    ctx.font = `900 ${card.score ? 150 : 120}px ${FONT}`; ctx.fillStyle = palette.accent;
     ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 30;
-    ctx.fillText("VS", 0, 4);
+    ctx.fillText(card.score ? `${card.score.ours} – ${card.score.theirs}` : "VS", 0, 4);
     ctx.restore();
     ctx.save(); ctx.globalAlpha = enter; ctx.translate(0, rise);
     const size2 = fitFont(ctx, card.title, 900, 96, W - 260);
@@ -306,6 +318,8 @@ export function drawCard(ctx: CanvasRenderingContext2D | null, card: CardSpec, t
     if (card.date) line(ctx, card.date, 790, 52, palette.accent, 700, 2);
     if (card.detail) line(ctx, card.detail, 870, 36, palette.sub, 500, 1);
     ctx.restore();
+  } else if (card.kind === "stats") {
+    drawStats(ctx, card, palette, t, enter, rise);
   } else {
     ctx.save(); ctx.globalAlpha = enter; ctx.translate(0, rise);
     if (card.kind === "opening") line(ctx, "FOOTBALL MEMORIES", 300, 34, palette.accent, 700, 14);
@@ -327,9 +341,40 @@ export function drawCard(ctx: CanvasRenderingContext2D | null, card: CardSpec, t
   return true;
 }
 
-/** Records one card's animation in real time. Resolves to a WebM (or MP4 on Safari). */
-export async function recordCard(card: CardSpec, theme: ThemeId, crests: Crests): Promise<Blob> {
-  const seconds = CARD_SECONDS[card.kind];
+/** Owner request 2026-11-15: us v them, a row per stat with a growing split bar. */
+function drawStats(ctx: CanvasRenderingContext2D, card: CardSpec, palette: Palette, t: number, enter: number, rise: number) {
+  const rows = card.stats ?? [];
+  ctx.save(); ctx.globalAlpha = enter; ctx.translate(0, rise);
+  // A dark panel so the rows read on every theme's background.
+  ctx.fillStyle = "rgba(5,10,20,0.62)";
+  ctx.beginPath(); ctx.roundRect?.(180, 60, W - 360, H - 120, 36); ctx.fill();
+  line(ctx, (card.title || "Team stats").toUpperCase(), 120, 40, palette.accent, 800, 10);
+  if (card.subtitle) line(ctx, card.subtitle, 190, fitFont(ctx, card.subtitle, 800, 64, W - 300), palette.text, 800);
+  ctx.textBaseline = "middle";
+  ctx.font = `700 38px ${FONT}`; ctx.fillStyle = palette.sub;
+  ctx.textAlign = "left"; ctx.fillText(card.home ?? "Us", 260, 270);
+  ctx.textAlign = "right"; ctx.fillText(card.away ?? "Opponent", W - 260, 270);
+  const top = 340, gap = Math.min(80, 660 / Math.max(1, rows.length));
+  rows.forEach((r, i) => {
+    const y = top + i * gap;
+    const grow = span(t, 0.12 + i * 0.04, 0.45 + i * 0.04);
+    ctx.font = `800 52px ${FONT}`; ctx.fillStyle = palette.text;
+    ctx.textAlign = "left"; ctx.fillText(String(r.own), 260, y);
+    ctx.textAlign = "right"; ctx.fillText(String(r.opponent), W - 260, y);
+    ctx.textAlign = "center"; ctx.font = `600 34px ${FONT}`; ctx.fillStyle = palette.sub;
+    ctx.fillText(r.label, W / 2, y - 16);
+    const total = Math.max(1, r.own + r.opponent), left = 520, width = W - 1040;
+    ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(left, y + 14, width, 10);
+    ctx.fillStyle = OURS; ctx.fillRect(left, y + 14, width * (r.own / total) * grow, 10);
+    ctx.fillStyle = THEIRS; const theirs = width * (r.opponent / total) * grow;
+    ctx.fillRect(left + width - theirs, y + 14, theirs, 10);
+  });
+  ctx.restore();
+}
+
+/** Records one card's animation in real time. Resolves to a WebM (or MP4 on Safari).
+ *  `seconds` overrides the card's usual length (the team stats card, owner request 2026-11-15). */
+export async function recordCard(card: CardSpec, theme: ThemeId, crests: Crests, seconds = CARD_SECONDS[card.kind]): Promise<Blob> {
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   canvas.style.cssText = "position:fixed;left:-99999px;top:0;width:480px;height:270px;";

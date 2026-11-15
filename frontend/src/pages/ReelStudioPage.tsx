@@ -9,9 +9,12 @@ import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { fixtureLabel } from "../lib/hudlFixture";
 import {
-  CARD_SECONDS, type CardSpec, type Crests, H, THEMES, type ThemeId, W,
-  blobToBase64, drawCard, loadCrest, matchCard, recordCard,
+  CARD_SECONDS, type CardSpec, type Crests, H, STATS_SECONDS, THEMES, type ThemeId, W,
+  blobToBase64, drawCard, loadCrest, matchCard, recordCard, statsCard,
 } from "../lib/reelCards";
+import { hudlTeamStats } from "../lib/hudlTeamStats";
+import { matchScore, useScoreCorrections } from "../lib/matchScore";
+import { type VeoTeamData, teamSplit } from "../lib/veoTeamSplit";
 import { timeLeft } from "../lib/taggedPlayback";
 import { useHomeClub } from "../lib/useHomeClub";
 import { useVeoTeam } from "../lib/useHomeTeams";
@@ -95,7 +98,8 @@ function Studio({ selection }: { selection: ReelSelection }) {
   const ageOf = (m: { age_group?: string; age_groups?: string[] }) => isVeo
     ? (m.age_group && m.age_group !== "Unclassified" ? m.age_group : undefined) : hudlAgeGroups(m as Parameters<typeof hudlAgeGroups>[0])[0];
   const rows = (isVeo ? selection.items.slice(0, 1) : selection.items).map((item) => {
-    const match = (library.data as { id: string; title: string; season_label?: string; age_group?: string; age_groups?: string[]; moments?: { id: string; category: string }[] }[] | undefined)?.find((m) => m.id === item.match_id);
+    const match = (library.data as { id: string; title: string; season_label?: string; age_group?: string; age_groups?: string[];
+      moments?: { id: string; category: string; time_s: number; duration_s: number }[]; score?: { ours: number; theirs: number } | null; team_data?: VeoTeamData | null }[] | undefined)?.find((m) => m.id === item.match_id);
     const moments = (match?.moments ?? []).filter((m) => item.moment_ids?.length ? item.moment_ids.includes(m.id) : item.codes?.includes(m.category));
     return { item, match, moments };
   });
@@ -119,16 +123,29 @@ function Studio({ selection }: { selection: ReelSelection }) {
   const [preview, setPreview] = useState(0);
   const [phase, setPhase] = useState("");
   const [crests, setCrests] = useState<Crests>({});
+  // Owner request 2026-11-15: the score on the match card, and a team stats card after
+  // each match's moments, on screen for as long as the owner picks.
+  const corrections = useScoreCorrections();
+  const [showScore, setShowScore] = useState(true);
+  const [statsOn, setStatsOn] = useState(false);
+  const [statsSeconds, setStatsSeconds] = useState(CARD_SECONDS.stats);
+  const scoreOf = (m: NonNullable<(typeof rows)[number]["match"]>) => isVeo ? m.score ?? null
+    : matchScore({ ...m, moments: m.moments ?? [] } as Parameters<typeof matchScore>[0], club, corrections.data);
+  const statRows = rows.map((r) => !r.match ? [] : isVeo ? teamSplit(r.match.team_data) : hudlTeamStats(r.match.moments ?? [], club));
 
   const defaultSubtitle = [seasons.join(" & "), `${rows.length} ${rows.length === 1 ? "match" : "matches"}`, `${totalMoments} moments`].filter(Boolean).join(" · ");
   const openingCard: CardSpec = { kind: "opening", title: openingTitle ?? name, subtitle: subtitle ?? defaultSubtitle };
-  const matchCards = rows.map((r) => r.match ? matchCard(r.match.title, club, { age: ageOf(r.match), moments: r.moments.length }) : { kind: "match" as const, title: r.item.match_id });
+  const matchCards = rows.map((r) => r.match ? matchCard(r.match.title, club, { age: ageOf(r.match), moments: r.moments.length,
+    score: showScore ? scoreOf(r.match) : null }) : { kind: "match" as const, title: r.item.match_id });
+  const statsCards = rows.map((_, i) => statsOn && statRows[i].length ? statsCard(matchCards[i], statRows[i]) : null);
+  const anyStats = statRows.some((r) => r.length > 0);
   const closingCard: CardSpec = { kind: "closing", title: closingText || " ", subtitle: club || undefined };
   const cards = useMemo(() => [
     ...(opening ? [{ card: openingCard, theme: openingTheme, label: "Opening" }] : []),
     ...(perMatch ? matchCards.map((c, i) => ({ card: c, theme: matchTheme, label: `Match ${i + 1}` })) : []),
+    ...statsCards.flatMap((c, i) => c ? [{ card: c, theme: matchTheme, label: `Stats ${i + 1}` }] : []),
     ...(closing ? [{ card: closingCard, theme: closingTheme, label: "Closing" }] : []),
-  ], [opening, perMatch, closing, openingCard.title, openingCard.subtitle, openingTheme, matchTheme, closingTheme, closingText, club, library.data]);
+  ], [opening, perMatch, closing, openingCard.title, openingCard.subtitle, openingTheme, matchTheme, closingTheme, closingText, club, library.data, showScore, statsOn, corrections.data]);
   const shown = cards[Math.min(preview, cards.length - 1)];
 
   const names = [...new Set(matchCards.flatMap((c) => [c.home, c.away]).filter((n): n is string => Boolean(n)))];
@@ -140,29 +157,31 @@ function Studio({ selection }: { selection: ReelSelection }) {
 
   const make = useMutation({
     mutationFn: async () => {
-      const upload = async (card: CardSpec, theme: ThemeId) => {
-        const blob = await recordCard(card, theme, crests);
+      const upload = async (card: CardSpec, theme: ThemeId, seconds?: number) => {
+        const blob = await recordCard(card, theme, crests, ...(seconds ? [seconds] as const : []));
         return (await hudlRequest<{ card_id: string }>("/reel/cards", { data: await blobToBase64(blob) })).card_id;
       };
-      const count = (opening ? 1 : 0) + (perMatch ? rows.length : 0) + (closing ? 1 : 0);
+      const count = (opening ? 1 : 0) + (perMatch ? rows.length : 0) + statsCards.filter(Boolean).length + (closing ? 1 : 0);
       let n = 0;
       const step = () => setPhase(`Recording title card ${++n} of ${count}…`);
       if (opening) step();
       const openingId = opening ? await upload(openingCard, openingTheme) : null;
       const ids: (string | null)[] = [];
       for (const card of matchCards) { if (perMatch) { step(); ids.push(await upload(card, matchTheme)); } else ids.push(null); }
+      const statsIds: (string | null)[] = [];
+      for (const card of statsCards) { if (card) { step(); statsIds.push(await upload(card, matchTheme, statsSeconds)); } else statsIds.push(null); }
       if (closing) step();
       const closingId = closing ? await upload(closingCard, closingTheme) : null;
       if (isVeo) {
         setPhase("Cutting the highlights and assembling the reel…");
         await veoRequest("/action", { action: "reel", match_id: rows[0].item.match_id, moment_ids: rows[0].moments.map((m) => m.id), name,
           match_label: rows[0].match ? fixtureLabel(rows[0].match.title, club, "") : undefined,
-          opening_card: openingId, match_card: ids[0] ?? null, closing_card: closingId });
+          opening_card: openingId, match_card: ids[0] ?? null, closing_card: closingId, ...(statsIds[0] ? { stats_card: statsIds[0] } : {}) });
         return;
       }
       setPhase("Fetching moments and assembling the reel…");
       await hudlRequest("/account/batch", {
-        items: selection.items.map((item, i) => ({ ...item, ...(ids[i] ? { card_id: ids[i] } : {}) })),
+        items: selection.items.map((item, i) => ({ ...item, ...(ids[i] ? { card_id: ids[i] } : {}), ...(statsIds[i] ? { stats_card_id: statsIds[i] } : {}) })),
         combined: true,
         reel: { name, opening_card: openingId, closing_card: closingId, ...(separate ? { per_match: true } : {}) },
       });
@@ -256,7 +275,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
           {isVeo && !veoTeam && <p role="note" aria-label="Veo team name" className="rounded-xl border border-warn/30 bg-warn/5 p-4 text-xs text-fg-muted">
             The cards say “Home” because your team's Veo name is not set. Veo may name your club differently from Hudl:
             add it in <Link to="/settings/connections" className="text-accent underline">Settings → Connections → Veo</Link>.</p>}
-          {isVeo && <p className="tile p-4 text-xs text-fg-muted">The desktop helper cuts these Veo highlights from the full match saved on this computer. If it is not saved yet, it downloads the full match first (it stays in your download folder).</p>}
+          {isVeo && <p className="tile p-4 text-xs text-fg-muted">The desktop helper cuts these Veo highlights from the full match if it is saved on this computer; otherwise it reads only the parts of the match the highlights need from Veo.</p>}
           {!separate && <div className="tile space-y-3 p-4">
             <label className="flex items-center justify-between text-sm font-semibold">Opening card
               <input type="checkbox" checked={opening} onChange={(e) => setOpening(e.target.checked)} aria-label="Opening card" /></label>
@@ -270,7 +289,18 @@ function Studio({ selection }: { selection: ReelSelection }) {
             <label className="flex items-center justify-between text-sm font-semibold">Title card before each match
               <input type="checkbox" checked={perMatch} onChange={(e) => setPerMatch(e.target.checked)} aria-label="Title card before each match" /></label>
             <p className="text-xs text-fg-muted">Filled in automatically: both crests, the opponent, the date (UK format), age group, venue and moment count.</p>
+            {perMatch && <label className="flex items-center justify-between text-sm">Show the score
+              <input type="checkbox" checked={showScore} onChange={(e) => setShowScore(e.target.checked)} aria-label="Show the score" /></label>}
             {perMatch && <ThemePicker label="Match card style" value={matchTheme} onChange={(t) => { setMatchTheme(t); setPreview(opening ? 1 : 0); }} />}
+          </div>
+          <div className="tile space-y-3 p-4">
+            <label className="flex items-center justify-between text-sm font-semibold">Team stats card
+              <input type="checkbox" checked={statsOn} disabled={!anyStats} onChange={(e) => setStatsOn(e.target.checked)} aria-label="Team stats card" /></label>
+            <p className="text-xs text-fg-muted">{anyStats ? "Us v them after each match's moments: goals, attempts, corners and more." : "None of these matches has team stats (Veo team data, or Hudl tags that name a side)."}</p>
+            {statsOn && <label className="block text-xs text-fg-muted">Show the team stats for
+              <select className="field mt-1" aria-label="Show the team stats for" value={statsSeconds} onChange={(e) => setStatsSeconds(Number(e.target.value))}>
+                {STATS_SECONDS.map((n) => <option key={n} value={n}>{n} seconds</option>)}
+              </select></label>}
           </div>
           <div className="tile space-y-3 p-4">
             <label className="flex items-center justify-between text-sm font-semibold">Closing card

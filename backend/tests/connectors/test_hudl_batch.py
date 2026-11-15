@@ -379,3 +379,55 @@ def test_batch_route_forwards_per_match_reels(tmp_path):
             assert plain.status_code == 202
             assert start.call_args.kwargs["reel"]["per_match"] is False
     app.state.account._executor.shutdown()
+
+
+# Owner request 2026-11-15: a team stats card after each match's moments, in a joined
+# reel and in one reel per match; removed once used.
+@pytest.mark.parametrize("per_match", [False, True])
+def test_batch_reel_puts_each_matchs_stats_card_after_its_moments(tmp_path, tiny_video, per_match):
+    connection = _connection(tmp_path)
+    cards = CardStore(tmp_path / "cards")
+    connection.cards = cards
+    m1_card = cards.save(_card(tmp_path / "m1.mp4").read_bytes())
+    m1_stats = cards.save(_card(tmp_path / "s1.mp4").read_bytes())
+    seen: list[list[str]] = []
+    expected = [cards.path(m1_card).name, "a.mp4", cards.path(m1_stats).name]
+
+    def prepare(identity):
+        connection._stream_id, connection._stream_match = f"s-{identity}", identity
+        connection._stream_playlist = "#EXTM3U\n"
+
+    def fake_export(playlist, fetch, selected, output, *, combined, match_title, progress):
+        target = output / f"{selected[0]['id']}.mp4"
+        shutil.copyfile(tiny_video, target)
+        return target
+
+    def fake_assemble(parts, output, **kwargs):
+        seen.append([p.name for p in parts])
+        shutil.copyfile(tiny_video, output)
+
+    with (
+        patch.object(connection, "_prepare_stream", side_effect=prepare),
+        patch.object(connection, "_pause", lambda: None),
+        patch("app.connectors.hudl_exports.export_from_segments", side_effect=fake_export),
+        patch("app.connectors.hudl_batch.assemble_reel", side_effect=fake_assemble),
+    ):
+        connection.start_batch(
+            [
+                {
+                    "match_id": "m1",
+                    "moment_ids": ["a"],
+                    "card_id": m1_card,
+                    "stats_card_id": m1_stats,
+                },
+                {"match_id": "m2", "codes": ["Sam Example"]},
+            ],
+            combined=True,
+            reel={"name": "R", "opening_card": None, "closing_card": None, "per_match": per_match},
+        )
+        _wait(connection)
+    connection._executor.shutdown()
+    assert connection.status()["state"] == "done", connection.status()["message"]
+    first = seen[0]
+    assert first[:3] == expected
+    assert not cards.path(m1_stats).exists()

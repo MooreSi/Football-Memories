@@ -345,3 +345,15 @@ def test_club_names_and_crest_are_served_to_the_app_only(tmp_path: Path) -> None
     assert c.get("/veo/crest", headers={"Origin": "https://evil.test"}).status_code == 403
     app.state.veo = ClubConnection(None)
     assert c.get("/veo/crest", headers=APP).status_code == 404
+
+
+# Owner request 2026-11-15: a team stats card after the highlights.
+def test_reel_action_passes_the_team_stats_card(tmp_path: Path) -> None:
+    app = create_companion(tmp_path / "out")
+    store = FakeStore()
+    store.saved.append(("parent@example.test", SECRET))
+    app.state.veo_store, app.state.veo = store, ReelConnection()
+    client = TestClient(app, base_url="http://127.0.0.1:8766")
+    body = {"action": "reel", "match_id": "veo-a", "moment_ids": ["h1"], "stats_card": "s" * 24}
+    assert client.post("/veo/action", json=body, headers=APP).status_code == 202
+    assert app.state.veo.reels[0][2]["stats_card"] == "s" * 24

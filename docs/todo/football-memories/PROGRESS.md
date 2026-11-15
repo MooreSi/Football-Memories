@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Reel score and team stats cards, Hudl team stats (owner request 2026-11-15)
+
+- done: score tick box on the match title card; team stats card with a chosen
+  duration for Hudl and Veo reels (helper places it after the match's moments);
+  Team stats panel on Hudl matches. Tests red first; frontend 462, backend 604 on
+  both databases. Cards checked in the browser on a real Veo match (not recorded
+  into a reel: making a reel was not run).
+
 ## Veo clips by range, multi-type rails, Veo head to head (owner request 2026-11-15)
 
 - done: Veo reels/moments read only the needed byte ranges (relay through

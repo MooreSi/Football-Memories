@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Reel score and team stats cards, Hudl team stats (owner request 2026-11-15):**
+  reel studio "Show the score" (match card shows the score instead of VS; Veo score,
+  Hudl `matchScore`) and an opt-in "Team stats card" after each match's moments,
+  on screen for 4 to 20 s (`statsCard`, `recordCard(..., seconds)`). Helper: Hudl
+  batch items take `stats_card_id`, Veo reels `stats_card`. Hudl match page has a
+  Team stats panel (`lib/hudlTeamStats.ts` from `teamProfile`; possession % first);
+  the table is shared (`TeamStatsTable`).
+
 - **Veo clips by range, multi-type rails, Veo head to head (owner request 2026-11-15):**
   Veo reels and moment downloads read only the parts they need through a private
   local relay (`veo/_ranges.py`), no full download. Hudl and Veo match rails pick

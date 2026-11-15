@@ -23,9 +23,9 @@ const library = [
 beforeEach(() => { vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); sessionStorage.clear(); });
 
-function renderStudio(state: unknown) {
+function renderStudio(state: unknown, matches: unknown[] = library) {
   let n = 0;
-  const calls = stubFetch({ [`${H}/library`]: library, [`${H}/account`]: { state: "ready", busy: false, configured: true },
+  const calls = stubFetch({ [`${H}/library`]: matches, [`${H}/account`]: { state: "ready", busy: false, configured: true },
     [`${H}/account/batch`]: { accepted: true }, "/api/preferences": { primary_player_id: null },
     "/api/matches": { total: 0, page: 1, page_size: 1, items: [] } });
   const base = vi.mocked(fetch).getMockImplementation()!;
@@ -106,4 +106,16 @@ it("switches from one reel to one per match in the studio", async () => {
   await userEvent.click(screen.getByRole("radio", { name: /One reel per match/ }));
   expect(screen.queryByRole("checkbox", { name: "Opening card" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Make 2 highlight reels/ })).toBeInTheDocument();
+});
+
+// Owner request 2026-11-15: a team stats card after each Hudl match's moments.
+it("sends a team stats card for each match that has side-named tags", async () => {
+  renderStudio({ items: [{ match_id: "stoke", codes: ["Sam Example"] }], name: "Sam" }, [{ ...library[0], moments: [...library[0].moments,
+    { id: "x1", category: "OPPOSITION CORNER", time_s: 20, duration_s: 1 }, { id: "x2", category: "U11 CORNER", time_s: 30, duration_s: 1 }] }]);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("checkbox", { name: "Team stats card" }));
+  await user.click(screen.getByRole("button", { name: /Make highlight reel/ }));
+  await vi.waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u]) => String(u) === `${H}/account/batch`)).toBe(true));
+  const body = JSON.parse(String(vi.mocked(fetch).mock.calls.find(([u]) => String(u) === `${H}/account/batch`)![1]?.body));
+  expect(body.items[0].stats_card_id).toMatch(/^card-/);
 });

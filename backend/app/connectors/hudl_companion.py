@@ -80,6 +80,8 @@ class BatchItem(BaseModel):
     moment_ids: list[str] = Field(default_factory=list, max_length=2000)
     codes: list[str] = Field(default_factory=list, max_length=50)
     card_id: str | None = Field(default=None, max_length=64)
+    # Owner request 2026-11-15: a team stats card after this match's moments.
+    stats_card_id: str | None = Field(default=None, max_length=64)
 
 
 class ReelSpec(BaseModel):

@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 DEFAULT_LENGTH = 20.0  # seconds, when Veo gives a highlight no duration
 MAX_HIGHLIGHTS = 150
-CARDS = ("opening_card", "match_card", "closing_card")
+CARDS = ("opening_card", "match_card", "stats_card", "closing_card")
 
 
 def _cut(source: str, start: float, length: float, target: Path) -> None:
@@ -147,6 +147,9 @@ def make_reel(
             card = {key: cards.path(str(reel[key])) if reel.get(key) else None for key in CARDS}
             parts = [p for p in (card["opening_card"], card["match_card"]) if p is not None]
             parts += _cut_all(connection, chosen, source, scratch)
+            # Owner request 2026-11-15: the team stats card after the highlights.
+            if card["stats_card"] is not None:
+                parts.append(card["stats_card"])
             if card["closing_card"] is not None:
                 parts.append(card["closing_card"])
             output = reels / f"{label} ({secrets.token_hex(4)}).mp4"

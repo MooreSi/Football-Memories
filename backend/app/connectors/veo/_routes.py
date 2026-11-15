@@ -32,6 +32,7 @@ class VeoAction(BaseModel):
     opening_card: str | None = Field(default=None, max_length=64)
     match_card: str | None = Field(default=None, max_length=64)
     closing_card: str | None = Field(default=None, max_length=64)
+    stats_card: str | None = Field(default=None, max_length=64)  # owner request 2026-11-15
     match_label: str | None = Field(default=None, max_length=200)
     combined: bool = True  # moments: one video, else a ZIP of one file each
 
@@ -84,6 +85,7 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
             "match_card": body.match_card,
             "closing_card": body.closing_card,
             "match_label": body.match_label,
+            **({"stats_card": body.stats_card} if body.stats_card else {}),
             **({"combined": body.combined} if body.action == "moments" else {}),
         }
         state.veo.start(body.action, body.match_id, name=body.name, reel=reel)

@@ -97,9 +97,10 @@ def _run_batch(
     from app.connectors.hudl_batch import assemble_reel
     from app.connectors.hudl_metadata import canonical_code
 
-    card_ids = [i.get("card_id") for i in items] + (
+    card_ids = [i.get(k) for i in items for k in ("card_id", "stats_card_id")] + (
         [reel.get("opening_card"), reel.get("closing_card")] if reel else []
     )
+    stats_cards: dict[str, str | None] = {}
     try:
         plans = []
         for item in items:
@@ -113,6 +114,7 @@ def _run_batch(
             ]
             if chosen:
                 plans.append((item["match_id"], chosen, item.get("card_id")))
+                stats_cards[item["match_id"]] = item.get("stats_card_id")
         if not plans:
             raise CaptureError("None of the chosen matches has those tagged moments cached.")
         with connection._lock:
@@ -162,6 +164,8 @@ def _run_batch(
                     )
                 if per_match:
                     card = connection.cards.path(card_id) if card_id else None
+                    stats = stats_cards.get(identity)
+                    stats_card = connection.cards.path(stats) if stats else None
                     match_name = _clean(title) or identity
                     output = folder / (
                         f"{name or 'Highlight reel'} - {match_name} ({secrets.token_hex(4)}).mp4"
@@ -169,9 +173,9 @@ def _run_batch(
                     step = f"Match {number} of {len(plans)}: assembling its reel"
                     connection.report("exporting", f"{step}…")
                     assemble_reel(
-                        [p for p in (card, target, closing) if p is not None],
+                        [p for p in (card, target, stats_card, closing) if p is not None],
                         output,
-                        cards=[p for p in (card, closing) if p is not None],
+                        cards=[p for p in (card, stats_card, closing) if p is not None],
                         progress=connection._reporter(step, number),
                         metadata=connection.media.export_details(
                             "reel",
@@ -196,6 +200,9 @@ def _run_batch(
                         cards.append(connection.cards.path(card_id))
                         parts.append(cards[-1])
                     parts.append(target)
+                    if stats_cards.get(identity):
+                        cards.append(connection.cards.path(str(stats_cards[identity])))
+                        parts.append(cards[-1])
                 else:
                     connection.index.record(
                         "moments",

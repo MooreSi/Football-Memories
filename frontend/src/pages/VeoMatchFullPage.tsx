@@ -13,6 +13,7 @@ import { useVeoTeam } from "../lib/useHomeTeams";
 import { SPELL, veoInsights } from "../lib/veoInsights";
 import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSplit";
 import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsights";
+import { TeamStatsTable } from "../components/match/TeamStatsTable";
 import { recordAgainst } from "../lib/headToHead";
 import { fixtureParts } from "../lib/hudlFixture";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
@@ -112,25 +113,7 @@ function VeoTeamStats({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) 
   const side = (s: "own" | "opponent") => (s === "own" ? ownName : "Opponent");
   return <section aria-label="Team stats" className="panel space-y-5 p-5">
     <h2 className="flex items-center gap-2 text-xl font-semibold"><Activity size={18} className="text-accent" aria-hidden /> Team stats</h2>
-    <table className="w-full text-sm tabular-nums">
-      <thead><tr className="text-xs text-fg-subtle">
-        <th scope="col" className="w-1/4 pb-2 text-left font-medium">{ownName}</th>
-        <th scope="col" className="pb-2 font-medium"><span className="sr-only">Stat</span></th>
-        <th scope="col" className="w-1/4 pb-2 text-right font-medium">Opponent</th>
-      </tr></thead>
-      <tbody>{rows.map(r => {
-        const total = Math.max(1, r.own + r.opponent);
-        return <tr key={r.label} className="border-t border-white/5">
-          <td className="py-2 text-left text-lg font-semibold">{r.own}</td>
-          <td className="py-2"><div className="text-center text-fg-muted">{r.label}</div>
-            <div aria-hidden className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-white/5">
-              <span className="block bg-accent" style={{ width: `${(r.own / total) * 100}%` }} />
-              <span className="ml-auto block bg-fg-subtle/60" style={{ width: `${(r.opponent / total) * 100}%` }} />
-            </div></td>
-          <td className="py-2 text-right text-lg font-semibold">{r.opponent}</td>
-        </tr>;
-      })}</tbody>
-    </table>
+    <TeamStatsTable rows={rows} ours={ownName} />
     {key.length > 0 && <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-fg-muted"><span>Goals and shots through the match</span>
         <span className="text-xs"><span className="text-ok">●</span> Goal · <span className="text-accent">●</span> Shot</span></div>
@@ -310,7 +293,7 @@ export function VeoMatchFull({ id }: { id: string }) {
           {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => navigate("/clips/reel/new", { state: {
             source: "veo", name: label ? `${label}${picked.length && !selected.length ? ` · ${picked.join(" + ").toLowerCase()}` : ""}` : undefined,
             items: [{ match_id: id, moment_ids: chosen.map(h => h.id) }] } })}><Clapperboard size={16} /> Make highlight reel ({chosen.length})</Button>}</div>
-        <p className="text-xs text-fg-muted">{shown.length} highlights{picked.length ? ` of ${picked.length === 1 ? `type ${type}` : `${picked.length} types`}` : ""}{selected.length ? ` · ${selected.length} ticked` : ""}. Pick several types on the left to see them together. Tick highlights to play, download or make a reel of just those. Click one to watch it; N and B step through them. Downloads are cut from the full match saved on this computer (downloaded first if needed).</p>
+        <p className="text-xs text-fg-muted">{shown.length} highlights{picked.length ? ` of ${picked.length === 1 ? `type ${type}` : `${picked.length} types`}` : ""}{selected.length ? ` · ${selected.length} ticked` : ""}. Pick several types on the left to see them together. Tick highlights to play, download or make a reel of just those. Click one to watch it; N and B step through them. Downloads are cut from the full match if it is saved on this computer; otherwise only the parts needed are read from Veo.</p>
         {selected.length > 0 && <button type="button" className="text-xs text-accent underline" onClick={() => setSelected([])}>Clear ticks</button>}
         <ul ref={list} aria-label="Veo highlights" className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
           {shown.map(h => <li key={h.id} data-moment={h.id} aria-current={active?.id === h.id ? true : undefined}

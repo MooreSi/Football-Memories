@@ -185,3 +185,12 @@ U10 v Stoke City reads 12-9.
 - Show Hudl off with Show Veo on: `LibraryPage` maps Veo matches through
   `veoAsHudl` into the Hudl hero/latest panels; `matchScore` returns Veo's score
   (`source: "veo"`) for them.
+
+### Reel cards: score and team stats (2026-11-15)
+
+- Match card: `score` replaces "VS" when "Show the score" is ticked (default on).
+- Stats card (`kind: "stats"`, at most 9 rows) draws on a dark panel with the fixed
+  team colours (OURS cyan, THEIRS orange): the themes' accent and ring were the
+  same yellow on Kick-off, so the sides could not be told apart.
+- The studio preview loops each card with a fade to black; a screenshot can land on
+  the black frame. Sample the canvas or take several before calling it broken.

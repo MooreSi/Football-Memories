@@ -38,3 +38,18 @@ it('shows and makes a reel of several chosen moment types at once', async () => 
  expect(JSON.parse(sessionStorage.getItem('fm.reel.selection')!)).toMatchObject({items:[{match_id:'synthetic-a',moment_ids:['m1','m2']}]});
  sessionStorage.clear();
 });
+
+// Owner request 2026-11-15: team stats on a Hudl match, as on a Veo match.
+it('shows the team stats from the tags that name a side', async () => {
+ stubFetch({'http://127.0.0.1:8766/library':[{id:'synthetic-a',title:'261108 Riverside v Rovers',age_group:'U10',moments:[
+  {id:'m1',category:'RIVERSIDE CORNER',time_s:10,duration_s:1},{id:'m2',category:'RIVERSIDE CORNER',time_s:20,duration_s:1},
+  {id:'m3',category:'OPPOSITION CORNER',time_s:30,duration_s:1},{id:'m4',category:'RIVERSIDE GOAL',time_s:40,duration_s:1},
+  {id:'m5',category:'OPPOSITION GOAL',time_s:50,duration_s:1}]}],
+  'http://127.0.0.1:8766/account':{configured:true,state:'idle',busy:false},'http://127.0.0.1:8766/account/action':{accepted:true},
+  '/api/settings/home-teams':{hudl:'Riverside',veo:null},'/api/notes':[]});
+ renderWithProviders(<App/>,'/hudl/synthetic-a');
+ const team=await screen.findByRole('region',{name:'Team stats'});
+ expect(within(team).getByRole('columnheader',{name:'Riverside'})).toBeInTheDocument();
+ expect(within(team).getByRole('row',{name:/Corners/})).toHaveTextContent(/2.*Corners.*1/);
+ expect(within(team).getByRole('row',{name:/Goals/})).toHaveTextContent(/1.*Goals.*1/);
+});
