@@ -4,7 +4,13 @@ import json
 
 import pytest
 
-from app.connectors.veo._parse import library_item, next_page, team_data, team_totals
+from app.connectors.veo._parse import (
+    library_item,
+    next_page,
+    team_data,
+    team_moments,
+    team_totals,
+)
 from tests.connectors.veo_fixtures.synthetic import (
     ACTIVE_ID,
     EXPIRED_ID,
@@ -135,3 +141,47 @@ def test_team_totals_names_each_count_and_drops_ones_neither_side_had() -> None:
     odd = [{"eventType": "MissedShots", "total": True}, {"total": 3}, "x"]
     assert team_totals(None, {"oops": 1}) == {}
     assert team_totals(odd, []) == {}
+
+
+# Owner request 2026-11-15: Veo's team events as moments that can be played, ticked,
+# downloaded or made into a reel, like Hudl's tags. Each starts 10 s before the event
+# and lasts 15 s; the type names which side it was. Ball out of play and kick-offs
+# are left out.
+def test_team_moments_name_the_side_and_lead_into_the_event() -> None:
+    data = {
+        "events": [
+            {"type": "CORNER KICK", "side": "own", "time_s": 400.5, "period": 1},
+            {"type": "GOAL", "side": "opponent", "time_s": 5.0, "period": 1},
+            {"type": "THROW IN", "side": "opponent", "time_s": 600.0, "period": 2},
+            {"type": "OUT OF PLAY", "side": "own", "time_s": 610.0, "period": 2},
+            {"type": "KICK OFF", "side": "own", "time_s": 51.0, "period": 1},
+            {"type": "FOUL", "side": None, "time_s": 700.0, "period": 2},
+        ]
+    }
+    assert team_moments(data) == [
+        {
+            "id": "t-opponent-goal-5000",
+            "category": "OPPONENT GOAL",
+            "side": "opponent",
+            "time_s": 0.0,
+            "duration_s": 15.0,
+            "team": True,
+        },
+        {
+            "id": "t-own-corner-kick-400500",
+            "category": "OUR CORNER",
+            "side": "own",
+            "time_s": 390.5,
+            "duration_s": 15.0,
+            "team": True,
+        },
+        {
+            "id": "t-opponent-throw-in-600000",
+            "category": "OPPONENT THROW-IN",
+            "side": "opponent",
+            "time_s": 590.0,
+            "duration_s": 15.0,
+            "team": True,
+        },
+    ]
+    assert team_moments(None) == [] and team_moments({"events": "x"}) == []

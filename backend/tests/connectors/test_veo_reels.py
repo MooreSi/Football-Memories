@@ -201,3 +201,28 @@ def test_selected_highlights_download_as_separate_files_in_a_zip(
         names = archive.namelist()
     assert names == ["01 0-02 SHOT ON GOAL.mp4", "02 0-15 GOAL.mp4"]
     assert not list(folder.rglob(".veo-reel-*"))
+
+
+# Owner request 2026-11-15: a team event (from Veo's team data) downloads like a highlight.
+def test_a_team_event_downloads_like_a_highlight(tmp_path: Path, match_video: Path) -> None:
+    media = FakeMedia()
+    veo, api, sessions, folder, index = _ready(tmp_path, media)
+    library = veo.library()
+    for item in library:
+        if item["id"] == IDENTITY:
+            item["team_data"] = {
+                "stats": {},
+                "events": [{"type": "CORNER KICK", "side": "own", "time_s": 12.0, "period": 1}],
+            }
+    veo._write(library)
+    _seed_download(veo, folder, index, match_video)
+    veo.start(
+        "moments",
+        IDENTITY,
+        name="Riverside v Northgate",
+        reel={"moment_ids": ["t-own-corner-kick-12000"], "combined": True},
+    )
+    status = veo.status()
+    assert status["state"] == "done", status["message"]
+    info = probe(folder / status["filename"])
+    assert 14.0 < info.duration_s < 16.0  # from 2 s (10 s before the corner), 15 s long

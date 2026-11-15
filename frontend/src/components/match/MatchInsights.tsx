@@ -5,7 +5,7 @@ import { hudlAgeGroups, useHudlLibrary } from "../../api/hudl";
 import { cohortOf, inCohort } from "../../lib/teams";
 import { recordAgainst } from "../../lib/headToHead";
 import { fixtureParts } from "../../lib/hudlFixture";
-import { MOMENTUM_WEIGHTS, type Possession, momentum, possession } from "../../lib/insights";
+import { MOMENTUM_WEIGHTS, type Minute, type Possession, momentum, possession } from "../../lib/insights";
 import { useScoreCorrections } from "../../lib/matchScore";
 import { OURS, THEIRS } from "../../lib/teamColours";
 
@@ -37,6 +37,12 @@ export function PossessionBar({ value, ours, theirs, caption }: { value: Possess
 /** Minute-by-minute attacking pressure; a click seeks the stream to that minute's first attacking moment. */
 export function MomentumChart({ match, club, theirs, onSeek }: { match: HudlMatch; club: string | null; theirs: string; onSeek?: (time: number) => void }) {
   const { minutes: rows, halves } = momentum(match.moments ?? [], club, match.duration_s);
+  return <MomentumBars rows={rows} halves={halves} ours={club || "Us"} theirs={theirs} onSeek={onSeek}
+    caption={`Bars weigh each side's tags per minute: ${Object.entries(MOMENTUM_WEIGHTS).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ")}. Dots are goals, dashed lines half-time. Click a bar to watch it.`} />;
+}
+
+/** The momentum bars themselves, for Hudl tags or Veo's team events (owner request 2026-11-15). */
+export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek }: { rows: Minute[]; halves: number[]; ours: string; theirs: string; caption: string; onSeek?: (time: number) => void }) {
   if (!rows.length) return null;
   const max = Math.max(1, ...rows.flatMap((r) => [r.ours, r.theirs]));
   const w = 6, gap = 1, h = 44, width = rows.length * (w + gap);
@@ -44,7 +50,7 @@ export function MomentumChart({ match, club, theirs, onSeek }: { match: HudlMatc
     <figure className="space-y-1">
       <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-fg-muted">
         <span>Momentum, minute by minute</span>
-        <span><span style={{ color: OURS }}>▲ {club || "Us"}</span> · <span style={{ color: THEIRS }}>▼ {theirs}</span></span>
+        <span><span style={{ color: OURS }}>▲ {ours}</span> · <span style={{ color: THEIRS }}>▼ {theirs}</span></span>
       </figcaption>
       <div className="overflow-x-auto">
         <svg role="img" aria-label="Momentum chart" viewBox={`0 0 ${width} ${h * 2 + 8}`} className="h-32 w-full min-w-[320px]" preserveAspectRatio="none">
@@ -55,7 +61,7 @@ export function MomentumChart({ match, club, theirs, onSeek }: { match: HudlMatc
             const up = (r.ours / max) * h, down = (r.theirs / max) * h;
             return <g key={r.minute}>
               {r.ours > 0 && <rect data-minute={r.minute} data-side="ours" x={x} y={h + 4 - up} width={w} height={up} rx={1} fill={OURS} className={onSeek ? "cursor-pointer hover:opacity-80" : undefined}
-                onClick={() => r.oursAt !== null && onSeek?.(r.oursAt)}><title>{`${r.minute + 1}' ${club || "Us"}: ${r.ours}${r.goals.ours ? `, goal` : ""}`}</title></rect>}
+                onClick={() => r.oursAt !== null && onSeek?.(r.oursAt)}><title>{`${r.minute + 1}' ${ours}: ${r.ours}${r.goals.ours ? `, goal` : ""}`}</title></rect>}
               {r.theirs > 0 && <rect data-minute={r.minute} data-side="theirs" x={x} y={h + 4} width={w} height={down} rx={1} fill={THEIRS} className={onSeek ? "cursor-pointer hover:opacity-80" : undefined}
                 onClick={() => r.theirsAt !== null && onSeek?.(r.theirsAt)}><title>{`${r.minute + 1}' ${theirs}: ${r.theirs}${r.goals.theirs ? `, goal` : ""}`}</title></rect>}
               {r.goals.ours > 0 && <circle cx={x + w / 2} cy={Math.max(3, h + 4 - up - 4)} r={2.5} fill="#fff" />}
@@ -64,9 +70,7 @@ export function MomentumChart({ match, club, theirs, onSeek }: { match: HudlMatc
           })}
         </svg>
       </div>
-      <p className="text-[11px] text-fg-subtle">
-        Bars weigh each side's tags per minute: {Object.entries(MOMENTUM_WEIGHTS).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ")}. Dots are goals, dashed lines half-time. Click a bar to watch it.
-      </p>
+      <p className="text-[11px] text-fg-subtle">{caption}</p>
     </figure>
   );
 }

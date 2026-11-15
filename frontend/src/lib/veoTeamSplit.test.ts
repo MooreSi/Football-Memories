@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { teamSplit } from "./veoTeamSplit";
+import { teamSplit, veoMomentum } from "./veoTeamSplit";
 
 // Decision 009 (owner, 2026-11-14): Veo's events service and match report give each
 // event's team. Synthetic data only.
@@ -45,4 +45,18 @@ it("uses each side's totals from Veo for the counts it gives", () => {
     { label: "Goal kicks", own: 0, opponent: 1 },
     { label: "Out of play", own: 13, opponent: 17 },
   ]);
+});
+
+// Owner request 2026-11-15: Hudl-style momentum from Veo's team events.
+it("weighs each side's events per minute, with goals and half-time", () => {
+  const ev = [
+    e("CORNER KICK", "own", 30), e("SHOT", "own", 40), e("GOAL", "own", 45),
+    e("SHOT", "opponent", 130), e("THROW IN", "opponent", 140), e("SHOT", null, 150),
+  ];
+  const { minutes, halves } = veoMomentum(ev, [[0, 100], [120, 200]], 200);
+  expect(minutes).toHaveLength(4);
+  expect(minutes[0]).toMatchObject({ ours: 9, theirs: 0, oursAt: 30, goals: { ours: 1, theirs: 0 } });
+  expect(minutes[2]).toMatchObject({ ours: 0, theirs: 3, theirsAt: 130 });
+  expect(halves).toEqual([100]);
+  expect(veoMomentum([e("THROW IN", "own", 5)], undefined, 60).minutes).toEqual([]);
 });

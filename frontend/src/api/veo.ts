@@ -23,12 +23,14 @@ export async function veoRequest<T>(path: string, body?: unknown): Promise<T> {
 }
 
 /** Spec 260: one Veo match from the helper's cache (no remote media URL is ever in it). */
-export type VeoHighlight = { id: string; category: string; time_s: number; duration_s: number; ai?: boolean; note?: string };
+export type VeoHighlight = { id: string; category: string; time_s: number; duration_s: number; ai?: boolean; note?: string;
+  team?: boolean; side?: "own" | "opponent" }; // team: one of Veo's team events (owner request 2026-11-15)
 export type VeoMatch = {
   id: string; source: "veo"; title: string; team?: string | null; age_group: string; age_groups?: string[]; season_label?: string;
   duration_s?: number; available: boolean; expiration_status?: string | null; home_or_away?: string | null;
   score?: { ours: number; theirs: number } | null; halves?: number[][]; moments?: VeoHighlight[]; poster_url?: string | null;
   team_data?: VeoTeamData | null; // decision 009: Veo's team-sided stats and events
+  team_moments?: VeoHighlight[]; // owner request 2026-11-15: team events as moments, from the helper
 };
 export function useVeoLibrary() {
   return useQuery<VeoMatch[]>({ queryKey: ["veo-library"], queryFn: () => veoRequest("/library"), retry: false, refetchInterval: 30000 });

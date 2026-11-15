@@ -11,6 +11,12 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Veo team events as moments and momentum (owner request 2026-11-15)
+
+- done: team events in the Veo match rail, chosen like highlights (helper accepts
+  their ids); momentum chart in Match insights. Tests red first; frontend 453,
+  backend 597 on both databases. Checked in the browser on a real match.
+
 ## Veo refresh, team totals, club crest; maps and POSTs checked (owner request 2026-11-15)
 
 - done: real Veo Refresh run (285 matches, 57 with video, 14 with team data); it

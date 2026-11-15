@@ -20,6 +20,8 @@ from app.connectors.hudl_batch import _ffmpeg, assemble_reel
 from app.connectors.hudl_capture import CaptureError
 from app.services.publish import publish_new
 
+from ._parse import team_moments
+
 if TYPE_CHECKING:
     from ._connection import VeoConnection
 
@@ -50,8 +52,10 @@ def _prepare(
     """The match, its chosen highlights in match order, the saved full match (downloaded
     first when missing) and the download folder."""
     item = connection._match(identity) or {}
+    # Owner request 2026-11-15: Veo's team events can be chosen like its highlights.
+    every = [*(item.get("moments") or []), *team_moments(item.get("team_data"))]
     chosen = sorted(
-        (m for m in item.get("moments") or [] if isinstance(m, dict) and m.get("id") in wanted),
+        (m for m in every if isinstance(m, dict) and m.get("id") in wanted),
         key=lambda m: float(m.get("time_s") or 0),
     )
     if not chosen:

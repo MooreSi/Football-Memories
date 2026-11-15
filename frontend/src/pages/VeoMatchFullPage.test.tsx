@@ -186,3 +186,38 @@ it("shows no team stats for a match Veo gave none for", async () => {
   await screen.findByRole("region", { name: "Match insights" });
   expect(screen.queryByRole("region", { name: "Team stats" })).toBeNull();
 });
+
+// Owner request 2026-11-15: Veo's team events in the rail, chosen like highlights, and
+// momentum in Match insights as on a Hudl match.
+const teamMoments = [
+  { id: "t-own-corner-kick-400000", category: "OUR CORNER", side: "own", time_s: 390, duration_s: 15, team: true },
+  { id: "t-opponent-corner-kick-900000", category: "OPPONENT CORNER", side: "opponent", time_s: 890, duration_s: 15, team: true },
+  { id: "t-own-foul-1000000", category: "OUR FOUL", side: "own", time_s: 990, duration_s: 15, team: true },
+];
+
+it("lists the team events in the rail and downloads the ones chosen", async () => {
+  const calls = routes([{ ...match, team_data: teamData, team_moments: teamMoments }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  const rail = await screen.findByRole("navigation", { name: "Highlight types" });
+  expect(within(rail).getByRole("button", { name: /ALL HIGHLIGHTS\s*3/ })).toBeInTheDocument();
+  expect(within(rail).getByRole("heading", { name: "Team events" })).toBeInTheDocument();
+  const team = within(rail).getAllByRole("button").map(b => b.textContent).filter(t => /^(OUR|OPPONENT)/.test(t ?? ""));
+  expect(team).toEqual(["OUR CORNER1", "OPPONENT CORNER1", "OUR FOUL1"]);
+  await user.click(within(rail).getByRole("button", { name: /OUR CORNER\s*1/ }));
+  const list = screen.getByRole("list", { name: "Veo highlights" });
+  expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+  expect(within(list).getByText("Veo team data")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /Download our corner moments/ }));
+  await user.click(screen.getByRole("button", { name: /Separate files/ }));
+  await vi.waitFor(() => expect(calls.filter(c => c.url === `${H}/veo/action` && (c.body as { action: string }).action === "moments")).toHaveLength(1));
+  expect(calls.find(c => (c.body as { action?: string })?.action === "moments")!.body).toMatchObject({ moment_ids: ["t-own-corner-kick-400000"] });
+});
+
+it("shows momentum minute by minute from Veo's team events", async () => {
+  routes([{ ...match, team_data: teamData }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const insights = await screen.findByRole("region", { name: "Match insights" });
+  expect(within(insights).getByRole("img", { name: "Momentum chart" })).toBeInTheDocument();
+  expect(within(insights).getByText(/Veo gives no possession/)).toBeInTheDocument();
+});

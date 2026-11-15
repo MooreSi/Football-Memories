@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field, SecretStr
 from app.connectors.hudl_account import Credentials
 from app.connectors.hudl_capture import CaptureError
 
+from ._parse import team_moments
+
 router = APIRouter(prefix="/veo")
 
 
@@ -123,6 +125,8 @@ def library(request: Request) -> list[dict[str, object]]:
             "poster_url": f"http://127.0.0.1:8766/veo/match/{item['id']}/poster"
             if poster(str(item.get("id"))) is not None
             else None,
+            # Owner request 2026-11-15: team events as moments, worked out from team_data.
+            "team_moments": team_moments(item.get("team_data")),
         }
         for item in veo.library()
     ]

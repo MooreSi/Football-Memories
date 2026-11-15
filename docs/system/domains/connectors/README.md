@@ -602,3 +602,17 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
 - Veo's web app (public code, read as text) sends heatmap requests as
   `{categories: [n], start_time, end_time}` with categories 0/1 left keeper/outfield,
   2/3 right, 6 ball, and `start_time`/`end_time` from the report's `periods`.
+
+### Veo team events as moments, and momentum (2026-11-15)
+
+- `_parse.team_moments(team_data)` turns the cached team events into moments:
+  `id = t-<side>-<type-slug>-<ms>` (stable across refreshes), category
+  `OUR <TYPE>` / `OPPONENT <TYPE>`, from 10 s before the event, 15 s long. Types:
+  goal, shot, corner, foul, free kick, penalty, throw-in, goal kick (out of play
+  and kick-offs left out). Worked out on read, not stored: `/veo/library` adds
+  `team_moments`, and `_reels._prepare` accepts their ids for downloads and reels.
+- The match page lists them under "Team events" in the rail; "All highlights" stays
+  Veo's own highlights (so it stays under the 150-moment request limit).
+- Momentum (`veoMomentum`, `MomentumBars` shared with Hudl): corner and free kick 1,
+  shot and penalty 3, goal 5; half-time lines at each half's end. No possession bar:
+  Veo gives none for this account.

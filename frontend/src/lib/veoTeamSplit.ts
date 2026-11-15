@@ -1,3 +1,4 @@
+import type { Minute } from "./insights";
 /** Decision 009 (owner, 2026-11-14): Veo's own team-sided stats and events, read at
  *  Refresh from its match report and events service. Own v opponent, no names. */
 export type VeoSide = "own" | "opponent";
@@ -40,4 +41,26 @@ export function teamSplit(data: VeoTeamData | null | undefined): TeamRow[] {
     if (value.own + value.opponent > 0) rows.push({ label, ...value });
   }
   return rows;
+}
+
+/** Owner request 2026-11-15: momentum as on a Hudl match, from Veo's team events. */
+export const VEO_MOMENTUM_WEIGHTS: Record<string, number> = { "CORNER KICK": 1, "FREE KICK": 1, SHOT: 3, "PENALTY KICK": 3, GOAL: 5 };
+
+export function veoMomentum(events: VeoTeamEvent[], halves: number[][] | undefined, duration_s?: number): { minutes: Minute[]; halves: number[] } {
+  const weighted = events.filter(e => e.side && VEO_MOMENTUM_WEIGHTS[e.type]).sort((a, b) => a.time_s - b.time_s);
+  const breaks = (halves ?? []).slice(0, -1).map(h => h[1]);
+  if (!weighted.length) return { minutes: [], halves: breaks };
+  const last = Math.max(...weighted.map(e => e.time_s), duration_s ? duration_s - 1 : 0);
+  const minutes: Minute[] = Array.from({ length: Math.floor(last / 60) + 1 }, (_, minute) => ({
+    minute, ours: 0, theirs: 0, oursAt: null, theirsAt: null, goals: { ours: 0, theirs: 0 },
+  }));
+  for (const e of weighted) {
+    const bucket = minutes[Math.floor(e.time_s / 60)];
+    const side = e.side === "own" ? "ours" : "theirs";
+    bucket[side] += VEO_MOMENTUM_WEIGHTS[e.type];
+    const at = side === "ours" ? "oursAt" : "theirsAt";
+    if (bucket[at] === null) bucket[at] = e.time_s;
+    if (e.type === "GOAL") bucket.goals[side] += 1;
+  }
+  return { minutes, halves: breaks };
 }

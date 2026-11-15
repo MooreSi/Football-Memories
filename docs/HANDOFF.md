@@ -13,6 +13,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Veo team events as moments, momentum (owner request 2026-11-15):** the Veo match
+  rail has a "Team events" group (OUR/OPPONENT goal, shot, corner, foul...) that can
+  be played, ticked, downloaded and made into reels; Match insights has the Hudl
+  momentum chart from Veo's team events. No possession (Veo gives none).
+
 - **Veo team data fixes, totals and club crest (owner request 2026-11-15):** the first
   real Refresh found Veo writes sides as "Own"/"Opponent" (sides were all None; fixed,
   cache version `team_data.v = 2` re-reads once). Per-side totals from

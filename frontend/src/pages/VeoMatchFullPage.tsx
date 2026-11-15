@@ -11,7 +11,8 @@ import { advanceTagged, needsSeek, nextMoment, taggedPlaylist } from "../lib/tag
 import { DownloadChoice } from "./HudlMatchPage";
 import { useVeoTeam } from "../lib/useHomeTeams";
 import { SPELL, veoInsights } from "../lib/veoInsights";
-import { teamSplit } from "../lib/veoTeamSplit";
+import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSplit";
+import { MomentumBars } from "../components/match/MatchInsights";
 import { useNotes, useSaveNote } from "../lib/viewerState";
 
 const HALF = ["1st half", "2nd half", "Extra time 1", "Extra time 2"];
@@ -42,7 +43,10 @@ function VeoPlayer({ url, seek, onTime, poster }: { url: string; seek?: { time: 
 /** Owner request 2026-11-13: what Veo's highlights allow (types and times, no team). */
 function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) => void }) {
   const s = veoInsights(match.moments ?? [], match.halves, match.duration_s);
-  if (!match.moments?.length) return null;
+  const ownName = useVeoTeam() || "Us";
+  // Owner request 2026-11-15: momentum as on a Hudl match, from Veo's team events.
+  const flow = veoMomentum(match.team_data?.events ?? [], match.halves, match.duration_s);
+  if (!match.moments?.length && !flow.minutes.length) return null;
   const peak = Math.max(1, ...s.spells.map(x => x.goals + x.shots + x.other));
   const tiles: [string, string][] = [
     ["Score", match.score ? `${match.score.ours}–${match.score.theirs}` : "–"],
@@ -54,6 +58,9 @@ function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) =
   ];
   return <section aria-label="Match insights" className="panel space-y-5 p-5">
     <h2 className="flex items-center gap-2 text-xl font-semibold"><Activity size={18} className="text-accent" aria-hidden /> Match insights</h2>
+    {flow.minutes.length > 0 && <MomentumBars rows={flow.minutes} halves={flow.halves} ours={ownName} theirs="Opponent" onSeek={onSeek}
+      caption={`Bars weigh each side's Veo events per minute: ${Object.entries(VEO_MOMENTUM_WEIGHTS).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ")}. Dots are goals, dashed lines half-time. Click a bar to watch it. Veo gives no possession data for this account, so there is no possession bar.`} />}
+    {match.moments?.length ? <>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {tiles.map(([label, value]) => <div key={label} className="tile p-3"><p className="text-xs text-fg-subtle">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums">{value}</p></div>)}
     </div>
@@ -81,6 +88,7 @@ function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) =
       <div className="flex justify-between text-[11px] text-fg-subtle"><span>0:00</span><span>{formatClock(s.spells.length * SPELL)}</span></div>
     </div>
     <p className="text-xs text-fg-subtle">Veo marks the type and time of each highlight but not the team, so these count both teams. Click a bar to watch from there.</p>
+    </> : null}
   </section>;
 }
 
@@ -175,10 +183,17 @@ export function VeoMatchFull({ id }: { id: string }) {
   }, [match, status.data]);
 
   const highlights = [...(match?.moments ?? [])].sort((a, b) => a.time_s - b.time_s);
-  const types = [...highlights.reduce((all, h) => all.set(h.category, (all.get(h.category) ?? 0) + 1), new Map<string, number>())]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const shown = highlights.filter(h => !type || h.category === type);
-  const chosen = selected.length ? highlights.filter(h => selected.includes(h.id)) : shown;
+  // Owner request 2026-11-15: Veo's team events, listed in the rail and chosen like
+  // highlights. "All highlights" stays Veo's own highlights.
+  const teamMoments = [...(match?.team_moments ?? [])].sort((a, b) => a.time_s - b.time_s);
+  const everything = [...highlights, ...teamMoments].sort((a, b) => a.time_s - b.time_s);
+  const counted = (list: VeoHighlight[]) => [...list.reduce((all, h) => all.set(h.category, (all.get(h.category) ?? 0) + 1), new Map<string, number>())];
+  const types = counted(highlights).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  // Grouped by event (goal, shot, corner...), the owner's team first.
+  const stem = (c: string) => c.replace(/^(OUR|OPPONENT) /, "");
+  const teamTypes = counted(teamMoments).sort((a, b) => stem(a[0]).localeCompare(stem(b[0])) || (a[0].startsWith("OUR") ? -1 : 1));
+  const shown = type ? everything.filter(h => h.category === type) : highlights;
+  const chosen = selected.length ? everything.filter(h => selected.includes(h.id)) : shown;
   const current = queue?.list[queue.index];
   const active = current ?? focus;
   const watch = (h: VeoHighlight) => { setQueue(undefined); setFocus(h); setSeek({ time: h.time_s, nonce: Date.now() }); };
@@ -236,6 +251,8 @@ export function VeoMatchFull({ id }: { id: string }) {
       <nav aria-label="Highlight types" className="max-h-[75vh] overflow-y-auto">
         <button type="button" className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!type ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} onClick={() => setType("")}>ALL HIGHLIGHTS <span>{highlights.length}</span></button>
         {types.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${type === t ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} onClick={() => setType(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
+        {teamTypes.length > 0 && <h3 className="border-t border-line px-4 pt-4 pb-2 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">Team events</h3>}
+        {teamTypes.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${type === t ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} onClick={() => setType(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
       </nav>
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
@@ -274,7 +291,7 @@ export function VeoMatchFull({ id }: { id: string }) {
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
       <VeoTeamStats match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
-      {highlights.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
+      {everything.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>
           {chosen.length > 0 && <Button variant="primary" disabled={!stream} title={stream ? undefined : "Available once the video is ready"} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
           {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? "selected moments" : type ? `${type.toLowerCase()} moments` : "all moments"}</Button>}
@@ -291,6 +308,7 @@ export function VeoMatchFull({ id }: { id: string }) {
             <button type="button" disabled={!stream} onClick={() => watch(h)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left disabled:cursor-default">
               <span className="min-w-0 flex-1"><span className="text-xs text-pin">{formatClock(h.time_s)}</span>
                 <span className="block truncate text-sm uppercase">{h.category}</span>
+                {h.team && <span className="block truncate text-xs text-fg-subtle">Veo team data</span>}
                 {(h.ai || h.note) && <span className="flex items-center gap-1 truncate text-xs text-fg-subtle">{h.ai && <><Sparkles size={11} aria-hidden />Veo AI</>}{h.note && <span className="text-fg-muted">{h.note}</span>}</span>}</span>
               <Play size={14} aria-hidden /></button></li>)}
         </ul>

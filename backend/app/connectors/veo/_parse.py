@@ -182,6 +182,48 @@ def team_totals(own: Any, opponent: Any) -> dict[str, dict[str, int]]:
     }
 
 
+# Owner request 2026-11-15: Veo's team events as moments, like Hudl tags. Ball out of
+# play and kick-offs are left out (not moments anyone picks).
+TEAM_MOMENTS = {
+    "GOAL": "GOAL",
+    "SHOT": "SHOT",
+    "CORNER KICK": "CORNER",
+    "FOUL": "FOUL",
+    "FREE KICK": "FREE KICK",
+    "PENALTY KICK": "PENALTY",
+    "THROW IN": "THROW-IN",
+    "GOAL KICK": "GOAL KICK",
+}
+TEAM_LEAD_S = 10.0
+TEAM_LENGTH_S = 15.0
+
+
+def team_moments(data: Any) -> list[dict[str, Any]]:
+    """The team events kept at Refresh as moments: from 10 s before the event, 15 s
+    long, named by side ("OUR CORNER", "OPPONENT GOAL"), with an id stable across
+    refreshes."""
+    events = data.get("events") if isinstance(data, dict) else None
+    found: list[dict[str, Any]] = []
+    for event in events if isinstance(events, list) else []:
+        if not isinstance(event, dict):
+            continue
+        kind, side, at = event.get("type"), event.get("side"), _number(event.get("time_s"))
+        if kind not in TEAM_MOMENTS or side not in ("own", "opponent") or at is None:
+            continue
+        slug = str(kind).lower().replace(" ", "-")
+        found.append(
+            {
+                "id": f"t-{side}-{slug}-{round(at * 1000)}",
+                "category": f"{'OUR' if side == 'own' else 'OPPONENT'} {TEAM_MOMENTS[kind]}",
+                "side": side,
+                "time_s": max(0.0, at - TEAM_LEAD_S),
+                "duration_s": TEAM_LENGTH_S,
+                "team": True,
+            }
+        )
+    return sorted(found, key=lambda m: m["time_s"])
+
+
 def next_page(link: str | None) -> int | None:
     """The page number of Veo's rel="next" link, or None on the last page."""
     for part in (link or "").split(","):

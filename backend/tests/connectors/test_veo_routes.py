@@ -110,6 +110,24 @@ def test_library_lists_cached_veo_matches(client) -> None:
     assert c.get("/veo/library", headers=APP).json()[0]["source"] == "veo"
 
 
+# Owner request 2026-11-15: each match lists its team events as moments too.
+def test_library_lists_each_matchs_team_events_as_moments(client) -> None:
+    c, app = client
+    item = {
+        "id": "veo-2",
+        "title": "t",
+        "source": "veo",
+        "moments": [],
+        "team_data": {
+            "stats": {},
+            "events": [{"type": "FOUL", "side": "opponent", "time_s": 30.0, "period": 1}],
+        },
+    }
+    app.state.veo.library = lambda: [item]
+    listed = c.get("/veo/library", headers=APP).json()[0]
+    assert [m["category"] for m in listed["team_moments"]] == ["OPPONENT FOUL"]
+
+
 def test_other_websites_cannot_use_the_veo_routes(client) -> None:
     c, app = client
     assert (
