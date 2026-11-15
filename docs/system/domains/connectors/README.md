@@ -616,3 +616,18 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
 - Momentum (`veoMomentum`, `MomentumBars` shared with Hudl): corner and free kick 1,
   shot and penalty 3, goal 5; half-time lines at each half's end. No possession bar:
   Veo gives none for this account.
+
+### Veo clips without the full match (2026-11-15)
+
+- Reels and moment downloads no longer download the whole match when it is not
+  saved. `_ranges.range_relay` serves a random 127.0.0.1 address for the job only;
+  each Range ffmpeg asks for is one `media_range` read through `_client` (Veo host
+  only, no redirects, at most 8 MB). ffmpeg reads the MP4 index, then only the parts
+  its clips need (checked: a 15 s clip from a 40 MB file read about 25 MB with 8 MB
+  answers; ffmpeg copes with short 206 answers). `-rw_timeout 60 s` so a stalled
+  read ends the job. A refusal is kept and reported; nothing is retried. A match
+  already saved is still cut from the local file.
+- **Gotcha (owner report 2026-11-15):** after a full download the index writes the
+  match details into the file with `ffmpeg -c copy`, which reads and rewrites the
+  whole file; on the SMB share a 2.4 GB match took minutes at "100%". The helper now
+  says "Writing the match details into the saved file…" during that step.

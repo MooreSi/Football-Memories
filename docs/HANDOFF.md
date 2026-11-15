@@ -13,6 +13,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Veo clips by range, multi-type rails, Veo head to head (owner request 2026-11-15):**
+  Veo reels and moment downloads read only the parts they need through a private
+  local relay (`veo/_ranges.py`), no full download. Hudl and Veo match rails pick
+  several moment types at once (`aria-pressed`; reel name joins them). The Veo
+  match's Match insights shows the record against this opponent from the Veo
+  library (`HeadToHeadRecord`, shared with Hudl).
+
 - **Veo team events as moments, momentum (owner request 2026-11-15):** the Veo match
   rail has a "Team events" group (OUR/OPPONENT goal, shot, corner, foul...) that can
   be played, ticked, downloaded and made into reels; Match insights has the Hudl

@@ -12,7 +12,10 @@ import { DownloadChoice } from "./HudlMatchPage";
 import { useVeoTeam } from "../lib/useHomeTeams";
 import { SPELL, veoInsights } from "../lib/veoInsights";
 import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSplit";
-import { MomentumBars } from "../components/match/MatchInsights";
+import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsights";
+import { recordAgainst } from "../lib/headToHead";
+import { fixtureParts } from "../lib/hudlFixture";
+import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
 import { useNotes, useSaveNote } from "../lib/viewerState";
 
 const HALF = ["1st half", "2nd half", "Extra time 1", "Extra time 2"];
@@ -46,7 +49,12 @@ function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) =
   const ownName = useVeoTeam() || "Us";
   // Owner request 2026-11-15: momentum as on a Hudl match, from Veo's team events.
   const flow = veoMomentum(match.team_data?.events ?? [], match.halves, match.duration_s);
-  if (!match.moments?.length && !flow.minutes.length) return null;
+  // Owner request 2026-11-15: the record against this opponent across the Veo matches.
+  const library = useVeoLibrary();
+  const club = useVeoTeam();
+  const opponent = fixtureParts(match.title, club)?.opponent;
+  const record = opponent ? recordAgainst(library.data?.map(veoAsHudl), club, undefined, opponent) : null;
+  if (!match.moments?.length && !flow.minutes.length && !record) return null;
   const peak = Math.max(1, ...s.spells.map(x => x.goals + x.shots + x.other));
   const tiles: [string, string][] = [
     ["Score", match.score ? `${match.score.ours}–${match.score.theirs}` : "–"],
@@ -89,6 +97,7 @@ function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) =
     </div>
     <p className="text-xs text-fg-subtle">Veo marks the type and time of each highlight but not the team, so these count both teams. Click a bar to watch from there.</p>
     </> : null}
+    {record && <HeadToHeadRecord record={record} current={match.id} linkTo={id => matchLink({ id, source: "veo" })} />}
   </section>;
 }
 
@@ -152,7 +161,10 @@ export function VeoMatchFull({ id }: { id: string }) {
   const team = useVeoTeam();
   const notes = useNotes(id);
   const saveNote = useSaveNote();
-  const [type, setType] = useState("");
+  // Owner request 2026-11-15: several types at once (highlights and team events).
+  const [picked, setPicked] = useState<string[]>([]);
+  const type = picked.length === 1 ? picked[0] : "";
+  const toggle = (t: string) => setPicked(p => (p.includes(t) ? p.filter(x => x !== t) : [...p, t]));
   const [seek, setSeek] = useState<{ time: number; nonce: number }>();
   const [now, setNow] = useState(0);
   const [focus, setFocus] = useState<VeoHighlight>();
@@ -192,7 +204,7 @@ export function VeoMatchFull({ id }: { id: string }) {
   // Grouped by event (goal, shot, corner...), the owner's team first.
   const stem = (c: string) => c.replace(/^(OUR|OPPONENT) /, "");
   const teamTypes = counted(teamMoments).sort((a, b) => stem(a[0]).localeCompare(stem(b[0])) || (a[0].startsWith("OUR") ? -1 : 1));
-  const shown = type ? everything.filter(h => h.category === type) : highlights;
+  const shown = picked.length ? everything.filter(h => picked.includes(h.category)) : highlights;
   const chosen = selected.length ? everything.filter(h => selected.includes(h.id)) : shown;
   const current = queue?.list[queue.index];
   const active = current ?? focus;
@@ -249,10 +261,10 @@ export function VeoMatchFull({ id }: { id: string }) {
       <div className="space-y-2 border-b border-line p-4"><Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link>
         <h2 className="text-sm font-semibold">{label ?? match.title}</h2><p className="text-xs text-fg-subtle">{[age || null, `${highlights.length} highlights`].filter(Boolean).join(" · ")}</p></div>
       <nav aria-label="Highlight types" className="max-h-[75vh] overflow-y-auto">
-        <button type="button" className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!type ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} onClick={() => setType("")}>ALL HIGHLIGHTS <span>{highlights.length}</span></button>
-        {types.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${type === t ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} onClick={() => setType(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
+        <button type="button" className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} aria-pressed={!picked.length} onClick={() => setPicked([])}>ALL HIGHLIGHTS <span>{highlights.length}</span></button>
+        {types.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${picked.includes(t) ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} aria-pressed={picked.includes(t)} onClick={() => toggle(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
         {teamTypes.length > 0 && <h3 className="border-t border-line px-4 pt-4 pb-2 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">Team events</h3>}
-        {teamTypes.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${type === t ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} onClick={() => setType(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
+        {teamTypes.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${picked.includes(t) ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} aria-pressed={picked.includes(t)} onClick={() => toggle(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
       </nav>
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
@@ -294,11 +306,11 @@ export function VeoMatchFull({ id }: { id: string }) {
       {everything.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>
           {chosen.length > 0 && <Button variant="primary" disabled={!stream} title={stream ? undefined : "Available once the video is ready"} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
-          {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? "selected moments" : type ? `${type.toLowerCase()} moments` : "all moments"}</Button>}
+          {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? "selected moments" : picked.length > 1 ? "chosen types" : type ? `${type.toLowerCase()} moments` : "all moments"}</Button>}
           {match.available && chosen.length > 0 && <Button disabled={busy} onClick={() => navigate("/clips/reel/new", { state: {
-            source: "veo", name: label ? `${label}${type && !selected.length ? ` · ${type.toLowerCase()}` : ""}` : undefined,
+            source: "veo", name: label ? `${label}${picked.length && !selected.length ? ` · ${picked.join(" + ").toLowerCase()}` : ""}` : undefined,
             items: [{ match_id: id, moment_ids: chosen.map(h => h.id) }] } })}><Clapperboard size={16} /> Make highlight reel ({chosen.length})</Button>}</div>
-        <p className="text-xs text-fg-muted">{shown.length} highlights{type ? ` of type ${type}` : ""}{selected.length ? ` · ${selected.length} ticked` : ""}. Tick highlights to play, download or make a reel of just those. Click one to watch it; N and B step through them. Downloads are cut from the full match saved on this computer (downloaded first if needed).</p>
+        <p className="text-xs text-fg-muted">{shown.length} highlights{picked.length ? ` of ${picked.length === 1 ? `type ${type}` : `${picked.length} types`}` : ""}{selected.length ? ` · ${selected.length} ticked` : ""}. Pick several types on the left to see them together. Tick highlights to play, download or make a reel of just those. Click one to watch it; N and B step through them. Downloads are cut from the full match saved on this computer (downloaded first if needed).</p>
         {selected.length > 0 && <button type="button" className="text-xs text-accent underline" onClick={() => setSelected([])}>Clear ticks</button>}
         <ul ref={list} aria-label="Veo highlights" className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
           {shown.map(h => <li key={h.id} data-moment={h.id} aria-current={active?.id === h.id ? true : undefined}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
 import { hudlAgeGroups, useHudlLibrary } from "../../api/hudl";
 import { cohortOf, inCohort } from "../../lib/teams";
-import { recordAgainst } from "../../lib/headToHead";
+import { type Record, recordAgainst } from "../../lib/headToHead";
 import { fixtureParts } from "../../lib/hudlFixture";
 import { MOMENTUM_WEIGHTS, type Minute, type Possession, momentum, possession } from "../../lib/insights";
 import { useScoreCorrections } from "../../lib/matchScore";
@@ -86,14 +86,21 @@ export function HeadToHead({ match, club }: { match: HudlMatch; club: string | n
   const scope = team === null ? library.data : library.data?.filter((m) => inCohort(m, team));
   const r = opponent ? recordAgainst(scope, club, corrections.data, opponent) : null;
   if (!r) return null;
-  const others = r.meetings.filter((m) => m.id !== match.id);
+  return <HeadToHeadRecord record={r} current={match.id}
+    allLink={team === null ? "/opponents" : `/opponents?age=${encodeURIComponent(age)}&season=${encodeURIComponent(match.season_label ?? "")}`} />;
+}
+
+/** The record against one opponent; also used for Veo matches (owner request 2026-11-15). */
+export function HeadToHeadRecord({ record: r, current, allLink, linkTo = (id) => `/hudl/${encodeURIComponent(id)}` }:
+  { record: Record; current: string; allLink?: string; linkTo?: (id: string) => string }) {
+  const others = r.meetings.filter((m) => m.id !== current);
   return (
     <section aria-label="Head to head" className="space-y-2">
       <div className="flex items-center justify-between"><h3 className="flex items-center gap-2 text-sm font-semibold"><Swords size={14} aria-hidden /> Against {r.opponent}</h3>
-        <Link to={team === null ? "/opponents" : `/opponents?age=${encodeURIComponent(age)}&season=${encodeURIComponent(match.season_label ?? "")}`} className="text-xs text-accent hover:underline">All opponents</Link></div>
+        {allLink && <Link to={allLink} className="text-xs text-accent hover:underline">All opponents</Link>}</div>
       <p className="text-sm"><span className="font-semibold">{r.played} played</span>{r.scored > 0 && <> · W {r.won} D {r.drawn} L {r.lost} · goals {r.goalsFor}-{r.goalsAgainst}</>}{r.scored < r.played && <span className="text-fg-subtle"> ({r.played - r.scored} without a score)</span>}</p>
       {others.length > 0 && <ul className="space-y-1 text-xs text-fg-muted">{others.slice(0, 4).map((m) => (
-        <li key={m.id}><Link className="hover:text-fg" to={`/hudl/${encodeURIComponent(m.id)}`}>{m.date ?? "Undated"} · {m.season} · {m.score ? `${m.score.ours}-${m.score.theirs}` : "no score"}</Link></li>
+        <li key={m.id}><Link className="hover:text-fg" to={linkTo(m.id)}>{m.date ?? "Undated"} · {m.season} · {m.score ? `${m.score.ours}-${m.score.theirs}` : "no score"}</Link></li>
       ))}</ul>}
     </section>
   );

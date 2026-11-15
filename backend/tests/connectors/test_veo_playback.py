@@ -262,3 +262,21 @@ def test_a_refused_poster_stops_poster_reads_but_not_the_refresh(tmp_path: Path)
     assert veo.status()["state"] == "ready"
     assert len(media.images) == 1
     assert veo.poster(IDENTITY) is None
+
+
+# Owner report 2026-11-15: after a 2.4 GB download the page sat at 100% while the
+# match details were written into the file on a network drive. It says so now.
+def test_download_says_when_it_is_writing_the_match_details(tmp_path: Path) -> None:
+    veo, _, _, folder, index = setup(tmp_path, FakeMedia())
+    veo.start("refresh")
+    seen: list[str] = []
+    record = index.record
+
+    def watching(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
+        seen.append(veo.status()["message"])
+        return record(*args, **kwargs)
+
+    index.record = watching  # type: ignore[method-assign]
+    veo.start("download", IDENTITY)
+    assert veo.status()["state"] == "done"
+    assert seen and seen[0].startswith("Writing the match details into the saved file")

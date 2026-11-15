@@ -221,3 +221,32 @@ it("shows momentum minute by minute from Veo's team events", async () => {
   expect(within(insights).getByRole("img", { name: "Momentum chart" })).toBeInTheDocument();
   expect(within(insights).getByText(/Veo gives no possession/)).toBeInTheDocument();
 });
+
+// Owner request 2026-11-15: several highlight types and team events at once.
+it("shows and reels several chosen highlight types at once", async () => {
+  routes([{ ...match, team_data: teamData, team_moments: teamMoments }], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  const rail = await screen.findByRole("navigation", { name: "Highlight types" });
+  await user.click(within(rail).getByRole("button", { name: /SHOT ON GOAL\s*1/ }));
+  await user.click(within(rail).getByRole("button", { name: /OUR CORNER\s*1/ }));
+  expect(within(rail).getByRole("button", { name: /SHOT ON GOAL\s*1/ })).toHaveAttribute("aria-pressed", "true");
+  const list = screen.getByRole("list", { name: "Veo highlights" });
+  expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+  await user.click(screen.getByRole("button", { name: /Make highlight reel \(2\)/ }));
+  expect(await screen.findByText("HIGHLIGHT REEL STUDIO")).toBeInTheDocument();
+  expect(JSON.parse(sessionStorage.getItem("fm.reel.selection")!)).toMatchObject({ items: [{ match_id: "veo-a", moment_ids: ["h1", "t-own-corner-kick-400000"] }] });
+  sessionStorage.clear();
+});
+
+// Owner request 2026-11-15: the record against this opponent, as on a Hudl match.
+it("shows the record against this opponent from the Veo matches", async () => {
+  const earlier = { ...match, id: "veo-b", title: "261001 RJ vs Northgate CB", score: { ours: 0, theirs: 2 }, moments: [] };
+  const other = { ...match, id: "veo-c", title: "261015 RJ vs Southside", score: { ours: 5, theirs: 0 }, moments: [] };
+  routes([match, earlier, other], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const h2h = await screen.findByRole("region", { name: "Head to head" });
+  expect(within(h2h).getByRole("heading", { name: /Against Northgate CB/ })).toBeInTheDocument();
+  expect(h2h).toHaveTextContent("2 played · W 1 D 0 L 1 · goals 2-3");
+  expect(within(h2h).getByRole("link", { name: /2026-10-01.*0-2/ })).toHaveAttribute("href", "/veo/veo-b");
+});

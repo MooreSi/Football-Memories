@@ -515,6 +515,13 @@ class VeoConnection:
         else:
             part.unlink()
         if self.index is not None:
+            # The index writes the match details into the file (a full copy of it), which
+            # takes minutes on a network drive; say so rather than look stuck at 100%.
+            self._report(
+                message="Writing the match details into the saved file… (a few minutes "
+                "on a network drive)",
+                progress=None,
+            )
             self.index.record(
                 "match", identity, item.get("title"), target, folder, item.get("moments") or []
             )

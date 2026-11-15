@@ -120,21 +120,66 @@ def test_reel_from_a_downloaded_match_needs_no_veo_request(
     assert not list(folder.rglob(".veo-reel-*"))  # scratch cleaned up
 
 
-def test_reel_downloads_the_full_match_first_when_it_is_not_saved(
-    tmp_path: Path, match_video: Path
-) -> None:
-    media = FakeMedia(body=match_video.read_bytes())
-    veo, _, _, folder, index = _ready(tmp_path, media)
+@pytest.fixture(scope="module")
+def long_video(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    return _video(tmp_path_factory.mktemp("veo-long") / "long.mp4", 90)
 
-    veo.start("reel", IDENTITY, name="Riverside highlights", reel={"moment_ids": ["h-3"]})
+
+class ChunkedMedia(FakeMedia):
+    """Answers each range with at most 64 KB, as Veo's host is read (8 MB) in the app."""
+
+    def __init__(self, body: bytes, refuse_after: int | None = None) -> None:
+        super().__init__(body=body)
+        self.sent = 0
+        self.refuse_after = refuse_after
+
+    def media_range(self, url: str, start: int, end: int | None) -> tuple[int, int, bytes]:
+        if self.refuse_after is not None and len(self.ranges) >= self.refuse_after:
+            from app.connectors.veo._client import VeoRefused
+
+            raise VeoRefused(403)
+        stop = start + 65_535 if end is None else min(end, start + 65_535)
+        first, total, body = super().media_range(url, start, stop)
+        self.sent += len(body)
+        return first, total, body
+
+
+# Owner request 2026-11-15 (replaces "downloads the full match first"): like Hudl, a
+# reel from a match not saved on this computer reads only the parts its highlights
+# need, not the whole match.
+def test_reel_reads_only_the_parts_it_needs_when_the_match_is_not_saved(
+    tmp_path: Path, long_video: Path
+) -> None:
+    media = ChunkedMedia(long_video.read_bytes())
+    veo, _, _, folder, index = _ready(tmp_path, media)
+    library = veo.library()
+    for item in library:
+        if item["id"] == IDENTITY:
+            item["moments"] = [{"id": "h-9", "category": "GOAL", "time_s": 60.0, "duration_s": 4.0}]
+    veo._write(library)
+
+    veo.start("reel", IDENTITY, name="Riverside highlights", reel={"moment_ids": ["h-9"]})
 
     status = veo.status()
     assert status["state"] == "done", status["message"]
-    assert len(media.downloads) == 1
-    kinds = sorted(e["kind"] for e in index.entries(folder))
-    assert kinds == ["match", "reel"]  # the full match is kept in the archive too
+    assert media.downloads == []
+    assert [e["kind"] for e in index.entries(folder)] == ["reel"]
     assert 3.0 < probe(folder / status["filename"]).duration_s < 5.0
+    assert 0 < media.sent < len(media.body) * 0.6  # not the whole match
     assert "http" not in status["message"]
+
+
+def test_a_refusal_while_reading_a_part_saves_nothing(tmp_path: Path, long_video: Path) -> None:
+    media = ChunkedMedia(long_video.read_bytes(), refuse_after=1)
+    veo, _, _, folder, _ = _ready(tmp_path, media)
+    veo.start("moments", IDENTITY, name="x", reel={"moment_ids": ["h-2"], "combined": True})
+    status = veo.status()
+    assert status["state"] == "error"
+    assert "http" not in status["message"]
+    assert not (folder / "moments").exists() or not any(
+        p.suffix in {".mp4", ".zip"} for p in (folder / "moments").iterdir()
+    )
+    assert media.downloads == []
 
 
 def test_reel_with_no_known_highlight_saves_nothing(tmp_path: Path, match_video: Path) -> None:

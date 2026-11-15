@@ -55,7 +55,11 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const status = useHudlStatus();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [code, setCode] = useState(initialCode);
+  // Owner request 2026-11-15: several codes at once; `code` is the one when only one is picked.
+  const [picked, setPicked] = useState<string[]>(initialCode ? [initialCode] : []);
+  const code = picked.length === 1 ? picked[0] : '';
+  const setCode = (c: string) => setPicked(c ? [c] : []);
+  const toggle = (c: string) => setPicked(p => p.some(x => sameCode(x, c)) ? p.filter(x => !sameCode(x, c)) : [...p, c]);
   const [selected, setSelected] = useState<string[]>([]);
   // Spec 230: "Continue watching" links carry ?t= (seconds) to resume where the owner stopped.
   const [seek, setSeek] = useState<{ time: number; nonce: number } | undefined>(initialTime && !initialMoment ? { time: initialTime, nonce: 1 } : undefined);
@@ -99,7 +103,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   // Spec 230: our possessions that ended in a chance or goal; with a player chosen, only his.
   const phaseList = phases(moments, club, code && looksLikePlayer(code) ? code : undefined);
   const phaseOf = new Map(phaseList.map(p => [p.moment.id, p]));
-  const filtered = phasesOnly ? phaseList.map(p => p.moment) : moments.filter(m => !code || sameCode(m.category, code));
+  const filtered = phasesOnly ? phaseList.map(p => p.moment) : moments.filter(m => !picked.length || picked.some(c => sameCode(m.category, c)));
   const noted = new Map((notes.data ?? []).map(n => [n.moment_id, n]));
   const chosen = selected.length ? selected : filtered.map(m => m.id);
   const busy = blocked || action.isPending;
@@ -176,8 +180,8 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
     <aside className="analysis-rail panel overflow-hidden">
       <div className="space-y-2 border-b border-line p-4">{!embedded && <Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link>}<h2 className="text-sm font-semibold">{match.title}</h2><p className="text-xs text-fg-subtle">{match.age_group} · {moments.length} moments</p></div>
       <div className="max-h-[75vh] overflow-y-auto">
-        <button className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!code ? 'bg-blue-600 text-white' : 'text-fg-muted'}`} onClick={() => { setCode(''); setSelected([]); }}>ALL MOMENTS <span>{moments.length}</span></button>
-        {codes.map(c => <button key={c} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs ${sameCode(code, c) ? 'bg-blue-600 text-white' : 'text-fg-muted hover:bg-white/5'}`} onClick={() => { setCode(c); setSelected([]); }}><span className="truncate">{c}</span><span>{moments.filter(m => m.category === c).length}</span></button>)}
+        <button className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? 'bg-blue-600 text-white' : 'text-fg-muted'}`} aria-pressed={!picked.length} onClick={() => { setCode(''); setSelected([]); }}>ALL MOMENTS <span>{moments.length}</span></button>
+        {codes.map(c => <button key={c} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs ${picked.some(x => sameCode(x, c)) ? 'bg-blue-600 text-white' : 'text-fg-muted hover:bg-white/5'}`} aria-pressed={picked.some(x => sameCode(x, c))} onClick={() => { toggle(c); setSelected([]); }}><span className="truncate">{c}</span><span>{moments.filter(m => m.category === c).length}</span></button>)}
       </div>
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
@@ -217,8 +221,8 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
           <label className="text-xs text-fg-muted lg:hidden">Tagged code / player<select className="field mt-1" aria-label="Tagged code / player" value={codes.find(c => sameCode(c, code)) ?? code} onChange={e => { setCode(e.target.value); setSelected([]); }}><option value="">All tagged moments</option>{codes.map(c => <option key={c}>{c}</option>)}</select></label>
           {phaseList.length > 0 && <Button aria-pressed={phasesOnly} variant={phasesOnly ? 'primary' : 'subtle'} onClick={() => { setPhasesOnly(v => !v); setSelected([]); }}><Route size={16} /> Attacks ending in a chance ({phaseList.length})</Button>}
           {chosen.length > 0 && <Button variant="primary" disabled={!streamUrl} title={streamUrl ? undefined : 'Available once the stream is ready'} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
-          <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : code ? 'player / code moments' : 'all moments'}</Button>
-          <Button disabled={!chosen.length || match.tag_status === 'unsynced'} onClick={() => navigate('/clips/reel/new', { state: { name: code ? `${code} highlights` : undefined, items: [{ match_id: id, moment_ids: chosen }] } })}><Clapperboard size={16} /> Make Highlight Reel</Button>
+          <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : picked.length ? 'player / code moments' : 'all moments'}</Button>
+          <Button disabled={!chosen.length || match.tag_status === 'unsynced'} onClick={() => navigate('/clips/reel/new', { state: { name: picked.length ? `${picked.join(' + ')} highlights` : undefined, items: [{ match_id: id, moment_ids: chosen }] } })}><Clapperboard size={16} /> Make Highlight Reel</Button>
         </div>
         {moments.length > 0 && <p className="text-xs text-pin">Tags cached locally · No full-match download required</p>}
         <p className="text-xs text-fg-muted">{filtered.length} tagged ranges. Play Tagged plays each chosen moment back to back. Downloads fetch only the selected moments, keep the original resolution and are encoded as H.264 for easy playback.</p>

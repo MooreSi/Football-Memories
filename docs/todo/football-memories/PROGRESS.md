@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Veo clips by range, multi-type rails, Veo head to head (owner request 2026-11-15)
+
+- done: Veo reels/moments read only the needed byte ranges (relay through
+  `_client`), progress message for the post-download tagging step, several moment
+  types at once on Hudl and Veo rails, Veo record against the opponent. Tests red
+  first (one Veo reel test replaced: "downloads the full match first" was the old
+  behaviour the owner asked to change). Frontend 456, backend both suites green.
+
 ## Veo team events as moments and momentum (owner request 2026-11-15)
 
 - done: team events in the Veo match rail, chosen like highlights (helper accepts
