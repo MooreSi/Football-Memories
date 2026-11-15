@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## All matches Hudl cards: score and date (owner request 2026-11-15)
+
+- done: each cached Hudl card shows both crests and the score at the bottom right
+  of the thumbnail (corrected score, else goal tags; hidden when unknown) and the
+  date from the title as "15th November 2026" ("Undated" otherwise), replacing
+  "Watch match · Download match or tagged moments". Tests red first; frontend
+  446 passed, both backend suites green. Browser-checked on the cached library.
+
 ## Veo tick boxes and Veo data research (owner request 2026-11-13)
 
 - done: tick boxes on Veo highlights; Play Tagged, Download selected (video or

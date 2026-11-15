@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveClub } from "./clubs";
-import { fixtureDate, fixtureParts } from "./hudlFixture";
+import { fixtureDate, fixtureParts, ordinalDate } from "./hudlFixture";
 
 // Titles copied from the owner's Hudl library (2026-11-13), with the opponent the
 // owner sees on the pitch. Several showed initials instead of a crest.
@@ -63,4 +63,14 @@ it("reads both date styles in Hudl titles", () => {
   expect(fixtureDate("261108 U10s v Stoke City (H)")?.toDateString()).toBe(new Date(2026, 10, 8).toDateString());
   expect(fixtureDate("2026.11.03 Barcelona 3-0 Aston Villa")?.toDateString()).toBe(new Date(2026, 10, 3).toDateString());
   expect(fixtureDate("261332 U10 v Nobody")).toBeNull();
+});
+
+// Owner request 2026-11-15: All matches cards show the date as "15th November 2026".
+describe("ordinalDate", () => {
+  it.each([
+    [1, "1st"], [2, "2nd"], [3, "3rd"], [4, "4th"], [11, "11th"], [12, "12th"], [13, "13th"],
+    [21, "21st"], [22, "22nd"], [23, "23rd"], [30, "30th"], [31, "31st"],
+  ])("day %i reads %s", (day, text) => {
+    expect(ordinalDate(new Date(2026, 9, day))).toBe(`${text} October 2026`);
+  });
 });

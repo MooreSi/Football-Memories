@@ -200,7 +200,7 @@ export function LibraryPage() {
               )}
             </>
           )}
-          <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} /></div>
+          <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} club={club} /></div>
           <div className="mt-5"><VeoLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} /></div>
         </section>
       </div>

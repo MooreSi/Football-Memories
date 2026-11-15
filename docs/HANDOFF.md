@@ -11,7 +11,12 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-14)
+## Current state (2026-11-15)
+
+- **All matches Hudl cards (owner request 2026-11-15):** crests and score pill at the
+  bottom right of each thumbnail (`ScoreBadge` in `HudlLibrary.tsx`, `matchScore`;
+  hidden with no score) and the date as "15th November 2026" (`ordinalDate` in
+  `lib/hudlFixture.ts`). LibraryPage passes the club to `HudlLibrary`.
 
 - **Release 0.4 (owner request 2026-11-14):** versions 0.4.0, CHANGELOG 0.4, README
   with Veo, drawing board, My Player and import; new screenshots `reel.png`,

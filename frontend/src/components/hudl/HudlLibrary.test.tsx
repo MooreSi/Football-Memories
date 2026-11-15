@@ -41,3 +41,19 @@ it('shows nothing when Settings has Show Hudl off', async()=>{
  expect(screen.queryByRole('link',{name:/U10 vs Rovers/})).toBeNull();
  localStorage.clear();
 });
+// Owner request 2026-11-15: the card shows the score with both crests, and the match date.
+it('shows the score with both crests and the date in words on each card', async()=>{
+ stubFetch({'http://127.0.0.1:8766/library':[
+ {id:'s',title:'261115 U11 v Stoke (A)',age_group:'U11'},{id:'w',title:'261101 U11s v West Brom (A)',age_group:'U11'},
+ {id:'n',title:'Training drills',age_group:'U11'}],
+ '/api/scores':{s:{ours:4,theirs:5}}});
+ renderWithProviders(<HudlLibrary club="Aston Villa"/>);
+ const s=await screen.findByRole('link',{name:/v Stoke/});
+ expect(await within(s).findByRole('group',{name:'Aston Villa 4, Stoke City 5'})).toHaveTextContent('4–5');
+ expect(within(s).getByText('15th November 2026')).toBeInTheDocument();
+ expect(within(s).queryByText(/Download match or tagged moments/)).toBeNull();
+ const w=screen.getByRole('link',{name:/West Brom/});
+ expect(within(w).getByText('1st November 2026')).toBeInTheDocument();
+ expect(within(w).queryByRole('group')).toBeNull();
+ expect(within(screen.getByRole('link',{name:'Training drills'})).getByText('Undated')).toBeInTheDocument();
+});

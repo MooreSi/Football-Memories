@@ -5,12 +5,16 @@ import { Link } from "react-router-dom";
 import { CircleDashed, Film, FolderArchive, RefreshCw } from "lucide-react";
 import { downloadState, hudlAgeGroups, hudlBlocked, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../../api/hudl";
 import { Button } from "../ui/Button";
+import { TeamBadge } from "../TeamBadge";
+import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
+import { matchScore, useScoreCorrections } from "../../lib/matchScore";
 
 export type HudlFilters = { age: string; season: string; search: string; offlineOnly?: boolean };
 
 /** Cached footage collection: accepts the parent All matches filters, or its own controls. */
-export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
+export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; club?: string | null }) {
   const library = useHudlLibrary();
+  const corrections = useScoreCorrections();
   const status = useHudlStatus();
   const saved = downloadState(useDownloadIndex().data);
   const qc = useQueryClient();
@@ -66,21 +70,36 @@ export function HudlLibrary({ filters }: { filters?: HudlFilters }) {
     {status.data?.busy && <p role="status" className="text-xs text-accent">{status.data.message}</p>}
     {library.isPending ? <p className="text-sm text-fg-muted">Loading cached Hudl matches…</p> : !library.isError && matches.length === 0 &&
       <p className="text-sm text-fg-muted">{videos.length ? "No Hudl videos match these filters. Choose All age groups or All seasons to see more." : "No Hudl videos cached yet. Refresh Hudl to load your library."}</p>}
-    <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, shown).map(m => <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
+    <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, shown).map(m => { const date = fixtureDate(m.title); return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
       <Link to={`/hudl/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
         <div className="relative aspect-video overflow-hidden bg-ink-800">
           {m.thumbnail_url ? <img crossOrigin="anonymous" src={m.thumbnail_url} alt={m.title} loading="lazy" className="size-full object-cover" />
             : <div className="grid h-full place-items-center text-fg-subtle"><Film size={28} /><span className="text-xs">Thumbnail pending refresh</span></div>}
           <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{hudlAgeGroups(m).join(" / ")} · Hudl</span>
           <DownloadBadges state={saved.get(m.id)} />
+          <ScoreBadge title={m.title} club={club} score={matchScore(m, club, corrections.data)} />
         </div>
         <div className="space-y-2 p-4"><h3 className="text-sm font-semibold leading-snug">{m.title}</h3>
           <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
-          <p className="text-xs text-fg-muted">Watch match · Download match or tagged moments</p></div>
+          <p className="text-xs text-fg-muted">{date ? ordinalDate(date) : "Undated"}</p></div>
       </Link>
-    </article>)}</div>
+    </article>; })}</div>
     {shown < matches.length && <div className="flex justify-center"><Button onClick={() => setShown(n => n + 12)}>Show more Hudl matches ({matches.length - shown})</Button></div>}
   </section>;
+}
+
+/** Owner request 2026-11-15: both crests and the score, bottom right of the thumbnail.
+ *  Only when the score is known and the title names the opponent. */
+function ScoreBadge({ title, club, score }: { title: string; club: string | null; score: { ours: number; theirs: number } | null }) {
+  const parts = fixtureParts(title, club);
+  if (!score || !parts) return null;
+  const home = club || "Home";
+  return <span role="group" aria-label={`${home} ${score.ours}, ${parts.opponent} ${score.theirs}`}
+    className="absolute right-2.5 bottom-2.5 flex items-center gap-2 rounded-full border border-white/10 bg-ink-950/75 p-1.5 backdrop-blur-md">
+    <TeamBadge name={home} size="sm" tone="home" />
+    <span className="px-1 text-base font-semibold tabular-nums">{score.ours}–{score.theirs}</span>
+    <TeamBadge name={parts.opponent} size="sm" tone="away" />
+  </span>;
 }
 
 /** Spec 190: which parts of a match are already on this computer. */

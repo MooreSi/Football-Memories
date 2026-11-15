@@ -58,3 +58,10 @@ export function clubName(team: string | undefined): string | null {
 export function ukDate(date: Date): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
+
+/** Long date with an ordinal day, e.g. "15th November 2026" (owner request 2026-11-15). */
+export function ordinalDate(date: Date): string {
+  const d = date.getDate();
+  const suffix = d % 100 >= 11 && d % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][d % 10] ?? "th";
+  return `${d}${suffix} ${date.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`;
+}
