@@ -62,3 +62,30 @@ it("shows the poster the helper saved from Veo's thumbnail", async () => {
   const link = await screen.findByRole("link", { name: /Rovers/ });
   expect(within(link).getByRole("img")).toHaveAttribute("src", "http://127.0.0.1:8766/veo/match/veo-a/poster");
 });
+
+// Owner request 2026-11-15: a Refresh Veo button on the library, like Refresh Hudl.
+const ACCOUNT = "http://127.0.0.1:8766/veo/account";
+const ACTION = "http://127.0.0.1:8766/veo/action";
+const idle = { configured: true, busy: false, state: "ready", message: "", summary: null };
+
+it("refreshes the Veo matches from the library and shows the progress", async () => {
+  stubFetch({ [LIB]: matches, [ACCOUNT]: idle, [ACTION]: { accepted: true } });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  await userEvent.setup().click(await screen.findByRole("button", { name: /Refresh Veo/ }));
+  const posts = vi.mocked(fetch).mock.calls.filter(c => String(c[0]) === ACTION).map(c => JSON.parse(String(c[1]?.body)));
+  expect(posts).toEqual([{ action: "refresh" }]);
+});
+
+it("cannot refresh while Veo is busy, and says what it is doing", async () => {
+  stubFetch({ [LIB]: matches, [ACCOUNT]: { ...idle, busy: true, state: "working", message: "Listing Veo matches… (160 so far)" } });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  expect(await screen.findByText("Listing Veo matches… (160 so far)")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Refresh Veo/ })).toBeDisabled();
+});
+
+it("offers no refresh until a Veo account is saved", async () => {
+  stubFetch({ [LIB]: [], [ACCOUNT]: { ...idle, configured: false } });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  expect(await screen.findByText(/No Veo matches cached yet/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Refresh Veo/ })).toBeDisabled();
+});

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Clock3, Film } from "lucide-react";
-import { useVeoLibrary, veoAgeGroups, veoExpiry } from "../../api/veo";
+import { Clock3, Film, RefreshCw } from "lucide-react";
+import { useVeoLibrary, useVeoStatus, veoAgeGroups, veoExpiry, veoRequest } from "../../api/veo";
 import { connectionShown } from "../../lib/connections";
 import { Button } from "../ui/Button";
 
@@ -11,6 +12,17 @@ export type VeoFilters = { age: string; season: string; search: string };
 export function VeoLibrary({ filters }: { filters: VeoFilters }) {
   const shown = connectionShown("veo");
   const library = useVeoLibrary();
+  // Owner request 2026-11-15: Refresh Veo here, like Refresh Hudl (the same action as
+  // Settings → Connections → Veo → Refresh matches).
+  const status = useVeoStatus();
+  const qc = useQueryClient();
+  const refresh = useMutation({
+    mutationFn: () => veoRequest("/action", { action: "refresh" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["veo-account"] }),
+  });
+  useEffect(() => {
+    if (status.data && !status.data.busy) void qc.invalidateQueries({ queryKey: ["veo-library"] });
+  }, [status.data?.busy, qc]);
   const [count, setCount] = useState(12);
   useEffect(() => setCount(12), [filters.age, filters.season, filters.search]);
   if (!shown) return null;
@@ -19,14 +31,21 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
     && (!filters.season || (m.season_label || "Unclassified") === filters.season)
     && (!filters.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
   return <section aria-label="Veo match library" className="space-y-4 border-t border-line pt-5">
-    <div><h3 className="text-sm font-semibold">Connected Veo</h3>
-      <p className="mt-1 text-xs text-fg-subtle">{matches.length} of {all.length} cached Veo matches · Details and highlights</p></div>
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="mr-auto"><h3 className="text-sm font-semibold">Connected Veo</h3>
+        <p className="mt-1 text-xs text-fg-subtle">{matches.length} of {all.length} cached Veo matches · Details and highlights</p></div>
+      <Button disabled={!status.data?.configured || status.data.busy || refresh.isPending || library.isError}
+        title={status.data && !status.data.configured ? "Save your Veo account in Settings → Connections first" : undefined}
+        onClick={() => refresh.mutate()}><RefreshCw size={14} /> Refresh Veo</Button>
+    </div>
+    {(refresh.isError || status.data?.state === "error") && <p role="alert" className="text-sm text-danger">{refresh.error?.message || status.data?.message}</p>}
+    {status.data?.busy && <p role="status" className="text-xs text-accent">{status.data.message}</p>}
     {library.isError && <div role="alert" className="space-y-2 rounded-xl border border-warn/20 bg-warn/5 p-3 text-sm">
       <p>Veo matches unavailable. Start the desktop helper or check Settings → Connections.</p>
       <Button onClick={() => void library.refetch()}>Retry connection</Button>
     </div>}
     {library.isPending ? <p className="text-sm text-fg-muted">Loading cached Veo matches…</p> : !library.isError && matches.length === 0 &&
-      <p className="text-sm text-fg-muted">{all.length ? "No Veo matches match these filters." : "No Veo matches cached yet. Select Refresh matches in Settings → Connections → Veo."}</p>}
+      <p className="text-sm text-fg-muted">{all.length ? "No Veo matches match these filters." : "No Veo matches cached yet. Select Refresh Veo, or Refresh matches in Settings → Connections → Veo."}</p>}
     <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, count).map(m => {
       const expiry = veoExpiry(m);
       const highlights = m.moments?.length ?? 0;
