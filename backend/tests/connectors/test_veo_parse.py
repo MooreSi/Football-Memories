@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app.connectors.veo._parse import library_item, next_page, team_data
+from app.connectors.veo._parse import library_item, next_page, team_data, team_totals
 from tests.connectors.veo_fixtures.synthetic import (
     ACTIVE_ID,
     EXPIRED_ID,
@@ -104,3 +104,34 @@ def test_team_data_copes_with_missing_parts() -> None:
     assert team_data({"teams": {"own_side": "home"}}, odd)["events"] == [
         {"type": "SHOT", "side": None, "time_s": 5.0, "period": None}
     ]
+
+
+# Owner request 2026-11-15: Veo labels the sides "Own" and "Opponent" (its web app's
+# own spelling); the first real refresh kept no side for any event.
+def test_team_data_reads_veos_own_and_opponent_labels() -> None:
+    data = team_data(match_report(), match_events("Own", "Opponent"))
+    assert [e["side"] for e in data["events"]] == ["own"] * 3 + ["opponent"] * 3
+
+
+# Owner request 2026-11-15: each side's totals from Veo's events service, named, with
+# the counts neither side had left out.
+def test_team_totals_names_each_count_and_drops_ones_neither_side_had() -> None:
+    own = [
+        {"eventType": "MissedShots", "total": 8, "byPeriod": {"1": 8}},
+        {"eventType": "FootballOutOfPlay", "total": 13, "byPeriod": {"1": 13}},
+        {"eventType": "ShotsInsideBox", "total": 0, "byPeriod": {}},
+        {"eventType": "FootballPenaltyKick", "total": 0, "byPeriod": {}},
+    ]
+    opponent = [
+        {"eventType": "MissedShots", "total": 5, "byPeriod": {"1": 5}},
+        {"eventType": "FootballPenaltyKick", "total": 1, "byPeriod": {"1": 1}},
+        {"eventType": "ShotsInsideBox", "total": 0, "byPeriod": {}},
+    ]
+    assert team_totals(own, opponent) == {
+        "missed_shots": {"own": 8, "opponent": 5},
+        "out_of_play": {"own": 13, "opponent": 0},
+        "penalty_kick": {"own": 0, "opponent": 1},
+    }
+    odd = [{"eventType": "MissedShots", "total": True}, {"total": 3}, "x"]
+    assert team_totals(None, {"oops": 1}) == {}
+    assert team_totals(odd, []) == {}

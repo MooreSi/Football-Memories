@@ -2,13 +2,23 @@
 in for c.veocdn.com (owner-approved check 2026-11-13: public MP4, Range answered 206)."""
 
 import io
+import shutil
+import struct
+import subprocess
 import urllib.error
 from pathlib import Path
 
 import pytest
 
 from app.connectors.hudl_capture import CaptureError
-from app.connectors.veo._client import CHUNK, media_download, media_image, media_range
+from app.connectors.veo._client import (
+    CHUNK,
+    media_crest,
+    media_download,
+    media_image,
+    media_range,
+)
+from app.connectors.veo._connection import shrink_crest
 
 URL = "https://c.veocdn.com/synthetic/match.mp4"
 TOTAL = 50_000_000
@@ -115,3 +125,53 @@ def test_reads_a_thumbnail_image_from_veos_host_only(tmp_path: Path) -> None:
     huge = Opener(lambda h: Response(200, {"Content-Type": "image/jpeg"}, b"x" * 3_000_001))
     with pytest.raises(CaptureError):
         media_image(image, opener=huge)
+
+
+# Owner request 2026-11-15: the club's crest, from the address in Veo's match report.
+# Owner-approved check: a public PNG on assets.app.veo.co, about 2.4 MB, no query.
+def test_reads_the_clubs_crest_from_veos_asset_host_only() -> None:
+    crest = "https://assets.app.veo.co/synthetic/crest.png"
+    png = b"\x89PNG\r\n\x1a\nsynthetic"
+    opener = Opener(lambda h: Response(200, {"Content-Type": "image/png"}, png))
+    assert media_crest(crest, opener=opener) == png
+    for url in (
+        "http://assets.app.veo.co/synthetic/crest.png",
+        "https://evil.test/crest.png",
+        "https://assets.app.veo.co.evil.test/crest.png",
+        crest + "?x=1",
+        "https://assets.app.veo.co/synthetic/crest.svg",
+        "https://c.veocdn.com/synthetic/crest.png",
+    ):
+        with pytest.raises(CaptureError):
+            media_crest(url, opener=opener)
+    assert len(opener.sent) == 1
+    for status, kind, body in ((200, "image/png", b"x" * 8_000_001), (200, "text/html", png)):
+        odd = Opener(lambda h, s=status, k=kind, b=body: Response(s, {"Content-Type": k}, b))
+        with pytest.raises(CaptureError):
+            media_crest(crest, opener=odd)
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
+def test_shrinks_a_large_crest_to_a_small_png(tmp_path: Path) -> None:
+    big = tmp_path / "big.png"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=red:s=1200x1400",
+            "-frames:v",
+            "1",
+            str(big),
+        ],
+        check=True,
+    )
+    small = shrink_crest(big.read_bytes())
+    assert small is not None and small.startswith(b"\x89PNG\r\n\x1a\n")
+    width, height = struct.unpack(">II", small[16:24])
+    assert max(width, height) == 512 and abs(width / height - 1200 / 1400) < 0.01
+    assert shrink_crest(b"not an image") is None

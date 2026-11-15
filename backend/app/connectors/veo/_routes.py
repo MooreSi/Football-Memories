@@ -134,3 +134,18 @@ def match_poster(identity: str, request: Request) -> FileResponse:
     if path is None:
         raise HTTPException(404, "No poster saved for this match")
     return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "max-age=3600"})
+
+
+@router.get("/club")
+def club(request: Request) -> dict[str, object]:
+    """Owner request 2026-11-15: the club's names from Veo, and whether its crest is saved."""
+    result: dict[str, object] = request.app.state.veo.club()
+    return result
+
+
+@router.get("/crest")
+def crest(request: Request) -> FileResponse:
+    path = request.app.state.veo.crest()
+    if path is None:
+        raise HTTPException(404, "No club crest saved from Veo")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-cache"})

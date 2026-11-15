@@ -13,6 +13,7 @@ from app.connectors.veo._client import VeoRefused
 from app.connectors.veo._connection import VeoConnection
 from tests.connectors.veo_fixtures.synthetic import (
     ACTIVE_ID,
+    CREST,
     EXPIRED_ID,
     detail,
     highlights,
@@ -20,6 +21,7 @@ from tests.connectors.veo_fixtures.synthetic import (
     match_report,
     periods,
     recording,
+    team_stats,
     videos,
 )
 
@@ -54,6 +56,9 @@ class FakeApi:
             # Decision 009: the match report and the events service (team-split data).
             f"/api/app/analysis/matches/{slug}/match-report/": ({}, match_report()),
             f"/api/mes/v2/{ACTIVE_ID}/match-events": ({}, match_events()),
+            # Owner request 2026-11-15: each side's totals.
+            f"/api/mes/v2/{ACTIVE_ID}/teams/Own/stats": ({}, team_stats(6, 11)),
+            f"/api/mes/v2/{ACTIVE_ID}/teams/Opponent/stats": ({}, team_stats(2, 9)),
         }
 
     def get(self, path: str) -> tuple[dict[str, str], Any]:
@@ -179,3 +184,112 @@ def test_a_sign_out_or_slow_down_on_team_data_stops_the_refresh(
     veo.start("refresh")
     assert veo.status()["state"] == "error"
     assert sum(p.startswith("/api/mes/") for p in api.paths) == 1
+
+
+# Owner request 2026-11-15: each side's totals, read once with the report.
+def test_refresh_keeps_each_sides_totals(tmp_path: Path) -> None:
+    veo = connection(tmp_path, FakeApi())
+    veo.start("refresh")
+    item = next(i for i in veo.library() if i["id"] == f"veo-{ACTIVE_ID}")
+    assert item["team_data"]["totals"]["missed_shots"] == {"own": 6, "opponent": 2}
+    assert item["team_data"]["totals"]["out_of_play"] == {"own": 11, "opponent": 9}
+    assert "shots_inside_box" not in item["team_data"]["totals"]
+
+
+def test_refused_totals_keep_the_report_and_events(tmp_path: Path) -> None:
+    api = FakeApi(refuse=f"/api/mes/v2/{ACTIVE_ID}/teams/", status=403)
+    veo = connection(tmp_path, api)
+    veo.start("refresh")
+    assert veo.status()["state"] == "ready"
+    item = next(i for i in veo.library() if i["id"] == f"veo-{ACTIVE_ID}")
+    assert item["team_data"]["stats"]["goals"] == {"own": 3, "opponent": 1}
+    assert item["team_data"]["totals"] == {}
+    assert sum("/teams/" in p for p in api.paths) == 1  # the first refusal ends the pair
+
+
+# The first real refresh (2026-11-15) kept sides as None; that cache is read again once.
+def test_team_data_kept_by_an_earlier_version_is_read_again(tmp_path: Path) -> None:
+    old = {"stats": {}, "events": [{"type": "GOAL", "side": None, "time_s": 1.0, "period": 1}]}
+    (tmp_path / "library.json").write_text(
+        json.dumps({"matches": [{"id": f"veo-{ACTIVE_ID}", "team_data": old}]})
+    )
+    api = FakeApi()
+    connection(tmp_path, api).start("refresh")
+    assert any("match-report" in p for p in api.paths)
+    item = next(
+        i for i in connection(tmp_path, FakeApi()).library() if i["id"] == f"veo-{ACTIVE_ID}"
+    )
+    assert {e["side"] for e in item["team_data"]["events"]} == {"own", "opponent"}
+
+
+class FakeMedia:
+    def __init__(self, crest: bytes | Exception = b"\x89PNG\r\n\x1a\nbig") -> None:
+        self.crest = crest
+        self.crests: list[str] = []
+
+    def media_image(self, url: str) -> bytes:
+        raise CaptureError("no posters in this test")
+
+    def media_crest(self, url: str) -> bytes:
+        self.crests.append(url)
+        if isinstance(self.crest, Exception):
+            raise self.crest
+        return self.crest
+
+
+def with_media(tmp_path: Path, api: FakeApi, media: FakeMedia) -> VeoConnection:
+    @contextmanager
+    def session(loader):  # noqa: ANN001, ANN202
+        yield api
+
+    return VeoConnection(
+        lambda: None,
+        tmp_path,
+        session=session,
+        run=lambda work: work(),
+        media=media,
+        shrink=lambda data: b"\x89PNG\r\n\x1a\nsmall:" + data[-3:],
+    )
+
+
+# Owner request 2026-11-15: the club's crest from Veo's match report, saved once on
+# this computer (scaled down); its address is not kept.
+def test_refresh_saves_the_clubs_crest_once(tmp_path: Path) -> None:
+    media = FakeMedia()
+    veo = with_media(tmp_path, FakeApi(), media)
+    veo.start("refresh")
+    assert media.crests == [CREST]
+    assert veo.crest() is not None
+    assert veo.crest().read_bytes() == b"\x89PNG\r\n\x1a\nsmall:big"
+    assert veo.club() == {"names": ["Riverside FC", "Riverside"], "crest": True}
+    for name in ("library.json", "club.json"):
+        assert "assets.app.veo.co" not in (tmp_path / name).read_text()
+    with_media(tmp_path, FakeApi(), media).start("refresh")
+    assert media.crests == [CREST]  # not asked again
+
+
+def test_a_crest_that_cannot_be_read_never_stops_the_refresh(tmp_path: Path) -> None:
+    media = FakeMedia(VeoRefused(403))
+    veo = with_media(tmp_path, FakeApi(), media)
+    veo.start("refresh")
+    assert veo.status()["state"] == "ready"
+    assert veo.crest() is None
+    assert veo.club() == {"names": ["Riverside FC", "Riverside"], "crest": False}
+    assert len(media.crests) == 1
+
+
+def test_an_unscalable_crest_is_not_kept(tmp_path: Path) -> None:
+    @contextmanager
+    def session(loader):  # noqa: ANN001, ANN202
+        yield FakeApi()
+
+    veo = VeoConnection(
+        lambda: None,
+        tmp_path,
+        session=session,
+        run=lambda work: work(),
+        media=FakeMedia(),
+        shrink=lambda data: None,
+    )
+    veo.start("refresh")
+    assert veo.status()["state"] == "ready" and veo.crest() is None

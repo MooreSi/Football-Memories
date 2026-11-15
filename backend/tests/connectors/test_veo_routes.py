@@ -296,3 +296,34 @@ def test_moments_action_passes_the_ticked_highlights_and_gets_a_save_link(tmp_pa
         "filename": "moments/Norton Lindsay v Town moments (ab12cd34).zip",
     }
     assert "/moments/" in client.get("/veo/account", headers=APP).json()["download_url"]
+
+
+# Owner request 2026-11-15: the club's names and crest from Veo, for the app's crests.
+class ClubConnection(FakeConnection):
+    def __init__(self, crest: Path | None) -> None:
+        super().__init__()
+        self.path = crest
+
+    def club(self) -> dict[str, object]:
+        return {"names": ["Riverside FC", "Riverside"], "crest": self.path is not None}
+
+    def crest(self) -> Path | None:
+        return self.path
+
+
+def test_club_names_and_crest_are_served_to_the_app_only(tmp_path: Path) -> None:
+    crest = tmp_path / "crest.png"
+    crest.write_bytes(b"\x89PNG\r\n\x1a\nsynthetic")
+    app = create_companion(tmp_path / "out")
+    app.state.veo = ClubConnection(crest)
+    c = TestClient(app, base_url="http://127.0.0.1:8766")
+    assert c.get("/veo/club", headers=APP).json() == {
+        "names": ["Riverside FC", "Riverside"],
+        "crest": True,
+    }
+    answer = c.get("/veo/crest", headers=APP)
+    assert answer.status_code == 200 and answer.headers["content-type"] == "image/png"
+    assert answer.content == crest.read_bytes()
+    assert c.get("/veo/crest", headers={"Origin": "https://evil.test"}).status_code == 403
+    app.state.veo = ClubConnection(None)
+    assert c.get("/veo/crest", headers=APP).status_code == 404

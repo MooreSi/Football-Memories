@@ -28,3 +28,21 @@ it("has nothing to show without team data", () => {
   expect(teamSplit(null)).toEqual([]);
   expect(teamSplit({ stats: {}, events: [] })).toEqual([]);
 });
+
+// Owner request 2026-11-15: each side's totals from Veo's events service.
+it("uses each side's totals from Veo for the counts it gives", () => {
+  const totals = {
+    missed_shots: { own: 8, opponent: 5 }, out_of_play: { own: 13, opponent: 17 },
+    throw_in: { own: 4, opponent: 6 }, penalty_kick: { own: 0, opponent: 1 },
+  };
+  const rows = teamSplit({ stats: { goals: { own: 3, opponent: 1 } }, events, totals });
+  expect(rows).toEqual([
+    { label: "Goals", own: 3, opponent: 1 },
+    { label: "Attempts", own: 2, opponent: 1 },
+    { label: "Missed shots", own: 8, opponent: 5 },
+    { label: "Penalties", own: 0, opponent: 1 },
+    { label: "Throw-ins", own: 4, opponent: 6 },
+    { label: "Goal kicks", own: 0, opponent: 1 },
+    { label: "Out of play", own: 13, opponent: 17 },
+  ]);
+});

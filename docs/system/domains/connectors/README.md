@@ -559,6 +559,40 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   `free_kicks`, full time) and events as `{type, side, time_s, period}`. Event type
   `FootballCornerKick` becomes `CORNER KICK`. Side: `own`/`opponent` as given, or
   `home`/`away` against the report's `teams.own_side`; anything else is None.
-  The real `team` values were not recorded by the check: confirm on first use.
+  **Fact (first real refresh, 2026-11-15):** the events service writes `team` as
+  `"Own"` / `"Opponent"` (capitalised, as in Veo's web app code). The first parser
+  only took lower case, so every side came out None; `_side` now lower-cases.
 - A match refreshed while Veo is still processing keeps whatever it got then;
   there is no re-read yet.
+
+### Veo per-side totals, club crest, maps and POSTs (2026-11-15)
+
+Owner request 2026-11-15 ("run a Veo refresh", "activate post requests", "read the
+local team crest from veo", "add the maps feature"). One-off checks from a script
+outside the repo, one match, 1 s apart, no retries; status, field names, counts only.
+
+- **Answered:** `GET /api/mes/v2/<uuid>/teams/{Own,Opponent}/stats` gives a list of
+  17 `{eventType, total, byPeriod}`: the event types plus `MissedShots`,
+  `GoalAssists`, `Goals/ShotsInside/OutsideBox`, `UnsuccessfulPasses`,
+  `FootballPenaltyKick`. The positional ones are 0 on this account. Now allowed in
+  `_PATH` and read once with the report; kept as `team_data.totals` (snake_case,
+  zero-for-both dropped). `team_data.v = 2`; Refresh re-reads any cached dict
+  without `v == 2` once (None is still never asked again).
+- **Club crest:** the report's `teams.<own_side>.crest_url` is a public PNG on
+  `assets.app.veo.co` (no query, ~2000 px, 2.4 MB, above the app's 2 MB crest
+  limit). `_client.media_crest` reads only that host; `shrink_crest` (ffmpeg) scales
+  it to fit 512 px. Saved once as `.veo-account/crest.png` with the club's names in
+  `club.json`; the address is not stored. Helper `GET /veo/club`, `GET /veo/crest`.
+  The frontend (`useVeoClubCrest`, in AppShell) gives it to each name with no crest
+  in TeamLogos; an existing crest (web or owner) is never replaced. The owner's
+  club already had a cleaner Wikipedia crest; Veo's image carries a watermark.
+- **Refused or absent (maps and POSTs):** `POST matches/<slug>/analysis/heatmap/`
+  403 (own outfield players; the ball category 400); `POST /api/mes/v2/<id>/heatmap`
+  404; `POST /api/mes/v2/-/team-stats` 403; `POST .../passing-network` 422;
+  `GET /api/app/analysis/passes-and-possession/?match_id=` 404; `match-momentum`
+  404 (with `team`). Event `x`/`z` are null. So Veo gives this account no pitch
+  positions: no heatmap, pass map or possession map can be built from it. The app
+  stays GET-only; no POST is enabled, because none answered.
+- Veo's web app (public code, read as text) sends heatmap requests as
+  `{categories: [n], start_time, end_time}` with categories 0/1 left keeper/outfield,
+  2/3 right, 6 ball, and `start_time`/`end_time` from the report's `periods`.

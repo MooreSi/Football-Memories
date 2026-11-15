@@ -35,6 +35,9 @@ _PATH = re.compile(
     # Decision 009 (owner, 2026-11-14): one match's events from Veo's analytics
     # service, and nothing else under /api/mes/ (no tracking or player data).
     r"|^/api/mes/v2/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/match-events$"
+    # Owner request 2026-11-15: each side's totals for that match.
+    r"|^/api/mes/v2/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    r"/teams/(Own|Opponent)/stats$"
 )
 
 Http = Callable[[str], tuple[int, dict[str, str], Any]]
@@ -224,11 +227,11 @@ def _open(request: urllib.request.Request, timeout: float) -> Any:
     return _OPENER.open(request, timeout=timeout)
 
 
-def _video(url: str, suffixes: tuple[str, ...] = (".mp4",)) -> str:
+def _video(url: str, suffixes: tuple[str, ...] = (".mp4",), host: str = CDN) -> str:
     parts = urlsplit(url)
     if (
         parts.scheme != "https"
-        or parts.hostname != CDN
+        or parts.hostname != host
         or parts.port is not None
         or parts.query
         or parts.fragment
@@ -244,10 +247,11 @@ def _fetch(
     opener: Opener | None,
     timeout: float,
     suffixes: tuple[str, ...] = (".mp4",),
+    host: str = CDN,
 ) -> Any:
-    # _video allows only https://c.veocdn.com/...mp4, so no file: or custom scheme.
+    # _video allows only https on Veo's own hosts, so no file: or custom scheme.
     request = urllib.request.Request(  # noqa: S310
-        _video(url, suffixes), headers=headers, method="GET"
+        _video(url, suffixes, host), headers=headers, method="GET"
     )
     try:
         return (opener or _open)(request, timeout)
@@ -307,4 +311,23 @@ def media_image(url: str, opener: Opener | None = None) -> bytes:
         data = response.read(IMAGE_LIMIT + 1)
     if len(data) > IMAGE_LIMIT:
         raise CaptureError("Veo's thumbnail was larger than expected; it was not kept.")
+    return bytes(data)
+
+
+# Owner request 2026-11-15: the club's crest named in Veo's match report. Owner-approved
+# check: a public PNG on assets.app.veo.co (no query, about 2.4 MB). Read once and
+# scaled down by the caller; the address is never stored.
+ASSETS = "assets.app.veo.co"
+CREST_LIMIT = 8_000_000
+
+
+def media_crest(url: str, opener: Opener | None = None) -> bytes:
+    """The club's crest image from Veo's asset host, at most 8 MB."""
+    with _fetch(url, {}, opener, 30, (".png", ".jpg", ".jpeg", ".webp"), ASSETS) as response:
+        kind = str(response.headers.get("Content-Type") or "")
+        if response.status != 200 or not kind.startswith("image/"):
+            raise CaptureError("Veo's club crest answered in a way the app does not expect.")
+        data = response.read(CREST_LIMIT + 1)
+    if len(data) > CREST_LIMIT:
+        raise CaptureError("Veo's club crest was larger than expected; it was not kept.")
     return bytes(data)

@@ -96,3 +96,12 @@ match-report path (today it allows `/api/app/` only). That is the next request.
 `/api/mes/v2/<uuid>/match-events` beyond `/api/app/`. Refresh reads the report and
 events once per match with video and caches the team-split result; the Veo match
 page shows it as Team stats.
+
+**Follow-up 2026-11-15 (owner: "activate post requests as well", "add the maps
+feature"):** a second one-off check tried the read-type POSTs Veo's own analysis
+page sends (heatmap, team stats, passing network) and the possession read. All were
+refused or empty on this account (403/404/422; no pitch positions), so no POST is
+enabled and there is no map data to show. Per-side totals (`teams/{Own,Opponent}/
+stats`, GET) answered and are now read; the club crest from the report is saved.
+Details: `docs/system/domains/connectors/README.md`. If the owner adds Veo's
+Analytics subscription, the check can be run again.

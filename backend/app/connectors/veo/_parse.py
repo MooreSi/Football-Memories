@@ -108,6 +108,8 @@ STATS = ("goals", "total_attempts", "corners", "fouls", "free_kicks")
 
 
 def _side(team: object, own_side: object) -> str | None:
+    # Veo's events service writes "Own" and "Opponent" (owner report 2026-11-15).
+    team = team.lower() if isinstance(team, str) else team
     if team in ("own", "opponent"):
         return str(team)
     if team in ("home", "away") and own_side in ("home", "away"):
@@ -151,6 +153,33 @@ def team_data(report: Any, events: Any) -> dict[str, Any]:
             }
         )
     return {"stats": stats, "events": sorted(items, key=lambda e: e["time_s"])}
+
+
+def _snake(kind: str) -> str:
+    words = re.findall(r"[A-Z][a-z]*|[a-z]+|\d+", kind.removeprefix("Football"))
+    return "_".join(words).lower()[:40]
+
+
+def _totals(rows: Any) -> dict[str, int]:
+    found: dict[str, int] = {}
+    for row in rows if isinstance(rows, list) else []:
+        if not isinstance(row, dict) or not isinstance(row.get("eventType"), str):
+            continue
+        total = row.get("total")
+        if isinstance(total, int) and not isinstance(total, bool) and _snake(row["eventType"]):
+            found[_snake(row["eventType"])] = total
+    return found
+
+
+def team_totals(own: Any, opponent: Any) -> dict[str, dict[str, int]]:
+    """Owner request 2026-11-15: each side's totals from Veo's events service, by
+    snake_case name; a count neither side had is left out."""
+    ours, theirs = _totals(own), _totals(opponent)
+    return {
+        name: {"own": ours.get(name, 0), "opponent": theirs.get(name, 0)}
+        for name in dict.fromkeys([*ours, *theirs])
+        if ours.get(name, 0) or theirs.get(name, 0)
+    }
 
 
 def next_page(link: str | None) -> int | None:

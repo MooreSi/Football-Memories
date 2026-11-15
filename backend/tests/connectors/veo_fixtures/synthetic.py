@@ -104,15 +104,33 @@ def videos() -> list[dict[str, Any]]:
 
 # Owner-approved check 2026-11-14 (decision 009): the match report and the events
 # service, field names and types as seen; every value is made up.
+CREST = "https://assets.app.veo.co/synthetic/riverside-crest.png"
+
+
+def team_stats(missed: int, out_of_play: int) -> list[dict[str, Any]]:
+    """Veo's per-side totals (owner-approved check 2026-11-15: 17 types, these keys)."""
+
+    def row(kind: str, total: int) -> dict[str, Any]:
+        return {"eventType": kind, "total": total, "byPeriod": {"1": total} if total else {}}
+
+    return [
+        row("FootballGoal", 3),
+        row("MissedShots", missed),
+        row("FootballOutOfPlay", out_of_play),
+        row("ShotsInsideBox", 0),
+    ]
+
+
 def match_report(own_side: str = "home") -> dict[str, Any]:
     def pair(own: int, opponent: int) -> dict[str, Any]:
         return {"full_time": {"own": own, "opponent": opponent}, "periods": []}
 
     return {
         "match": {"match_id": "m", "slug": "s", "title": "t", "kick_off": "k", "videos": []},
+        "club": {"club_id": "c", "slug": "riverside", "name": "Riverside FC"},
         "teams": {
             "own_side": own_side,
-            "home": {"name": "Riverside", "crest_url": "https://c.veocdn.com/synthetic/crest.png"},
+            "home": {"name": "Riverside", "crest_url": CREST},
             "away": {"name": "Northgate", "crest_url": None},
         },
         "events": [],

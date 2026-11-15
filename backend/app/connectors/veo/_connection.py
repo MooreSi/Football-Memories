@@ -19,9 +19,12 @@ from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_metadata import capture_key
 
 from ._client import VeoRefused
-from ._parse import ACTIVE, best_video, library_item, next_page, team_data
+from ._parse import ACTIVE, best_video, library_item, next_page, team_data, team_totals
 
 MAX_PAGES = 100
+# 2: Veo's "Own"/"Opponent" sides and each side's totals (owner request 2026-11-15).
+TEAM_DATA_VERSION = 2
+NO_REPORT = {400, 403, 404, 405}
 
 
 class VeoConnection:
@@ -36,6 +39,7 @@ class VeoConnection:
         index: Any = None,
         folder: Callable[[], Path] | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        shrink: Callable[[bytes], bytes | None] | None = None,
     ) -> None:
         if session is None:
             from ._client import session as real_session
@@ -45,6 +49,8 @@ class VeoConnection:
             from . import _client as media
         self._media = media
         self._probe = probe or _probe_duration
+        self._shrink = shrink or shrink_crest
+        self._club_read = False
         self.index = index
         self._folder = folder or (lambda: directory.parent)
         # Spec 260: video addresses and the stream token live in memory only.
@@ -233,6 +239,7 @@ class VeoConnection:
             if r.get("is_accessible") and r.get("expiration_status") in ACTIVE and r.get("slug")
         ]
         known = {i.get("id"): i for i in self.library()}
+        self._club_read = False
         library: list[dict[str, Any]] = []
         done = 0
         for r in recordings:
@@ -257,9 +264,11 @@ class VeoConnection:
             item = library_item(r, detail, highlights, periods, videos)
             if item["available"]:
                 previous = known.get(item["id"]) or {}
+                kept = previous.get("team_data")
                 item["team_data"] = (
-                    previous["team_data"]
+                    kept
                     if "team_data" in previous
+                    and (kept is None or kept.get("v") == TEAM_DATA_VERSION)
                     else self._team_data(api, slug, str(r["identifier"]))
                 )
             library.append(item)
@@ -286,15 +295,79 @@ class VeoConnection:
     def _team_data(self, api: Any, slug: str, identifier: str) -> dict[str, Any] | None:
         """Decision 009: Veo's match report and its events for one match, read once.
         A match Veo has no report for (400/403/404/405) is kept as None and not asked
-        again; a sign-out, slow-down or server error stops the refresh as usual."""
+        again; a sign-out, slow-down or server error stops the refresh as usual. Each
+        side's totals (owner request 2026-11-15) are optional: a refusal keeps none."""
         try:
             _, report = api.get(f"/api/app/analysis/matches/{slug}/match-report/")
             _, events = api.get(f"/api/mes/v2/{identifier}/match-events")
         except VeoRefused as refused:
-            if refused.status in {400, 403, 404, 405}:
+            if refused.status in NO_REPORT:
                 return None
             raise
-        return team_data(report, events)
+        self._read_club(report)
+        sides: list[Any] = []
+        try:
+            for side in ("Own", "Opponent"):
+                sides.append(api.get(f"/api/mes/v2/{identifier}/teams/{side}/stats")[1])
+        except VeoRefused as refused:
+            if refused.status not in NO_REPORT:
+                raise
+            sides = []
+        data = team_data(report, events)
+        data["totals"] = team_totals(*sides) if len(sides) == 2 else {}
+        data["v"] = TEAM_DATA_VERSION
+        return data
+
+    # Owner request 2026-11-15: the club's name and crest from Veo's match report.
+    def crest(self) -> Path | None:
+        path = self.directory / "crest.png"
+        return path if path.is_file() else None
+
+    def club(self) -> dict[str, Any]:
+        try:
+            names = json.loads((self.directory / "club.json").read_text()).get("names")
+        except (OSError, ValueError, AttributeError):
+            names = None
+        names = [n for n in names or [] if isinstance(n, str)]
+        return {"names": names, "crest": self.crest() is not None}
+
+    def _read_club(self, report: Any) -> None:
+        """Once per refresh: the club's names, and its crest if none is saved yet. The
+        crest's address is used once and not kept; a failed read never stops a refresh."""
+        if self._club_read or not isinstance(report, dict):
+            return
+        self._club_read = True
+        teams = _mapping(report.get("teams"))
+        side = teams.get("own_side")
+        own = _mapping(teams.get(side)) if side in ("home", "away") else {}
+        club = _mapping(report.get("club"))
+        names = [
+            n.strip()[:200]
+            for n in (club.get("name"), own.get("name"))
+            if isinstance(n, str) and n.strip()
+        ]
+        if names:
+            unique = list(dict.fromkeys(names))
+            self._save(self.directory / "club.json", json.dumps({"names": unique}).encode())
+        url = own.get("crest_url")
+        if self.crest() is not None or not isinstance(url, str):
+            return
+        try:
+            small = self._shrink(self._media.media_crest(url))
+        except Exception:  # noqa: BLE001 (a crest is optional; try again next refresh)
+            return
+        if small:
+            self._save(self.directory / "crest.png", small)
+
+    def _save(self, target: Path, data: bytes) -> None:
+        self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        descriptor, temporary = tempfile.mkstemp(dir=self.directory, suffix=".tmp")
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(data)
+            os.replace(temporary, target)
+        finally:
+            Path(temporary).unlink(missing_ok=True)
 
     def poster(self, identity: str) -> Path | None:
         path = self.posters / f"{capture_key(identity)}.jpg"
@@ -484,6 +557,49 @@ class VeoConnection:
     def close(self) -> None:
         if self._executor is not None:
             self._executor.shutdown(wait=False)
+
+
+def _mapping(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+CREST_SIZE = 512
+CREST_BYTES = 2_000_000  # the app's crest store takes up to 2 MB
+
+
+def shrink_crest(data: bytes) -> bytes | None:
+    """A crest scaled to fit 512 x 512 as PNG (Veo's is about 2000 px, 2.4 MB)."""
+    try:
+        done = subprocess.run(
+            [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-nostdin",
+                "-i",
+                "pipe:0",
+                "-frames:v",
+                "1",
+                "-vf",
+                f"scale={CREST_SIZE}:{CREST_SIZE}:force_original_aspect_ratio=decrease",
+                "-f",
+                "image2pipe",
+                "-c:v",
+                "png",
+                "pipe:1",
+            ],
+            input=data,
+            capture_output=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    out = done.stdout
+    if done.returncode or not out.startswith(b"\x89PNG\r\n\x1a\n") or len(out) > CREST_BYTES:
+        return None
+    return bytes(out)
 
 
 def _probe_duration(path: Path) -> float | None:

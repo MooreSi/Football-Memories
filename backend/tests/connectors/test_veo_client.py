@@ -259,3 +259,22 @@ def test_allows_only_the_events_read_of_the_analytics_service() -> None:
         with pytest.raises(CaptureError):
             veo.get(path)
     assert http.calls == [allowed]
+
+
+# Owner request 2026-11-15: each side's totals from the events service; still nothing
+# else under /api/mes/ (no player, tracking or cross-match reads).
+def test_allows_each_sides_team_totals_and_no_other_team_read() -> None:
+    match = "11111111-2222-3333-4444-555555555555"
+    base = f"https://app.veo.co/api/mes/v2/{match}/teams"
+    http = FakeHttp({f"{base}/Own/stats": (200, {}, []), f"{base}/Opponent/stats": (200, {}, [])})
+    veo, _ = api(http)
+    assert veo.get(f"/api/mes/v2/{match}/teams/Own/stats")[1] == []
+    assert veo.get(f"/api/mes/v2/{match}/teams/Opponent/stats")[1] == []
+    for path in (
+        f"/api/mes/v2/{match}/teams/Other/stats",
+        f"/api/mes/v2/{match}/teams/Own/players/7/stats",
+        f"/api/mes/v2/{match}/teams/Own/physical-stats",
+    ):
+        with pytest.raises(CaptureError):
+            veo.get(path)
+    assert len(http.calls) == 2

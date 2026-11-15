@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Veo refresh, team totals, club crest; maps and POSTs checked (owner request 2026-11-15)
+
+- done: real Veo Refresh run (285 matches, 57 with video, 14 with team data); it
+  showed Veo's sides are "Own"/"Opponent", now read (cache v2 re-reads once).
+  Per-side totals (GET `teams/{Own,Opponent}/stats`) on the Team stats table. Club
+  crest from the match report saved by the helper, given to club names with no crest.
+- checked, not built: heatmaps, passing network, possession and the analytics POSTs
+  all refused on this account (403/404/422; no pitch positions). No POST enabled.
+
 ## All matches Hudl cards: score and date (owner request 2026-11-15)
 
 - done: each cached Hudl card shows both crests and the score at the bottom right

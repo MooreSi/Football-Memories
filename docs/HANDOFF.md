@@ -13,6 +13,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-15)
 
+- **Veo team data fixes, totals and club crest (owner request 2026-11-15):** the first
+  real Refresh found Veo writes sides as "Own"/"Opponent" (sides were all None; fixed,
+  cache version `team_data.v = 2` re-reads once). Per-side totals from
+  `teams/{Own,Opponent}/stats` (missed shots, penalties, out of play) on the Team
+  stats table. Club crest from the match report saved once by the helper
+  (`/veo/club`, `/veo/crest`), given by `useVeoClubCrest` only to club names with no
+  crest. Maps and POSTs: Veo refused them all on this account (403/404/422, no
+  positions), so none were built or enabled; see decision 009 follow-up.
+
 - **All matches Hudl cards (owner request 2026-11-15):** crests and score pill at the
   bottom right of each thumbnail (`ScoreBadge` in `HudlLibrary.tsx`, `matchScore`;
   hidden with no score) and the date as "15th November 2026" (`ordinalDate` in
