@@ -19,8 +19,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   5 s), measured on the cached tags (see interface domain notes); most overlap is the
   fallback. "How the score went" (GameStateStrip) and Match recap removed from both
   match pages, with `lib/matchRecap.ts` and `matchSpan`; season game-state lines kept.
-  Not deployed; live app not opened. Open for the owner: whether the new guess matches
-  goals they know.
+  Deployed 2026-11-16 at b0696ee (frontend container only; health ok, live bundle has
+  neither panel; live app not opened). Open for the owner: whether the new guess
+  matches goals they know.
 
 - **Goals and keepers (spec 270, owner requests 2026-11-16, owner chose "Both"):**
   Hudl and Veo name no scorer or keeper (checked on the real caches: Hudl goal tags are
