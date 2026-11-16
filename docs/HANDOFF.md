@@ -93,9 +93,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Warwick, Tamworth, Solihull Moors, Coleshill Town; not Bolehall Swifts (Wikipedia
   has it). The Veo account crest (Racing Club Warwick's) had been saved as Norton
   Lindsay's by `useVeoClubCrest`. Owner answer 2026-11-16: move it to Racing Club
-  Warwick and stop saving it under the Veo team name. Done: hook removed, and Norton
-  Lindsay's copy removed from TeamLogos (Racing Club Warwick's file already held the
-  identical image; `.veo-account/crest.png` keeps it too).
+  Warwick and stop saving it under the Veo team name. Done: hook removed and deployed;
+  Norton Lindsay's copy moved from TeamLogos to the macOS Trash ("Norton Lindsay crest
+  (Veo account copy) 8d0b5ec6.png"). Racing Club Warwick's file held the identical
+  image, as does `.veo-account/crest.png`. Norton Lindsay now has no saved crest, so
+  the app looks one up online or shows initials; the owner can upload one in Settings.
 
 - **Veo season report split by club (owner request 2026-11-15):** the Veo account
   films Norton Lindsay ("NL ...") and Racing Club Warwick ("RCW ...", "Racing ...").
