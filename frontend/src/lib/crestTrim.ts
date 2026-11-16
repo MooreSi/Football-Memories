@@ -66,10 +66,12 @@ export function trimCrest(src: string): Promise<{ url: string; round: boolean } 
     let probe: CanvasRenderingContext2D | null = null;
     try { probe = document.createElement("canvas").getContext("2d"); } catch { probe = null; }
     if (!probe) { resolve(null); return; }
-    // A crest that never finishes loading must not hold the badge or report back.
-    setTimeout(() => resolve(null), 4000);
+    // A crest that never finishes loading must not hold the badge or report back. One
+    // that loads after the limit is still cropped, for the badges that ask next.
+    let late = false;
+    const timer = setTimeout(() => { late = true; resolve(null); }, 4000);
     const img = new Image();
-    img.onload = () => {
+    const crop = (): { url: string; round: boolean } | null => {
       try {
         const w = img.naturalWidth;
         const h = img.naturalHeight;
@@ -77,17 +79,22 @@ export function trimCrest(src: string): Promise<{ url: string; round: boolean } 
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        if (!ctx || !w || !h) { resolve(null); return; }
+        if (!ctx || !w || !h) return null;
         ctx.drawImage(img, 0, 0);
         const box = crestBox(ctx.getImageData(0, 0, w, h).data, w, h);
-        if (!box) { resolve(null); return; }
+        if (!box) return null;
         const out = document.createElement("canvas");
         out.width = out.height = Math.ceil(box.size);
         out.getContext("2d")?.drawImage(img, -box.x, -box.y);
-        resolve({ url: out.toDataURL("image/png"), round: box.round });
+        return { url: out.toDataURL("image/png"), round: box.round };
       } catch {
-        resolve(null);
+        return null;
       }
+    };
+    img.onload = () => {
+      const result = crop();
+      if (late) trimmed.set(src, Promise.resolve(result));
+      else { clearTimeout(timer); resolve(result); }
     };
     img.onerror = () => resolve(null);
     img.src = src;

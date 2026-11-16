@@ -24,6 +24,11 @@ def _title(recording: dict[str, Any]) -> str:
     return f"{prefix} {title}" if prefix else title
 
 
+def _dict(value: object) -> dict[str, Any]:
+    """An object Veo sent, or empty when it sent something else (read as missing)."""
+    return value if isinstance(value, dict) else {}
+
+
 def _number(value: object) -> float | None:
     return float(value) if isinstance(value, int | float) and not isinstance(value, bool) else None
 
@@ -65,12 +70,12 @@ def library_item(
 ) -> dict[str, Any]:
     """One Veo match in the shape the app's Hudl library uses, plus Veo fields."""
     identity = f"veo-{recording['identifier']}"
-    title = _title({**recording, **(detail or {})})
+    detail = _dict(detail)
+    title = _title({**recording, **detail})
     status = str(recording.get("expiration_status") or "")
     video = best_video(videos)
     available = bool(recording.get("is_accessible")) and status in ACTIVE and video is not None
-    stats = ((detail or {}).get("info") or {}).get("stats") or {}
-    score = stats.get("score_aggregated") if isinstance(stats, dict) else None
+    score = _dict(_dict(detail.get("info")).get("stats")).get("score_aggregated")
     group = age_group(f"{recording.get('team') or ''} {title}")
     moments = [m for m in (moment(h) for h in highlights or []) if m] if available else []
     return {
@@ -84,13 +89,11 @@ def library_item(
         "age_groups": [] if group == "Unclassified" else [group],
         "season_label": season_label(title),
         "capture_key": capture_key(identity),
-        "duration_s": _number((detail or {}).get("duration"))
-        or _number(recording.get("duration"))
-        or 0.0,
+        "duration_s": _number(detail.get("duration")) or _number(recording.get("duration")) or 0.0,
         "expiration_status": status or None,
         "available": available,
         "video_height": video.get("height") if video else None,
-        "home_or_away": (detail or {}).get("own_team_home_or_away") or None,
+        "home_or_away": detail.get("own_team_home_or_away") or None,
         "score": (
             {"ours": score["own"], "theirs": score["opponent"]}
             if isinstance(score, dict)
@@ -98,7 +101,11 @@ def library_item(
             and isinstance(score.get("opponent"), int)
             else None
         ),
-        "halves": [p["timeframe"] for p in periods or [] if isinstance(p.get("timeframe"), list)],
+        "halves": [
+            p["timeframe"]
+            for p in (periods if isinstance(periods, list) else [])
+            if isinstance(p, dict) and isinstance(p.get("timeframe"), list)
+        ],
         "tag_status": "synced" if available else "unsynced",
         "moments": sorted(moments, key=lambda m: m["time_s"]),
     }
@@ -125,19 +132,19 @@ def _event_name(kind: str) -> str:
 def team_data(report: Any, events: Any) -> dict[str, Any]:
     """Decision 009: Veo's match report key stats and its events service, as own v
     opponent. Counts, types, sides and times only; no names, ids or addresses."""
-    report = report if isinstance(report, dict) else {}
-    own_side = (report.get("teams") or {}).get("own_side")
-    key_stats = (report.get("overview") or {}).get("key_stats") or {}
+    report = _dict(report)
+    own_side = _dict(report.get("teams")).get("own_side")
+    key_stats = _dict(_dict(report.get("overview")).get("key_stats"))
     stats: dict[str, Any] = {}
     for name in STATS:
-        full = (key_stats.get(name) or {}).get("full_time") if isinstance(key_stats, dict) else None
+        full = _dict(key_stats.get(name)).get("full_time")
         if isinstance(full, dict) and all(
             isinstance(full.get(k), int) for k in ("own", "opponent")
         ):
             stats[name] = {"own": full["own"], "opponent": full["opponent"]}
-    found = (events or {}).get("events") if isinstance(events, dict) else None
+    found = _dict(events).get("events")
     items: list[dict[str, Any]] = []
-    for event in found or []:
+    for event in found if isinstance(found, list) else []:
         if not isinstance(event, dict) or not isinstance(event.get("eventType"), str):
             continue
         millis = _number(event.get("videoTimeMs"))

@@ -1,5 +1,5 @@
-import { expect, it } from "vitest";
-import { crestBox } from "./crestTrim";
+import { afterEach, expect, it, vi } from "vitest";
+import { crestBox, trimCrest } from "./crestTrim";
 
 // Owner report 2026-11-15: crests looked small. A crest file often has a wide plain margin
 // (and sometimes a faint watermark); the badge crops to the crest itself. Synthetic pixels.
@@ -40,4 +40,25 @@ it("calls a square or shield crest not round, so its corners are not cut off", (
 
 it("gives nothing for a blank image", () => {
   expect(crestBox(image(10, 10, OFF_WHITE, () => null), 10, 10)).toBeNull();
+});
+
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+// Full check 2026-11-16: a crest slower than the 4 s limit showed uncropped, and that
+// "no crop" answer was kept for the whole visit, so the crest never filled its badge
+// even after it had loaded. A crest that loads late is cropped for the next badge.
+it("crops a crest that loaded after the time limit for the badges that ask next", async () => {
+  vi.useFakeTimers();
+  const images: { onload: (() => void) | null; naturalWidth: number; naturalHeight: number }[] = [];
+  vi.stubGlobal("Image", class { onload: (() => void) | null = null; onerror: (() => void) | null = null; naturalWidth = 40; naturalHeight = 40; src = "";
+    constructor() { images.push(this); } });
+  const pixels = image(40, 40, OFF_WHITE, disc(20, 20, 12));
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() =>
+    ({ drawImage: () => undefined, getImageData: () => ({ data: pixels }) }) as unknown as CanvasRenderingContext2D);
+  vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,CROPPED");
+  const first = trimCrest("/api/team-logo?name=Slow%20Town");
+  vi.advanceTimersByTime(4001);
+  expect(await first).toBeNull(); // the badge does not wait
+  images[0].onload?.();
+  expect(await trimCrest("/api/team-logo?name=Slow%20Town")).toEqual({ url: "data:image/png;base64,CROPPED", round: true });
 });

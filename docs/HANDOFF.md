@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-16)
 
+- **Full app check (owner request 2026-11-16):** every gate green before and after;
+  no file over 800 lines (largest `hudl_browser/_account.py`, 773). Three defects fixed,
+  each test watched red first: one Veo match's odd report/details shape (a list where an
+  object was expected) raised AttributeError and stopped the whole Refresh (`_parse`
+  now reads it as missing); `media_range` accepted a Veo answer longer than the range
+  asked for, which the range relay would forward past its promised length (now
+  refused); a crest slower than 4 s stayed uncropped for the whole visit (`crestTrim`
+  now keeps a late crop for the next badge). Verified on a clean copy of main with only
+  these changes, because other sessions had uncommitted work in this checkout. The live
+  app was not opened (it can start a Hudl/Veo refresh).
+
 - **Veo expiry queue (spec 280, owner request 2026-11-16):** Downloaded page panel
   "Before Veo deletes them" (`components/downloads/VeoExpiryPanel`,
   `lib/veoExpiryQueue.ts`): Veo matches with video and no full-match download,

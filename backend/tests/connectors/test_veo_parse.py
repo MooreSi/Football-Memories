@@ -112,6 +112,20 @@ def test_team_data_copes_with_missing_parts() -> None:
     ]
 
 
+# Full check 2026-11-16: one match whose report or details came back in an unexpected
+# shape (a list or number where an object was expected) raised AttributeError, which
+# stopped the whole Refresh. Such a part is now read as missing, like a missing key.
+def test_odd_shapes_in_one_matchs_report_or_details_are_read_as_missing() -> None:
+    assert team_data({"teams": [], "overview": {"key_stats": {"goals": 3}}}, {}) == {
+        "stats": {},
+        "events": [],
+    }
+    assert team_data({"overview": []}, {"events": ["x"]}) == {"stats": {}, "events": []}
+    item = library_item(recording(), {"info": [], "duration": 60.0}, highlights(), ["x"], videos())
+    assert item["score"] is None and item["halves"] == [] and item["duration_s"] == 60.0
+    assert library_item(recording(), {"info": {"stats": []}}, None, None, videos())["score"] is None
+
+
 # Owner request 2026-11-15: Veo labels the sides "Own" and "Opponent" (its web app's
 # own spelling); the first real refresh kept no side for any event.
 def test_team_data_reads_veos_own_and_opponent_labels() -> None:

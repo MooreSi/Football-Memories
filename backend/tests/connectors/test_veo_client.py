@@ -9,6 +9,7 @@ from app.connectors.hudl_capture import CaptureError
 from app.connectors.veo._client import (
     VeoApi,
     confirm_signed_in,
+    media_range,
     sign_in,
     signed_in_header,
     token_http,
@@ -278,3 +279,39 @@ def test_allows_each_sides_team_totals_and_no_other_team_read() -> None:
         with pytest.raises(CaptureError):
             veo.get(path)
     assert len(http.calls) == 2
+
+
+# Full check 2026-11-16: the range relay tells ffmpeg how many bytes follow from the
+# range it asked for. A Veo answer running past that range would make the relay send
+# more than it said, so a part longer than asked for is refused.
+class FakeRangeAnswer:
+    def __init__(self, first: int, last: int, total: int) -> None:
+        self.status = 206
+        self.headers = {"Content-Range": f"bytes {first}-{last}/{total}"}
+        self._body = b"x" * (last - first + 1)
+
+    def __enter__(self) -> "FakeRangeAnswer":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def read(self, limit: int) -> bytes:
+        return self._body[:limit]
+
+
+VIDEO = "https://c.veocdn.com/match/video.mp4"
+
+
+def test_a_range_read_returns_exactly_the_part_asked_for() -> None:
+    start, total, body = media_range(
+        VIDEO, 100, 199, opener=lambda request, timeout: FakeRangeAnswer(100, 199, 5000)
+    )
+    assert (start, total, len(body)) == (100, 5000, 100)
+
+
+def test_a_range_answer_longer_than_asked_for_is_refused() -> None:
+    with pytest.raises(CaptureError):
+        media_range(
+            VIDEO, 100, 199, opener=lambda request, timeout: FakeRangeAnswer(100, 399, 5000)
+        )

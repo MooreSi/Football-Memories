@@ -476,6 +476,12 @@ Learned from a read-only look at the owner's account (owner signed in, 2026-11-1
   Downloads: `veo-<capture_key>-<height>p.mp4` in the download folder, `.part`
   until the length matches and ffprobe reads it, hard-linked into place so an
   existing file is never replaced; recorded in the download index.
+  `media_range` refuses a 206 whose Content-Range ends past the range asked for
+  (full check 2026-11-16): the range relay has already promised ffmpeg that length.
+- Parsing (full check 2026-11-16): `_parse` reads any nested part that is not the
+  object it expects (a list or number where Veo normally sends `{...}`) as missing.
+  Before, one match's odd report or details raised AttributeError and stopped the
+  whole Refresh with "stopped unexpectedly".
 - Owner follow-ups 2026-11-13: Refresh saves one poster per recording from its
   `thumbnail` (c.veocdn.com image, at most 2 MB) into `.veo-account/posters/`,
   missing ones only, 1 s apart; the thumbnail address is not stored; a refusal stops

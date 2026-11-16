@@ -272,7 +272,8 @@ def media_range(
         found = re.fullmatch(
             r"bytes (\d+)-(\d+)/(\d+)", str(response.headers.get("Content-Range") or "")
         )
-        if response.status != 206 or not found or int(found[1]) != start:
+        # An answer past `last` would make the range relay send more than it promised.
+        if response.status != 206 or not found or int(found[1]) != start or int(found[2]) > last:
             raise CaptureError("Veo's video answered in a way the app does not expect.")
         body = response.read(CHUNK)
         if len(body) != int(found[2]) - start + 1:
