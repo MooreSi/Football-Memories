@@ -41,7 +41,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   and keepers on both match pages; season report lines via `seasonGameLines`. A match
   counts only when every goal has a time and they add up to the score (owner-added
   goals have no time, so such a match says why instead). Span: Veo periods, else first
-  to last Hudl tag, else the video. Not deployed (Docker not rebuilt).
+  to last Hudl tag, else the video.
+- **Deployed 2026-11-16** (owner yes): `docker compose up -d --build` at f93f8a0;
+  health ok, live bundle has the expiry panel and the game-state strip. No migration
+  change; helper not restarted (unchanged). The live app was not opened in a browser
+  (it can start a Hudl/Veo refresh); the owner has not looked yet.
 
 - **Veo expiry queue (spec 280, owner request 2026-11-16):** Downloaded page panel
   "Before Veo deletes them" (`components/downloads/VeoExpiryPanel`,
@@ -49,8 +53,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   soonest first, days left estimated as match date + 12 months (picker: 6; owner
   decision 010 open), Veo's `expires-soon` counts as 30 days or less; expired
   matches never saved in a collapsed list. Frontend only, no Veo request.
-  **Not deployed** (Docker not rebuilt): another session had uncommitted spec 270
-  work in this checkout, and a build would have shipped it. Research report behind
+  Deployed with spec 290 (see that entry). Research report behind
   it: `reports/Football Memories improvement ideas.md` (notes in `research_notes/`).
 
 - **Veo Opponents and fuller crests (owner requests 2026-11-15):** with Hudl hidden and
