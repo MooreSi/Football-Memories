@@ -16,6 +16,7 @@ import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsight
 import { TeamStatsTable } from "../components/match/TeamStatsTable";
 import { GoalsPanel } from "../components/match/GoalsPanel";
 import { GameStateStrip } from "../components/match/GameStateStrip";
+import { QuickReels } from "../components/match/QuickReels";
 import { recordAgainst } from "../lib/headToHead";
 import { fixtureParts } from "../lib/hudlFixture";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
@@ -296,6 +297,7 @@ export function VeoMatchFull({ id }: { id: string }) {
       <GoalsPanel match={match} club={null} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <GameStateStrip match={match} club={null} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
+      <QuickReels match={match} club={null} />
       {everything.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>
           {chosen.length > 0 && <Button variant="primary" disabled={!stream} title={stream ? undefined : "Available once the video is ready"} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}

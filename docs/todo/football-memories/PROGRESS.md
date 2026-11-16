@@ -19,6 +19,14 @@ keepers with saves and goals conceded; the owner edits and saves them (preferenc
 confirmed only. Tests: `test_goals.py`, `goals.test.ts`, `report.test.ts`,
 `GoalsPanel.test.tsx`.
 
+## Reel presets (spec 300, owner request 2026-11-16)
+
+`done`: "Quick reels" on Hudl and Veo match pages: the player's moments, team moments
+with the player (our goals/chances overlapping their tags), our goals, every goal, our
+goals and chances (Veo: OUR GOAL/OUR SHOT events). Each opens Reel Studio with that
+selection. No pre/post-roll change (helper untouched). Tests: `reelPresets.test.ts`,
+`QuickReels.test.tsx`.
+
 ## Game-state timeline (spec 290, owner request 2026-11-16)
 
 `done`: "How the score went" on Hudl and Veo match pages (ahead/level/behind strip,

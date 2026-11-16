@@ -36,6 +36,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   these changes, because other sessions had uncommitted work in this checkout. The live
   app was not opened (it can start a Hudl/Veo refresh).
 
+- **Reel presets (spec 300, owner request 2026-11-16):** `lib/reelPresets.ts` and
+  `components/match/QuickReels` above the moments panel on both match pages; buttons
+  navigate to `/clips/reel/new` with the same state Make Highlight Reel sends. Hidden
+  for unsynced Hudl tags or a Veo match without video, and until the primary player
+  and goal entries load. Pre/post-roll per reel not built: it would change what the
+  helper fetches from Hudl (`/safe-change`). Not deployed.
+
 - **Game-state timeline (spec 290, owner request 2026-11-16):** `lib/gameState.ts`
   from spec 270's goals and `matchScore`; `components/match/GameStateStrip` under Goals
   and keepers on both match pages; season report lines via `seasonGameLines`. A match

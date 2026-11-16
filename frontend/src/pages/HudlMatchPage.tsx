@@ -15,6 +15,7 @@ import { MatchInsights } from '../components/match/MatchInsights';
 import { TeamStatsTable } from '../components/match/TeamStatsTable';
 import { GoalsPanel } from '../components/match/GoalsPanel';
 import { GameStateStrip } from '../components/match/GameStateStrip';
+import { QuickReels } from '../components/match/QuickReels';
 import { hudlTeamStats } from '../lib/hudlTeamStats';
 import { MatchDrawing } from '../components/match/MatchDrawing';
 import { looksLikePlayer } from '../lib/hudlPlayer';
@@ -222,6 +223,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       {!embedded && <GoalsPanel match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
       {!embedded && <GameStateStrip match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
       {!embedded && <MatchInsights match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
+      {!embedded && <QuickReels match={match} club={club} />}
       <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
         <div className="flex flex-wrap items-end gap-3">
           <h2 className="mr-auto text-xl font-semibold">Tagged moments & players</h2>
