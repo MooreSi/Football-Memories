@@ -40,7 +40,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   templates) and `components/match/MatchRecap` after How the score went on both match
   pages, with Copy. Half-time: Veo's first period end, Hudl's first END HALF tag. Only
   confirmed scorers/keepers are written. No local LLM (owner decision not asked).
-  Not deployed.
+  Deployed 2026-11-16 at 1f35c4a (frontend container only; health ok, live bundle has
+  Match recap; live app not opened).
 
 - **Reel presets (spec 300, owner request 2026-11-16):** `lib/reelPresets.ts` and
   `components/match/QuickReels` above the moments panel on both match pages; buttons
