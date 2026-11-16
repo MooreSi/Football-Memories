@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Goals and keepers, season top scorers (spec 270, owner requests 2026-11-16)
+
+`done`: match pages (Hudl and Veo) show goals with a likely or confirmed scorer,
+keepers with saves and goals conceded; the owner edits and saves them (preferences
+`goals:<id>`). Match report Scorers/Keeper lines; season report top three scorers,
+confirmed only. Tests: `test_goals.py`, `goals.test.ts`, `report.test.ts`,
+`GoalsPanel.test.tsx`.
+
 ## Veo expiry queue (spec 280, owner request 2026-11-16)
 
 `done`: Downloaded page "Before Veo deletes them": Veo matches with video and no

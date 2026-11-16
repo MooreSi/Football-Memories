@@ -13,6 +13,18 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-16)
 
+- **Goals and keepers (spec 270, owner requests 2026-11-16, owner chose "Both"):**
+  Hudl and Veo name no scorer or keeper (checked on the real caches: Hudl goal tags are
+  team-only with 3 to 4 player tags overlapping each goal; no save tag; Veo has goal
+  times by side, no names, no on-target). `lib/goals.ts` guesses ("Likely"): the player
+  tag overlapping a Hudl goal most, the player most often tagged with our GOAL KEEPER
+  codes, saves = opposition ON TARGET tags not overlapping their goal. A Goals and
+  keepers panel on the Hudl and Veo match pages lists goals (seek), keepers, saves,
+  conceded; Edit lets the owner set scorers, add/remove goals, keepers, saves, keeper
+  beaten. Saved as `preferences` `goals:<match id>` JSON (`GET/PUT /api/goals`). Match
+  report: Scorers and Keeper lines; season report: TOP SCORERS (top three) and goals
+  still unconfirmed. Reports use confirmed names only. Open for the owner: whether the
+  "most overlap" guess matches a game they know.
 - **Full app check (owner request 2026-11-16):** every gate green before and after;
   no file over 800 lines (largest `hudl_browser/_account.py`, 773). Three defects fixed,
   each test watched red first: one Veo match's odd report/details shape (a list where an

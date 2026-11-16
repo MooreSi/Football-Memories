@@ -1,9 +1,9 @@
-"""Settings (clip timing), storage health and score corrections (spec 210)."""
+"""Settings (clip timing), storage health, score corrections (spec 210) and goals (spec 270)."""
 
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -15,13 +15,14 @@ from app.schemas import (
     AppSettingsPatch,
     ArchiveSummaryOut,
     FolderHealthOut,
+    GoalsIn,
     HomeTeamsOut,
     HomeTeamsPatch,
     MissingFileOut,
     ScoreCorrectionIn,
     StorageHealthOut,
 )
-from app.services import app_settings, scores, storage
+from app.services import app_settings, goals, scores, storage
 
 router = APIRouter(prefix="/api")
 Db = Annotated[Session, Depends(get_db)]
@@ -79,3 +80,15 @@ def get_scores(db: Db) -> dict[str, dict[str, int]]:
 def put_score(body: ScoreCorrectionIn, db: Db) -> dict[str, dict[str, int]]:
     scores.correct(db, body.match_id, body.ours, body.theirs)
     return scores.corrections(db)
+
+
+@router.get("/goals")
+def get_goals(db: Db) -> dict[str, dict[str, Any]]:
+    """Spec 270: the owner's scorers and keepers, by match id (Hudl or Veo)."""
+    return goals.entries(db)
+
+
+@router.put("/goals")
+def put_goals(body: GoalsIn, db: Db) -> dict[str, dict[str, Any]]:
+    goals.save(db, body.match_id, body.entry)
+    return goals.entries(db)

@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import type { HudlMatch } from "../api/hudl";
 import { matchReport, seasonReport } from "./report";
+import { matchGoals } from "./goals";
 
 const t = (id: string, category: string, time_s: number, duration_s = 0) => ({ id, category, time_s, duration_s });
 const a: HudlMatch = { id: "a", title: "261101 U11 v Derby County", age_group: "U11", capture_key: "a", moments: [
@@ -59,4 +60,27 @@ it("puts Veo's team stats on a Veo match report, shots on goal and penalties inc
     { label: "Goals", value: "1 - 4" }, { label: "Shots on goal", value: "10 - 28" }, { label: "Corners", value: "5 - 8" },
     { label: "Fouls", value: "6 - 3" }, { label: "Penalties", value: "0 - 0" },
   ]);
+});
+
+// Spec 270 (owner requests 2026-11-16): confirmed scorers and keepers, season top three.
+it("adds the confirmed scorers and keeper to a match report, and nothing for a guess", () => {
+  const confirmed = matchGoals(a, "Aston Villa", { scorers: { "3": "Pat Example", "4": "Pat Example" }, added: [], removed: [],
+    keepers: [{ name: "Chris Hands", saves: 2 }], beaten: {} });
+  const lines = matchReport(a, "Aston Villa", {}, null, undefined, confirmed).lines;
+  expect(lines.slice(-2)).toEqual([{ label: "Scorers", value: "Pat Example 2" }, { label: "Keeper", value: "Chris Hands: 2 saves, 1 conceded" }]);
+  expect(matchReport(a, "Aston Villa", {}, null, undefined, matchGoals(a, "Aston Villa")).lines).toEqual(matchReport(a, "Aston Villa", {}, null).lines);
+});
+
+it("lists a season's top three confirmed scorers and the goals still to confirm", () => {
+  const goals = {
+    a: matchGoals(a, "Aston Villa", { scorers: { "3": "Pat Example" }, added: [], removed: [], keepers: [], beaten: {} }),
+    b: matchGoals(b, "Aston Villa", { scorers: { x: "Ali Test", y: "Pat Example", z: "Zed Other", w: "Bo Demo" },
+      added: ["x", "y", "z", "w"].map((id) => ({ id, side: "ours" as const })), removed: [], keepers: [], beaten: {} }),
+  };
+  const r = seasonReport([a, b], "U11", "Aston Villa", {}, null, goals);
+  expect(r.scorers).toEqual({ lines: [
+    { label: "1. Pat Example", value: "2 goals" }, { label: "2. Ali Test", value: "1 goal" }, { label: "3. Bo Demo", value: "1 goal" },
+  ], note: "1 goal has no confirmed scorer yet" });
+  expect(seasonReport([a, b], "U11", "Aston Villa", {}, null).scorers).toBeNull();
+  expect(seasonReport([b], "U11", "Aston Villa", {}, null, { b: matchGoals(b, "Aston Villa") }).scorers).toBeNull();
 });

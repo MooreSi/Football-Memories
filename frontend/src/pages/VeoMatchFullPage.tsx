@@ -14,6 +14,7 @@ import { SPELL, veoInsights } from "../lib/veoInsights";
 import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSplit";
 import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsights";
 import { TeamStatsTable } from "../components/match/TeamStatsTable";
+import { GoalsPanel } from "../components/match/GoalsPanel";
 import { recordAgainst } from "../lib/headToHead";
 import { fixtureParts } from "../lib/hudlFixture";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
@@ -291,6 +292,7 @@ export function VeoMatchFull({ id }: { id: string }) {
       {own && !status.data?.busy && status.data?.state === "done" && <p role="status" className="text-sm text-ok">{status.data.message} It is listed under Downloaded.{status.data.download_url && <> <a href={status.data.download_url} className="font-semibold text-accent underline">Save the highlights</a></>}</p>}
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
       <VeoTeamStats match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
+      <GoalsPanel match={match} club={null} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       {everything.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>

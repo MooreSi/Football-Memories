@@ -440,6 +440,39 @@ class ScoreCorrectionIn(BaseModel):
         return self
 
 
+GoalName = Annotated[str, Field(min_length=1, max_length=80)]
+GoalId = Annotated[str, Field(min_length=1, max_length=80)]
+
+
+class AddedGoal(BaseModel):
+    """Spec 270: a goal the tags missed, added by the owner."""
+
+    id: GoalId
+    side: Literal["ours", "theirs"]
+
+
+class GoalKeeper(BaseModel):
+    name: GoalName
+    saves: int | None = Field(default=None, ge=0, le=99)
+
+
+class GoalsEntry(BaseModel):
+    """Spec 270: the owner's scorers, added or removed goals and keepers for one match."""
+
+    scorers: dict[GoalId, GoalName] = Field(default_factory=dict, max_length=100)
+    added: list[AddedGoal] = Field(default_factory=list, max_length=100)
+    removed: list[GoalId] = Field(default_factory=list, max_length=100)
+    keepers: list[GoalKeeper] = Field(default_factory=list, max_length=10)
+    beaten: dict[GoalId, GoalName] = Field(default_factory=dict, max_length=100)
+
+
+class GoalsIn(BaseModel):
+    """Spec 270: one match's entry; None clears it."""
+
+    match_id: str = Field(min_length=1, max_length=70)
+    entry: GoalsEntry | None
+
+
 Unit = Annotated[float, Field(ge=0, le=1)]
 
 

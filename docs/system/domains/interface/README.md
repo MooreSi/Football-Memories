@@ -201,3 +201,15 @@ U10 v Stoke City reads 12-9.
   from the title's `YYMMDD` date plus the retention picked (`fm.veo.retentionMonths`,
   12 or 6). "Saved" means a full-match entry in the download index; a moments
   download does not count. A match not expired but with no video is in neither list.
+
+## Goals and keepers (spec 270, 2026-11-16)
+
+- Nothing names a scorer: Hudl player tags overlap a goal 3 to 4 at a time (they mark
+  who was involved), and Veo gives no names. The "Likely" scorer is the most-overlap
+  player; reports never show a guess, only what the owner saved.
+- `looksLikePlayer` treats "keeper" as football vocabulary, so a player whose surname is
+  Keeper would not be found; test names avoid it.
+- Hudl has no save code. Likely saves = opposition ON TARGET tags not overlapping an
+  opposition goal; null (not counted) when the match has no ON TARGET codes at all.
+- Veo goal ids are `t-<own|opponent>-goal-<ms>`, the same as its team moments, so an
+  owner's scorer stays attached across refreshes.

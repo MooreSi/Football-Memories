@@ -15,6 +15,7 @@ import { Spinner } from "../components/ui/Spinner";
 import { useTeamChoice } from "../lib/useTeamChoice";
 import { ageIn, agesIn, cohortOf, inCohort, teamSeasons } from "../lib/teams";
 import { useScoreCorrections } from "../lib/matchScore";
+import { type MatchGoals, matchGoals, useGoalEntries } from "../lib/goals";
 import { type Report, matchReport, seasonReport } from "../lib/report";
 import { useHomeClub } from "../lib/useHomeClub";
 import { fixtureParts } from "../lib/hudlFixture";
@@ -128,6 +129,17 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
   const resultRows = layoutRows(listed.map((k) => ({ label: `${k[0].toUpperCase()}${k.slice(1)} (${report.results![k].length})`,
     value: report.results![k].join(", ") })), y + 20);
   y = resultRows.length ? resultRows[resultRows.length - 1].bottom : y;
+  // Spec 270 (owner request 2026-11-16): the season's top three confirmed scorers.
+  let scorers = null;
+  if (report.scorers) {
+    const top = y + 30;
+    const srows = layoutRows(report.scorers.lines, top + 70);
+    let end = srows.length ? srows[srows.length - 1].bottom : top + 40;
+    scorers = <g data-section="scorers"><text x={REPORT_MARGIN} y={top} fill="#4ade80" fontSize={30} fontWeight={700} letterSpacing={4}>TOP SCORERS</text><Rows rows={srows} />
+      {report.scorers.note && <text x={REPORT_MARGIN} y={end + 10} fill="#94a3b8" fontSize={24}>{report.scorers.note}</text>}</g>;
+    if (report.scorers.note) end += 40;
+    y = end;
+  }
   let player = null;
   if (report.player) {
     const top = y + 30;
@@ -144,6 +156,7 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
       {possession}
       <Rows rows={rows} />
       {resultRows.map((row, i) => <g key={listed[i]} data-results={listed[i]}><Rows rows={[row]} /></g>)}
+      {scorers}
       {player}
       <text x={REPORT_MARGIN} y={H - 60} fill="#64748b" fontSize={26}>Football Memories · from the coaches' tags</text>
     </svg>
@@ -179,6 +192,7 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const veoLibrary = useVeoLibrary();
   const library = veoOnly ? { ...veoLibrary, data: veoLibrary.data?.map(veoAsHudl) } : hudl;
   const corrections = useScoreCorrections();
+  const goalEntries = useGoalEntries();
   const hudlClub = useHomeClub();
   const veoTeam = useVeoTeam();
   const { name } = usePrimaryPlayerName();
@@ -214,8 +228,12 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const scope = veoOnly ? (library.data ?? []).filter((m) => (m.season_label || "Unclassified") === shownSeason && (clubOfId.get(m.id) ?? "Other") === shownClub)
     : team === null ? library.data ?? [] : (library.data ?? []).filter((m) => inCohort(m, team) && m.season_label === shownSeason);
   const veoRows = match && veoOnly ? teamSplit(veoLibrary.data?.find((m) => m.id === match.id)?.team_data) : undefined;
-  const report = match ? matchReport(match, club, corrections.data, name, veoRows)
-    : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name);
+  // Spec 270: each match's goals and keepers (a Veo match counts Veo's own goal events).
+  const veoById = new Map((veoLibrary.data ?? []).map((m) => [m.id, m]));
+  const goalsOf = (m: (typeof scope)[number]): MatchGoals => matchGoals(m.source === "veo" ? veoById.get(m.id) ?? m : m, club, goalEntries.data?.[m.id]);
+  const report = match ? matchReport(match, club, corrections.data, name, veoRows, goalsOf(match))
+    : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name,
+      Object.fromEntries(scope.map((m) => [m.id, goalsOf(m)])));
   const ageOptions = team === null ? [] : [...new Set([...agesIn(library.data, shownSeason), ageIn(team, shownSeason)])].sort((x, y) => x.localeCompare(y, undefined, { numeric: true }));
   const file = `${report.title} ${report.subtitle}`.replace(/[^\w -]+/g, "").trim() || "report";
   return (
