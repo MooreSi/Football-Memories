@@ -194,3 +194,10 @@ U10 v Stoke City reads 12-9.
   same yellow on Kick-off, so the sides could not be told apart.
 - The studio preview loops each card with a fade to black; a screenshot can land on
   the black frame. Sample the canvas or take several before calling it broken.
+
+## Veo expiry queue (spec 280, 2026-11-16)
+
+- Veo gives no expiry date per match, only `expiration_status`; the panel estimates
+  from the title's `YYMMDD` date plus the retention picked (`fm.veo.retentionMonths`,
+  12 or 6). "Saved" means a full-match entry in the download index; a moments
+  download does not count. A match not expired but with no video is in neither list.

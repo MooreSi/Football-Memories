@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Veo expiry queue (spec 280, owner request 2026-11-16)
+
+`done`: Downloaded page "Before Veo deletes them": Veo matches with video and no
+full-match download, soonest estimated expiry first (match date + 12 or 6 months,
+owner decision 010 open), Veo's `expires-soon` counts as 30 days or less; expired
+matches never saved listed. Frontend only, no Veo request. Tests:
+`veoExpiryQueue.test.ts`, `VeoExpiryPanel.test.tsx`.
+
 ## New matches appear on their own; Veo events filters (owner request 2026-11-15)
 
 `done`: Veo list re-read on opening/returning to the app when over 6 h old (not on

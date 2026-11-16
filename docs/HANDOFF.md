@@ -11,7 +11,17 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-15)
+## Current state (2026-11-16)
+
+- **Veo expiry queue (spec 280, owner request 2026-11-16):** Downloaded page panel
+  "Before Veo deletes them" (`components/downloads/VeoExpiryPanel`,
+  `lib/veoExpiryQueue.ts`): Veo matches with video and no full-match download,
+  soonest first, days left estimated as match date + 12 months (picker: 6; owner
+  decision 010 open), Veo's `expires-soon` counts as 30 days or less; expired
+  matches never saved in a collapsed list. Frontend only, no Veo request.
+  **Not deployed** (Docker not rebuilt): another session had uncommitted spec 270
+  work in this checkout, and a build would have shipped it. Research report behind
+  it: `reports/Football Memories improvement ideas.md` (notes in `research_notes/`).
 
 - **Veo Opponents and fuller crests (owner requests 2026-11-15):** with Hudl hidden and
   Veo shown, `/opponents` is built from Veo matches, one club at a time (Club picker,
