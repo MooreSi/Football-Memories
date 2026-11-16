@@ -21,7 +21,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   `lib/matchSummary.ts`). Inactive panels stay mounted, hidden by CSS. Tag rail is
   sticky. Checked in the browser on a real Hudl and Veo match via the new
   `frontend-live-api` launch entry (`FM_API_PROXY`). Not built from the mockup: Team
-  stats in two columns, goals in time order with a running score. Not yet deployed.
+  stats in two columns, goals in time order with a running score. Deployed 2026-11-16
+  at 2b09b47 (frontend container only; health ok, live bundle has the tabs; live app
+  not opened after the deploy).
 
 - **Keepers from goal kicks, with changes (owner request 2026-11-16):** the old keeper
   guess needed a GOAL KEEPER code, which only 2 cached matches have. `lib/goals.ts` now
