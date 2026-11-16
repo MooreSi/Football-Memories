@@ -19,6 +19,14 @@ keepers with saves and goals conceded; the owner edits and saves them (preferenc
 confirmed only. Tests: `test_goals.py`, `goals.test.ts`, `report.test.ts`,
 `GoalsPanel.test.tsx`.
 
+## Game-state timeline (spec 290, owner request 2026-11-16)
+
+`done`: "How the score went" on Hudl and Veo match pages (ahead/level/behind strip,
+score after each goal to watch, rough time shares, comeback / lead-lost story, runs of
+3+ goals); season report adds Scored first, Came from behind, Clean sheets and Goal
+times known. Only matches whose goals are all timed and add up to the score count.
+Tests: `gameState.test.ts`, `GameStateStrip.test.tsx`, `report.test.ts`.
+
 ## Veo expiry queue (spec 280, owner request 2026-11-16)
 
 `done`: Downloaded page "Before Veo deletes them": Veo matches with video and no

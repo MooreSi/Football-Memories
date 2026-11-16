@@ -84,3 +84,12 @@ it("lists a season's top three confirmed scorers and the goals still to confirm"
   expect(seasonReport([a, b], "U11", "Aston Villa", {}, null).scorers).toBeNull();
   expect(seasonReport([b], "U11", "Aston Villa", {}, null, { b: matchGoals(b, "Aston Villa") }).scorers).toBeNull();
 });
+
+// Spec 290: how games went, from matches whose every goal has a time and adds up to the score.
+it("adds scored first, clean sheets and how many matches they come from to a season with goals", () => {
+  const r = seasonReport([a, b], "U11", "Aston Villa", {}, null, { a: matchGoals(a, "Aston Villa"), b: matchGoals(b, "Aston Villa") });
+  expect(r.lines.slice(-3)).toEqual([
+    { label: "Scored first", value: "1 (won 1, drew 0, lost 0)" }, { label: "Clean sheets", value: "0" }, { label: "Goal times known", value: "1 of 2 matches" },
+  ]);
+  expect(r.lines.slice(0, -3)).toEqual(seasonReport([a, b], "U11", "Aston Villa", {}, null).lines);
+});

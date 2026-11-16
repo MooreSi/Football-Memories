@@ -14,6 +14,7 @@ import { markHudlMomentWatched } from '../lib/hudlWatched';
 import { MatchInsights } from '../components/match/MatchInsights';
 import { TeamStatsTable } from '../components/match/TeamStatsTable';
 import { GoalsPanel } from '../components/match/GoalsPanel';
+import { GameStateStrip } from '../components/match/GameStateStrip';
 import { hudlTeamStats } from '../lib/hudlTeamStats';
 import { MatchDrawing } from '../components/match/MatchDrawing';
 import { looksLikePlayer } from '../lib/hudlPlayer';
@@ -219,6 +220,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       {own && status.data?.download_url && <div className="panel flex flex-wrap items-center gap-4 p-4"><a className="font-semibold text-accent underline" href={status.data.download_url}>{downloadLabel(status.data.filename,status.data.download_kind)}</a>{status.data.download_kind!=='moments' && !status.data.filename?.startsWith('hudl-moments-') && !status.data.filename?.endsWith('.zip') && <Link to="/import" className="text-sm text-fg-muted underline">{match.tag_status === 'unsynced' ? 'Import offline match' : 'Import offline match and tags'}</Link>}<Button onClick={() => action.mutate({ action: 'stream', match_id: id })} disabled={busy}>Resume stream</Button></div>}
       {!embedded && <HudlTeamStats moments={moments} club={club} />}
       {!embedded && <GoalsPanel match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
+      {!embedded && <GameStateStrip match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
       {!embedded && <MatchInsights match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
       <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
         <div className="flex flex-wrap items-end gap-3">

@@ -36,6 +36,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   these changes, because other sessions had uncommitted work in this checkout. The live
   app was not opened (it can start a Hudl/Veo refresh).
 
+- **Game-state timeline (spec 290, owner request 2026-11-16):** `lib/gameState.ts`
+  from spec 270's goals and `matchScore`; `components/match/GameStateStrip` under Goals
+  and keepers on both match pages; season report lines via `seasonGameLines`. A match
+  counts only when every goal has a time and they add up to the score (owner-added
+  goals have no time, so such a match says why instead). Span: Veo periods, else first
+  to last Hudl tag, else the video. Not deployed (Docker not rebuilt).
+
 - **Veo expiry queue (spec 280, owner request 2026-11-16):** Downloaded page panel
   "Before Veo deletes them" (`components/downloads/VeoExpiryPanel`,
   `lib/veoExpiryQueue.ts`): Veo matches with video and no full-match download,

@@ -15,6 +15,7 @@ import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSpli
 import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsights";
 import { TeamStatsTable } from "../components/match/TeamStatsTable";
 import { GoalsPanel } from "../components/match/GoalsPanel";
+import { GameStateStrip } from "../components/match/GameStateStrip";
 import { recordAgainst } from "../lib/headToHead";
 import { fixtureParts } from "../lib/hudlFixture";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
@@ -293,6 +294,7 @@ export function VeoMatchFull({ id }: { id: string }) {
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}
       <VeoTeamStats match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <GoalsPanel match={match} club={null} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
+      <GameStateStrip match={match} club={null} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       <VeoInsights match={match} onSeek={time => { setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />
       {everything.length > 0 && <section className="panel space-y-4 p-5" aria-label="Veo highlight moments">
         <div className="flex flex-wrap items-center gap-3"><h2 className="mr-auto text-xl font-semibold">Veo highlights</h2>

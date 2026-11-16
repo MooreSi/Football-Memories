@@ -213,3 +213,10 @@ U10 v Stoke City reads 12-9.
   opposition goal; null (not counted) when the match has no ON TARGET codes at all.
 - Veo goal ids are `t-<own|opponent>-goal-<ms>`, the same as its team moments, so an
   owner's scorer stays attached across refreshes.
+
+## Game-state timeline (spec 290, 2026-11-16)
+
+- Goals come from `matchGoals` (spec 270), so owner edits count; an owner-added goal
+  has no time, which makes that match incomplete for game state by design.
+- Hudl's tagged score and `goals.ts` can disagree (a single unplaced "<club> GOAL"
+  code with no club set): such a match shows "no score" and is left out.

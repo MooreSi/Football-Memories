@@ -1,3 +1,4 @@
+import { gameState, seasonGameLines } from "./gameState";
 import type { HudlMatch } from "../api/hudl";
 import { opponentRecords } from "./headToHead";
 import { fixtureDate, fixtureParts, latestFirst, ukDate } from "./hudlFixture";
@@ -60,6 +61,12 @@ function scorerSection(matches: HudlMatch[], goals: Record<string, MatchGoals> |
     note: unconfirmed ? `${plural(unconfirmed)} ${unconfirmed === 1 ? "has" : "have"} no confirmed scorer yet` : null };
 }
 
+/** Spec 290: scored first, came from behind, clean sheets, from fully timed matches only. */
+function gameLines(matches: HudlMatch[], club: string | null, corrections: Corrections | undefined, goals: Record<string, MatchGoals>) {
+  const scores = matches.map((m) => matchScore(m, club, corrections));
+  return seasonGameLines(matches.map((m, i) => (goals[m.id] ? gameState(goals[m.id].goals, scores[i]) : { complete: false as const, reason: "" })), scores);
+}
+
 export function seasonReport(matches: HudlMatch[], scope: string, club: string | null, corrections: Corrections | undefined, player: string | null,
   goals?: Record<string, MatchGoals>): Report {
   const records = opponentRecords(matches, club, corrections);
@@ -87,6 +94,7 @@ export function seasonReport(matches: HudlMatch[], scope: string, club: string |
       ...(scored ? [{ label: "Goals", value: `${sum("goalsFor")} - ${sum("goalsAgainst")}` }] : []),
       { label: "Opponents", value: String(records.length) },
       ...(records[0] ? [{ label: "Most played", value: `${records[0].opponent} (${records[0].played})` }] : []),
+      ...(goals ? gameLines(matches, club, corrections, goals) : []),
     ],
     player: v && player && v.moments ? { name: player, lines: [
       { label: "Matches tagged", value: String(v.matches) },
