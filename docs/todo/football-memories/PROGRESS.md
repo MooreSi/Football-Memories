@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Match page summary strip and tabs (spec 320, owner request 2026-11-16)
+
+`done`: Hudl and Veo match pages put a momentum timeline (playhead, click to watch) and
+a summary strip (possession, chances/attempts, on target, corners, who was in goal)
+under the video, then tabs Moments | Team stats | Goals and keepers | Insights, Moments
+first; empty tabs are left out. Tag rail sticks beside the page. Tests:
+`matchSummary.test.ts`, `MatchTabs.test.tsx`. Not built from the mockup: Team stats in
+two columns, goals in time order with a running score.
+
 ## Goals and keepers, season top scorers (spec 270, owner requests 2026-11-16)
 
 `done`: match pages (Hudl and Veo) show goals with a likely or confirmed scorer,

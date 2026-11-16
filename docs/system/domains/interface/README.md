@@ -239,3 +239,19 @@ U10 v Stoke City reads 12-9.
   has no time, which makes that match incomplete for game state by design.
 - Hudl's tagged score and `goals.ts` can disagree (a single unplaced "<club> GOAL"
   code with no club set): such a match shows "no score" and is left out.
+
+## Match page tabs (spec 320, 2026-11-16)
+
+- `components/match/MatchSections` lays out both match pages under the video: the
+  momentum bars as "Match timeline" (compact, with playhead), the summary strip
+  (`lib/matchSummary.ts`), then tabs. Inactive tab panels stay mounted and are hidden by
+  the `hidden` class, not the `hidden` attribute: a Goals and keepers edit survives a tab
+  switch. jsdom loads no CSS, so tests see every panel; tests of the tabs themselves
+  check `aria-selected` and the `hidden` class.
+- The timeline's chart is labelled "Match timeline" and Insights keeps "Momentum chart",
+  so tests that look the chart up by name find one each.
+- Team stats stays one table (narrowed to `max-w-3xl`): two tables would repeat the
+  column headers for screen readers.
+- `FM_API_PROXY=http://127.0.0.1:8765` (launch entry `frontend-live-api`) runs the dev
+  server against the running app's API, to check a layout on real data. Opening a match
+  page there starts that match's stream, as in the app.

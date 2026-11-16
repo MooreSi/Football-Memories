@@ -42,6 +42,8 @@ cd frontend && npm install && npm run dev     # http://127.0.0.1:5173, proxies /
 
 `.claude/launch.json` has `backend` and `frontend` entries for the Claude
 desktop preview with the same settings.
+`frontend-live-api` runs the dev server with `FM_API_PROXY=http://127.0.0.1:8765`,
+so `/api` goes to the running Docker app instead (real data; read it like the app).
 
 ## Database migrations
 

@@ -18,7 +18,9 @@ import { QuickReels } from '../components/match/QuickReels';
 import { hudlTeamStats } from '../lib/hudlTeamStats';
 import { MatchDrawing } from '../components/match/MatchDrawing';
 import { looksLikePlayer } from '../lib/hudlPlayer';
-import { phases } from '../lib/insights';
+import { momentum, phases } from '../lib/insights';
+import { fixtureParts } from '../lib/hudlFixture';
+import { MatchSections } from '../components/match/MatchSections';
 import { sameCode } from '../lib/codes';
 import { useNotes, useRecordWatching, useSaveNote } from '../lib/viewerState';
 
@@ -180,10 +182,29 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   }, [drawing, streamUrl]);
 
   if (!match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">{library.isPending ? 'Loading cached match…' : 'This match is not cached. Refresh Hudl from Library.'}</p></div>;
+  const seekTo = (time: number) => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); };
+  const theirs = fixtureParts(match.title, club)?.opponent ?? 'Opposition';
+  const teamRows = hudlTeamStats(moments, club);
+  const momentsPanel = <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
+        <div className="flex flex-wrap items-end gap-3">
+          <h2 className="mr-auto text-xl font-semibold">Tagged moments & players</h2>
+          <label className="text-xs text-fg-muted lg:hidden">Tagged code / player<select className="field mt-1" aria-label="Tagged code / player" value={codes.find(c => sameCode(c, code)) ?? code} onChange={e => { setCode(e.target.value); setSelected([]); }}><option value="">All tagged moments</option>{codes.map(c => <option key={c}>{c}</option>)}</select></label>
+          {phaseList.length > 0 && <Button aria-pressed={phasesOnly} variant={phasesOnly ? 'primary' : 'subtle'} onClick={() => { setPhasesOnly(v => !v); setSelected([]); }}><Route size={16} /> Attacks ending in a chance ({phaseList.length})</Button>}
+          {chosen.length > 0 && <Button variant="primary" disabled={!streamUrl} title={streamUrl ? undefined : 'Available once the stream is ready'} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
+          <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : picked.length ? 'player / code moments' : 'all moments'}</Button>
+          <Button disabled={!chosen.length || match.tag_status === 'unsynced'} onClick={() => navigate('/clips/reel/new', { state: { name: picked.length ? `${picked.join(' + ')} highlights` : undefined, items: [{ match_id: id, moment_ids: chosen }] } })}><Clapperboard size={16} /> Make Highlight Reel</Button>
+        </div>
+        {moments.length > 0 && <p className="text-xs text-pin">Tags cached locally · No full-match download required</p>}
+        <p className="text-xs text-fg-muted">{filtered.length} tagged ranges. Play Tagged plays each chosen moment back to back. Downloads fetch only the selected moments, keep the original resolution and are encoded as H.264 for easy playback.</p>
+        {code && <Link to={`/player/hudl/${encodeURIComponent(code)}`}><Button>See every match tagged “{code}”</Button></Link>}
+        {match.tag_status === 'unsynced' && <p role="note" className="rounded-xl border border-warn/20 bg-warn/5 p-4 text-sm text-fg-muted">Hudl has not marked this tag timeline as synced. You can still stream or download the full match. Tagged moment and player downloads are unavailable until verified timings are available.</p>}
+        {!moments.length && match.tag_status !== 'unsynced' && <p className="text-sm text-fg-muted">Tags load and cache when you open this match, independently of full-match downloads. Videos without supported tags can still stream.</p>}
+        <ul ref={list} className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">{filtered.map(m => <li data-moment={m.id} aria-current={active?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${active?.id === m.id ? 'border-ok bg-ok/10 ring-2 ring-inset ring-ok' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => watch(m)}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{phaseOf.has(m.id) ? `${phaseOf.get(m.id)!.outcome === 'goal' ? 'Goal' : 'Chance'}: ${phaseOf.get(m.id)!.steps.join(' → ')}` : m.category}</span>{noted.get(m.id)?.text && <span className="block truncate text-xs text-fg-muted">{noted.get(m.id)!.text}</span>}</button>{noted.has(m.id) && <StickyNote size={14} aria-label="Has a note" className="text-pin" />}<Play size={14} /></li>)}</ul>
+      </section>;
   return <div className="analysis-workspace">
-    <aside className="analysis-rail panel overflow-hidden">
+    <aside className="analysis-rail moments-rail panel flex flex-col overflow-hidden">
       <div className="space-y-2 border-b border-line p-4">{!embedded && <Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link>}<h2 className="text-sm font-semibold">{match.title}</h2><p className="text-xs text-fg-subtle">{match.age_group} · {moments.length} moments</p></div>
-      <div className="max-h-[75vh] overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <button className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? 'bg-blue-600 text-white' : 'text-fg-muted'}`} aria-pressed={!picked.length} onClick={() => { setCode(''); setSelected([]); }}>ALL MOMENTS <span>{moments.length}</span></button>
         {codes.map(c => <button key={c} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs ${picked.some(x => sameCode(x, c)) ? 'bg-blue-600 text-white' : 'text-fg-muted hover:bg-white/5'}`} aria-pressed={picked.some(x => sameCode(x, c))} onClick={() => { toggle(c); setSelected([]); }}><span className="truncate">{c}</span><span>{moments.filter(m => m.category === c).length}</span></button>)}
       </div>
@@ -218,26 +239,12 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       {own && <p role="status" className={`text-sm ${status.data?.state === 'error' ? 'text-danger' : 'text-fg-muted'}`}>{status.data?.message}</p>}
       {action.isError && <p role="alert" className="text-danger">{action.error.message}</p>}
       {own && status.data?.download_url && <div className="panel flex flex-wrap items-center gap-4 p-4"><a className="font-semibold text-accent underline" href={status.data.download_url}>{downloadLabel(status.data.filename,status.data.download_kind)}</a>{status.data.download_kind!=='moments' && !status.data.filename?.startsWith('hudl-moments-') && !status.data.filename?.endsWith('.zip') && <Link to="/import" className="text-sm text-fg-muted underline">{match.tag_status === 'unsynced' ? 'Import offline match' : 'Import offline match and tags'}</Link>}<Button onClick={() => action.mutate({ action: 'stream', match_id: id })} disabled={busy}>Resume stream</Button></div>}
-      {!embedded && <HudlTeamStats moments={moments} club={club} />}
-      {!embedded && <GoalsPanel match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
-      {!embedded && <MatchInsights match={match} club={club} onSeek={time => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); }} />}
-      {!embedded && <QuickReels match={match} club={club} />}
-      <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
-        <div className="flex flex-wrap items-end gap-3">
-          <h2 className="mr-auto text-xl font-semibold">Tagged moments & players</h2>
-          <label className="text-xs text-fg-muted lg:hidden">Tagged code / player<select className="field mt-1" aria-label="Tagged code / player" value={codes.find(c => sameCode(c, code)) ?? code} onChange={e => { setCode(e.target.value); setSelected([]); }}><option value="">All tagged moments</option>{codes.map(c => <option key={c}>{c}</option>)}</select></label>
-          {phaseList.length > 0 && <Button aria-pressed={phasesOnly} variant={phasesOnly ? 'primary' : 'subtle'} onClick={() => { setPhasesOnly(v => !v); setSelected([]); }}><Route size={16} /> Attacks ending in a chance ({phaseList.length})</Button>}
-          {chosen.length > 0 && <Button variant="primary" disabled={!streamUrl} title={streamUrl ? undefined : 'Available once the stream is ready'} onClick={playTagged}><Play size={16} /> Play Tagged ({chosen.length})</Button>}
-          <Button disabled={busy || !chosen.length} onClick={() => setAsking(true)}><Download size={16} /> Download {selected.length ? 'selected moments' : picked.length ? 'player / code moments' : 'all moments'}</Button>
-          <Button disabled={!chosen.length || match.tag_status === 'unsynced'} onClick={() => navigate('/clips/reel/new', { state: { name: picked.length ? `${picked.join(' + ')} highlights` : undefined, items: [{ match_id: id, moment_ids: chosen }] } })}><Clapperboard size={16} /> Make Highlight Reel</Button>
-        </div>
-        {moments.length > 0 && <p className="text-xs text-pin">Tags cached locally · No full-match download required</p>}
-        <p className="text-xs text-fg-muted">{filtered.length} tagged ranges. Play Tagged plays each chosen moment back to back. Downloads fetch only the selected moments, keep the original resolution and are encoded as H.264 for easy playback.</p>
-        {code && <Link to={`/player/hudl/${encodeURIComponent(code)}`}><Button>See every match tagged “{code}”</Button></Link>}
-        {match.tag_status === 'unsynced' && <p role="note" className="rounded-xl border border-warn/20 bg-warn/5 p-4 text-sm text-fg-muted">Hudl has not marked this tag timeline as synced. You can still stream or download the full match. Tagged moment and player downloads are unavailable until verified timings are available.</p>}
-        {!moments.length && match.tag_status !== 'unsynced' && <p className="text-sm text-fg-muted">Tags load and cache when you open this match, independently of full-match downloads. Videos without supported tags can still stream.</p>}
-        <ul ref={list} className="grid max-h-[600px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{filtered.map(m => <li data-moment={m.id} aria-current={active?.id === m.id ? true : undefined} className={`tile flex items-center gap-3 p-3 ${active?.id === m.id ? 'border-ok bg-ok/10 ring-2 ring-inset ring-ok' : ''}`} key={m.id}><input type="checkbox" aria-label={`Select ${m.category} at ${formatClock(m.time_s)}`} checked={selected.includes(m.id)} onChange={e => setSelected(s => e.target.checked ? [...s, m.id] : s.filter(x => x !== m.id))} /><button className="min-w-0 flex-1 text-left" onClick={() => watch(m)}><span className="text-xs text-pin">{formatClock(m.time_s)}</span><span className="block truncate text-sm">{phaseOf.has(m.id) ? `${phaseOf.get(m.id)!.outcome === 'goal' ? 'Goal' : 'Chance'}: ${phaseOf.get(m.id)!.steps.join(' → ')}` : m.category}</span>{noted.get(m.id)?.text && <span className="block truncate text-xs text-fg-muted">{noted.get(m.id)!.text}</span>}</button>{noted.has(m.id) && <StickyNote size={14} aria-label="Has a note" className="text-pin" />}<Play size={14} /></li>)}</ul>
-      </section>
+      {embedded ? momentsPanel : <MatchSections match={match} club={club} rows={teamRows} flow={momentum(moments, club, match.duration_s)}
+        ours={club || 'Us'} theirs={theirs} now={now} onSeek={seekTo}
+        moments={<><QuickReels match={match} club={club} />{momentsPanel}</>} momentsCount={moments.length}
+        stats={teamRows.length ? <HudlTeamStats moments={moments} club={club} /> : null}
+        goals={<GoalsPanel match={match} club={club} onSeek={seekTo} />}
+        insights={<MatchInsights match={match} club={club} onSeek={seekTo} />} />}
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}
   </div>;

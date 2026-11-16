@@ -42,18 +42,22 @@ export function MomentumChart({ match, club, theirs, onSeek }: { match: HudlMatc
 }
 
 /** The momentum bars themselves, for Hudl tags or Veo's team events (owner request 2026-11-15). */
-export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek }: { rows: Minute[]; halves: number[]; ours: string; theirs: string; caption: string; onSeek?: (time: number) => void }) {
+/** Spec 320: `label` and `now` let the same bars run under the video as the match
+ *  timeline, compact, with a playhead at the current time. */
+export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek, label = "Momentum chart", title = "Momentum, minute by minute", now, compact = false }:
+  { rows: Minute[]; halves: number[]; ours: string; theirs: string; caption?: string; onSeek?: (time: number) => void; label?: string; title?: string; now?: number; compact?: boolean }) {
   if (!rows.length) return null;
   const max = Math.max(1, ...rows.flatMap((r) => [r.ours, r.theirs]));
   const w = 6, gap = 1, h = 44, width = rows.length * (w + gap);
+  const head = now === undefined ? null : Math.min(width, (now / 60) * (w + gap));
   return (
     <figure className="space-y-1">
       <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-fg-muted">
-        <span>Momentum, minute by minute</span>
+        <span>{title}</span>
         <span><span style={{ color: OURS }}>▲ {ours}</span> · <span style={{ color: THEIRS }}>▼ {theirs}</span></span>
       </figcaption>
       <div className="overflow-x-auto">
-        <svg role="img" aria-label="Momentum chart" viewBox={`0 0 ${width} ${h * 2 + 8}`} className="h-32 w-full min-w-[320px]" preserveAspectRatio="none">
+        <svg role="img" aria-label={label} viewBox={`0 0 ${width} ${h * 2 + 8}`} className={`${compact ? "h-16" : "h-32"} w-full min-w-[320px]`} preserveAspectRatio="none">
           <line x1={0} x2={width} y1={h + 4} y2={h + 4} stroke="rgb(255 255 255 / 0.15)" />
           {halves.map((t) => <line key={t} data-half x1={(t / 60) * (w + gap)} x2={(t / 60) * (w + gap)} y1={0} y2={h * 2 + 8} stroke="rgb(255 255 255 / 0.35)" strokeDasharray="2 2" />)}
           {rows.map((r) => {
@@ -68,9 +72,10 @@ export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek }: { 
               {r.goals.theirs > 0 && <circle cx={x + w / 2} cy={Math.min(h * 2 + 5, h + 4 + down + 4)} r={2.5} fill="#fff" />}
             </g>;
           })}
+          {head !== null && <line data-playhead x1={head} x2={head} y1={0} y2={h * 2 + 8} stroke="#fff" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />}
         </svg>
       </div>
-      <p className="text-[11px] text-fg-subtle">{caption}</p>
+      {caption && <p className="text-[11px] text-fg-subtle">{caption}</p>}
     </figure>
   );
 }
@@ -114,10 +119,15 @@ export function MatchInsights({ match, club, onSeek }: { match: HudlMatch; club:
   return (
     <section aria-label="Match insights" className="panel space-y-5 p-5">
       <div className="flex items-center gap-2"><Activity size={16} className="text-accent" aria-hidden /><h2 className="text-lg font-semibold">Match insights</h2></div>
-      {!poss && !hasMomentum && <p className="text-sm text-fg-muted">The tags for this match do not say who had the ball or attacked when.</p>}
-      {poss && <PossessionBar value={poss} ours={club || "Us"} theirs={theirs} />}
-      <MomentumChart match={match} club={club} theirs={theirs} onSeek={onSeek} />
-      <HeadToHead match={match} club={club} />
+      {/* Spec 320: the record against this opponent sits beside this match's charts. */}
+      <div className="flex flex-wrap gap-8">
+        <div className="min-w-0 flex-[999_1_480px] space-y-5">
+          {!poss && !hasMomentum && <p className="text-sm text-fg-muted">The tags for this match do not say who had the ball or attacked when.</p>}
+          {poss && <PossessionBar value={poss} ours={club || "Us"} theirs={theirs} />}
+          <MomentumChart match={match} club={club} theirs={theirs} onSeek={onSeek} />
+        </div>
+        <div className="min-w-0 flex-[1_1_260px] empty:hidden"><HeadToHead match={match} club={club} /></div>
+      </div>
     </section>
   );
 }

@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-16)
 
+- **Match page tabs (spec 320, owner request 2026-11-16, "implement option A" from
+  layout mockups):** Hudl and Veo match pages now put a compact momentum timeline
+  (playhead, click to watch) and a summary strip (possession, chances/attempts, on
+  target, corners, who was in goal) under the video, then tabs Moments | Team stats |
+  Goals and keepers | Insights, Moments first (`components/match/MatchSections`,
+  `lib/matchSummary.ts`). Inactive panels stay mounted, hidden by CSS. Tag rail is
+  sticky. Checked in the browser on a real Hudl and Veo match via the new
+  `frontend-live-api` launch entry (`FM_API_PROXY`). Not built from the mockup: Team
+  stats in two columns, goals in time order with a running score. Not yet deployed.
+
 - **Keepers from goal kicks, with changes (owner request 2026-11-16):** the old keeper
   guess needed a GOAL KEEPER code, which only 2 cached matches have. `lib/goals.ts` now
   votes at each of our goal kicks (the player whose tag is running at the kick, started

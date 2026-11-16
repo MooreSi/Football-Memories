@@ -3,7 +3,7 @@ import type { TeamRow } from "../../lib/veoTeamSplit";
 /** Us v them, a row per stat with a split bar. Shared by Veo and Hudl match pages
  *  (owner request 2026-11-15). */
 export function TeamStatsTable({ rows, ours, theirs = "Opponent" }: { rows: TeamRow[]; ours: string; theirs?: string }) {
-  return <table className="w-full text-sm tabular-nums">
+  return <table className="mx-auto w-full max-w-3xl text-sm tabular-nums">
     <thead><tr className="text-xs text-fg-subtle">
       <th scope="col" className="w-1/4 pb-2 text-left font-medium">{ours}</th>
       <th scope="col" className="pb-2 font-medium"><span className="sr-only">Stat</span></th>
