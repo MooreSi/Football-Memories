@@ -20,7 +20,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   END HALF tag. Saves and conceded go to whoever was in goal then (also for confirmed
   keepers when the owner did not name one). Panel shows "In goal to/from" when there was
   a change. On the cache: a keeper on 143 of 152 matches, a change on 47, 57 of 62 at an
-  END HALF. Not deployed yet; live app not opened. Open for the owner: whether the
+  END HALF. Deployed 2026-11-16 at 6855cbe (frontend container only; health ok, live
+  bundle has the keeper spells; live app not opened). Open for the owner: whether the
   spells match games they remember.
 
 - **Likely scorer and panels removed (owner request 2026-11-16):** the owner said
