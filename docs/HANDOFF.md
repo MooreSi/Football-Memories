@@ -59,7 +59,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   "Before Veo deletes them" (`components/downloads/VeoExpiryPanel`,
   `lib/veoExpiryQueue.ts`): Veo matches with video and no full-match download,
   soonest first, days left estimated as match date + 12 months (picker: 6; owner
-  decision 010 open), Veo's `expires-soon` counts as 30 days or less; expired
+  decision 010: owner confirmed 12), Veo's `expires-soon` counts as 30 days or less; expired
   matches never saved in a collapsed list. Frontend only, no Veo request.
   Deployed with spec 290 (see that entry). Research report behind
   it: `reports/Football Memories improvement ideas.md` (notes in `research_notes/`).
@@ -70,8 +70,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Opening an opponent shows Veo's stats summed over the meetings that have them (Shots
   on goal, Corners, Fouls, Free kicks, Penalties) and links each game to `/veo/<id>`.
   Across all seasons the Club list is long: older Veo titles put the home side first
-  ("Redditch United vs RCW"), so opponents appear as clubs; an open question for the
-  owner. Crests: `lib/crestTrim.ts` crops a crest file's plain margin in the browser
+  ("Redditch United vs RCW"), so opponents appear as clubs. Owner answer 2026-11-16:
+  leave as is (first-named side stays the club). Crests: `lib/crestTrim.ts` crops a crest file's plain margin in the browser
   (canvas; the file is never changed); a round crest then fills 94% of the badge, a
   square or shield one 74%; the report uses the same crop. No canvas (the test DOM)
   shows the crest as before; a load that never finishes falls back after 4 s.
@@ -92,8 +92,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   both sides, so "Racing Club Warwick" can match at all. Live: found Racing Club
   Warwick, Tamworth, Solihull Moors, Coleshill Town; not Bolehall Swifts (Wikipedia
   has it). **Still open:** the Veo account crest (Racing Club Warwick's) was saved as
-  Norton Lindsay's by `useVeoClubCrest`; changing that rule and replacing the saved
-  file also waits for the owner.
+  Norton Lindsay's by `useVeoClubCrest`. Owner answer 2026-11-16: move it to Racing
+  Club Warwick and stop saving the account crest under the Veo team name; not done
+  yet (code change plus replacing a saved crest file).
 
 - **Veo season report split by club (owner request 2026-11-15):** the Veo account
   films Norton Lindsay ("NL ...") and Racing Club Warwick ("RCW ...", "Racing ...").
@@ -115,8 +116,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   coming back to the tab (`useReturns`), never on `/veo/` or `/clips`.
   `useHudlAutoCheck` now also re-checks on coming back (list re-read only; the tag
   sweep stays once per load). Each browser waits 6 h after a try
-  (`fm.{veo,hudl}.autocheck.tried`). Decision 003 records it; a shorter interval is
-  open for the owner. Veo highlights panel also has Highlights / Veo events filters.
+  (`fm.{veo,hudl}.autocheck.tried`). Decision 003 records it; owner answer 2026-11-16:
+  keep 6 hours. Veo highlights panel also has Highlights / Veo events filters.
 
 - **Reel score and team stats cards, Hudl team stats (owner request 2026-11-15):**
   reel studio "Show the score" (match card shows the score instead of VS; Veo score,

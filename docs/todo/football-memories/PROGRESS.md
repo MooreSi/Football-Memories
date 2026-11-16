@@ -39,7 +39,7 @@ Tests: `gameState.test.ts`, `GameStateStrip.test.tsx`, `report.test.ts`.
 
 `done`: Downloaded page "Before Veo deletes them": Veo matches with video and no
 full-match download, soonest estimated expiry first (match date + 12 or 6 months,
-owner decision 010 open), Veo's `expires-soon` counts as 30 days or less; expired
+owner decision 010: owner confirmed 12), Veo's `expires-soon` counts as 30 days or less; expired
 matches never saved listed. Frontend only, no Veo request. Tests:
 `veoExpiryQueue.test.ts`, `VeoExpiryPanel.test.tsx`.
 

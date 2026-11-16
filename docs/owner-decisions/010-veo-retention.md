@@ -1,6 +1,6 @@
 # 010: How long Veo keeps match video on the owner's clubs
 
-**Status:** open
+**Status:** answered 2026-11-16
 **Raised by:** Veo expiry queue (spec 280), 2026-11-16
 
 ## The question
@@ -27,4 +27,6 @@ counts as 30 days or less, whatever the estimate says.
 6 months: the default becomes 6. Different plans per club: the setting is kept per club
 (the app already knows each match's club, `lib/veoClubs.ts`).
 
-ANSWER:
+ANSWER: (owner, 2026-11-16, asked in chat) Both clubs keep video 12 months (Team,
+Club or Enterprise plan). The provisional default of 12 months for all Veo matches
+stays; no per-club setting is needed. The panel's 6-month choice stays available.

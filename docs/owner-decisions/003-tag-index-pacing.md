@@ -40,4 +40,7 @@ The pause and failure limit live in `BrowserConnection._sync_tags`
 (`backend/app/connectors/hudl_browser.py`). A slower answer only means the
 first sweep takes longer.
 
-ANSWER:
+ANSWER: (partial; owner, 2026-11-16, asked in chat) Automatic re-read interval:
+keep 6 hours for both Hudl and Veo (on opening the app or coming back to it, each
+browser waiting 6 hours after a try). The sweep pacing (2.5 s pause, failure limits)
+was not asked and stays provisional.
