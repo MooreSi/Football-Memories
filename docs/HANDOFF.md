@@ -41,7 +41,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   navigate to `/clips/reel/new` with the same state Make Highlight Reel sends. Hidden
   for unsynced Hudl tags or a Veo match without video, and until the primary player
   and goal entries load. Pre/post-roll per reel not built: it would change what the
-  helper fetches from Hudl (`/safe-change`). Not deployed.
+  helper fetches from Hudl (`/safe-change`). Deployed 2026-11-16 at 55a52eb (frontend
+  container only; health ok, live bundle has Quick reels; live app not opened).
 
 - **Game-state timeline (spec 290, owner request 2026-11-16):** `lib/gameState.ts`
   from spec 270's goals and `matchScore`; `components/match/GameStateStrip` under Goals
