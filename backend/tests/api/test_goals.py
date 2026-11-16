@@ -59,7 +59,11 @@ def test_goals_do_not_touch_scores_or_other_preferences(client: TestClient) -> N
 def test_missing_lists_default_to_empty(client: TestClient) -> None:
     put = client.put("/api/goals", json={"match_id": HUDL_ID, "entry": {"scorers": {"g1": "Sam"}}})
     assert put.json()[HUDL_ID] == {
-        "scorers": {"g1": "Sam"}, "added": [], "removed": [], "keepers": [], "beaten": {},
+        "scorers": {"g1": "Sam"},
+        "added": [],
+        "removed": [],
+        "keepers": [],
+        "beaten": {},
     }
 
 
