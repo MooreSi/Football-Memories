@@ -19,6 +19,13 @@ keepers with saves and goals conceded; the owner edits and saves them (preferenc
 confirmed only. Tests: `test_goals.py`, `goals.test.ts`, `report.test.ts`,
 `GoalsPanel.test.tsx`.
 
+## Match recap (spec 310, owner request 2026-11-16)
+
+`done`: "Match recap" on Hudl and Veo match pages with Copy: result, venue and date;
+how it went and the half-time score (when every goal is timed); confirmed scorers and
+keeper only; the primary player's tagged moments and goals featured in; Veo's attempts
+and corners. Templates only, no AI. Tests: `matchRecap.test.ts`, `MatchRecap.test.tsx`.
+
 ## Reel presets (spec 300, owner request 2026-11-16)
 
 `done`: "Quick reels" on Hudl and Veo match pages: the player's moments, team moments

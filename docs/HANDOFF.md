@@ -36,6 +36,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   these changes, because other sessions had uncommitted work in this checkout. The live
   app was not opened (it can start a Hudl/Veo refresh).
 
+- **Match recap (spec 310, owner request 2026-11-16):** `lib/matchRecap.ts` (pure
+  templates) and `components/match/MatchRecap` after How the score went on both match
+  pages, with Copy. Half-time: Veo's first period end, Hudl's first END HALF tag. Only
+  confirmed scorers/keepers are written. No local LLM (owner decision not asked).
+  Not deployed.
+
 - **Reel presets (spec 300, owner request 2026-11-16):** `lib/reelPresets.ts` and
   `components/match/QuickReels` above the moments panel on both match pages; buttons
   navigate to `/clips/reel/new` with the same state Make Highlight Reel sends. Hidden
