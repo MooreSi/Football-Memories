@@ -595,8 +595,12 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   limit). `_client.media_crest` reads only that host; `shrink_crest` (ffmpeg) scales
   it to fit 512 px. Saved once as `.veo-account/crest.png` with the club's names in
   `club.json`; the address is not stored. Helper `GET /veo/club`, `GET /veo/crest`.
-  The frontend (`useVeoClubCrest`, in AppShell) gives it to the **Veo home team set
-  in Settings** when that team has no crest; an existing crest is kept.
+  Until 2026-11-16 the frontend (`useVeoClubCrest`, in AppShell) gave it to the Veo
+  home team set in Settings. **Owner answer 2026-11-16:** the account crest is Racing
+  Club Warwick's, not the Veo home team's (Norton Lindsay); one Veo account films more
+  than one club, so the app no longer gives it to any club on its own (hook removed;
+  `AppShell.crest.test.tsx`). Nothing in the frontend reads `/veo/club` or
+  `/veo/crest` now; the helper still saves the file at Refresh.
   **Gotcha (real account, 2026-11-15):** the report's names are not the owner's
   team: `club.name` was another club ("... Academy blue") and `teams.home.name` the
   placeholder "Own team", while `crest_url` was the owner's club crest. The first

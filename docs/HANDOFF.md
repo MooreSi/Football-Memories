@@ -91,10 +91,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   (owner-approved test change). `_same_club` now ignores generic words ("club") on
   both sides, so "Racing Club Warwick" can match at all. Live: found Racing Club
   Warwick, Tamworth, Solihull Moors, Coleshill Town; not Bolehall Swifts (Wikipedia
-  has it). **Still open:** the Veo account crest (Racing Club Warwick's) was saved as
-  Norton Lindsay's by `useVeoClubCrest`. Owner answer 2026-11-16: move it to Racing
-  Club Warwick and stop saving the account crest under the Veo team name; not done
-  yet (code change plus replacing a saved crest file).
+  has it). The Veo account crest (Racing Club Warwick's) had been saved as Norton
+  Lindsay's by `useVeoClubCrest`. Owner answer 2026-11-16: move it to Racing Club
+  Warwick and stop saving it under the Veo team name. Done: hook removed, and Norton
+  Lindsay's copy removed from TeamLogos (Racing Club Warwick's file already held the
+  identical image; `.veo-account/crest.png` keeps it too).
 
 - **Veo season report split by club (owner request 2026-11-15):** the Veo account
   films Norton Lindsay ("NL ...") and Racing Club Warwick ("RCW ...", "Racing ...").
@@ -144,8 +145,8 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   cache version `team_data.v = 2` re-reads once). Per-side totals from
   `teams/{Own,Opponent}/stats` (missed shots, penalties, out of play) on the Team
   stats table. Club crest from the match report saved once by the helper
-  (`/veo/club`, `/veo/crest`), given by `useVeoClubCrest` to the Veo home team
-  (Settings) when it has no crest; Veo's report names are unreliable (see connectors). Maps and POSTs: Veo refused them all on this account (403/404/422, no
+  (`/veo/club`, `/veo/crest`); no longer given to any club by the app (owner answer
+  2026-11-16); Veo's report names are unreliable (see connectors). Maps and POSTs: Veo refused them all on this account (403/404/422, no
   positions), so none were built or enabled; see decision 009 follow-up.
 
 - **All matches Hudl cards (owner request 2026-11-15):** crests and score pill at the
