@@ -28,11 +28,33 @@ const veo = { source: "veo" as const, team_data: { stats: {}, events: [
 ] } };
 
 describe("goals from Hudl tags", () => {
-  it("lists each side's goals with the players tagged at them, most overlap first", () => {
+  it("lists each side's goals with the players tagged at them, likeliest scorer first", () => {
     const { goals } = matchGoals(hudl, CLUB);
     expect(goals.map((g) => [g.id, g.side, g.time_s])).toEqual([["g1", "ours", 100], ["g2", "theirs", 500]]);
     expect(goals[0]).toMatchObject({ candidates: ["Alex Demo", "Sam Example"], scorer: "Alex Demo", confirmed: false });
     expect(goals[1]).toMatchObject({ scorer: null });
+  });
+
+  // Owner report 2026-11-16: the most-overlap player was often the build-up, not the
+  // finisher. A goal tag's ball-in moment is 5 s before its end, a player tag's touch
+  // about a third of its length (at most 5 s) before its end.
+  it("picks the player whose touch is nearest the ball going in, not the longest overlap", () => {
+    const { goals } = matchGoals({ moments: [
+      t("g", "ASTON VILLA GOAL", 1000, 25), // ball in at 1020
+      t("a", "Ben Builder", 1001, 18), // 18 s overlap (the most), touch at 1014
+      t("b", "Late Finisher", 1012, 10), // 10 s overlap, touch at about 1018.7
+      t("c", "After Whistle", 1018, 15), // touch at 1028, after the goal
+    ] }, CLUB);
+    expect(goals[0]).toMatchObject({ candidates: ["Late Finisher", "Ben Builder", "After Whistle"], scorer: "Late Finisher" });
+  });
+
+  it("falls back to the most overlap when no touch is near the ball going in", () => {
+    const { goals } = matchGoals({ moments: [
+      t("g", "ASTON VILLA GOAL", 1000, 25),
+      t("a", "Early One", 990, 15), // touch at 1000, 20 s before
+      t("b", "Earlier Two", 985, 17), // touch at about 996.3, 2 s overlap
+    ] }, CLUB);
+    expect(goals[0]).toMatchObject({ candidates: ["Early One", "Earlier Two"], scorer: "Early One" });
   });
 
   it("guesses the keeper from the goalkeeper codes and saves from shots on target not scored", () => {

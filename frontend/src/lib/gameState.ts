@@ -1,4 +1,3 @@
-import type { HudlMoment } from "../api/hudl";
 import type { Score } from "./matchScore";
 
 /** Spec 290: how the score went in one match. Exact only when a score is known, every
@@ -21,16 +20,6 @@ export type GameState =
 
 const stateOf = (ours: number, theirs: number): State => (ours > theirs ? "ahead" : ours < theirs ? "behind" : "level");
 const round = (n: number) => Math.round(n * 10000) / 10000;
-
-/** The playing time to measure shares over: Veo's periods when listed, else from the first
- *  Hudl tag to the last tag's end, else the whole video. Null when nothing is known. */
-export function matchSpan(match: { halves?: number[][]; moments?: HudlMoment[]; duration_s?: number }): number[][] | null {
-  const halves = (match.halves ?? []).filter((h) => h.length === 2 && h[1] > h[0]);
-  if (halves.length) return halves;
-  const tags = match.moments ?? [];
-  if (tags.length) return [[Math.min(...tags.map((m) => m.time_s)), Math.max(...tags.map((m) => m.time_s + m.duration_s))]];
-  return match.duration_s ? [[0, match.duration_s]] : null;
-}
 
 export function gameState(goals: { side: Side; time_s: number | null }[], score: Score | null, span?: number[][] | null): GameState {
   if (!score) return { complete: false, reason: "There is no score for this match." };

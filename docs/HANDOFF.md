@@ -13,6 +13,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-16)
 
+- **Likely scorer and panels removed (owner request 2026-11-16):** the owner said
+  scorers were wrong. `lib/goals.ts` now picks the player whose touch is nearest the
+  ball going in (goal tag end minus 5 s; touch = player tag end minus a third, at most
+  5 s), measured on the cached tags (see interface domain notes); most overlap is the
+  fallback. "How the score went" (GameStateStrip) and Match recap removed from both
+  match pages, with `lib/matchRecap.ts` and `matchSpan`; season game-state lines kept.
+  Not deployed; live app not opened. Open for the owner: whether the new guess matches
+  goals they know.
+
 - **Goals and keepers (spec 270, owner requests 2026-11-16, owner chose "Both"):**
   Hudl and Veo name no scorer or keeper (checked on the real caches: Hudl goal tags are
   team-only with 3 to 4 player tags overlapping each goal; no save tag; Veo has goal

@@ -38,6 +38,20 @@ const overlap = (a: HudlMoment, b: HudlMoment) =>
   Math.max(0, Math.min(a.time_s + a.duration_s, b.time_s + b.duration_s) - Math.max(a.time_s, b.time_s));
 const touches = (a: HudlMoment, b: HudlMoment) => a.time_s <= b.time_s + b.duration_s && b.time_s <= a.time_s + a.duration_s;
 
+// Measured on the owner's cached Hudl tags (2026-11-16): goal tags are 25 s and the ball
+// goes in 20 s in (a BALL OUT OF PLAY tag starts there on 1243 of 1529 goals); player tags
+// (mostly 10 or 15 s) line up with our possession best at 7 of 10 s and 10 of 15 s, so the
+// touch is a third of the tag, at most 5 s, before its end. With these, the nearest touch
+// is within 1 s of the ball going in on three goals in four; the most-overlap player
+// agreed with it on only about half.
+const GOAL_LAG_S = 5;
+const NEAR_BEFORE = 12;
+const NEAR_AFTER = 3;
+const ballInAt = (g: HudlMoment) => g.time_s + Math.max(0, g.duration_s - GOAL_LAG_S);
+const touchAt = (p: HudlMoment) => p.time_s + p.duration_s - Math.min(GOAL_LAG_S, p.duration_s / 3);
+// A touch after the ball went in is less likely the scorer's than one just before.
+const nearness = (gap: number) => (gap >= 0 ? gap : -gap * 2);
+
 function distinct(names: string[]): string[] {
   const seen = new Map<string, string>();
   for (const n of names) if (!seen.has(codeKey(n))) seen.set(codeKey(n), n);
@@ -57,8 +71,12 @@ function fromHudl(moments: HudlMoment[], club: string | null): Base {
     if (unplaced.length === 1) goalTags = [...goalTags, ...sided.filter(({ m }) => codeKey(m.category) === unplaced[0]).map(({ m }) => ({ m, p: { side: "ours" as const, stem: "GOAL" } }))];
   }
   const goals = goalTags.map(({ m, p }) => {
+    const ballIn = ballInAt(m);
+    const near = players.map((pl) => ({ name: pl.category, gap: ballIn - touchAt(pl) }))
+      .filter((x) => x.gap >= -NEAR_AFTER && x.gap <= NEAR_BEFORE)
+      .sort((a, b) => nearness(a.gap) - nearness(b.gap));
     const ranked = players.map((pl) => ({ name: pl.category, s: overlap(pl, m) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s);
-    return { id: m.id, side: p.side as "ours" | "theirs", time_s: m.time_s, candidates: distinct(ranked.map((x) => x.name)) };
+    return { id: m.id, side: p.side as "ours" | "theirs", time_s: m.time_s, candidates: distinct([...near, ...ranked].map((x) => x.name)) };
   }).sort((a, b) => a.time_s - b.time_s);
   // The likely keeper: the player most often tagged with our goalkeeper codes.
   const votes = new Map<string, { name: string; n: number }>();

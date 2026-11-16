@@ -205,8 +205,15 @@ U10 v Stoke City reads 12-9.
 ## Goals and keepers (spec 270, 2026-11-16)
 
 - Nothing names a scorer: Hudl player tags overlap a goal 3 to 4 at a time (they mark
-  who was involved), and Veo gives no names. The "Likely" scorer is the most-overlap
-  player; reports never show a guess, only what the owner saved.
+  who was involved), and Veo gives no names. Reports never show a guess, only what the
+  owner saved.
+- Hudl tag timing (measured 2026-11-16 on 154 cached matches): a goal tag is 25 s and
+  the ball goes in 20 s in (BALL OUT OF PLAY starts there on 1243 of 1529 goals). Player
+  tags are mostly 10 or 15 s and the touch sits a third of the way from the end (best
+  match with our possession at 7 of 10 s, 10 of 15 s). The "Likely" scorer is the
+  player whose touch is nearest the ball going in (12 s before to 3 s after, touches
+  after counted double); most overlap is only the fallback. The most-overlap rule
+  picked the build-up player: it agreed with the nearest touch on about half the goals.
 - `looksLikePlayer` treats "keeper" as football vocabulary, so a player whose surname is
   Keeper would not be found; test names avoid it.
 - Hudl has no save code. Likely saves = opposition ON TARGET tags not overlapping an
@@ -215,6 +222,9 @@ U10 v Stoke City reads 12-9.
   owner's scorer stays attached across refreshes.
 
 ## Game-state timeline (spec 290, 2026-11-16)
+
+- The match-page strip ("How the score went") and the Match recap (spec 310) were
+  removed at the owner's request on 2026-11-16; the season report lines remain.
 
 - Goals come from `matchGoals` (spec 270), so owner edits count; an owner-added goal
   has no time, which makes that match incomplete for game state by design.

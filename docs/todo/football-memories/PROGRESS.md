@@ -21,10 +21,7 @@ confirmed only. Tests: `test_goals.py`, `goals.test.ts`, `report.test.ts`,
 
 ## Match recap (spec 310, owner request 2026-11-16)
 
-`done`: "Match recap" on Hudl and Veo match pages with Copy: result, venue and date;
-how it went and the half-time score (when every goal is timed); confirmed scorers and
-keeper only; the primary player's tagged moments and goals featured in; Veo's attempts
-and corners. Templates only, no AI. Tests: `matchRecap.test.ts`, `MatchRecap.test.tsx`.
+`removed` 2026-11-16 at the owner's request ("not needed"), with `lib/matchRecap.ts`.
 
 ## Reel presets (spec 300, owner request 2026-11-16)
 
@@ -36,11 +33,10 @@ selection. No pre/post-roll change (helper untouched). Tests: `reelPresets.test.
 
 ## Game-state timeline (spec 290, owner request 2026-11-16)
 
-`done`: "How the score went" on Hudl and Veo match pages (ahead/level/behind strip,
-score after each goal to watch, rough time shares, comeback / lead-lost story, runs of
-3+ goals); season report adds Scored first, Came from behind, Clean sheets and Goal
-times known. Only matches whose goals are all timed and add up to the score count.
-Tests: `gameState.test.ts`, `GameStateStrip.test.tsx`, `report.test.ts`.
+`partial`: the match-page strip ("How the score went") was removed 2026-11-16 at the
+owner's request. Season report still adds Scored first, Came from behind, Clean sheets
+and Goal times known, counting only matches whose goals are all timed and add up.
+Tests: `gameState.test.ts`, `report.test.ts`.
 
 ## Veo expiry queue (spec 280, owner request 2026-11-16)
 

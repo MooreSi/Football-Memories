@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { gameState, matchSpan, seasonGameLines } from "./gameState";
+import { gameState, seasonGameLines } from "./gameState";
 
 // Spec 290: how the score went, only when every goal has a time and they add up to the score.
 const g = (side: "ours" | "theirs", time_s: number | null) => ({ side, time_s });
@@ -67,13 +67,6 @@ it("finds the longest run of unanswered goals", () => {
 it("without a span it still tells the story but gives no shares", () => {
   const s = gameState([g("theirs", 10), g("ours", 20)], { ours: 1, theirs: 1 });
   expect(s.complete && [s.share, s.segments, s.firstGoal]).toEqual([null, [], "theirs"]);
-});
-
-it("takes the span from Veo periods, else the Hudl tags, else the video length", () => {
-  expect(matchSpan({ halves: [[10, 1500], [1700, 3200]], duration_s: 4000 })).toEqual([[10, 1500], [1700, 3200]]);
-  expect(matchSpan({ moments: [{ id: "1", category: "X", time_s: 30, duration_s: 10 }, { id: "2", category: "Y", time_s: 2900, duration_s: 20 }], duration_s: 4000 })).toEqual([[30, 2920]]);
-  expect(matchSpan({ duration_s: 4000 })).toEqual([[0, 4000]]);
-  expect(matchSpan({})).toBeNull();
 });
 
 it("adds up a season: scored first with results, came from behind, clean sheets, and how many matches", () => {
