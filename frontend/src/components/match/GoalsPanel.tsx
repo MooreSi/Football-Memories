@@ -1,7 +1,7 @@
 import { Goal as GoalIcon, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { formatClock } from "../../lib/format";
-import { type Goal, type GoalsEntry, type GoalsSource, type Keeper, matchGoals, useGoalEntries, useSaveGoals } from "../../lib/goals";
+import { type Goal, type GoalsEntry, type GoalsSource, type Keeper, type Spell, matchGoals, useGoalEntries, useSaveGoals } from "../../lib/goals";
 import { Button } from "../ui/Button";
 
 type DraftGoal = { id: string; side: "ours" | "theirs"; time_s: number | null; added: boolean; scorer: string; keeper: string };
@@ -13,6 +13,15 @@ const Tag = ({ children }: { children: string }) =>
 function savesText(k: Keeper): string {
   const saves = k.saves === null ? "Saves not counted" : `${k.saves} save${k.saves === 1 ? "" : "s"}`;
   return `${saves} · ${k.conceded} conceded`;
+}
+
+/** When a keeper was in goal, from the likely spells; only worth saying when there was a change. */
+function spellText(name: string | null, spells: Spell[]): string | null {
+  if (!name || spells.length < 2) return null;
+  const mine = spells.filter((s) => s.name.toUpperCase() === name.toUpperCase());
+  if (!mine.length) return null;
+  return `In goal ${mine.map((s) => (s.from_s === 0 ? `to ${formatClock(s.to_s ?? 0)}`
+    : s.to_s === null ? `from ${formatClock(s.from_s)}` : `${formatClock(s.from_s)} to ${formatClock(s.to_s)}`)).join(", ")}`;
 }
 
 /** Spec 270 (owner requests 2026-11-16): who scored, who kept goal, saves and goals
@@ -105,7 +114,8 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
         <div><h3 className="mb-2 text-sm font-semibold">Keepers</h3>
           {data.keepers.length ? <ul aria-label="Keepers" className="space-y-1.5">{data.keepers.map((k, i) => <li key={i} className="flex flex-wrap items-center gap-2 text-sm">
             <span className={k.name ? "font-medium" : "text-fg-subtle"}>{k.name ?? "Keeper not named"}</span>
-            <span className="text-fg-muted">{savesText(k)}</span>{!k.confirmed && (k.name || k.saves !== null) && <Tag>Likely</Tag>}
+            <span className="text-fg-muted">{savesText(k)}</span>
+            {spellText(k.name, data.spells) && <span className="text-fg-muted">{spellText(k.name, data.spells)}</span>}{!k.confirmed && (k.name || k.saves !== null) && <Tag>Likely</Tag>}
           </li>)}</ul> : <p className="text-sm text-fg-subtle">No keeper listed.</p>}
           {theirs.length > 0 && <ul aria-label="Goals conceded" className="mt-3 space-y-1.5">{theirs.map((g) => <li key={g.id} className="flex items-center gap-2 text-sm text-fg-muted">
             {when(g)}<span>Conceded{g.keeper && data.keepers.length > 1 ? `, ${g.keeper} in goal` : ""}</span>
@@ -117,7 +127,7 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
       </div>
       <p className="text-xs text-fg-subtle">{match.source === "veo" || match.team_data
         ? "Veo records goals and their times but no names. Add the scorers and keeper; reports show only what you save."
-        : "Likely names are a guess from the players tagged at each goal, and saves from the opposition's shots on target. Check and save to confirm; reports show only what you save."}</p>
+        : "Likely names are a guess: scorers from the player tagged as the ball goes in, keepers from who is tagged at our goal kicks (a change is found when that player changes), and saves from the opposition's shots on target. Check and save to confirm; reports show only what you save."}</p>
     </>}
     {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
   </section>;

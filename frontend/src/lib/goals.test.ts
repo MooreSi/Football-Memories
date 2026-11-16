@@ -69,6 +69,61 @@ describe("goals from Hudl tags", () => {
     expect(matchGoals({ moments: [t("p", "Sam Example", 1, 5)] }, CLUB).keepers).toEqual([]);
   });
 
+  // Owner request 2026-11-16: most matches have no GOAL KEEPER code, but every one has
+  // our goal kicks, and the keeper's tag is running at each, started up to 12 s before
+  // (measured on the cache). Others: tagged too early, and the player receiving it after.
+  const kick = (id: string, at: number, keeper: string, others: string[] = []) => [
+    t(`gk-${id}`, "ASTON VILLA GOAL KICK", at, 20),
+    t(`k-${id}`, keeper, at - 4, 15),
+    ...others.flatMap((o, i) => [t(`o-${id}-${i}`, o, at - 14, 15), t(`r-${id}-${i}`, o, at + 2, 15)]),
+  ];
+  // A keeper change at half-time: Sam in goal for the first half, Jo for the second.
+  const swap = { moments: [
+    ...kick("1", 300, "Sam Gloves", ["Ben Stone"]), ...kick("2", 900, "Sam Gloves"), ...kick("3", 1500, "Sam Gloves", ["Ben Stone"]),
+    ...kick("4", 1800, "Ben Stone"), // one odd kick is not a change
+    ...kick("5", 2100, "Sam Gloves"),
+    ...kick("6", 3300, "Jo Palms", ["Ben Stone"]), ...kick("7", 3900, "Jo Palms"), ...kick("8", 4500, "Jo Palms"),
+    t("c1", "OPPOSITION GOAL", 1000, 25), t("c2", "OPPOSITION GOAL", 4000, 25), t("c3", "OPPOSITION GOAL", 4200, 25),
+    t("s1", "OPPOSITION ON TARGET", 600, 25), t("s2", "OPPOSITION ON TARGET", 3600, 25), t("s3", "OPPOSITION ON TARGET", 4600, 25),
+    t("s4", "OPPOSITION ON TARGET", 4000, 25), // the goal at 4000, not a save
+  ] };
+
+  it("finds the keeper from the player tagged at our goal kicks, with no goalkeeper code", () => {
+    const { keepers } = matchGoals({ moments: [...kick("1", 300, "Sam Gloves", ["Ben Stone"]), ...kick("2", 900, "Sam Gloves", ["Ben Stone"]), ...kick("3", 1500, "Sam Gloves")] }, CLUB);
+    expect(keepers).toEqual([{ name: "Sam Gloves", saves: null, conceded: 0, confirmed: false }]);
+  });
+
+  it("counts a keeper tag started well before the kick, but not the player who receives it", () => {
+    const { keepers } = matchGoals({ moments: [
+      ...[300, 900, 1500].flatMap((at, i) => [t(`gk${i}`, "ASTON VILLA GOAL KICK", at, 20), t(`k${i}`, "Sam Gloves", at - 9, 20), t(`r${i}`, "Ben Stone", at + 0.5, 15)]),
+    ] }, CLUB);
+    expect(keepers.map((k) => k.name)).toEqual(["Sam Gloves"]);
+  });
+
+  it("puts a keeper change at the END HALF tag between the two spells", () => {
+    expect(matchGoals({ moments: [...swap.moments, t("h1", "END HALF", 2500, 1), t("h0", "END HALF", 1200, 1)] }, CLUB).spells)
+      .toEqual([{ name: "Sam Gloves", from_s: 0, to_s: 2500 }, { name: "Jo Palms", from_s: 2500, to_s: null }]);
+  });
+
+  it("follows a keeper change, giving each keeper the saves and goals in their spell", () => {
+    const { keepers, goals, spells } = matchGoals(swap, CLUB);
+    expect(keepers).toEqual([
+      { name: "Sam Gloves", saves: 1, conceded: 1, confirmed: false },
+      { name: "Jo Palms", saves: 2, conceded: 2, confirmed: false },
+    ]);
+    expect(goals.filter((g) => g.side === "theirs").map((g) => g.keeper)).toEqual(["Sam Gloves", "Jo Palms", "Jo Palms"]);
+    // With no END HALF tag, the change goes halfway between the two spells' nearest kicks.
+    expect(spells).toEqual([{ name: "Sam Gloves", from_s: 0, to_s: 2700 }, { name: "Jo Palms", from_s: 2700, to_s: null }]);
+  });
+
+  it("puts a conceded goal on the confirmed keeper who was in goal then, unless the owner named one", () => {
+    const entry: GoalsEntry = { scorers: {}, added: [], removed: [], beaten: { c3: "Sam Gloves" },
+      keepers: [{ name: "Sam Gloves", saves: 2 }, { name: "Jo Palms", saves: 4 }] };
+    const { keepers, goals } = matchGoals(swap, CLUB, entry);
+    expect(goals.filter((g) => g.side === "theirs").map((g) => g.keeper)).toEqual(["Sam Gloves", "Jo Palms", "Sam Gloves"]);
+    expect(keepers.map((k) => [k.name, k.conceded])).toEqual([["Sam Gloves", 2], ["Jo Palms", 1]]);
+  });
+
   it("lists the match's players for picking a scorer, without situation codes", () => {
     expect(matchGoals(hudl, CLUB).players).toEqual(["Alex Demo", "Chris Hands", "Jo Back", "Sam Example"]);
   });

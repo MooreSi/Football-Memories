@@ -218,6 +218,15 @@ U10 v Stoke City reads 12-9.
   Keeper would not be found; test names avoid it.
 - Hudl has no save code. Likely saves = opposition ON TARGET tags not overlapping an
   opposition goal; null (not counted) when the match has no ON TARGET codes at all.
+  Each save and conceded goal goes to the keeper in goal at that time.
+- Keepers (measured 2026-11-16): only 2 cached matches have a GOAL KEEPER code, but 147
+  have our goal kicks ("AVFC GOAL KICK", 20 s). The kick is at the goal-kick tag's
+  start: the keeper's tag is running then (usually started about 0.5 s before, up to
+  12 s before when it is a longer tag) and the receiving player is tagged 0.3 to 1 s
+  after, so a window ending after the kick picks up the receiver. Keeper spells come
+  from the vote at each kick, a change costing 2.5 missed votes; a change snaps to an
+  END HALF tag between the two spells. On the cache: a keeper on 143 of 152 matches, a
+  change on 47, and 57 of 62 changes fall on an END HALF tag.
 - Veo goal ids are `t-<own|opponent>-goal-<ms>`, the same as its team moments, so an
   owner's scorer stays attached across refreshes.
 

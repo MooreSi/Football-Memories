@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-16)
 
+- **Keepers from goal kicks, with changes (owner request 2026-11-16):** the old keeper
+  guess needed a GOAL KEEPER code, which only 2 cached matches have. `lib/goals.ts` now
+  votes at each of our goal kicks (the player whose tag is running at the kick, started
+  up to 12 s before) and finds keeper spells, a change costing 2.5 votes, snapped to an
+  END HALF tag. Saves and conceded go to whoever was in goal then (also for confirmed
+  keepers when the owner did not name one). Panel shows "In goal to/from" when there was
+  a change. On the cache: a keeper on 143 of 152 matches, a change on 47, 57 of 62 at an
+  END HALF. Not deployed yet; live app not opened. Open for the owner: whether the
+  spells match games they remember.
+
 - **Likely scorer and panels removed (owner request 2026-11-16):** the owner said
   scorers were wrong. `lib/goals.ts` now picks the player whose touch is nearest the
   ball going in (goal tag end minus 5 s; touch = player tag end minus a third, at most

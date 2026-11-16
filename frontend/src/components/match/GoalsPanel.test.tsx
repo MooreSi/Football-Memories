@@ -15,6 +15,16 @@ const hudl = { id: "m1", moments: [
   t("o2", "OPPOSITION ON TARGET", 800, 10), t("a1", "ASTON VILLA ON TARGET", 98, 20),
 ] };
 
+// Owner request 2026-11-16: keepers change during a game; each spell comes from who is
+// tagged at our goal kicks.
+const kick = (i: number, at: number, keeper: string) => [t(`gk${i}`, "ASTON VILLA GOAL KICK", at, 20), t(`k${i}`, keeper, at - 1, 15)];
+const swapped = { id: "m2", moments: [
+  ...kick(1, 300, "Sam Gloves"), ...kick(2, 900, "Sam Gloves"), ...kick(3, 1500, "Sam Gloves"),
+  t("h", "END HALF", 2400, 1),
+  ...kick(4, 3000, "Jo Palms"), ...kick(5, 3600, "Jo Palms"), ...kick(6, 4200, "Jo Palms"),
+  t("c1", "OPPOSITION GOAL", 3900, 25),
+] };
+
 function serve(initial: Record<string, unknown> = {}) {
   let saved = initial;
   const puts: { match_id: string; entry: unknown }[] = [];
@@ -97,4 +107,15 @@ it("lists Veo's goals with no scorer until the owner names one", async () => {
   const panel = await screen.findByRole("region", { name: "Goals and keepers" });
   expect(within(panel).getByText("Scorer not set")).toBeInTheDocument();
   expect(await within(panel).findByText("Saves not counted · 1 conceded")).toBeInTheDocument();
+});
+
+it("shows when each likely keeper was in goal, and who was beaten", async () => {
+  serve();
+  renderWithProviders(<GoalsPanel match={swapped} club="Aston Villa" />);
+  const panel = await screen.findByRole("region", { name: "Goals and keepers" });
+  const keepers = within(panel).getByRole("list", { name: "Keepers" });
+  expect(within(keepers).getByText("Sam Gloves")).toBeInTheDocument();
+  expect(within(keepers).getByText("In goal to 40:00")).toBeInTheDocument();
+  expect(within(keepers).getByText("In goal from 40:00")).toBeInTheDocument();
+  expect(within(panel).getByRole("list", { name: "Goals conceded" })).toHaveTextContent("Conceded, Jo Palms in goal");
 });

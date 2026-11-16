@@ -17,7 +17,9 @@ no additional code or live capture needed. App/helper run the verified source.
 keepers with saves and goals conceded; the owner edits and saves them (preferences
 `goals:<id>`). Match report Scorers/Keeper lines; season report top three scorers,
 confirmed only. Tests: `test_goals.py`, `goals.test.ts`, `report.test.ts`,
-`GoalsPanel.test.tsx`.
+`GoalsPanel.test.tsx`. 2026-11-16: likely scorer = touch nearest the ball going in;
+likely keepers = spells from who is tagged at our goal kicks, with changes (snapped to
+END HALF), saves and conceded per spell; checked on the 152 cached matches.
 
 ## Match recap (spec 310, owner request 2026-11-16)
 

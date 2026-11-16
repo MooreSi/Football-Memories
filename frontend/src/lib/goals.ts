@@ -26,7 +26,9 @@ export type Goal = {
   keeper: string | null;
 };
 export type Keeper = { name: string | null; saves: number | null; conceded: number; confirmed: boolean };
-export type MatchGoals = { goals: Goal[]; keepers: Keeper[]; players: string[] };
+/** A likely keeper's time in goal; to_s null means to the end. */
+export type Spell = { name: string; from_s: number; to_s: number | null };
+export type MatchGoals = { goals: Goal[]; keepers: Keeper[]; players: string[]; spells: Spell[] };
 export type GoalsSource = { source?: string; moments?: HudlMoment[]; team_data?: VeoTeamData | null };
 
 export const EMPTY_ENTRY: GoalsEntry = { scorers: {}, added: [], removed: [], keepers: [], beaten: {} };
@@ -52,13 +54,56 @@ const touchAt = (p: HudlMoment) => p.time_s + p.duration_s - Math.min(GOAL_LAG_S
 // A touch after the ball went in is less likely the scorer's than one just before.
 const nearness = (gap: number) => (gap >= 0 ? gap : -gap * 2);
 
+// Keepers (owner request 2026-11-16). Few matches have a GOAL KEEPER code, but every one
+// has our goal kicks. On the cache the kick is at the goal-kick tag's start: the keeper's
+// tag is running then, started up to 12 s before (most about 0.5 s), and the player
+// receiving it is tagged 0.3 to 1 s after. Counting tags that started up to 12 s before
+// the kick and are still running at it, the spell's keeper is there on 83% of kicks, the
+// next player on 28% (any overlap: 87% against 59%). Each kick is a vote; the spells are the keeper
+// sequence that misses the fewest votes, a change costing SWITCH_COST of them, so one odd
+// kick is not a change but a keeper swapped at a break is found.
+const KICK_FROM = -12;
+const KICK_TO = 0;
+const SWITCH_COST = 2.5;
+
+function keeperSpells(votes: { at: number; names: string[] }[], breaks: number[]): Spell[] {
+  const seq = votes.filter((v) => v.names.length).sort((a, b) => a.at - b.at);
+  const names = distinct(seq.flatMap((v) => v.names)).sort((a, b) => a.localeCompare(b));
+  if (!seq.length) return [];
+  const has = (i: number, n: string) => seq[i].names.some((x) => codeKey(x) === codeKey(n));
+  let cost: number[] = names.map((n) => (has(0, n) ? 0 : 1));
+  const back: number[][] = [];
+  for (let i = 1; i < seq.length; i++) {
+    const best = cost.indexOf(Math.min(...cost));
+    back.push(names.map((_, j) => (cost[j] <= cost[best] + SWITCH_COST ? j : best)));
+    cost = names.map((n, j) => Math.min(cost[j], cost[best] + SWITCH_COST) + (has(i, n) ? 0 : 1));
+  }
+  const path = [cost.indexOf(Math.min(...cost))];
+  for (let i = back.length - 1; i >= 0; i--) path.unshift(back[i][path[0]]);
+  const spells: Spell[] = [];
+  path.forEach((j, i) => {
+    const last = spells[spells.length - 1];
+    if (last && codeKey(last.name) === codeKey(names[j])) return;
+    // A change goes at an END HALF tag between the two spells (the nearest the middle),
+    // else halfway between the last vote of one and the first of the next.
+    const mid = last ? (seq[i - 1].at + seq[i].at) / 2 : 0;
+    const gap = breaks.filter((b) => last && b > seq[i - 1].at && b < seq[i].at).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid));
+    const from = gap[0] ?? mid;
+    if (last) last.to_s = from;
+    spells.push({ name: names[j], from_s: from, to_s: null });
+  });
+  return spells;
+}
+
+const inSpell = (s: Spell, t: number) => t >= s.from_s && (s.to_s === null || t < s.to_s);
+
 function distinct(names: string[]): string[] {
   const seen = new Map<string, string>();
   for (const n of names) if (!seen.has(codeKey(n))) seen.set(codeKey(n), n);
   return [...seen.values()];
 }
 
-type Base = { goals: Omit<Goal, "scorer" | "confirmed" | "keeper" | "added">[]; keeper: string | null; saves: number | null; players: string[] };
+type Base = { goals: Omit<Goal, "scorer" | "confirmed" | "keeper" | "added">[]; spells: Spell[]; saveTimes: number[] | null; players: string[] };
 
 function fromHudl(moments: HudlMoment[], club: string | null): Base {
   const place = codeSides(moments, club);
@@ -78,28 +123,26 @@ function fromHudl(moments: HudlMoment[], club: string | null): Base {
     const ranked = players.map((pl) => ({ name: pl.category, s: overlap(pl, m) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s);
     return { id: m.id, side: p.side as "ours" | "theirs", time_s: m.time_s, candidates: distinct([...near, ...ranked].map((x) => x.name)) };
   }).sort((a, b) => a.time_s - b.time_s);
-  // The likely keeper: the player most often tagged with our goalkeeper codes.
-  const votes = new Map<string, { name: string; n: number }>();
-  for (const { m, p } of sided) {
-    if (p.side === "theirs" || !/GOAL ?KEEPER/i.test(m.category)) continue;
-    for (const name of distinct(players.filter((pl) => touches(pl, m)).map((pl) => pl.category))) {
-      const v = votes.get(codeKey(name)) ?? { name, n: 0 };
-      votes.set(codeKey(name), { ...v, n: v.n + 1 });
-    }
-  }
-  const keeper = [...votes.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))[0]?.name ?? null;
+  // Keeper votes: our goal kicks (who starts just before the kick) and goalkeeper codes.
+  const votes = sided.filter(({ m, p }) => p.side !== "theirs" && (p.stem === "GOAL KICK" || /GOAL ?KEEPER/i.test(m.category)))
+    .map(({ m, p }) => ({ at: m.time_s, names: distinct(players.filter((pl) => (p.stem === "GOAL KICK"
+      ? pl.time_s - m.time_s >= KICK_FROM && pl.time_s - m.time_s <= KICK_TO && pl.time_s + pl.duration_s >= m.time_s
+      : touches(pl, m))).map((pl) => pl.category)) }));
+  const breaks = moments.filter((m) => /^END HALF$/i.test(m.category.trim())).map((m) => m.time_s);
   // Likely saves: their shots on target that did not overlap one of their goals.
   const onTarget = sided.filter(({ p }) => p.stem === "ON TARGET");
   const theirGoals = goalTags.filter(({ p }) => p.side === "theirs").map(({ m }) => m);
-  const saves = onTarget.length ? onTarget.filter(({ m, p }) => p.side === "theirs" && !theirGoals.some((g) => touches(g, m))).length : null;
-  return { goals, keeper, saves, players: distinct(players.map((p) => p.category)).sort((a, b) => a.localeCompare(b)) };
+  const saveTimes = onTarget.length
+    ? onTarget.filter(({ m, p }) => p.side === "theirs" && !theirGoals.some((g) => touches(g, m))).map(({ m }) => ballInAt(m))
+    : null;
+  return { goals, spells: keeperSpells(votes, breaks), saveTimes, players: distinct(players.map((p) => p.category)).sort((a, b) => a.localeCompare(b)) };
 }
 
 function fromVeo(data: VeoTeamData | null | undefined): Base {
   const goals = (data?.events ?? []).filter((e) => e.type === "GOAL" && (e.side === "own" || e.side === "opponent"))
     .map((e) => ({ id: `t-${e.side}-goal-${Math.round(e.time_s * 1000)}`, side: e.side === "own" ? "ours" as const : "theirs" as const, time_s: e.time_s, candidates: [] }))
     .sort((a, b) => a.time_s - b.time_s);
-  return { goals, keeper: null, saves: null, players: [] };
+  return { goals, spells: [], saveTimes: null, players: [] };
 }
 
 export function matchGoals(match: GoalsSource, club: string | null, entry?: GoalsEntry | null): MatchGoals {
@@ -110,21 +153,29 @@ export function matchGoals(match: GoalsSource, club: string | null, entry?: Goal
     ...base.goals.filter((g) => !removed.has(g.id)).map((g) => ({ ...g, added: false })),
     ...e.added.map((a) => ({ id: a.id, side: a.side, time_s: null, candidates: [], added: true })),
   ];
+  const { spells, saveTimes } = base;
+  const guessed = distinct(spells.map((s) => s.name)).map((name) => ({
+    name, saves: saveTimes && saveTimes.filter((t) => spells.some((s) => codeKey(s.name) === codeKey(name) && inSpell(s, t))).length,
+    conceded: 0, confirmed: false,
+  }));
   const keepers: Keeper[] = e.keepers.length
     ? e.keepers.map((k) => ({ name: k.name, saves: k.saves, conceded: 0, confirmed: true }))
-    : [{ name: base.keeper, saves: base.saves, conceded: 0, confirmed: false }];
+    : guessed.length ? guessed : [{ name: null, saves: saveTimes && saveTimes.length, conceded: 0, confirmed: false }];
+  const byName = (n: string | null | undefined) => (n ? keepers.find((x) => x.name && codeKey(x.name) === codeKey(n)) : undefined);
+  const inGoalAt = (t: number | null) => (t === null ? undefined : spells.find((s) => inSpell(s, t))?.name);
   const goals: Goal[] = listed.map((g) => {
     if (g.side === "ours") {
       const own = e.scorers[g.id];
       return { ...g, scorer: own ?? g.candidates[0] ?? null, confirmed: own !== undefined, keeper: null };
     }
-    const named = e.beaten[g.id];
-    const k = keepers.find((x) => named && x.name && codeKey(x.name) === codeKey(named)) ?? keepers[0];
+    // The keeper the owner named, else whoever was in goal then (a confirmed keeper only
+    // when the owner kept that name), else the first.
+    const k = byName(e.beaten[g.id]) ?? byName(inGoalAt(g.time_s)) ?? keepers[0];
     k.conceded += 1;
     return { ...g, scorer: null, confirmed: false, keeper: k.name };
   });
   const shown = keepers.filter((k) => k.confirmed || k.name !== null || k.conceded > 0 || k.saves !== null);
-  return { goals, keepers: shown, players: base.players };
+  return { goals, keepers: shown, players: base.players, spells };
 }
 
 const count = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
