@@ -14,6 +14,12 @@ export function advanceTagged(list: HudlMoment[], current: number, time: number)
   return current + 1 < list.length ? current + 1 : null;
 }
 
+/** Whether the video has reached `moment` after being sent there: its time is inside the
+ *  moment (a little early counts, since a seek can land just before the tag). */
+export function arrived(moment: HudlMoment, time: number): boolean {
+  return time >= moment.time_s - 3 && time < moment.time_s + Math.max(0.5, moment.duration_s);
+}
+
 /** Adjacent or overlapping moments play straight on: no seek, no buffering pause. */
 export function needsSeek(next: HudlMoment, time: number): boolean {
   const end = next.time_s + Math.max(0.5, next.duration_s);

@@ -173,6 +173,12 @@ U10 v Stoke City reads 12-9.
   `DownloadChoice`: one video or separate files) and Make highlight reel; with none
   ticked, the highlights shown (after the type filter) are used.
 
+- Next/Previous during Play Tagged (Hudl and Veo, owner report 2026-11-17) step within
+  the queue and keep it running; they must not call `watch()`, which ends the queue. A
+  video `timeupdate` can still report the old position just after a seek, so after a
+  queue move the page ignores times until `arrived()` says the video is inside the new
+  moment; otherwise Previous would count the earlier moment as already finished.
+
 ### Import upload (owner request 2026-11-14)
 
 - The Import page's drop box sends the file with XHR `PUT /api/imports/upload?filename=`

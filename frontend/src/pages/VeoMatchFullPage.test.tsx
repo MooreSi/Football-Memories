@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders, stubFetch } from "../test/render";
@@ -284,4 +284,29 @@ it("names the club the title names in the team stats", async () => {
   renderWithProviders(<App />, "/veo/veo-a");
   const team = await screen.findByRole("region", { name: "Team stats" });
   expect(await within(team).findByRole("columnheader", { name: "Hill Town" })).toBeInTheDocument();
+});
+
+// Owner report 2026-11-17: Next during Play Tagged ended the queue and the match just played on.
+it("keeps Play Tagged going when Next or Previous moves between the queued highlights", async () => {
+  stub(ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: /Play Tagged \(3\)/ }));
+  const bar = () => screen.getByRole("status", { name: "Tagged playback" });
+  const video = screen.getByLabelText("Veo match video") as HTMLVideoElement;
+  // Each timeupdate gets its own render, as in a browser (they arrive about 250 ms apart).
+  const at = (s: number) => act(() => {
+    Object.defineProperty(video, "currentTime", { configurable: true, writable: true, value: s });
+    video.dispatchEvent(new Event("timeupdate"));
+  });
+  expect(bar()).toHaveTextContent(/1 of 3.*1:04/);
+  await user.click(screen.getByRole("button", { name: /Next highlight/ }));
+  expect(bar()).toHaveTextContent(/2 of 3.*5:00/);
+  await at(301); await at(321);
+  expect(bar()).toHaveTextContent(/3 of 3.*31:40/);
+  await at(1901);
+  await user.keyboard("b");
+  // The video still reports 31:41 until the seek lands: that must not count as 5:00 ending.
+  await at(1901);
+  expect(bar()).toHaveTextContent(/2 of 3.*5:00/);
 });

@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button';
 import { MatchScoreBox } from '../components/match/MatchScoreBox';
 import { useHomeClub } from '../lib/useHomeClub';
 import { formatClock } from '../lib/format';
-import { advanceTagged, needsSeek, nextMoment, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
+import { advanceTagged, arrived, needsSeek, nextMoment, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 import { markHudlMomentWatched } from '../lib/hudlWatched';
 import { MatchInsights } from '../components/match/MatchInsights';
 import { TeamStatsTable } from '../components/match/TeamStatsTable';
@@ -76,7 +76,9 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const notes = useNotes(id);
   const saveNote = useSaveNote();
   const [asking, setAsking] = useState(false);
-  const [queue, setQueue] = useState<{ list: HudlMoment[]; index: number }>();
+  // `landed: false` after Next/Previous in the queue: until the video reaches that moment its
+  // time is still the old position, which must not count as the moment ending.
+  const [queue, setQueue] = useState<{ list: HudlMoment[]; index: number; landed?: boolean }>();
   const started = useRef(false);
   const linked = useRef(false);
   const action = useMutation({
@@ -125,6 +127,10 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
     setNow(time);
     record(time);
     if (!queue) return;
+    if (queue.landed === false) {
+      if (!arrived(queue.list[queue.index], time)) return;
+      setQueue({ ...queue, landed: true });
+    }
     const next = advanceTagged(queue.list, queue.index, time);
     if (next === null) setQueue(undefined);
     else if (next !== queue.index) {
@@ -146,13 +152,20 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   // by button, N / B (same keys on Mac and Windows) or the keyboard's media keys.
   const list = useRef<HTMLUListElement>(null);
   const skip = (dir: 1 | -1) => {
-    const m = nextMoment(filtered, now, dir, active && filtered.some(x => x.id === active.id) ? active.id : undefined);
+    // Owner report 2026-11-17: during Play Tagged, Next/Previous move within the queue and
+    // playback carries on from there, instead of ending the queue and running the match on.
+    // Past either end of the queue they step through the moments shown, as without one.
+    const queued = queue?.list[queue.index + dir];
+    const m = queued ?? nextMoment(filtered, now, dir, active && filtered.some(x => x.id === active.id) ? active.id : undefined);
     if (!m) return;
     // A tile clicked earlier keeps keyboard focus, and the browser then draws its focus
     // ring there as well as the green outline on the new moment: let it go.
     const held = document.activeElement;
     if (held instanceof HTMLElement && list.current?.contains(held)) held.blur();
-    watch(m);
+    if (queue && queued) {
+      setQueue({ list: queue.list, index: queue.index + dir, landed: false });
+      setSeek({ time: m.time_s, nonce: Date.now() });
+    } else watch(m);
     // Keep the new moment in sight inside the list without scrolling the page.
     requestAnimationFrame(() => {
       const box = list.current, tile = box?.querySelector<HTMLElement>(`li[data-moment="${CSS.escape(m.id)}"]`);

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -77,4 +77,31 @@ it('opens at a linked moment',async()=>{
  renderWithProviders(<Routes><Route path='/hudl/:id' element={<HudlMatchPage/>}/></Routes>,'/hudl/synthetic-a?moment=m3');
  const playing=await screen.findByRole('listitem',{current:true});
  expect(playing).toHaveTextContent('0:20');
+});
+
+// Owner report 2026-11-17: Next during Play Tagged ended the queue and the match just played on.
+it('keeps Play Tagged going when Next or Previous moves between the queued moments',async()=>{
+ open();const user=userEvent.setup();
+ await screen.findByRole('option',{name:'Sam Example'});
+ await user.click(screen.getByRole('button',{name:'Play Tagged (3)'}));
+ const bar=()=>screen.getByRole('status',{name:'Tagged playback'});
+ const video=document.querySelector('video')!;
+ // Each timeupdate gets its own render, as in a browser (they arrive about 250 ms apart).
+ const at=(s:number)=>act(()=>{Object.defineProperty(video,'currentTime',{configurable:true,writable:true,value:s});video.dispatchEvent(new Event('timeupdate'));});
+ expect(bar()).toHaveTextContent('Playing tagged moment 1 of 3');
+ await user.click(screen.getByRole('button',{name:/Next tagged moment/}));
+ expect(bar()).toHaveTextContent('Playing tagged moment 2 of 3');
+ expect(bar()).toHaveTextContent('0:20');
+ await at(21); await at(26);
+ expect(bar()).toHaveTextContent('Playing tagged moment 3 of 3');
+ expect(bar()).toHaveTextContent('0:40');
+ await at(42);
+ await user.keyboard('b');
+ // The video still reports 0:42 until the seek lands: that must not count as moment 2 ending.
+ await at(42);
+ expect(bar()).toHaveTextContent('Playing tagged moment 2 of 3');
+ await at(20); await at(26);
+ expect(bar()).toHaveTextContent('Playing tagged moment 3 of 3');
+ await at(40); await at(46);
+ expect(screen.queryByRole('status',{name:'Tagged playback'})).toBeNull();
 });

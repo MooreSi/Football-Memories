@@ -7,7 +7,7 @@ import { Button } from "../components/ui/Button";
 import { MatchDrawing } from "../components/match/MatchDrawing";
 import { formatClock } from "../lib/format";
 import { fixtureLabel } from "../lib/hudlFixture";
-import { advanceTagged, needsSeek, nextMoment, taggedPlaylist } from "../lib/taggedPlayback";
+import { advanceTagged, arrived, needsSeek, nextMoment, taggedPlaylist } from "../lib/taggedPlayback";
 import { DownloadChoice } from "./HudlMatchPage";
 import { useVeoClubOf } from "../lib/useVeoClub";
 import { SPELL, veoInsights } from "../lib/veoInsights";
@@ -165,7 +165,9 @@ export function VeoMatchFull({ id }: { id: string }) {
   // Owner request 2026-11-13: tick boxes as on a Hudl match. Ticked highlights are what
   // Play Tagged plays, the reel uses and Download saves; none ticked means all shown.
   const [selected, setSelected] = useState<string[]>([]);
-  const [queue, setQueue] = useState<{ list: VeoHighlight[]; index: number }>();
+  // `landed: false` after Next/Previous in the queue: until the video reaches that highlight
+  // its time is still the old position, which must not count as the highlight ending.
+  const [queue, setQueue] = useState<{ list: VeoHighlight[]; index: number; landed?: boolean }>();
   const [asking, setAsking] = useState(false);
   const started = useRef(false);
   const list = useRef<HTMLUListElement>(null);
@@ -215,6 +217,10 @@ export function VeoMatchFull({ id }: { id: string }) {
   const onTime = (time: number) => {
     setNow(time);
     if (!queue) return;
+    if (queue.landed === false) {
+      if (!arrived(queue.list[queue.index], time)) return;
+      setQueue({ ...queue, landed: true });
+    }
     const next = advanceTagged(queue.list, queue.index, time);
     if (next === null) setQueue(undefined);
     else if (next !== queue.index) {
@@ -224,11 +230,18 @@ export function VeoMatchFull({ id }: { id: string }) {
     }
   };
   const skip = (dir: 1 | -1) => {
-    const h = nextMoment(shown, now, dir, active && shown.some(x => x.id === active.id) ? active.id : undefined);
+    // Owner report 2026-11-17: during Play Tagged, Next/Previous move within the queue and
+    // playback carries on; past either end they step through the highlights shown.
+    const queued = queue?.list[queue.index + dir];
+    const h = queued ?? nextMoment(shown, now, dir, active && shown.some(x => x.id === active.id) ? active.id : undefined);
     if (!h) return;
     const held = document.activeElement;
     if (held instanceof HTMLElement && list.current?.contains(held)) held.blur();
-    watch(h);
+    if (queue && queued) {
+      setQueue({ list: queue.list, index: queue.index + dir, landed: false });
+      setFocus(queued);
+      setSeek({ time: queued.time_s, nonce: Date.now() });
+    } else watch(h);
     requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`li[data-moment="${CSS.escape(h.id)}"]`)?.scrollIntoView?.({ block: "nearest" }));
   };
   const skipRef = useRef(skip);
