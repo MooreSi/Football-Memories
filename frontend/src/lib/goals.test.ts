@@ -163,17 +163,19 @@ describe("the owner's entry", () => {
   });
 });
 
-describe("report lines (confirmed only) and top scorers (likely counted)", () => {
+describe("report lines and top scorers (likely scorers counted, keepers confirmed only)", () => {
   const confirmed = matchGoals(hudl, CLUB, { scorers: { g1: "Sam Example" }, added: [{ id: "a1", side: "ours" }], removed: [],
     keepers: [{ name: "Chris Hands", saves: 3 }], beaten: {} });
   const likely = matchGoals(hudl, CLUB);
 
-  it("names confirmed scorers and keepers on a match report, never a guess", () => {
+  // Owner request 2026-11-17: the match report shows who scored, the likely scorer marked.
+  it("names the scorers on a match report, likely ones marked, and confirmed keepers only", () => {
     expect(matchGoalLines(confirmed)).toEqual([
-      { label: "Scorers", value: "Sam Example" },
+      { label: "Scorers", value: "Sam Example, 1 unknown" },
       { label: "Keeper", value: "Chris Hands: 3 saves, 1 conceded" },
     ]);
-    expect(matchGoalLines(likely)).toEqual([]);
+    expect(matchGoalLines(likely)).toEqual([{ label: "Scorers", value: "Alex Demo (likely)" }]);
+    expect(matchGoalLines(matchGoals({ moments: [t("g", "ASTON VILLA GOAL", 100, 25)] }, CLUB))).toEqual([]);
   });
 
   // Owner request 2026-11-17: the season's top scorers count the likely scorer until one is confirmed.

@@ -190,13 +190,19 @@ function tally(names: string[]): { name: string; goals: number }[] {
   return [...found.values()].sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name));
 }
 
-const confirmedScorers = (m: MatchGoals) => m.goals.filter((g) => g.side === "ours" && g.confirmed && g.scorer).map((g) => g.scorer!);
-
-/** Match report lines: confirmed scorers and keepers only, so a guess is never shared. */
+/** Match report lines (owner request 2026-11-17): who scored, the owner's scorer else the
+ *  likely one, marked "(likely)" when none of that player's goals is confirmed; goals with
+ *  no scorer at all as "N unknown". Keepers stay confirmed only. */
 export function matchGoalLines(m: MatchGoals): { label: string; value: string }[] {
   const lines: { label: string; value: string }[] = [];
-  const scorers = tally(confirmedScorers(m));
-  if (scorers.length) lines.push({ label: "Scorers", value: scorers.map((s) => (s.goals > 1 ? `${s.name} ${s.goals}` : s.name)).join(", ") });
+  const ours = m.goals.filter((g) => g.side === "ours");
+  const scorers = tally(ours.flatMap((g) => (g.scorer ? [g.scorer] : [])));
+  const sure = new Set(ours.filter((g) => g.confirmed && g.scorer).map((g) => codeKey(g.scorer!)));
+  const unknown = ours.filter((g) => !g.scorer).length;
+  if (scorers.length) lines.push({ label: "Scorers", value: [
+    ...scorers.map((s) => `${s.goals > 1 ? `${s.name} ${s.goals}` : s.name}${sure.has(codeKey(s.name)) ? "" : " (likely)"}`),
+    ...(unknown ? [`${unknown} unknown`] : []),
+  ].join(", ") });
   const keepers = m.keepers.filter((k) => k.confirmed && k.name);
   if (keepers.length) lines.push({ label: keepers.length > 1 ? "Keepers" : "Keeper",
     value: keepers.map((k) => `${k.name}: ${k.saves !== null ? `${count(k.saves, "save")}, ` : ""}${k.conceded} conceded`).join("; ") });

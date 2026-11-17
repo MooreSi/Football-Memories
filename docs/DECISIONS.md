@@ -9,8 +9,9 @@ Owner request: the season report's TOP SCORERS showed only a note ("125 goals ha
 no confirmed scorer yet") because spec 270 shared confirmed scorers only. Now each
 of our goals counts for the owner's scorer, else the likely one from the tags
 (`lib/goals.ts` nearest touch). The note says how many goals behind the top three are
-only likely and how many have no scorer. Match reports still name confirmed scorers
-only. "Plays alongside" removed from the season report's player lines (not relevant).
+only likely and how many have no scorer. Later the same day (owner request) the match
+report also names who scored: confirmed else likely, "(likely)" after a guessed name,
+"N unknown" for goals with no scorer; keepers stay confirmed only. "Plays alongside" removed from the season report's player lines (not relevant).
 
 ## D-035 (2026-11-13) Veo connection authorized, same scope as Hudl
 Owner decision 006: permission to access the owner's Veo account; Veo has no

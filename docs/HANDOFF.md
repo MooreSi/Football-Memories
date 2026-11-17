@@ -22,6 +22,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   so a stale time from before the seek cannot skip it. Tests pass; not checked in a
   browser after the fix (the helper's stream had moved to another match the owner opened,
   and reopening ours would have taken it). Deployed 2026-11-17 at b7ed9e6 (frontend container only; health ok).
+- **Match report scorers (owner request 2026-11-17, D-036):** the match report's Scorers
+  line now names the likely scorer too, "(likely)" after a name none of whose goals is
+  confirmed, and "N unknown" for goals with no scorer (`matchGoalLines`). Keepers stay
+  confirmed only. Checked in the browser on a real 6-4 match: six goals, all likely.
+  Not deployed.
 - **Season report top scorers and plays alongside (owner request 2026-11-17, D-036):**
   TOP SCORERS now counts the likely scorer for goals not yet confirmed; the note reads
   "N goals by a likely scorer, not yet confirmed · N goals with no scorer". "Plays

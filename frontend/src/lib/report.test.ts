@@ -63,12 +63,14 @@ it("puts Veo's team stats on a Veo match report, shots on goal and penalties inc
 });
 
 // Spec 270 (owner requests 2026-11-16): confirmed scorers and keepers, season top three.
-it("adds the confirmed scorers and keeper to a match report, and nothing for a guess", () => {
+// Owner request 2026-11-17: who scored is on the match report, a likely scorer marked as such.
+it("adds the scorers and confirmed keeper to a match report, a likely scorer marked", () => {
   const confirmed = matchGoals(a, "Aston Villa", { scorers: { "3": "Pat Example", "4": "Pat Example" }, added: [], removed: [],
     keepers: [{ name: "Chris Hands", saves: 2 }], beaten: {} });
   const lines = matchReport(a, "Aston Villa", {}, null, undefined, confirmed).lines;
   expect(lines.slice(-2)).toEqual([{ label: "Scorers", value: "Pat Example 2" }, { label: "Keeper", value: "Chris Hands: 2 saves, 1 conceded" }]);
-  expect(matchReport(a, "Aston Villa", {}, null, undefined, matchGoals(a, "Aston Villa")).lines).toEqual(matchReport(a, "Aston Villa", {}, null).lines);
+  const c = { ...b, moments: [t("g", "ASTON VILLA GOAL", 100, 25), t("p", "Ali Test", 110, 15)] };
+  expect(matchReport(c, "Aston Villa", {}, null, undefined, matchGoals(c, "Aston Villa")).lines).toContainEqual({ label: "Scorers", value: "Ali Test (likely)" });
 });
 
 // Owner request 2026-11-17: top scorers use the likely scorer until one is confirmed.
