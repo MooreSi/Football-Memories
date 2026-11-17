@@ -203,11 +203,16 @@ export function matchGoalLines(m: MatchGoals): { label: string; value: string }[
   return lines;
 }
 
-/** A season's top scorers from confirmed goals, and how many of our goals are unconfirmed. */
-export function topScorers(matches: MatchGoals[], n = 3): { top: { name: string; goals: number }[]; unconfirmed: number } {
+/** A season's top scorers (owner request 2026-11-17: the owner's scorer, else the likely
+ *  one), how many of the goals counted are only likely, and how many of ours have no scorer. */
+export function topScorers(matches: MatchGoals[], n = 3): { top: { name: string; goals: number }[]; likely: number; unnamed: number } {
+  const ours = matches.flatMap((m) => m.goals.filter((g) => g.side === "ours"));
+  const top = tally(ours.flatMap((g) => (g.scorer ? [g.scorer] : []))).slice(0, n);
+  const inTop = new Set(top.map((s) => codeKey(s.name)));
   return {
-    top: tally(matches.flatMap(confirmedScorers)).slice(0, n),
-    unconfirmed: matches.reduce((sum, m) => sum + m.goals.filter((g) => g.side === "ours" && !g.confirmed).length, 0),
+    top,
+    likely: ours.filter((g) => g.scorer && !g.confirmed && inTop.has(codeKey(g.scorer))).length,
+    unnamed: ours.filter((g) => !g.scorer).length,
   };
 }
 

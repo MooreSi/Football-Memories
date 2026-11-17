@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-036 (2026-11-17) Season top scorers count the likely scorer until confirmed
+Owner request: the season report's TOP SCORERS showed only a note ("125 goals have
+no confirmed scorer yet") because spec 270 shared confirmed scorers only. Now each
+of our goals counts for the owner's scorer, else the likely one from the tags
+(`lib/goals.ts` nearest touch). The note says how many goals behind the top three are
+only likely and how many have no scorer. Match reports still name confirmed scorers
+only. "Plays alongside" removed from the season report's player lines (not relevant).
+
 ## D-035 (2026-11-13) Veo connection authorized, same scope as Hudl
 Owner decision 006: permission to access the owner's Veo account; Veo has no
 public API (its help pages offer in-app downloads only), so the desktop helper

@@ -117,14 +117,16 @@ it('draws a match report with the score, possession and the player', async () =>
 });
 
 it('keeps a crest as initials when none is found, and puts long season values on their own lines', async () => {
-  const teammates = ['Chris Demo', 'Alex Sample', 'Jo Tester', 'Robin Mock'].map((n, i) => t(`p${i}`, n.toUpperCase(), 1, 2));
-  const big = [{ ...lib[0], moments: [...lib[0].moments!.map(m => ({ ...m, duration_s: m.duration_s || 2 })), ...teammates] }];
+  // Owner request 2026-11-17 removed "Plays alongside", which was the long value here; a long
+  // opponent name in "Most played" now checks the same wrapping.
+  const big = [{ ...lib[0], title: '261101 U11 v Wolverhampton Wanderers Development Squad Under Elevens Blue' }];
   stubFetch({ [`${H}/library`]: big, '/api/scores': {}, '/api/preferences': player, '/api/players/5': profile });
   renderWithProviders(<Routes><Route path="/report/season" element={<ReportPage kind="season" />} /></Routes>, '/report/season');
   const card = await screen.findByRole('img', { name: /U11 · 2026-27/ });
-  await vi.waitFor(() => expect(card).toHaveTextContent('Plays alongside'));
+  await vi.waitFor(() => expect(card).toHaveTextContent('Most played'));
   expect(card.querySelector('[data-crest=initials]')).not.toBeNull();
-  expect(card.querySelector('[data-row=stacked]')).toHaveTextContent('Plays alongside');
+  expect(card.querySelector('[data-row=stacked]')).toHaveTextContent('Most played');
+  expect(card).not.toHaveTextContent('Plays alongside');
 });
 
 it('shows only the last three matches still being watched, newest first', async () => {

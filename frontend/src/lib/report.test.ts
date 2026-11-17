@@ -71,7 +71,8 @@ it("adds the confirmed scorers and keeper to a match report, and nothing for a g
   expect(matchReport(a, "Aston Villa", {}, null, undefined, matchGoals(a, "Aston Villa")).lines).toEqual(matchReport(a, "Aston Villa", {}, null).lines);
 });
 
-it("lists a season's top three confirmed scorers and the goals still to confirm", () => {
+// Owner request 2026-11-17: top scorers use the likely scorer until one is confirmed.
+it("lists a season's top three scorers, saying how many are likely and how many have none", () => {
   const goals = {
     a: matchGoals(a, "Aston Villa", { scorers: { "3": "Pat Example" }, added: [], removed: [], keepers: [], beaten: {} }),
     b: matchGoals(b, "Aston Villa", { scorers: { x: "Ali Test", y: "Pat Example", z: "Zed Other", w: "Bo Demo" },
@@ -80,9 +81,24 @@ it("lists a season's top three confirmed scorers and the goals still to confirm"
   const r = seasonReport([a, b], "U11", "Aston Villa", {}, null, goals);
   expect(r.scorers).toEqual({ lines: [
     { label: "1. Pat Example", value: "2 goals" }, { label: "2. Ali Test", value: "1 goal" }, { label: "3. Bo Demo", value: "1 goal" },
-  ], note: "1 goal has no confirmed scorer yet" });
+  ], note: "1 goal with no scorer" });
   expect(seasonReport([a, b], "U11", "Aston Villa", {}, null).scorers).toBeNull();
   expect(seasonReport([b], "U11", "Aston Villa", {}, null, { b: matchGoals(b, "Aston Villa") }).scorers).toBeNull();
+});
+
+it("counts a likely scorer in the season's top scorers and says it is not yet confirmed", () => {
+  const goals = { a: matchGoals(a, "Aston Villa", { scorers: { "3": "Pat Example" }, added: [], removed: [], keepers: [], beaten: {} }),
+    b: matchGoals({ ...b, moments: [t("g", "ASTON VILLA GOAL", 100, 25), t("p", "Ali Test", 110, 15)] }, "Aston Villa") };
+  const r = seasonReport([a, { ...b, moments: [t("g", "ASTON VILLA GOAL", 100, 25), t("p", "Ali Test", 110, 15)] }], "U11", "Aston Villa", {}, null, goals);
+  expect(r.scorers?.lines).toEqual([{ label: "1. Ali Test", value: "1 goal" }, { label: "2. Pat Example", value: "1 goal" }]);
+  expect(r.scorers?.note).toBe("1 goal by a likely scorer, not yet confirmed · 1 goal with no scorer");
+});
+
+// Owner request 2026-11-17: "Plays alongside" is not relevant on the season report.
+it("leaves plays alongside off the season report's player lines", () => {
+  const withMate = { ...a, moments: [...a.moments!, t("9", "JO TESTER", 8, 5)] };
+  const r = seasonReport([withMate], "U11", "Aston Villa", {}, "Pat Example");
+  expect(r.player?.lines.map((l) => l.label)).toEqual(["Matches tagged", "Tagged moments", "During our chances / goals"]);
 });
 
 // Spec 290: how games went, from matches whose every goal has a time and adds up to the score.

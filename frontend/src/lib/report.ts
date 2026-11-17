@@ -2,7 +2,7 @@ import { gameState, seasonGameLines } from "./gameState";
 import type { HudlMatch } from "../api/hudl";
 import { opponentRecords } from "./headToHead";
 import { fixtureDate, fixtureParts, latestFirst, ukDate } from "./hudlFixture";
-import { involvementTotals, partnerships, possession, possessionTotals } from "./insights";
+import { involvementTotals, possession, possessionTotals } from "./insights";
 import { type Corrections, matchScore } from "./matchScore";
 import { teamProfile } from "./matchProfile";
 import { sameCode } from "./codes";
@@ -16,7 +16,8 @@ export type Report = { kind: "match" | "season"; eyebrow: string; title: string;
   record?: { played: number; won: number; drawn: number; lost: number; unscored: number } | null;
   /** Season only (owner request 2026-11-15): each game won, drawn and lost, newest first. */
   results?: { won: string[]; drawn: string[]; lost: string[] } | null;
-  /** Season only (spec 270): the top three confirmed scorers, and goals still unconfirmed. */
+  /** Season only (spec 270; likely scorers counted from 2026-11-17): the top three scorers,
+   *  and a note of how many are only likely and how many goals have no scorer. */
   scorers?: { lines: ReportLine[]; note: string | null } | null };
 
 /** Veo's team stats as report lines (owner request 2026-11-15): Veo's attempts are its
@@ -54,11 +55,12 @@ export function matchReport(match: HudlMatch, club: string | null, corrections: 
 
 function scorerSection(matches: HudlMatch[], goals: Record<string, MatchGoals> | undefined): Report["scorers"] {
   if (!goals) return null;
-  const { top, unconfirmed } = topScorers(matches.flatMap((m) => (goals[m.id] ? [goals[m.id]] : [])));
-  if (!top.length && !unconfirmed) return null;
+  const { top, likely, unnamed } = topScorers(matches.flatMap((m) => (goals[m.id] ? [goals[m.id]] : [])));
+  if (!top.length && !unnamed) return null;
   const plural = (n: number) => `${n} goal${n === 1 ? "" : "s"}`;
-  return { lines: top.map((s, i) => ({ label: `${i + 1}. ${s.name}`, value: plural(s.goals) })),
-    note: unconfirmed ? `${plural(unconfirmed)} ${unconfirmed === 1 ? "has" : "have"} no confirmed scorer yet` : null };
+  const note = [likely ? `${plural(likely)} by a likely scorer, not yet confirmed` : "", unnamed ? `${plural(unnamed)} with no scorer` : ""]
+    .filter(Boolean).join(" · ");
+  return { lines: top.map((s, i) => ({ label: `${i + 1}. ${s.name}`, value: plural(s.goals) })), note: note || null };
 }
 
 /** Spec 290: scored first, came from behind, clean sheets, from fully timed matches only. */
@@ -73,7 +75,6 @@ export function seasonReport(matches: HudlMatch[], scope: string, club: string |
   const sum = (k: "won" | "drawn" | "lost" | "goalsFor" | "goalsAgainst" | "scored") => records.reduce((n, r) => n + r[k], 0);
   const poss = possessionTotals(matches.map((m) => m.moments ?? []), club);
   const v = player ? involvementTotals(matches, player, club) : null;
-  const partners = player ? partnerships(matches, player).slice(0, 3) : [];
   const scored = sum("scored");
   const results = { won: [] as string[], drawn: [] as string[], lost: [] as string[] };
   for (const m of latestFirst(matches)) {
@@ -100,7 +101,6 @@ export function seasonReport(matches: HudlMatch[], scope: string, club: string |
       { label: "Matches tagged", value: String(v.matches) },
       { label: "Tagged moments", value: `${v.moments} (${Math.round((v.moments / v.matches) * 10) / 10} a match)` },
       { label: "During our chances / goals", value: `${v.headline.ourChances} / ${v.headline.ourGoals}` },
-      ...(partners.length ? [{ label: "Plays alongside", value: partners.map((p) => p.name).join(", ") }] : []),
     ] } : null,
   };
 }

@@ -11,7 +11,31 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-16)
+## Current state (2026-11-17)
+
+- **Next/Previous during Play Tagged (owner report 2026-11-17):** on the Hudl and Veo
+  match pages, Next moment (button, N, media key) and Previous (B) during Play Tagged
+  ended the queue, so the match just played on. They now move within the queue and
+  playback carries on to the following moment; past either end of the queue they step
+  through the moments shown as before. After a Next/Previous the queue waits until the
+  video reaches that moment before counting its end (`arrived` in `lib/taggedPlayback.ts`),
+  so a stale time from before the seek cannot skip it. Tests pass; not checked in a
+  browser after the fix (the helper's stream had moved to another match the owner opened,
+  and reopening ours would have taken it). Not deployed.
+- **Season report top scorers and plays alongside (owner request 2026-11-17, D-036):**
+  TOP SCORERS now counts the likely scorer for goals not yet confirmed; the note reads
+  "N goals by a likely scorer, not yet confirmed · N goals with no scorer". "Plays
+  alongside" removed from the season report (the player hub's "Plays alongside most"
+  panel is untouched). On the real cache the top three have 23, 20 and 19
+  goals; 62 likely, 8 with no scorer. Checked in the browser. Not deployed.
+- **"Two green boxes" on the moments grid (owner report 2026-11-17, open):** not
+  reproduced. In Chromium, on the real match, the page only ever marks one tile
+  (`aria-current`, `border-ok`) and only one is drawn; no duplicate moment ids in any of
+  the 288 cached matches; no other CSS outlines a tile. Likely a stale repaint in the
+  owner's browser (Chrome and Safari both run here). Needs: which browser, and the clicks
+  that led to it. Same report on 2026-11-13 was put down to a focus ring.
+
+## Earlier (2026-11-16)
 
 - **Match page tabs (spec 320, owner request 2026-11-16, "implement option A" from
   layout mockups):** Hudl and Veo match pages now put a compact momentum timeline

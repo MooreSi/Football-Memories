@@ -129,7 +129,7 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
   const resultRows = layoutRows(listed.map((k) => ({ label: `${k[0].toUpperCase()}${k.slice(1)} (${report.results![k].length})`,
     value: report.results![k].join(", ") })), y + 20);
   y = resultRows.length ? resultRows[resultRows.length - 1].bottom : y;
-  // Spec 270 (owner request 2026-11-16): the season's top three confirmed scorers.
+  // Spec 270: the season's top three scorers (likely ones counted from 2026-11-17).
   let scorers = null;
   if (report.scorers) {
     const top = y + 30;

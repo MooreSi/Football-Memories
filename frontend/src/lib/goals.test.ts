@@ -163,7 +163,7 @@ describe("the owner's entry", () => {
   });
 });
 
-describe("report lines and top scorers (confirmed only)", () => {
+describe("report lines (confirmed only) and top scorers (likely counted)", () => {
   const confirmed = matchGoals(hudl, CLUB, { scorers: { g1: "Sam Example" }, added: [{ id: "a1", side: "ours" }], removed: [],
     keepers: [{ name: "Chris Hands", saves: 3 }], beaten: {} });
   const likely = matchGoals(hudl, CLUB);
@@ -176,12 +176,14 @@ describe("report lines and top scorers (confirmed only)", () => {
     expect(matchGoalLines(likely)).toEqual([]);
   });
 
-  it("ranks a season's confirmed scorers, top three, ties by name, own goals left out", () => {
+  // Owner request 2026-11-17: the season's top scorers count the likely scorer until one is confirmed.
+  it("ranks a season's scorers, confirmed or likely, top three, ties by name, own goals left out", () => {
     const own = matchGoals({ moments: [] }, CLUB, { scorers: { a: "own goal", b: "Pat Demo", c: "Ali Test", d: "Zed Other", e: "SAM EXAMPLE" },
       added: ["a", "b", "c", "d", "e"].map((id) => ({ id, side: "ours" as const })), removed: [], keepers: [], beaten: {} });
     expect(topScorers([confirmed, likely, own])).toEqual({
-      top: [{ name: "Sam Example", goals: 2 }, { name: "Ali Test", goals: 1 }, { name: "Pat Demo", goals: 1 }],
-      unconfirmed: 2, // likely's g1 and confirmed's a1
+      top: [{ name: "Sam Example", goals: 2 }, { name: "Alex Demo", goals: 1 }, { name: "Ali Test", goals: 1 }],
+      likely: 1, // likely's g1, Alex Demo
+      unnamed: 1, // confirmed's a1: added by the owner with no scorer
     });
   });
 });
