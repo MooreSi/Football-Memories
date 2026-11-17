@@ -21,13 +21,13 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   video reaches that moment before counting its end (`arrived` in `lib/taggedPlayback.ts`),
   so a stale time from before the seek cannot skip it. Tests pass; not checked in a
   browser after the fix (the helper's stream had moved to another match the owner opened,
-  and reopening ours would have taken it). Not deployed.
+  and reopening ours would have taken it). Deployed 2026-11-17 at b7ed9e6 (frontend container only; health ok).
 - **Season report top scorers and plays alongside (owner request 2026-11-17, D-036):**
   TOP SCORERS now counts the likely scorer for goals not yet confirmed; the note reads
   "N goals by a likely scorer, not yet confirmed · N goals with no scorer". "Plays
   alongside" removed from the season report (the player hub's "Plays alongside most"
   panel is untouched). On the real cache the top three have 23, 20 and 19
-  goals; 62 likely, 8 with no scorer. Checked in the browser. Not deployed.
+  goals; 62 likely, 8 with no scorer. Checked in the browser. Deployed 2026-11-17 at b7ed9e6 (frontend container only; health ok, live bundle has the new note; live app not opened).
 - **"Two green boxes" on the moments grid (owner report 2026-11-17, open):** not
   reproduced. In Chromium, on the real match, the page only ever marks one tile
   (`aria-current`, `border-ok`) and only one is drawn; no duplicate moment ids in any of
