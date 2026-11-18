@@ -35,7 +35,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   "not measured" until the provisioner exists. Task 040 (provisioner + our own Docker
   allow-list proxy; real-Docker tested) done at gateway e4f3976; this repo's 50b020f makes the
   backend image's /archive and /inbox writable in new volumes (owner's install unaffected; live
-  app not rebuilt). Next: 050 forwarding, 090 security pass.
+  app not rebuilt). Task 050 (forwarding to each user's own library; browser-checked end to
+  end) done at gateway d96e78e. Owner: every hosted user enters their own Hudl and Veo
+  credentials (phase 2). Next: 090 security pass, phase 2.
 
 ## Earlier (2026-11-17)
 
