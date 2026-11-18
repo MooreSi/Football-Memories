@@ -63,9 +63,11 @@ unchanged (rule 5):
 
 ## Still to do
 
-- Hide the remaining Hudl/Veo surfaces in a hosted build (Library's Hudl/Veo sections, Downloaded
-  page, Veo expiry panel, Hudl match/player routes), so no control is left that cannot work. In a
-  hosted build today they show the "not available" error instead of calling the helper.
+- Hudl/Veo surfaces in a hosted build (Library's Hudl/Veo sections, Downloaded page, Veo expiry
+  panel, Hudl match/player routes): the owner wants every hosted user to connect their own Hudl
+  and Veo (2026-11-18), so these are not removed for good; phase 2 makes them work inside each
+  library. Until then they say "start the desktop helper" with a Retry that cannot work there.
+  Owner to choose: hide them meanwhile, or go straight to phase 2.
 - Backend image: `FM_HOSTED` has nothing to switch yet (the Docker backend has no helper, updater
   or LAN routes; those live in the host helper process). Keep it that way.
 - Quota note: an uploaded video is kept in `uploaded/` after import (owner request 2026-11-14), so

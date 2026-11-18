@@ -1,6 +1,6 @@
 # 050: Routing a signed-in user to their instance
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway d96e78e)
 **Depends on:** 030, 040
 **Real-money surface:** no
 **Leverage:** none
