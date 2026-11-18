@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     render_worker: bool = True  # background highlight-reel renderer (spec 080)
     auto_backup: bool = True  # one automatic backup per day while running (spec 070)
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    # Hosted instances only (owner decision 011): disk limit for archive + import folders.
+    quota_bytes: int | None = Field(default=None, gt=0)
 
     @field_validator("archive_root", "import_root")
     @classmethod

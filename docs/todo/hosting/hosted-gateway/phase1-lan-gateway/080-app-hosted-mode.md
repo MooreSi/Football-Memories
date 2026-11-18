@@ -1,6 +1,6 @@
 # 080: Hosted mode of the app (this repo)
 
-**Status:** not started
+**Status:** in progress (2026-11-18: quota, helper guard, hosted nginx and image done; remaining UI hiding listed below)
 **Depends on:** none (can start in parallel with 010)
 **Real-money surface:** no (`/safe-change`: it decides whether an instance can reach the owner's Hudl helper)
 **Leverage:** `frontend/nginx.conf`, `frontend/src/api/helperBase.ts`, `docker-compose.yml`,
@@ -45,3 +45,29 @@ unchanged (rule 5):
 - `docker run` of the hosted web image on an internal network: `curl /helper/` -> 404 and
   `getent hosts host.docker.internal` fails inside it (verified in 090).
 - Owner's own `docker compose up` behaves exactly as before.
+
+## Done so far (2026-11-18)
+
+- `FM_QUOTA_BYTES` (`Settings.quota_bytes`, default unset): `services/quota.py`; uploads
+  (`services/uploads.py`) and imports (`services/importer.py`) refused with 413 before any byte is
+  written. Tests: `backend/tests/api/test_hosted_quota.py` (seen red first, negative control).
+- `VITE_FM_HOSTED=1`: `api/helperBase.ts` `HOSTED` and `helperFetch`; every helper request
+  (`api/hudl.ts`, `api/veo.ts`, `HudlCapture`, `HudlAccount`) goes through it and is refused
+  without a request. Settings hides Connections and Update. Tests: `api/hosted.test.ts`,
+  `pages/SettingsPage.hosted.test.tsx`.
+- `nginx.hosted.conf` and `Dockerfile` `ARG FM_HOSTED=0` (default image unchanged). Test:
+  `src/test/nginxHosted.test.ts`.
+- Checked by hand: hosted image on a `--internal` Docker network (Docker 29.9): nginx config
+  valid, `host.docker.internal` has no address, `/helper/status` returns the app's own
+  `index.html` (SPA fallback, nothing proxied). The gateway (050) refuses those paths anyway.
+
+## Still to do
+
+- Hide the remaining Hudl/Veo surfaces in a hosted build (Library's Hudl/Veo sections, Downloaded
+  page, Veo expiry panel, Hudl match/player routes), so no control is left that cannot work. In a
+  hosted build today they show the "not available" error instead of calling the helper.
+- Backend image: `FM_HOSTED` has nothing to switch yet (the Docker backend has no helper, updater
+  or LAN routes; those live in the host helper process). Keep it that way.
+- Quota note: an uploaded video is kept in `uploaded/` after import (owner request 2026-11-14), so
+  it counts twice against the quota. Decide in 070 whether hosted imports remove the upload copy
+  (that is a library delete: `/safe-change`, owner).

@@ -1,7 +1,7 @@
 import type { VeoTeamData } from "../lib/veoTeamSplit";
 import { useQuery } from "@tanstack/react-query";
 import { HUDL } from "./hudl";
-import { localiseHelperUrls } from "./helperBase";
+import { helperFetch, localiseHelperUrls } from "./helperBase";
 
 /** Spec 250: the desktop helper's Veo routes (same helper and origin rules as Hudl). */
 export type VeoSummary = { clubs: number; matches: number; with_video: number; expired: number; expiring: number; moments?: number };
@@ -12,7 +12,7 @@ export type VeoStatus = {
 };
 
 export async function veoRequest<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`${HUDL}/veo${path}`, body === undefined ? {} : {
+  const response = await helperFetch(`${HUDL}/veo${path}`, body === undefined ? {} : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
   // Opened over the network the page reaches the helper through /helper, so the

@@ -3,13 +3,13 @@
 **Shared status log. Any agent picking up a task updates this file**: claim a row (name and date
 under Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 
-_Last updated: 2026-11-18. Pack scaffolded, no code started. Gateway repo is empty._
+_Last updated: 2026-11-18. Answers in; 080 mostly done in this repo; gateway repo still empty._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
 
 ## Overall
-- Phase 1 (LAN gateway): not started
+- Phase 1 (LAN gateway): in progress (080)
 - Phase 2 (container capture): not started, owner sign-off gated
 - Phase 3 (Cloudflare Tunnel): not started, gated on phase 1 passing 090
 - **Gates:** QUESTIONS answered? yes, all recommendations (2026-11-18) · phase 2 tasks signed off? no · tests-first honoured? n/a yet
@@ -25,7 +25,7 @@ _Last updated: 2026-11-18. Pack scaffolded, no code started. Gateway repo is emp
 | 1 | [050 routing to the instance](phase1-lan-gateway/050-routing-to-instance.md) | not started | | |
 | 1 | [060 portal UI](phase1-lan-gateway/060-portal-ui.md) | not started | | design side by side |
 | 1 | [070 admin page](phase1-lan-gateway/070-admin-page.md) | not started | | |
-| 1 | [080 hosted mode of the app](phase1-lan-gateway/080-app-hosted-mode.md) | not started | | this repo; cuts the helper path |
+| 1 | [080 hosted mode of the app](phase1-lan-gateway/080-app-hosted-mode.md) | in progress | Claude 2026-11-18 | quota, helper guard, hosted nginx/image done; UI hiding left |
 | 1 | [090 LAN security pass](phase1-lan-gateway/090-lan-security-pass.md) | not started | | |
 | 2 | [010 secret store in a container](phase2-container-capture/010-container-secret-store.md) | not started | | sign-off gated |
 | 2 | [020 headless capture on Linux](phase2-container-capture/020-headless-capture-linux.md) | not started | | sign-off gated |

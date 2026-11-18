@@ -1,13 +1,16 @@
 import { ArrowUpCircle, HardDrive, PlugZap, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { HOSTED } from "../api/helperBase";
 
-const TABS = [
+const ALL_TABS = [
   { to: "/settings", label: "Playback", icon: SlidersHorizontal, end: true },
   { to: "/settings/storage", label: "Storage", icon: HardDrive, end: false },
   { to: "/settings/backups", label: "Backups", icon: ShieldCheck, end: false },
-  { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false },
-  { to: "/settings/update", label: "Update", icon: ArrowUpCircle, end: false },
+  { to: "/settings/connections", label: "Connections", icon: PlugZap, end: false, helper: true },
+  { to: "/settings/update", label: "Update", icon: ArrowUpCircle, end: false, helper: true },
 ];
+// Task 080: the helper-only tabs cannot work in a hosted copy, so they are not shown there.
+const TABS = ALL_TABS.filter((tab) => !(HOSTED && tab.helper));
 
 export function SettingsLayout() {
   return (

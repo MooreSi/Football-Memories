@@ -27,7 +27,7 @@ from app.schemas import (
     StatsOut,
     TagCount,
 )
-from app.services import library, players, uploads
+from app.services import library, players, quota, uploads
 from app.services.importer import (
     VIDEO_EXTENSIONS,
     DuplicateMedia,
@@ -126,6 +126,8 @@ async def upload_video(
         saved = await uploads.save_upload(settings, filename, request.stream())
     except uploads.UploadRefused as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except quota.QuotaExceeded as exc:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, detail=str(exc)) from exc
     except OSError as exc:
         raise HTTPException(
             status.HTTP_507_INSUFFICIENT_STORAGE,
@@ -144,6 +146,8 @@ def create_import(body: ImportIn, db: Db, settings: Cfg) -> MatchSummary:
         match = import_match(db, settings, ImportRequest(**body.model_dump()))
     except InvalidImport as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except quota.QuotaExceeded as exc:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, detail=str(exc)) from exc
     except DuplicateMedia as exc:
         raise HTTPException(
             status.HTTP_409_CONFLICT,

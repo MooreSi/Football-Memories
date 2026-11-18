@@ -1,4 +1,5 @@
 import { HUDL } from "../../api/hudl";
+import { helperFetch } from "../../api/helperBase";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
@@ -18,7 +19,7 @@ export function HudlCapture() {
   const q = useQuery<Status>({
     queryKey: KEY, retry: false,
     queryFn: async () => {
-      const response = await fetch(`${BASE}/status`, { signal: AbortSignal.timeout(3000) });
+      const response = await helperFetch(`${BASE}/status`, { signal: AbortSignal.timeout(3000) });
       if (!response.ok) throw new Error("Desktop helper is not running.");
       return response.json();
     },
@@ -26,7 +27,7 @@ export function HudlCapture() {
   });
   const capture = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${BASE}/capture`, {
+      const response = await helperFetch(`${BASE}/capture`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: url.trim(), max_height: Number(height),
           player_codes: players.split(";").map(p => p.trim()).filter(Boolean) }),

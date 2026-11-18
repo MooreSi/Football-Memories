@@ -16,6 +16,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 from app.config import Settings
+from app.services import quota
 from app.services.importer import VIDEO_EXTENSIONS
 from app.services.paths import sanitize_component
 from app.services.publish import publish_new
@@ -64,6 +65,7 @@ async def save_upload(settings: Settings, filename: str, chunks: AsyncIterator[b
             "The import folder cannot be written to, so the video was not saved. "
             "Copy it into the import folder instead."
         ) from error
+    used = quota.used_bytes(settings) if settings.quota_bytes is not None else 0
     part = folder / f".{secrets.token_hex(8)}.part"
     size = 0
     try:
@@ -72,6 +74,7 @@ async def save_upload(settings: Settings, filename: str, chunks: AsyncIterator[b
                 size += len(chunk)
                 if size > MAX_BYTES:
                     raise UploadRefused("That video is larger than 50 GB; it was not saved.")
+                quota.check(settings, size, used)
                 out.write(chunk)
             out.flush()
             os.fsync(out.fileno())

@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from app.config import Settings
 from app.models import Event, Match, MediaAsset, Player, Season, TagDefinition, Team, TeamSeason
+from app.services import quota
 from app.services.media import MediaError, make_thumbnail, probe
 from app.services.paths import UnsafePath, safe_join, sanitize_component
 from app.services.sidecar import SidecarError, SidecarRow, parse_sidecar
@@ -131,6 +132,8 @@ def import_match(db: Session, settings: Settings, req: ImportRequest) -> Match:
         raise InvalidImport(f"no such file in the import folder: {req.filename}")
     if source.suffix.lower() not in VIDEO_EXTENSIONS:
         raise InvalidImport(f"not a supported video file type: {source.suffix}")
+    # Owner decision 011: a hosted instance's disk limit, checked before any copy.
+    quota.check(settings, source.stat().st_size)
     for label, value in (
         ("team", req.team_name),
         ("season", req.season_label),

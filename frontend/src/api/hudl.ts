@@ -1,6 +1,6 @@
 import { scopedHudlAction } from "../lib/archiveFilters";
 import { useQuery } from '@tanstack/react-query';
-import { helperBase, localiseHelperUrls } from './helperBase';
+import { helperBase, helperFetch, localiseHelperUrls } from './helperBase';
 import { displayLibrary } from '../lib/hudlPlayer';
 export const HUDL = helperBase();
 export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number};
@@ -10,7 +10,7 @@ export type HudlMatch = {id:string; title:string; age_group:string; age_groups?:
 export type HudlProgress = {label:string; step:number; steps:number; done:number; total:number; fraction:number; eta_s:number|null};
 export type HudlStatus = {state:string; message:string; busy:boolean; syncing?:boolean; tag_age_group?:string|null; progress?:HudlProgress|null; catalogue_checked_at?:number|null; configured:boolean; secret_store?:string; platform?:"mac"|"windows"; match_id?:string; filename?:string; download_url?:string; download_kind?:"match"|"moments"|"reel"; stream_url?:string};
 export async function hudlRequest<T>(path:string,body?:unknown):Promise<T> {
- const response=await fetch(HUDL+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path==='/account/action'?scopedHudlAction(body):body)});
+ const response=await helperFetch(HUDL+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path==='/account/action'?scopedHudlAction(body):body)});
  const data=localiseHelperUrls(await response.json().catch(()=>({detail:'Hudl helper unavailable. Start it on the Mac (run the installer), then try again.'})),HUDL); if(!response.ok)throw Object.assign(new Error(data.detail||'Hudl helper unavailable'),{status:response.status});return data;
 }
 export function useHudlStatus(){return useQuery<HudlStatus>({queryKey:['hudl-account'],queryFn:()=>hudlRequest('/account'),retry:false,refetchInterval:q=>q.state.data?.busy?1500:10000});}

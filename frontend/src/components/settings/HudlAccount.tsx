@@ -1,4 +1,5 @@
 import { HUDL } from "../../api/hudl";
+import { helperFetch } from "../../api/helperBase";
 import { scopedHudlAction } from "../../lib/archiveFilters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type Hls from "hls.js";
@@ -13,7 +14,7 @@ type Match = { id: string; title: string; url: string };
 type Status = { session_active?: boolean; configured: boolean; busy: boolean; state: string; message: string; secret_store?: string;
   matches: Match[]; stream_url?: string | null; filename?: string | null };
 async function request<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`${BASE}${path}`, body === undefined ? {} : {
+  const response = await helperFetch(`${BASE}${path}`, body === undefined ? {} : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(path === "/account/action" ? scopedHudlAction(body) : body),
   });
   const data = await response.json();
