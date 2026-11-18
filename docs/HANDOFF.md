@@ -11,7 +11,18 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-17)
+## Current state (2026-11-18)
+
+- **Hosted version for other users (owner request 2026-11-18, planning only):** plan pack
+  [todo/hosting/hosted-gateway/](todo/hosting/hosted-gateway/README.md) and owner decision
+  [011](owner-decisions/011-hosted-instances.md). A separate gateway (repo
+  `MooreSi/football-memories-frontend`, still empty) with registration, admin approval, sign-in,
+  admin page; one internal-network Docker stack per approved user; LAN first, Hudl/Veo in containers
+  as a gated phase 2, Cloudflare Tunnel phase 3. Found while planning: the app's nginx forwards
+  `/helper/` to the owner's desktop helper, so user instances need a hosted build without it
+  (task 080). No code written; next step is the owner answering the pack's QUESTIONS.md.
+
+## Earlier (2026-11-17)
 
 - **Next/Previous during Play Tagged (owner report 2026-11-17):** on the Hudl and Veo
   match pages, Next moment (button, N, media key) and Previous (B) during Play Tagged
