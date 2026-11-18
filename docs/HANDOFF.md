@@ -28,8 +28,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   `~/Football Memories Gateway` (3bc236e). Both pushed.
   Gateway tasks 020 (Caddy edge) and 030 (accounts and sign-in API) done at fc70e7b: 76 tests
   plus a real-Caddy test, every control broken on purpose and caught; stack run locally on
-  127.0.0.1 and taken down again. Owner approved adding `cryptography`. Next: 040 provisioner,
-  050 forwarding, 060 portal screens.
+  127.0.0.1 and taken down again. Owner approved adding `cryptography`. Task 060 (portal
+  screens after reference 01, served by the gateway) done at gateway 5e764c5; checked in the
+  browser at desktop and 375 px; owner approved `qrcode`. Next: 070 admin page (approve users),
+  040 provisioner, 050 forwarding.
 
 ## Earlier (2026-11-17)
 

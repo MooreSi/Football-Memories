@@ -78,6 +78,11 @@ ANSWER: (2026-11-18) Owner: go with the recommendation.
 
 ANSWER: (2026-11-18) Owner: yes, add it.
 
+## 7b. Added later (2026-11-18)
+`qrcode` (npm, draws the authenticator QR in the browser).
+
+ANSWER: (2026-11-18) Owner: yes, add it.
+
 ## 8. Deleting a user
 - **Delete stops their app and removes the account; their files are kept until you press
   "Erase data" with a typed confirmation (Recommended)**

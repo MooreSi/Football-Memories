@@ -1,6 +1,6 @@
 # 060: Portal UI
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway 5e764c5); screenshots in the gateway repo's docs/design/
 **Depends on:** 030
 **Real-money surface:** no
 **Leverage:** `frontend/src/index.css` tokens, `frontend/src/screens.css` charcoal canvas,

@@ -3,13 +3,13 @@
 **Shared status log. Any agent picking up a task updates this file**: claim a row (name and date
 under Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 
-_Last updated: 2026-11-18. 010, 020, 030 done in the gateway repo (fc70e7b, pushed); 080 mostly done here._
+_Last updated: 2026-11-18. 010, 020, 030, 060 done in the gateway repo (5e764c5, pushed); 080 mostly done here._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
 
 ## Overall
-- Phase 1 (LAN gateway): in progress (010/020/030 done, 080 mostly)
+- Phase 1 (LAN gateway): in progress (010/020/030/060 done, 080 mostly)
 - Phase 2 (container capture): not started, owner sign-off gated
 - Phase 3 (Cloudflare Tunnel): not started, gated on phase 1 passing 090
 - **Gates:** QUESTIONS answered? yes, all recommendations (2026-11-18); `cryptography` added with owner approval (2026-11-18) · phase 2 tasks signed off? no · tests-first honoured? yes, plus deliberate-breakage checks on every control
@@ -23,7 +23,7 @@ _Last updated: 2026-11-18. 010, 020, 030 done in the gateway repo (fc70e7b, push
 | 1 | [030 accounts and sign-in](phase1-lan-gateway/030-accounts-and-auth.md) | done, API only (2026-11-18, gateway fc70e7b) | Claude | no per-address registration limit yet; screens in 060 |
 | 1 | [040 provisioner](phase1-lan-gateway/040-provisioner.md) | not started | | `/safe-change` |
 | 1 | [050 routing to the instance](phase1-lan-gateway/050-routing-to-instance.md) | not started | | |
-| 1 | [060 portal UI](phase1-lan-gateway/060-portal-ui.md) | not started | | design side by side |
+| 1 | [060 portal UI](phase1-lan-gateway/060-portal-ui.md) | done (2026-11-18, gateway 5e764c5) | Claude | checked vs reference 01 at desktop and 375 px; qrcode 1.5.4 owner-approved |
 | 1 | [070 admin page](phase1-lan-gateway/070-admin-page.md) | not started | | |
 | 1 | [080 hosted mode of the app](phase1-lan-gateway/080-app-hosted-mode.md) | in progress | Claude 2026-11-18 | quota, helper guard, hosted nginx/image done; UI hiding left |
 | 1 | [090 LAN security pass](phase1-lan-gateway/090-lan-security-pass.md) | not started | | |
