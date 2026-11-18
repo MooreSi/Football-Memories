@@ -1,6 +1,6 @@
 # 070: Admin page
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway aff5fca). Screen at `/_portal/admin` (one portal build); API at `/_admin/api/`. Disk and library figures wait for 040.
 **Depends on:** 030, 040, 060
 **Real-money surface:** no (`/safe-change` for erase)
 **Leverage:** app's Settings tiles/panels styling; provisioner `usage`

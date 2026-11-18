@@ -30,8 +30,9 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   plus a real-Caddy test, every control broken on purpose and caught; stack run locally on
   127.0.0.1 and taken down again. Owner approved adding `cryptography`. Task 060 (portal
   screens after reference 01, served by the gateway) done at gateway 5e764c5; checked in the
-  browser at desktop and 375 px; owner approved `qrcode`. Next: 070 admin page (approve users),
-  040 provisioner, 050 forwarding.
+  browser at desktop and 375 px; owner approved `qrcode`. Task 070 (admin page: approve, suspend, quotas, delete/erase,
+  activity; screen at `/_portal/admin`) done at gateway aff5fca; disk and library figures show
+  "not measured" until the provisioner exists. Next: 040 provisioner, 050 forwarding.
 
 ## Earlier (2026-11-17)
 
