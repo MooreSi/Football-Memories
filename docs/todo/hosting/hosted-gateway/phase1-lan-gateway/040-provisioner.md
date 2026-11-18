@@ -1,6 +1,6 @@
 # 040: Provisioner
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway e4f3976). Socket filter is our own HAProxy config, not tecnativa (its CONTAINERS=1 + POST=1 also allows exec). Idle memory of one user stack measured at about 160 MB.
 **Depends on:** 010, 080 (needs the hosted-mode images)
 **Real-money surface:** no (but `/safe-change`: Docker access and deleting user volumes)
 **Leverage:** `docker-compose.yml` in this repo as the template for one user's stack

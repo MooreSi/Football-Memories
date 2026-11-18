@@ -41,7 +41,7 @@ These are other people's children. The admin page shows sizes, dates and status 
 ANSWER: (2026-11-18) Owner: go with the recommendation.
 
 ## 4. How many users at most?
-Each copy is three containers (about 300-500 MB of memory idle, to be measured in task 040).
+Each copy is three containers (measured 2026-11-18: about 160 MB of memory idle).
 
 - **10, the provisioner refuses beyond it, you can raise it (Recommended)**
 - **A different number**

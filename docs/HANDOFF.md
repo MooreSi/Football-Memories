@@ -32,7 +32,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   screens after reference 01, served by the gateway) done at gateway 5e764c5; checked in the
   browser at desktop and 375 px; owner approved `qrcode`. Task 070 (admin page: approve, suspend, quotas, delete/erase,
   activity; screen at `/_portal/admin`) done at gateway aff5fca; disk and library figures show
-  "not measured" until the provisioner exists. Next: 040 provisioner, 050 forwarding.
+  "not measured" until the provisioner exists. Task 040 (provisioner + our own Docker
+  allow-list proxy; real-Docker tested) done at gateway e4f3976; this repo's 50b020f makes the
+  backend image's /archive and /inbox writable in new volumes (owner's install unaffected; live
+  app not rebuilt). Next: 050 forwarding, 090 security pass.
 
 ## Earlier (2026-11-17)
 
