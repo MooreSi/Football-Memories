@@ -73,6 +73,11 @@ Frontend: the app's own set (React, TanStack Query, React Router, Tailwind, luci
 
 ANSWER: (2026-11-18) Owner: go with the recommendation.
 
+## 7a. Added later (2026-11-18)
+`cryptography` (AES-GCM for authenticator secrets; phase 2 will reuse it).
+
+ANSWER: (2026-11-18) Owner: yes, add it.
+
 ## 8. Deleting a user
 - **Delete stops their app and removes the account; their files are kept until you press
   "Erase data" with a typed confirmation (Recommended)**

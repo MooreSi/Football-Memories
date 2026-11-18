@@ -3,24 +3,24 @@
 **Shared status log. Any agent picking up a task updates this file**: claim a row (name and date
 under Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 
-_Last updated: 2026-11-18. Answers in; 080 mostly done here (c01338a); 010 scaffolded in the gateway repo (3bc236e). Neither repo pushed._
+_Last updated: 2026-11-18. 010, 020, 030 done in the gateway repo (fc70e7b, pushed); 080 mostly done here._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
 
 ## Overall
-- Phase 1 (LAN gateway): in progress (010, 080)
+- Phase 1 (LAN gateway): in progress (010/020/030 done, 080 mostly)
 - Phase 2 (container capture): not started, owner sign-off gated
 - Phase 3 (Cloudflare Tunnel): not started, gated on phase 1 passing 090
-- **Gates:** QUESTIONS answered? yes, all recommendations (2026-11-18) · phase 2 tasks signed off? no · tests-first honoured? n/a yet
+- **Gates:** QUESTIONS answered? yes, all recommendations (2026-11-18); `cryptography` added with owner approval (2026-11-18) · phase 2 tasks signed off? no · tests-first honoured? yes, plus deliberate-breakage checks on every control
 
 ## Tasks
 
 | Phase | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| 1 | [010 repo and threat model](phase1-lan-gateway/010-repo-and-threat-model.md) | in progress | Claude 2026-11-18 | gateway 3bc236e (local, not pushed): redacting logger, hygiene test, secrets script, threat model, CI written but never run |
-| 1 | [020 edge proxy](phase1-lan-gateway/020-edge-proxy.md) | not started | | |
-| 1 | [030 accounts and sign-in](phase1-lan-gateway/030-accounts-and-auth.md) | not started | | |
+| 1 | [010 repo and threat model](phase1-lan-gateway/010-repo-and-threat-model.md) | done (2026-11-18, gateway 3bc236e) | Claude | CI green once, never seen red (owner skipped) |
+| 1 | [020 edge proxy](phase1-lan-gateway/020-edge-proxy.md) | done (2026-11-18, gateway fc70e7b) | Claude | Caddy 2.11.9; throttling in gateway (no Caddy rate limiter) |
+| 1 | [030 accounts and sign-in](phase1-lan-gateway/030-accounts-and-auth.md) | done, API only (2026-11-18, gateway fc70e7b) | Claude | no per-address registration limit yet; screens in 060 |
 | 1 | [040 provisioner](phase1-lan-gateway/040-provisioner.md) | not started | | `/safe-change` |
 | 1 | [050 routing to the instance](phase1-lan-gateway/050-routing-to-instance.md) | not started | | |
 | 1 | [060 portal UI](phase1-lan-gateway/060-portal-ui.md) | not started | | design side by side |
@@ -40,5 +40,4 @@ _Last updated: 2026-11-18. Answers in; 080 mostly done here (c01338a); 010 scaff
 - All QUESTIONS 1-8: recommendations accepted (owner, 2026-11-18): 50 GB quota refused at limit, TOTP admin required / users optional, admin sees metadata only, cap 10 users, owner's app stays separate, no backups (test-service notice), dependency list approved, delete keeps files until Erase data
 
 ## Blockers / open
-- Pushing both repos needs the owner's go-ahead (auto mode blocked the push on 2026-11-18).
 - Gateway clone lives at `~/Football Memories Gateway`.

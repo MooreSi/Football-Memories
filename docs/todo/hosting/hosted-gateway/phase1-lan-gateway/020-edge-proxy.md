@@ -1,6 +1,6 @@
 # 020: Edge proxy
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway fc70e7b)
 **Depends on:** 010
 **Real-money surface:** no
 **Leverage:** none in the app (its nginx is plain HTTP on localhost)

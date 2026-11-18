@@ -1,6 +1,6 @@
 # 010: Gateway repo and threat model
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway 3bc236e)
 **Depends on:** QUESTIONS 7 answered
 **Real-money surface:** no
 **Leverage:** this repo's layout (`backend/` FastAPI, `frontend/` Vite), its `.gitignore`, `logging_setup.py` redaction, `/verify` gates

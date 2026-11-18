@@ -25,7 +25,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   build refuses every helper request, `FM_HOSTED=1` image uses `nginx.hosted.conf` (no helper
   route). Default install unchanged; live app not rebuilt or redeployed. Left in 080: hiding the
   remaining Hudl/Veo screens in a hosted build. Task 010 scaffolded in the gateway clone at
-  `~/Football Memories Gateway` (3bc236e). Neither repo pushed yet (needs the owner's go-ahead).
+  `~/Football Memories Gateway` (3bc236e). Both pushed.
+  Gateway tasks 020 (Caddy edge) and 030 (accounts and sign-in API) done at fc70e7b: 76 tests
+  plus a real-Caddy test, every control broken on purpose and caught; stack run locally on
+  127.0.0.1 and taken down again. Owner approved adding `cryptography`. Next: 040 provisioner,
+  050 forwarding, 060 portal screens.
 
 ## Earlier (2026-11-17)
 

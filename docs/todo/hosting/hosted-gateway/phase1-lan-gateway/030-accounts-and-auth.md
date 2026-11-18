@@ -1,6 +1,6 @@
 # 030: Accounts and sign-in
 
-**Status:** not started
+**Status:** done, API only (2026-11-18, gateway fc70e7b); per-address registration limit still to add
 **Depends on:** 010
 **Real-money surface:** no (but `/safe-change`: credentials and sessions)
 **Leverage:** none; new ground
