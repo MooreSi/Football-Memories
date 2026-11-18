@@ -1,6 +1,6 @@
 # 090: LAN security pass
 
-**Status:** not started
+**Status:** done (2026-11-18, gateway 33ebdee). Report: gateway repo docs/security-pass-2026-11-18.md, 24/24.
 **Depends on:** 010-080
 **Real-money surface:** no
 **Leverage:** none

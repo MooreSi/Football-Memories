@@ -3,15 +3,15 @@
 **Shared status log. Any agent picking up a task updates this file**: claim a row (name and date
 under Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 
-_Last updated: 2026-11-18. 010-070 done in the gateway repo (d96e78e, pushed); 080 mostly done here; 090 left._
+_Last updated: 2026-11-18 (night). Phase 1 done (gateway 391158a); phase 3 built and switched off; phase 2 ready for the owner's sign-off._
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
 
 ## Overall
-- Phase 1 (LAN gateway): in progress (010-070 done, 080 mostly; 090 left)
-- Phase 2 (container capture): not started, owner sign-off gated
-- Phase 3 (Cloudflare Tunnel): not started, gated on phase 1 passing 090
+- Phase 1 (LAN gateway): done (080's Hudl/Veo part waits for phase 2)
+- Phase 2 (container capture): task files ready for the owner's sign-off; not built
+- Phase 3 (Cloudflare Tunnel): built and switched off; owner steps in the gateway repo's docs/PHASE3_TUNNEL.md
 - **Gates:** QUESTIONS answered? yes, all recommendations (2026-11-18); `cryptography` added with owner approval (2026-11-18) · phase 2 tasks signed off? no · tests-first honoured? yes, plus deliberate-breakage checks on every control
 
 ## Tasks
@@ -26,11 +26,11 @@ _Last updated: 2026-11-18. 010-070 done in the gateway repo (d96e78e, pushed); 0
 | 1 | [060 portal UI](phase1-lan-gateway/060-portal-ui.md) | done (2026-11-18, gateway 5e764c5) | Claude | checked vs reference 01 at desktop and 375 px; qrcode 1.5.4 owner-approved |
 | 1 | [070 admin page](phase1-lan-gateway/070-admin-page.md) | done (2026-11-18, gateway aff5fca) | Claude | screen at /_portal/admin; provisioner stand-in until 040 |
 | 1 | [080 hosted mode of the app](phase1-lan-gateway/080-app-hosted-mode.md) | in progress | Claude 2026-11-18 | quota, helper guard, hosted nginx/image done; Hudl/Veo panels: owner wants per-user credentials (phase 2) |
-| 1 | [090 LAN security pass](phase1-lan-gateway/090-lan-security-pass.md) | not started | | |
-| 2 | [010 secret store in a container](phase2-container-capture/010-container-secret-store.md) | not started | | sign-off gated |
-| 2 | [020 headless capture on Linux](phase2-container-capture/020-headless-capture-linux.md) | not started | | sign-off gated |
-| 2 | [030 per-user permission and egress](phase2-container-capture/030-user-permission-and-egress.md) | not started | | sign-off gated |
-| 3 | [010 tunnel and domain](phase3-cloudflare-tunnel/010-tunnel-and-domain.md) | not started | | |
+| 1 | [090 LAN security pass](phase1-lan-gateway/090-lan-security-pass.md) | done (2026-11-18, gateway 33ebdee) | Claude | 24/24; found and fixed TLS for IP-address visits (default_sni) |
+| 2 | [010 secret store in a container](phase2-container-capture/010-container-secret-store.md) | ready for sign-off, not built | | owner sign-off needed |
+| 2 | [020 headless capture on Linux](phase2-container-capture/020-headless-capture-linux.md) | ready for sign-off, not built | | owner sign-off needed |
+| 2 | [030 per-user permission and egress](phase2-container-capture/030-user-permission-and-egress.md) | ready for sign-off, not built | | owner sign-off needed |
+| 3 | [010 tunnel and domain](phase3-cloudflare-tunnel/010-tunnel-and-domain.md) | built, switched off (gateway fd7a451) | Claude | owner: domain, tunnel token, 100 MB upload decision |
 
 ## Decisions log
 - Every hosted user enters their own Hudl and Veo credentials (owner, 2026-11-18): phase 2, not hidden for good.

@@ -11,7 +11,18 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-18)
+## Current state (2026-11-18, night)
+
+- **Hosted gateway, phase 1 done; phase 3 built and switched off; phase 2 ready for sign-off.**
+  Gateway repo at 391158a: security pass 24/24 (it found and fixed TLS failing for visits by
+  IP address), registration limited to 5 per address per hour, Cloudflare Tunnel in
+  `compose.tunnel.yaml` (off; owner steps in its docs/PHASE3_TUNNEL.md), CI actions on Node 24.
+  This repo at 39096e4: a hosted copy shows one honest Hudl/Veo note instead of panels that
+  could not work, and no Downloaded page. Phase 2 task files rewritten with what the code does
+  today and the risks to weigh (many Hudl accounts from one home address; each user's own
+  permission; the encryption limit): `todo/hosting/hosted-gateway/phase2-container-capture/`.
+  **Needs the owner:** sign-off on phase 2's task files; a domain and tunnel token for phase 3;
+  how to handle uploads over Cloudflare's 100 MB limit.
 
 - **Hosted version for other users (owner request 2026-11-18, planning only):** plan pack
   [todo/hosting/hosted-gateway/](todo/hosting/hosted-gateway/README.md) and owner decision

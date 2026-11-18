@@ -1,6 +1,6 @@
 # 080: Hosted mode of the app (this repo)
 
-**Status:** in progress (2026-11-18: quota, helper guard, hosted nginx and image done; remaining UI hiding listed below)
+**Status:** done for phase 1 (2026-11-18: quota, helper guard, hosted nginx and image; hosted Hudl/Veo note, 39096e4). Hudl/Veo themselves: phase 2.
 **Depends on:** none (can start in parallel with 010)
 **Real-money surface:** no (`/safe-change`: it decides whether an instance can reach the owner's Hudl helper)
 **Leverage:** `frontend/nginx.conf`, `frontend/src/api/helperBase.ts`, `docker-compose.yml`,

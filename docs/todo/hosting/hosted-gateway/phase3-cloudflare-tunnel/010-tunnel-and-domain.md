@@ -1,6 +1,6 @@
 # 010: Tunnel and domain
 
-**Status:** not started
+**Status:** built and switched off (2026-11-18, gateway fd7a451). Owner steps: gateway repo docs/PHASE3_TUNNEL.md. Found: Cloudflare Free/Pro refuse uploads over 100 MB.
 **Depends on:** phase 1
 **Real-money surface:** no (buying a domain is the owner's action)
 **Leverage:** phase 1 edge
