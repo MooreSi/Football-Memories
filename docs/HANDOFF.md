@@ -26,7 +26,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   line now names the likely scorer too, "(likely)" after a name none of whose goals is
   confirmed, and "N unknown" for goals with no scorer (`matchGoalLines`). Keepers stay
   confirmed only. Checked in the browser on a real 6-4 match: six goals, all likely.
-  Not deployed.
+  Deployed 2026-11-18 at 4c6c034 (frontend container only; health ok).
 - **Season report top scorers and plays alongside (owner request 2026-11-17, D-036):**
   TOP SCORERS now counts the likely scorer for goals not yet confirmed; the note reads
   "N goals by a likely scorer, not yet confirmed · N goals with no scorer". "Plays
