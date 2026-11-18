@@ -20,7 +20,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   admin page; one internal-network Docker stack per approved user; LAN first, Hudl/Veo in containers
   as a gated phase 2, Cloudflare Tunnel phase 3. Found while planning: the app's nginx forwards
   `/helper/` to the owner's desktop helper, so user instances need a hosted build without it
-  (task 080). No code written; next step is the owner answering the pack's QUESTIONS.md.
+  (task 080). Owner answered QUESTIONS.md: all recommendations.
+  Task 080 mostly done (c01338a): `FM_QUOTA_BYTES` quota on uploads/imports, `VITE_FM_HOSTED`
+  build refuses every helper request, `FM_HOSTED=1` image uses `nginx.hosted.conf` (no helper
+  route). Default install unchanged; live app not rebuilt or redeployed. Left in 080: hiding the
+  remaining Hudl/Veo screens in a hosted build. Task 010 scaffolded in the gateway clone at
+  `~/Football Memories Gateway` (3bc236e). Neither repo pushed yet (needs the owner's go-ahead).
 
 ## Earlier (2026-11-17)
 
