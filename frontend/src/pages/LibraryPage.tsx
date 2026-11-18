@@ -16,6 +16,8 @@ import { Spinner } from "../components/ui/Spinner";
 import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
 import { HudlLibrary } from "../components/hudl/HudlLibrary";
 import { VeoLibrary } from "../components/veo/VeoLibrary";
+import { HostedConnectionsNote } from "../components/HostedConnectionsNote";
+import { HOSTED } from "../api/helperBase";
 import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
 import { fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
@@ -209,6 +211,7 @@ export function LibraryPage() {
           )}
           <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} club={club} /></div>
           <div className="mt-5"><VeoLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} /></div>
+          {HOSTED && <div className="mt-5"><HostedConnectionsNote /></div>}
         </section>
       </div>
     </div>

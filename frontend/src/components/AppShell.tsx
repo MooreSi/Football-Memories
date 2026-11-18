@@ -6,17 +6,20 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Brand } from "./BrandMark";
 import { UpdateBadge } from "./settings/UpdateSettings";
 import { AlertsBell } from "./AlertsBell";
+import { HOSTED } from "../api/helperBase";
 
 // Only screens that work are listed (brief section 19). Layout follows reference 1:
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
-const NAV = [
+const ALL_NAV = [
   { to: "/", label: "Library", icon: Library, end: true },
   { to: "/clips", label: "Clips", icon: Film, end: false },
-  { to: "/downloaded", label: "Downloaded", icon: HardDriveDownload, end: false },
+  { to: "/downloaded", label: "Downloaded", icon: HardDriveDownload, end: false, helper: true },
   { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },
   { to: "/settings", label: "Settings", icon: Settings, end: false },
 ];
+// Downloaded lists what the desktop helper saved; a hosted copy has no helper (decision 011).
+const NAV = ALL_NAV.filter((item) => !(HOSTED && "helper" in item));
 
 function PillNav() {
   return (

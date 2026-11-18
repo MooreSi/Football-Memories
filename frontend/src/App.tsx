@@ -23,6 +23,8 @@ import { VeoMatchFullPage } from "./pages/VeoMatchFullPage";
 import { OpponentsPage } from "./pages/OpponentsPage";
 import { ReportPage } from "./pages/ReportPage";
 import { Compass } from "lucide-react";
+import { HOSTED } from "./api/helperBase";
+import { HostedConnectionsNote } from "./components/HostedConnectionsNote";
 
 export function App() {
   return (
@@ -37,7 +39,7 @@ export function App() {
         <Route path="report/season" element={<ReportPage kind="season" />} />
         <Route path="matches/:id" element={<MatchDetailPage />} />
         <Route path="clips" element={<ClipExplorerPage />} />
-        <Route path="downloaded" element={<DownloadedPage />} />
+        <Route path="downloaded" element={HOSTED ? <HostedConnectionsNote /> : <DownloadedPage />} />
         <Route path="clips/reel/new" element={<ReelStudioPage />} />
         <Route path="clips/reels" element={<ReelsPage />} />
         <Route path="clips/reels/:id" element={<ReelBuilderPage />} />

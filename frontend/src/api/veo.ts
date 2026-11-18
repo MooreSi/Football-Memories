@@ -1,7 +1,7 @@
 import type { VeoTeamData } from "../lib/veoTeamSplit";
 import { useQuery } from "@tanstack/react-query";
 import { HUDL } from "./hudl";
-import { helperFetch, localiseHelperUrls } from "./helperBase";
+import { HOSTED, helperFetch, localiseHelperUrls } from "./helperBase";
 
 /** Spec 250: the desktop helper's Veo routes (same helper and origin rules as Hudl). */
 export type VeoSummary = { clubs: number; matches: number; with_video: number; expired: number; expiring: number; moments?: number };
@@ -33,7 +33,7 @@ export type VeoMatch = {
   team_moments?: VeoHighlight[]; // owner request 2026-11-15: team events as moments, from the helper
 };
 export function useVeoLibrary() {
-  return useQuery<VeoMatch[]>({ queryKey: ["veo-library"], queryFn: () => veoRequest("/library"), retry: false, refetchInterval: 30000 });
+  return useQuery<VeoMatch[]>({enabled:!HOSTED, queryKey: ["veo-library"], queryFn: () => veoRequest("/library"), retry: false, refetchInterval: 30000 });
 }
 export function veoAgeGroups(match: VeoMatch): string[] {
   return match.age_groups?.length ? match.age_groups : [match.age_group || "Unclassified"];
@@ -43,6 +43,6 @@ export function veoExpiry(match: VeoMatch): string | null {
   return match.expiration_status === "expires-soon" ? "Video expires soon on Veo" : null;
 }
 export function useVeoStatus() {
-  return useQuery<VeoStatus>({ queryKey: ["veo-account"], queryFn: () => veoRequest("/account"), retry: false,
+  return useQuery<VeoStatus>({enabled:!HOSTED, queryKey: ["veo-account"], queryFn: () => veoRequest("/account"), retry: false,
     refetchInterval: (query) => (query.state.data?.busy ? 1500 : false) });
 }

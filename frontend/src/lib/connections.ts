@@ -1,3 +1,4 @@
+import { HOSTED } from "../api/helperBase";
 // Owner request 2026-11-13: show or hide the Hudl and Veo connections (this browser only).
 export const HIDDEN_KEY = "fm.connections.hidden";
 
@@ -6,5 +7,7 @@ export function readHidden(): string[] {
 }
 
 export function connectionShown(id: string): boolean {
+  // Hosted copies cannot reach the desktop helper (owner decision 011): neither is shown.
+  if (HOSTED) return false;
   return !readHidden().includes(id);
 }
