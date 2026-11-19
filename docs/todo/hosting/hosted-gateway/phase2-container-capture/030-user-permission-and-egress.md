@@ -1,6 +1,7 @@
 # 030: Each user's own permission, and an egress allow-list
 
-**Status:** ready for sign-off, not built
+**Status:** design answered by the owner, not built
+**Owner (2026-11-19):** wording approved as written; hosts measured once by the owner, read-only.
 **Depends on:** 020
 **Real-money surface:** no (account-touching: owner sign-off required before any code)
 **Leverage:** owner decision 002 wording; `docker-proxy/haproxy.cfg` (allow-list pattern)

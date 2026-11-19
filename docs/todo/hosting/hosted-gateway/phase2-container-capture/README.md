@@ -51,6 +51,17 @@ Mac); the gateway keeps refusing those paths until this ships.
    hold to sign in. That protects against copied volumes or backups, not against someone who
    has taken over that container (see 010).
 
+## Owner's answers (2026-11-19)
+
+1. **One home address:** one capture at a time across the whole Mac, at decision 003's pace.
+2. **Passwords:** saved, encrypted (AES-256-GCM, a key unique to each user, in their own
+   library only), as in 010.
+3. **Permission wording:** as proposed in 030.
+4. **Allow-list:** the owner checks once, read-only, with their own account in a test library;
+   the hosts video actually comes from are added by exact name.
+
+Still needed before any code: the owner's go-ahead to build (these answers settle the design).
+
 ## Docs
 
 | Doc | Contents |

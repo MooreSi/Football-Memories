@@ -1,6 +1,7 @@
 # 010: Secret store inside a user's `capture` container
 
-**Status:** ready for sign-off, not built
+**Status:** design answered by the owner, not built
+**Owner (2026-11-19):** design approved: saved, encrypted, per-user key.
 **Depends on:** phase 1 (done)
 **Real-money surface:** no (account-touching: owner sign-off required before any code)
 **Leverage:** `backend/app/connectors/hudl_keychain.py` (the `Keychain` interface and `SERVICES`)

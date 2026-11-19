@@ -1,6 +1,7 @@
 # 020: Headless capture on Linux, one `capture` container per user
 
-**Status:** ready for sign-off, not built
+**Status:** design answered by the owner, not built
+**Owner (2026-11-19):** one capture at a time across all users.
 **Depends on:** 010
 **Real-money surface:** no (account-touching: owner sign-off required before any code)
 **Leverage:** `hudl_companion.py` (`main()`), `hudl_browser/_account.py:262` (hidden login,
