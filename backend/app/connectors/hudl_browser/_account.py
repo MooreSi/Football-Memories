@@ -106,7 +106,7 @@ class BrowserConnection:
                 "tag_age_group": self._tag_age,
                 "progress": dict(self._progress) if self._progress else None,
                 "matches": self.catalogue.items(),
-                "session_active": self._context is not None and not self._page_crashed,
+                "session_active": self._context is not None and not self._session_lost(),
             }
 
     def _set_progress(self, label: str, step: int, done: int, total: int) -> None:
@@ -300,11 +300,23 @@ class BrowserConnection:
         # once, exactly as it does with no session. Never a retry of its own.
         self._page_crashed = True
 
+    def _session_lost(self) -> bool:
+        """A crashed tab or a dead browser (the kernel killed Chromium for memory, owner report
+        2026-11-19) is no session. The next Refresh signs in once, as with no session."""
+        if self._page_crashed:
+            return True
+        if self._browser is None:
+            return False
+        try:
+            return not self._browser.is_connected()
+        except Exception:
+            return True
+
     def _park(self) -> None:
         """Leave the hidden page blank between operations so an open match page does not
         hold memory and CPU (owner report 2026-11-19). Cookies stay in the context. A
         visible window is the owner's, possibly mid-verification: never navigate it."""
-        if self._page is None or self._visible_session or self._page_crashed:
+        if self._page is None or self._visible_session or self._session_lost():
             return
         with contextlib.suppress(Exception):
             self._page.goto("about:blank")
@@ -370,7 +382,7 @@ class BrowserConnection:
     def _discover(self, refresh: bool = False) -> None:
         from app.connectors.hudl_account import extract_matches, team_libraries
 
-        if self._page_crashed:
+        if self._session_lost():
             self._close()
         if not refresh or self._context is None or not self._libraries:
             self._login()
@@ -471,7 +483,7 @@ class BrowserConnection:
 
     def _observe(self, identity: str, need_tags: bool) -> Observation:
         match = self.catalogue.find(identity)
-        if self._page_crashed:
+        if self._session_lost():
             self._close()
         if self._context is None:
             self._login()
@@ -777,7 +789,8 @@ class BrowserConnection:
                 raise CaptureError("Unknown Hudl operation.")
         except CaptureError as error:
             self.report("error", str(error))
-        except Exception:
+        except Exception as error:
+            _batch._cause(error)  # type and line only, in the helper log; never the message
             self.report(
                 "error",
                 "Hudl stopped part-way. Press Refresh to try again. If it stops again, check "

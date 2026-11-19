@@ -90,3 +90,67 @@ def test_the_generic_error_points_to_refresh_not_a_hidden_test_button(tmp_path: 
     assert "Refresh" in message and "Test again" not in message
     assert "renderer gone" not in message
     connection._executor.shutdown()
+
+
+# Owner report 2026-11-19, second round: the capture container hit its memory limit and the
+# kernel killed Chromium itself, not just a tab. No "crash" event fires for that, so every
+# Refresh reused the dead browser and failed with the same generic error.
+
+
+def _dead_browser(connection: BrowserConnection) -> None:
+    connection._browser = MagicMock()
+    connection._browser.is_connected.return_value = False
+
+
+def test_a_dead_browser_makes_refresh_sign_in_once(tmp_path: Path):
+    connection = _connection(tmp_path)
+    _dead_browser(connection)
+    with patch.object(connection, "_login") as login, contextlib.suppress(Exception):
+        connection._discover(refresh=True)
+    login.assert_called_once()
+    connection._executor.shutdown()
+
+
+def test_a_live_browser_refreshes_without_signing_in(tmp_path: Path):
+    """Negative control for the dead-browser rule."""
+    connection = _connection(tmp_path)
+    connection._browser = MagicMock()
+    connection._browser.is_connected.return_value = True
+    with patch.object(connection, "_login") as login, contextlib.suppress(Exception):
+        connection._discover(refresh=True)
+    login.assert_not_called()
+    connection._executor.shutdown()
+
+
+def test_a_dead_browser_is_reported_as_no_session(tmp_path: Path):
+    connection = _connection(tmp_path)
+    _dead_browser(connection)
+    assert connection.status()["session_active"] is False
+    connection._executor.shutdown()
+
+
+def test_a_dead_browser_makes_a_match_page_sign_in_once(tmp_path: Path):
+    connection = _connection(tmp_path)
+    match = {"id": "synthetic-a", "url": "https://www.hudl.com/watch/video/synthetic-a"}
+    _dead_browser(connection)
+    with (
+        patch.object(connection.catalogue, "find", return_value=match),
+        # Stop right after signing in: only the sign-in matters, not the page's polling.
+        patch.object(connection, "_login", side_effect=RuntimeError("stop here")) as login,
+        contextlib.suppress(RuntimeError),
+    ):
+        connection._observe("synthetic-a", False)
+    login.assert_called_once()
+    connection._executor.shutdown()
+
+
+def test_the_generic_error_names_its_cause_in_the_log_never_its_message(tmp_path: Path, caplog):
+    connection = _connection(tmp_path)
+    planted = "https://vod.hudl.com/signed?Signature=planted-secret"
+    with patch.object(connection, "_discover", side_effect=RuntimeError(planted)):
+        connection._perform("refresh", None)
+    logged = caplog.text
+    assert "RuntimeError" in logged
+    assert "planted-secret" not in logged
+    assert "planted-secret" not in connection._state["message"]
+    connection._executor.shutdown()

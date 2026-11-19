@@ -680,3 +680,13 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   page counts as no session: the next Refresh signs in once, exactly as with no session (no
   new retry). The generic error now says to press Refresh rather than a Test button the
   library page does not have.
+- **A dead browser, not just a crashed tab (2026-11-19, second round):** at the capture
+  container's 1.5 GB cap the kernel killed Chromium itself (cgroup `memory.events`: oom_kill 3,
+  peak at the cap), and its processes stayed as zombies under the helper, which is PID 1 and
+  never reaps. No page "crash" event fires for that, so every Refresh reused the dead browser
+  and failed with "Hudl stopped part-way". `_session_lost()` now also treats
+  `browser.is_connected() == False` as no session (one sign-in on the next Refresh, as before).
+  The generic error logs the exception's type and line only (never its message: it can carry
+  signed URLs). Gateway: capture cap raised to 2.5 GB and `Init: true` to reap Chromium.
+  To diagnose next time: `docker exec <capture> cat /sys/fs/cgroup/memory.events` and the
+  container log.

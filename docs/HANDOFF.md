@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-19)
 
+- **"Hudl stopped part-way" on every Refresh (owner report 2026-11-19).** The hosted capture
+  container hit its 1.5 GB cap, the kernel killed Chromium, and the helper kept reusing the dead
+  browser. This repo: a disconnected browser now counts as no session (Refresh signs in once),
+  and the generic error logs its type and line. Gateway: capture cap 2.5 GB plus `Init: true`.
+  Needs the capture image rebuilt and the family's capture container recreated before it shows.
+
 - **Owner's phase 2 check, first round of fixes (2026-11-19).** This repo: the hidden Hudl
   page is parked between jobs (it held 1.1 GB and pegged the capture container's CPU, then
   crashed, which is why Refresh failed); a crashed page counts as no session, so Refresh signs
