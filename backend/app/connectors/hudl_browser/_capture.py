@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import BrowserContext, Page, Response, sync_playwright
 
+from app.connectors.browser_launch import launch
 from app.connectors.hudl_capture import (
     CaptureError,
     capture_hls,
@@ -150,7 +151,7 @@ def run(args: argparse.Namespace, report: Callable[[str, str], None] | None = No
     video_id = match_id(args.url)
     observation = Observation(video_id)
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel="chrome", headless=False)
+        browser = launch(playwright, visible=True)
         try:
             context = browser.new_context()
             page = context.new_page()

@@ -22,6 +22,7 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Page, sync_playwright
 
+from app.connectors.browser_launch import launch
 from app.connectors.hudl_capture import CaptureError
 
 APP = "https://app.veo.co"
@@ -181,7 +182,7 @@ def token_http(request: Any, authorization: str) -> Http:
 def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
     """A signed-in, ephemeral Veo session for one operation."""
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel="chrome", headless=True)
+        browser = launch(playwright, visible=False)
         try:
             context = browser.new_context()
             page = context.new_page()

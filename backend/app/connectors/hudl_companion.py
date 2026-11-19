@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from app.connectors import hudl_downloads, hudl_media
+from app.connectors.browser_launch import hosted
 from app.connectors.hudl_account import Catalogue, Credentials
 from app.connectors.hudl_browser import BrowserConnection, match_id, run
 from app.connectors.hudl_capture import CaptureError
@@ -192,6 +193,40 @@ class CaptureManager:
                 self._active = False
 
 
+# Hosted library (phase 2, task 020): desktop-only routes do not exist there, and no
+# download starts once the library is at its storage limit.
+HOSTED_ABSENT = ("/update/", "/network", "/downloads/folder", "/capture")
+DOWNLOADS = {"/account/action", "/account/batch", "/veo/action"}
+
+
+def _folder_bytes(folder: Path) -> int:
+    total = 0
+    for root, _dirs, files in os.walk(folder):
+        for name in files:
+            try:
+                total += (Path(root) / name).lstat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def _hosted_refusal(request: Request, folder: Path) -> Response | None:
+    path = request.url.path
+    if path.startswith(HOSTED_ABSENT):
+        return JSONResponse({"detail": "Not found"}, status_code=404)
+    limit = os.environ.get("FM_QUOTA_BYTES")
+    if request.method == "POST" and path in DOWNLOADS and limit and limit.isdigit():
+        if _folder_bytes(folder) >= int(limit):
+            return JSONResponse(
+                {
+                    "detail": "Your library has reached its storage limit, "
+                    "so nothing new was downloaded."
+                },
+                status_code=409,
+            )
+    return None
+
+
 def create_companion(output: Path) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
@@ -203,7 +238,11 @@ def create_companion(output: Path) -> FastAPI:
     output = output.expanduser().resolve()
     app.state.capture = CaptureManager(output)
     cache = output.parent / ".hudl-account"
-    app.state.keychain = secret_store(Path.home() / "Library/Caches/FootballMemories")
+    # Hosted library (phase 2): the sealed per-user store beside the capture caches.
+    secrets_dir = (
+        output.parent / ".secrets" if hosted() else Path.home() / "Library/Caches/FootballMemories"
+    )
+    app.state.keychain = secret_store(secrets_dir)
     app.state.catalogue = Catalogue(cache)
     app.state.details = MatchCache(cache / "details")
     app.state.account = BrowserConnection(
@@ -214,9 +253,7 @@ def create_companion(output: Path) -> FastAPI:
     from app.connectors.veo._connection import VeoConnection
     from app.connectors.veo._routes import router as veo_router
 
-    app.state.veo_store = secret_store(
-        Path.home() / "Library/Caches/FootballMemories", service="Veo"
-    )
+    app.state.veo_store = secret_store(secrets_dir, service="Veo")
     app.state.veo = VeoConnection(
         lambda: app.state.veo_store.load(),
         output.parent / ".veo-account",
@@ -246,6 +283,10 @@ def create_companion(output: Path) -> FastAPI:
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
+        if hosted():
+            refused = _hosted_refusal(request, app.state.downloads.folder)
+            if refused is not None:
+                return refused
         origin = request.headers.get("origin")
         if request.headers.get("host") not in {"127.0.0.1:8766", "localhost:8766"} or (
             origin not in ORIGINS
@@ -691,7 +732,10 @@ def main() -> None:
         from app.connectors.app_updater import wait_for_free_port
 
         wait_for_free_port(8766)
-    uvicorn.run(create_companion(args.output), host="127.0.0.1", port=8766, access_log=False)
+    # A hosted capture container listens on its own private network only (phase 2); the
+    # owner's helper stays on this computer's loopback address.
+    host = "0.0.0.0" if hosted() else "127.0.0.1"  # noqa: S104
+    uvicorn.run(create_companion(args.output), host=host, port=8766, access_log=False)
 
 
 if __name__ == "__main__":

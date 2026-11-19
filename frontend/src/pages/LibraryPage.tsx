@@ -18,6 +18,7 @@ import { HudlLibrary } from "../components/hudl/HudlLibrary";
 import { VeoLibrary } from "../components/veo/VeoLibrary";
 import { HostedConnectionsNote } from "../components/HostedConnectionsNote";
 import { HOSTED } from "../api/helperBase";
+import { useHostedPermissions } from "../api/hostedPermissions";
 import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
 import { fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
@@ -54,6 +55,7 @@ export function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
   const {age:ageGroup,setAge:setAgeGroup,season:seasonLabel,setSeason:setSeasonLabel} = useArchiveFilters();
+  const hostedPerms = useHostedPermissions();
   const hudlLibrary = useHudlLibrary();
   const veoLibrary = useVeoLibrary();
   // Owner request 2026-11-14: Show Hudl off with Show Veo on puts Veo matches in the
@@ -211,7 +213,7 @@ export function LibraryPage() {
           )}
           <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} club={club} /></div>
           <div className="mt-5"><VeoLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} /></div>
-          {HOSTED && <div className="mt-5"><HostedConnectionsNote /></div>}
+          {HOSTED && !hostedPerms.data?.hudl && !hostedPerms.data?.veo && <div className="mt-5"><HostedConnectionsNote /></div>}
         </section>
       </div>
     </div>

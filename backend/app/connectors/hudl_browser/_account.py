@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Response, sync_playwright
 
+from app.connectors.browser_launch import HOSTED_CHECK, hosted, launch
 from app.connectors.hudl_batch import CardStore
 from app.connectors.hudl_capture import (
     CaptureError,
@@ -259,7 +260,7 @@ class BrowserConnection:
         # visible window on the next attempt, never a hidden retry.
         visible = self._visible_next
         self._visible_next = False
-        self._browser = self._playwright.chromium.launch(channel="chrome", headless=not visible)
+        self._browser = launch(self._playwright, visible=visible)
         self._context = self._browser.new_context()
         self._page = self._context.new_page()
         self._page.on("response", self._library_response)
@@ -280,6 +281,9 @@ class BrowserConnection:
                     "it there, then select Test again."
                 ) from error
             self._close()
+            if hosted():
+                # A hosted library has no window to fall back to (phase 2, task 020).
+                raise HudlBlocked(HOSTED_CHECK) from error
             self._visible_next = True
             raise HudlBlocked(
                 "Hudl sign-in did not finish in the hidden browser. Select Test again to sign "

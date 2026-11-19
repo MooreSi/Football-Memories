@@ -2,8 +2,9 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 
-/** Task 080: a hosted copy shows no Connections (Hudl/Veo helper) or Update (desktop
- *  updater) tab, since neither can work there (no control that does nothing). */
+/** Hosted gateway phase 2 (owner sign-off 2026-11-19; rewritten from task 080): a hosted copy
+ *  shows Connections (where a user confirms permission and saves their own Hudl/Veo account)
+ *  but never Update, the desktop updater. */
 
 afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
 
@@ -15,8 +16,8 @@ async function tabs(hosted: boolean) {
   return screen.getAllByRole("link").map((a) => a.textContent?.trim());
 }
 
-it("hides the helper-only tabs in a hosted build", async () => {
-  expect(await tabs(true)).toEqual(["Playback", "Storage", "Backups"]);
+it("a hosted build shows Connections but not Update", async () => {
+  expect(await tabs(true)).toEqual(["Playback", "Storage", "Backups", "Connections"]);
 });
 
 it("keeps every tab on the owner's own install (negative control)", async () => {

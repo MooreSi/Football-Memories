@@ -1,3 +1,4 @@
+import { HOSTED } from "../../api/helperBase";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, FolderOpen, HardDrive, RefreshCw, TriangleAlert, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -91,7 +92,8 @@ export function StorageSettings() {
         {folders.map((f) => <FolderCard key={f.role} f={f} />)}
       </div>
 
-      <DownloadFolderSettings />
+      {/* The download folder is fixed inside a hosted library (decision 011). */}
+      {!HOSTED && <DownloadFolderSettings />}
 
       <ArchiveTools />
 

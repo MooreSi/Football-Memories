@@ -24,7 +24,14 @@ import { OpponentsPage } from "./pages/OpponentsPage";
 import { ReportPage } from "./pages/ReportPage";
 import { Compass } from "lucide-react";
 import { HOSTED } from "./api/helperBase";
-import { HostedConnectionsNote } from "./components/HostedConnectionsNote";
+import { HostedNeedsConnection } from "./components/HostedConnectionsNote";
+import { useHostedPermissions } from "./api/hostedPermissions";
+
+function DownloadedRoute() {
+  const perms = useHostedPermissions();
+  if (HOSTED && !perms.data?.hudl && !perms.data?.veo) return <HostedNeedsConnection />;
+  return <DownloadedPage />;
+}
 
 export function App() {
   return (
@@ -39,7 +46,7 @@ export function App() {
         <Route path="report/season" element={<ReportPage kind="season" />} />
         <Route path="matches/:id" element={<MatchDetailPage />} />
         <Route path="clips" element={<ClipExplorerPage />} />
-        <Route path="downloaded" element={HOSTED ? <HostedConnectionsNote /> : <DownloadedPage />} />
+        <Route path="downloaded" element={<DownloadedRoute />} />
         <Route path="clips/reel/new" element={<ReelStudioPage />} />
         <Route path="clips/reels" element={<ReelsPage />} />
         <Route path="clips/reels/:id" element={<ReelBuilderPage />} />

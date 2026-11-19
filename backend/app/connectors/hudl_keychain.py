@@ -6,8 +6,11 @@ Manager, which encrypts the entry to the signed-in Windows user (DPAPI).
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
+import os
 import platform
 import subprocess
 from pathlib import Path
@@ -229,8 +232,91 @@ class WindowsCredentialStore:
             return False
 
 
-def secret_store(directory: Path, service: str = "Hudl") -> Keychain | WindowsCredentialStore:
-    """The operating system's own secret store for one service's saved account."""
+_CAPTURE_KEY: bytes | None = None
+KEY_ENV = "FM_CAPTURE_KEY"
+
+
+def _capture_key() -> bytes:
+    """The per-user key (hosted gateway phase 2, task 010), given by the provisioner in the
+    environment. Taken out of the environment on first read: the browser this process starts
+    inherits its environment, and must never carry the key."""
+    global _CAPTURE_KEY
+    raw = os.environ.pop(KEY_ENV, None)
+    if raw is not None:
+        try:
+            key = base64.b64decode(raw, validate=True)
+        except (ValueError, binascii.Error):
+            key = b""
+        _CAPTURE_KEY = key if len(key) == 32 else None
+    if _CAPTURE_KEY is None:
+        raise CaptureError(
+            "This library's secret store is not set up. Ask the owner to restart it."
+        )
+    return _CAPTURE_KEY
+
+
+class SealedFileStore:
+    """Hosted libraries (owner decision 011, phase 2 task 010): one file per service in the
+    capture container's own volume, sealed with AES-256-GCM under that user's key. Protects a
+    copied volume or backup; it cannot protect against someone who controls the container."""
+
+    label = "this library's sealed store"
+
+    def __init__(self, directory: Path, service: str = "Hudl") -> None:
+        if service not in SERVICES:
+            raise ValueError("unknown service")
+        self.service = service
+        self.path = directory / f"{service}.sealed"
+        _capture_key()  # take the key out of the environment now, not when the browser runs
+
+    def __repr__(self) -> str:
+        return f"SealedFileStore({self.service})"
+
+    def _aead(self) -> Any:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        return AESGCM(_capture_key())
+
+    def save(self, credentials: Credentials) -> None:
+        data = json.dumps(
+            {"username": credentials.username, "password": credentials.password.get_secret_value()}
+        ).encode()
+        nonce = os.urandom(12)
+        sealed = nonce + self._aead().encrypt(nonce, data, self.service.encode())
+        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        part = self.path.with_suffix(".part")
+        fd = os.open(part, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as out:
+            out.write(sealed)
+        os.replace(part, self.path)
+
+    def load(self) -> Credentials:
+        try:
+            sealed = self.path.read_bytes()
+            data = json.loads(self._aead().decrypt(sealed[:12], sealed[12:], self.service.encode()))
+            return Credentials(data["username"], data["password"])
+        except CaptureError:
+            raise
+        except Exception:
+            raise CaptureError(
+                f"No {self.service} account is saved here, or it could not be read."
+            ) from None
+
+    def configured(self) -> bool:
+        return self.path.is_file()
+
+
+def _hosted() -> bool:
+    return os.environ.get("FM_HOSTED") == "1"
+
+
+def secret_store(
+    directory: Path, service: str = "Hudl"
+) -> Keychain | WindowsCredentialStore | SealedFileStore:
+    """The secret store for one service's saved account: the OS's own on the owner's
+    computer; the sealed per-user store inside a hosted library's capture container."""
+    if _hosted():
+        return SealedFileStore(directory, service=service)
     if platform.system() == "Windows":
         return WindowsCredentialStore(_Advapi32(), service=service)
     return Keychain(directory, service=service)

@@ -1,0 +1,30 @@
+# Hosted libraries (owner decision 011, gateway phase 2 task 020): the Hudl/Veo helper for ONE
+# user, in that user's own capture container. Headless Playwright Chromium only; the sealed
+# per-user secret store; listens on the user's private network. Built by the gateway repo's
+# scripts/build-app-images.sh as fm-app-capture:hosted. The owner's install never uses it.
+FROM python:3.12-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN useradd --create-home --uid 1000 app
+WORKDIR /srv
+
+COPY requirements.lock ./
+RUN grep -v '^-e ' requirements.lock > /tmp/req.txt && pip install --no-cache-dir -r /tmp/req.txt
+
+# Playwright's own Chromium and the system libraries it needs, at a fixed shared path.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN python -m playwright install --with-deps chromium && rm -rf /var/lib/apt/lists/*
+
+COPY app ./app
+
+# /data is the capture container's own volume (caches, sealed secrets); /data/inbox is the
+# user's inbox volume, shared with their backend. Fresh volumes copy this ownership.
+RUN mkdir -p /data/inbox && chown -R app:app /data
+
+USER app
+ENV FM_HOSTED=1 PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 HOME=/data
+EXPOSE 8766
+CMD ["python", "-m", "app.connectors.hudl_companion", "--output", "/data/inbox"]

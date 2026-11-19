@@ -13,6 +13,9 @@ import { HIDDEN_KEY, readHidden } from "../lib/connections";
 import { HomeTeamField } from "../components/settings/HomeTeamField";
 import { ClubCrestUpload } from "../components/settings/ClubCrestUpload";
 import { LanAddress } from "../components/settings/LanAddress";
+import { HOSTED } from "../api/helperBase";
+import { useHostedPermissions } from "../api/hostedPermissions";
+import { HostedPermission } from "../components/settings/HostedPermission";
 
 const LABELS: Record<string, string> = {
   list_teams: "List teams",
@@ -42,6 +45,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
   const shown = (id: string) => !hidden.includes(id);
   const show = (id: string, on: boolean) => setHidden((h) => (on ? h.filter((x) => x !== id) : [...new Set([...h, id])]));
   const q = useQuery({ queryKey: ["connectors"], queryFn: api.connectors });
+  const perms = useHostedPermissions();
 
   return (
     <>
@@ -54,7 +58,7 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
         </EmptyState>
       ) : (
         <div className="space-y-4">
-        <LanAddress />
+        {!HOSTED && <LanAddress />}
         <div className="flex flex-wrap gap-2" aria-label="Connections shown">
           <Toggle label="Show Hudl matches" on={shown("hudl")} onChange={(on) => show("hudl", on)} />
           <Toggle label="Show Veo matches" on={shown("veo")} onChange={(on) => show("veo", on)} />
@@ -110,15 +114,20 @@ export function ConnectionsPage({ embedded = false }: { embedded?: boolean }) {
                   Details: <code>{c.docs}</code> in the project folder.
                 </p>
               )}
-              {c.id === "hudl" && <><HudlAccount onConnectionChange={setHudlState} /><HomeTeamField source="hudl" /><details><summary className="cursor-pointer text-sm text-fg-muted">Capture a match by URL</summary><div className="mt-4"><HudlCapture /></div></details></>}
+              {c.id === "hudl" && (HOSTED && !perms.data?.hudl ? <HostedPermission service="hudl" />
+                : <><HudlAccount onConnectionChange={setHudlState} /><HomeTeamField source="hudl" />
+                  {/* The manual capture opens a visible window, which a hosted library does not have. */}
+                  {!HOSTED && <details><summary className="cursor-pointer text-sm text-fg-muted">Capture a match by URL</summary><div className="mt-4"><HudlCapture /></div></details>}</>)}
             </section>
           ))}
           <section className="panel h-fit space-y-4 p-5" aria-label="Veo">
             <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Veo</h2>
               {veoState && <Badge tone={veoState === "Connected" ? "ok" : "warn"}>{veoState}</Badge>}</div>
             <p className="text-sm text-fg-muted">Connect the Veo account you record with. The desktop helper signs in with your saved account and reads your Veo match list, details and highlights; it never changes anything on Veo. Watch and download Veo matches from All matches.</p>
-            <VeoAccount onConnectionChange={setVeoState} />
-            <HomeTeamField source="veo" />
+            {HOSTED && !perms.data?.veo ? <HostedPermission service="veo" /> : <>
+              <VeoAccount onConnectionChange={setVeoState} />
+              <HomeTeamField source="veo" />
+            </>}
           </section>
         </div>
         <section aria-label="Club crests" className="panel space-y-3 p-5">

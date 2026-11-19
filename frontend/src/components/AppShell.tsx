@@ -7,6 +7,7 @@ import { Brand } from "./BrandMark";
 import { UpdateBadge } from "./settings/UpdateSettings";
 import { AlertsBell } from "./AlertsBell";
 import { HOSTED } from "../api/helperBase";
+import { useHostedPermissions } from "../api/hostedPermissions";
 
 // Only screens that work are listed (brief section 19). Layout follows reference 1:
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
@@ -18,10 +19,15 @@ const ALL_NAV = [
   { to: "/import", label: "Import", icon: FolderInput, end: false },
   { to: "/settings", label: "Settings", icon: Settings, end: false },
 ];
-// Downloaded lists what the desktop helper saved; a hosted copy has no helper (decision 011).
-const NAV = ALL_NAV.filter((item) => !(HOSTED && "helper" in item));
+// Downloaded lists what the helper saved: in a hosted copy, only once Hudl or Veo is connected.
+function useNav() {
+  const perms = useHostedPermissions();
+  const any = Boolean(perms.data?.hudl || perms.data?.veo);
+  return ALL_NAV.filter((item) => !(HOSTED && "helper" in item && !any));
+}
 
 function PillNav() {
+  const NAV = useNav();
   return (
     <nav aria-label="Main" className="screen-navigation flex items-center gap-1.5 sm:gap-2">
       {NAV.map(({ to, label, icon: Icon, end }) => (

@@ -10,8 +10,12 @@ anyio==4.16.0
     # via
     #   starlette
     #   watchfiles
+cffi==2.1.1 ; platform_python_implementation != 'PyPy'
+    # via cryptography
 click==8.5.1
     # via uvicorn
+cryptography==50.0.2
+    # via football-memories
 fastapi==0.162.2
     # via football-memories
 greenlet==3.5.6
@@ -34,6 +38,8 @@ psycopg==3.3.8
     # via football-memories
 psycopg-binary==3.3.8 ; implementation_name != 'pypy'
     # via psycopg
+pycparser==3.12 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+    # via cffi
 pydantic==2.14.3
     # via
     #   fastapi

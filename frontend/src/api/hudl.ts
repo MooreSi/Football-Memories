@@ -1,6 +1,7 @@
 import { scopedHudlAction } from "../lib/archiveFilters";
 import { useQuery } from '@tanstack/react-query';
-import { HOSTED, helperBase, helperFetch, localiseHelperUrls } from './helperBase';
+import { helperBase, helperFetch, localiseHelperUrls } from './helperBase';
+import { useHelperEnabled } from './hostedPermissions';
 import { displayLibrary } from '../lib/hudlPlayer';
 export const HUDL = helperBase();
 export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number};
@@ -13,8 +14,8 @@ export async function hudlRequest<T>(path:string,body?:unknown):Promise<T> {
  const response=await helperFetch(HUDL+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path==='/account/action'?scopedHudlAction(body):body)});
  const data=localiseHelperUrls(await response.json().catch(()=>({detail:'Hudl helper unavailable. Start it on the Mac (run the installer), then try again.'})),HUDL); if(!response.ok)throw Object.assign(new Error(data.detail||'Hudl helper unavailable'),{status:response.status});return data;
 }
-export function useHudlStatus(){return useQuery<HudlStatus>({enabled:!HOSTED,queryKey:['hudl-account'],queryFn:()=>hudlRequest('/account'),retry:false,refetchInterval:q=>q.state.data?.busy?1500:10000});}
-export function useHudlLibrary(){return useQuery<HudlMatch[]>({enabled:!HOSTED,queryKey:['hudl-library'],queryFn:async()=>displayLibrary(await hudlRequest<HudlMatch[]>('/library')),retry:false,refetchInterval:15000,refetchOnWindowFocus:'always',refetchOnReconnect:'always'});}
+export function useHudlStatus(){return useQuery<HudlStatus>({enabled:useHelperEnabled('hudl'),queryKey:['hudl-account'],queryFn:()=>hudlRequest('/account'),retry:false,refetchInterval:q=>q.state.data?.busy?1500:10000});}
+export function useHudlLibrary(){return useQuery<HudlMatch[]>({enabled:useHelperEnabled('hudl'),queryKey:['hudl-library'],queryFn:async()=>displayLibrary(await hudlRequest<HudlMatch[]>('/library')),retry:false,refetchInterval:15000,refetchOnWindowFocus:'always',refetchOnReconnect:'always'});}
 
 /** Actual Hudl library memberships take precedence over legacy title-derived ages. */
 export function hudlAgeGroups(match: HudlMatch): string[] {
@@ -28,12 +29,12 @@ export function hudlBlocked(status?: HudlStatus): boolean {
 
 export type DownloadFile = {name:string; size:number; modified:number};
 export type DownloadFolderInfo = {folder:string; default_folder:string; is_default:boolean; free_bytes:number|null; files:DownloadFile[]};
-export function useDownloadFolder(){return useQuery<DownloadFolderInfo>({enabled:!HOSTED,queryKey:['hudl-downloads'],queryFn:()=>hudlRequest('/downloads'),retry:false});}
+export function useDownloadFolder(){return useQuery<DownloadFolderInfo>({enabled:useHelperEnabled('hudl'),queryKey:['hudl-downloads'],queryFn:()=>hudlRequest('/downloads'),retry:false});}
 
 /** Spec 190: one completed download recorded by the helper. */
 export type DownloadEntry = {kind:"match"|"moments"|"reel"; match_id:string|null; matches:string[]; title:string|null; file:string; url:string;
  moment_count:number; codes:string[]; combined:boolean; created:number; size:number; modified:number};
-export function useDownloadIndex(){return useQuery<DownloadEntry[]>({enabled:!HOSTED,queryKey:['hudl-download-index'],queryFn:()=>hudlRequest('/downloads/index'),retry:false,refetchInterval:30000});}
+export function useDownloadIndex(){return useQuery<DownloadEntry[]>({enabled:useHelperEnabled('hudl'),queryKey:['hudl-download-index'],queryFn:()=>hudlRequest('/downloads/index'),retry:false,refetchInterval:30000});}
 export type DownloadState = {match:boolean; moments:boolean};
 /** Per match: is the full match downloaded, are any of its moments. */
 export function downloadState(entries: DownloadEntry[] | undefined): Map<string, DownloadState> {
