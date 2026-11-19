@@ -657,3 +657,26 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   `player-tracking?start=0` 404; the match record's `ras_status` is null (tracking
   never processed). `speed-zone-distribution` is a POST (compute), not sent.
   Veo's web app shows physical stats only with `analysis.read_match_playerphysicalstats`.
+
+## Hosted libraries: shared crests and an idle capture browser (2026-11-19)
+
+- **Crests in a hosted library** (owner decision 2026-11-19): a hosted backend has no
+  internet, so every crest failed (initials only, for Hudl and Veo matches alike). Now
+  `FM_CREST_SERVICE` points it at one shared crest service (`app.crest_service`, run from
+  the hosted backend image in the gateway stack). The service does the usual paced lookup
+  once per club, through its own filter (gateway `egress/crests.filter`, which must list
+  exactly `team_logos._HOSTS`; a gateway test checks this when both repos sit side by side),
+  and serves every family. The library keeps each answer locally; a family's own upload
+  always wins and is never shared. A 404 is remembered for an hour; an unreachable service
+  is asked again next time. Without `FM_CREST_SERVICE` (the owner's install) nothing changed.
+- **"Home" instead of a club name** on a new hosted library is not a crest failure: the home
+  side is the name saved in Settings > Connections (or the player's "Plays for"). Until one is
+  saved there is no club to ask a crest for.
+- **The capture browser between jobs:** the hidden page used to stay on the last match page
+  (Hudl's player running), which held about 1.1 GB and 150% CPU in a hosted capture container
+  until the renderer was killed for memory. Refresh then failed with the generic "operation
+  stopped". The page is now parked on about:blank after every job (cookies stay in the
+  context), never a visible window the owner may be using for Hudl's own check. A crashed
+  page counts as no session: the next Refresh signs in once, exactly as with no session (no
+  new retry). The generic error now says to press Refresh rather than a Test button the
+  library page does not have.

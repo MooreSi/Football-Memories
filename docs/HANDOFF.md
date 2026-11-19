@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-19)
 
+- **Owner's phase 2 check, first round of fixes (2026-11-19).** This repo: the hidden Hudl
+  page is parked between jobs (it held 1.1 GB and pegged the capture container's CPU, then
+  crashed, which is why Refresh failed); a crashed page counts as no session, so Refresh signs
+  in once. Hosted crests come from one shared crest service (`app.crest_service`,
+  `FM_CREST_SERVICE`), since a hosted backend has no internet. Dropdowns draw their own
+  chevron in Chrome. Hosted header gains an account button. Gateway repo: families sign
+  straight into their library; Docker Desktop groups each family's containers; crest service
+  and crest-only filter; admin shows each family's container prefix. **Next:** Telegram admin
+  (owner asked for: new-request alerts with Approve/Decline, reports, suspend/resume/restart),
+  then the owner finishes the read-only check on https://localhost (Safari needs https).
+
 - **Hosted gateway phase 2 built and tested offline** (owner sign-off 2026-11-19). This repo:
   sealed per-user Hudl/Veo store (`SealedFileStore`), one browser-launch rule (headless
   Playwright Chromium in a hosted library, never a visible window, through the egress proxy),

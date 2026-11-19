@@ -84,6 +84,7 @@ class BrowserConnection:
         self._playwright: Any = None
         self._context: Any = None
         self._page: Any = None
+        self._page_crashed = False
         self._assets: dict[str, str] = {}
         self._observed_matches: dict[str, dict[str, str]] = {}
         self._library_failure: str | None = None
@@ -105,7 +106,7 @@ class BrowserConnection:
                 "tag_age_group": self._tag_age,
                 "progress": dict(self._progress) if self._progress else None,
                 "matches": self.catalogue.items(),
-                "session_active": self._context is not None,
+                "session_active": self._context is not None and not self._page_crashed,
             }
 
     def _set_progress(self, label: str, step: int, done: int, total: int) -> None:
@@ -236,6 +237,7 @@ class BrowserConnection:
             with contextlib.suppress(Exception):
                 self._browser.close()
         self._browser = self._context = self._page = None
+        self._page_crashed = False
         self._assets.clear()
         self._stream_id = ""
         self._stream_match = ""
@@ -264,6 +266,7 @@ class BrowserConnection:
         self._context = self._browser.new_context()
         self._page = self._context.new_page()
         self._page.on("response", self._library_response)
+        self._page.on("crash", self._on_page_crash)
         self.report("login", "Signing into Hudl using this Mac's Keychain.")
         self._page.goto(LOGIN_URL, wait_until="domcontentloaded")
         if visible:
@@ -291,6 +294,20 @@ class BrowserConnection:
             ) from error
         finally:
             del credentials
+
+    def _on_page_crash(self, _page: Any) -> None:
+        # A killed renderer (e.g. out of memory) is no session: the next Refresh signs in
+        # once, exactly as it does with no session. Never a retry of its own.
+        self._page_crashed = True
+
+    def _park(self) -> None:
+        """Leave the hidden page blank between operations so an open match page does not
+        hold memory and CPU (owner report 2026-11-19). Cookies stay in the context. A
+        visible window is the owner's, possibly mid-verification: never navigate it."""
+        if self._page is None or self._visible_session or self._page_crashed:
+            return
+        with contextlib.suppress(Exception):
+            self._page.goto("about:blank")
 
     def _signed_in(self) -> bool:
         try:
@@ -353,6 +370,8 @@ class BrowserConnection:
     def _discover(self, refresh: bool = False) -> None:
         from app.connectors.hudl_account import extract_matches, team_libraries
 
+        if self._page_crashed:
+            self._close()
         if not refresh or self._context is None or not self._libraries:
             self._login()
         self.report("discovering", "Reading accessible matches from your Hudl team libraries.")
@@ -452,6 +471,8 @@ class BrowserConnection:
 
     def _observe(self, identity: str, need_tags: bool) -> Observation:
         match = self.catalogue.find(identity)
+        if self._page_crashed:
+            self._close()
         if self._context is None:
             self._login()
         observation = Observation(identity)
@@ -759,11 +780,12 @@ class BrowserConnection:
         except Exception:
             self.report(
                 "error",
-                "Hudl operation stopped. Check credentials, browser verification and connection, "
-                "then Test again.",
+                "Hudl stopped part-way. Press Refresh to try again. If it stops again, check "
+                "your Hudl password in Settings, Connections.",
             )
         finally:
             if not handed_off:
+                self._park()
                 with self._lock:
                     self._pending -= 1
                     if action in {"clips", "download"}:

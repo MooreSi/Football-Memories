@@ -261,3 +261,12 @@ U10 v Stoke City reads 12-9.
 - `FM_API_PROXY=http://127.0.0.1:8765` (launch entry `frontend-live-api`) runs the dev
   server against the running app's API, to check a layout on real data. Opening a match
   page there starts that match's stream, as in the app.
+
+## Dropdowns and the hosted account button (2026-11-19)
+
+- Chrome drew its own grey arrow and light list on `select.field`; Safari did not. Every
+  `select.field` now draws the app's chevron (`appearance: none`), and `:root` declares
+  `color-scheme: dark` so the opened list is dark in every browser.
+- A hosted family now signs straight into their library (gateway change), so the header has
+  a round account button (`HostedAccountLink`, hosted builds only) back to the gateway's
+  account page for password, two-step sign-in and sign out.

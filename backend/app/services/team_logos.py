@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import threading
 import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import ProxyHandler, Request, build_opener, urlopen
 
 from app.services.paths import safe_join
 
@@ -335,6 +336,37 @@ def _sportsdb_crest(name: str) -> str | None:
     return None
 
 
+# Owner decision 2026-11-19: a hosted library has no internet. It asks the shared crest
+# service (FM_CREST_SERVICE, on its own private network) and keeps the answer locally.
+_SHARED_MISS_S = 3600.0
+
+
+def _shared_get(url: str) -> tuple[int, bytes]:
+    """One GET to the crest service, never through a proxy."""
+    request = Request(url, headers={"User-Agent": "FootballMemories/1.0"})  # noqa: S310
+    try:
+        with build_opener(ProxyHandler({})).open(request, timeout=30) as response:
+            return int(response.status), bytes(response.read(CREST_LIMIT + 1))
+    except HTTPError as error:
+        return int(error.code), b""
+
+
+def _shared_crest(base: str, name: str, key: str, target: Path, directory: Path) -> Path | None:
+    try:
+        status, data = _shared_get(f"{base.rstrip('/')}/crest?{urlencode({'name': name})}")
+    except (URLError, TimeoutError, OSError):
+        return None  # the service is restarting or busy: ask again next time
+    if status == 404:
+        _MISSES[key] = time.monotonic() + _SHARED_MISS_S
+        return None
+    if status != 200 or len(data) > CREST_LIMIT or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return None
+    directory.mkdir(parents=True, exist_ok=True)
+    with target.open("xb") as stream:
+        stream.write(data)
+    return target
+
+
 def cached_crest(name: str, directory: Path) -> Path | None:
     identity = club_name(name)
     key = hashlib.sha256(identity.encode()).hexdigest()
@@ -345,6 +377,9 @@ def cached_crest(name: str, directory: Path) -> Path | None:
         now = time.monotonic()
         if _MISSES.get(key, 0) > now or _PAUSED_UNTIL[0] > now:
             return None
+        shared = os.environ.get("FM_CREST_SERVICE")
+        if shared:
+            return _shared_crest(shared, name, key, target, directory)
         try:
             url = (
                 logo_candidate(name)
