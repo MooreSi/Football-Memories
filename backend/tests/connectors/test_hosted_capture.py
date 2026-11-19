@@ -142,3 +142,16 @@ def test_the_hosted_store_is_the_sealed_one(companion: TestClient) -> None:
 
     assert isinstance(companion.app.state.keychain, SealedFileStore)
     assert isinstance(companion.app.state.veo_store, SealedFileStore)
+
+
+def test_a_hosted_browser_goes_through_the_egress_proxy(
+    hosted: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Phase 2, task 030: the capture container's only way out is its filtering proxy."""
+    monkeypatch.setenv("FM_EGRESS_PROXY", "http://egress:3128")
+    playwright = MagicMock()
+    launch(playwright, visible=False)
+    assert playwright.chromium.launch.call_args.kwargs == {
+        "headless": True,
+        "proxy": {"server": "http://egress:3128"},
+    }

@@ -30,5 +30,9 @@ def launch(playwright: Any, *, visible: bool) -> Any:
                 "Use your saved account instead; if Hudl asks for a check, complete it in your "
                 "own browser."
             )
+        proxy = os.environ.get("FM_EGRESS_PROXY")
+        if proxy:
+            # Phase 2, task 030: the capture container's only way out is its filtering proxy.
+            return playwright.chromium.launch(headless=True, proxy={"server": proxy})
         return playwright.chromium.launch(headless=True)
     return playwright.chromium.launch(channel="chrome", headless=not visible)
