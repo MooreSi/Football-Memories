@@ -11,7 +11,16 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-18, night)
+## Current state (2026-11-19)
+
+- **Hosted gateway phase 2 built and tested offline** (owner sign-off 2026-11-19). This repo:
+  sealed per-user Hudl/Veo store (`SealedFileStore`), one browser-launch rule (headless
+  Playwright Chromium in a hosted library, never a visible window, through the egress proxy),
+  hosted-only route refusals and storage limit in the helper, `backend/Dockerfile.capture`, and
+  a hosted page that talks only to its own `/helper` after the user confirms permission.
+  Gateway repo a503461: capture container per user, egress filter, permission gate,
+  one-family-at-a-time slot, security pass 27/27. The owner's install is unchanged.
+  **Next, owner only:** the read-only check in the gateway repo's docs/PHASE2_OWNER_CHECK.md.
 
 - **Hosted gateway, phase 1 done; phase 3 built and switched off; phase 2 ready for sign-off.**
   Gateway repo at 391158a: security pass 24/24 (it found and fixed TLS failing for visits by

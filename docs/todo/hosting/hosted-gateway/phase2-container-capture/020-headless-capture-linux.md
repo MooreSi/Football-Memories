@@ -1,6 +1,6 @@
 # 020: Headless capture on Linux, one `capture` container per user
 
-**Status:** design answered by the owner, not built
+**Status:** built (2026-11-19, app 6c3a518 + 1db9f40; gateway capture container in the provisioner). Owner's read-only check pending.
 **Owner (2026-11-19):** one capture at a time across all users.
 **Depends on:** 010
 **Real-money surface:** no (account-touching: owner sign-off required before any code)
@@ -24,9 +24,10 @@ assumed; Playwright's own Chromium is the fallback.
   disguising HeadlessChrome (D-022).
 - Pacing per decision 003; **one capture at a time across all users** (a gateway-wide lock), so
   this Mac's one address never runs parallel automation against Hudl (README risk 1).
-- Hardening as the other containers (read-only root, tmpfs for the browser profile, no
-  capabilities, limits); Chromium's own sandbox kept, never `--no-sandbox` (if it needs a
-  seccomp profile, that profile is reviewed first).
+- Hardening as the other containers (read-only root, no capabilities, limits). **Correction
+  (2026-11-19):** Playwright opens Chromium without its own sandbox by default (that is how the
+  owner's helper already runs), and that sandbox cannot start in a container with no
+  capabilities; the container is the sandbox.
 
 ## Tests first (TDD)
 

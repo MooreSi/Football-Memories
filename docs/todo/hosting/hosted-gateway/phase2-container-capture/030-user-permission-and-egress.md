@@ -1,6 +1,6 @@
 # 030: Each user's own permission, and an egress allow-list
 
-**Status:** design answered by the owner, not built
+**Status:** built (2026-11-19, gateway b1b63dd + egress filter). Video hosts to be measured in the owner's read-only check.
 **Owner (2026-11-19):** wording approved as written; hosts measured once by the owner, read-only.
 **Depends on:** 020
 **Real-money surface:** no (account-touching: owner sign-off required before any code)
