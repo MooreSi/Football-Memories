@@ -9,7 +9,7 @@ RUN useradd --create-home --uid 1000 app
 # Hosted copies (owner decision 011) mount fresh named volumes here; Docker copies this
 # ownership into a new volume so the app user can write. Bind mounts (the owner's install)
 # replace these folders and are unaffected.
-RUN mkdir -p /archive /inbox/uploaded && chown -R app:app /archive /inbox
+RUN mkdir -p /archive /inbox/uploaded /crests && chown -R app:app /archive /inbox /crests
 WORKDIR /srv
 
 COPY requirements.lock ./
