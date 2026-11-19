@@ -270,3 +270,7 @@ U10 v Stoke City reads 12-9.
 - A hosted family now signs straight into their library (gateway change), so the header has
   a round account button (`HostedAccountLink`, hosted builds only) back to the gateway's
   account page for password, two-step sign-in and sign out.
+- 2026-11-19: the gateway's admin account has its own library. In a hosted build the header
+  asks the gateway's `/_portal/api/me` (same origin) and shows an **Admin** button
+  (`HostedAdminLink`, shield icon, label hidden on phones) to the admin only; it opens
+  `/_portal/admin`. The admin API checks the role itself, so the button is not the guard.

@@ -7,6 +7,7 @@ import { Brand } from "./BrandMark";
 import { UpdateBadge } from "./settings/UpdateSettings";
 import { AlertsBell } from "./AlertsBell";
 import { HostedAccountLink } from "./HostedAccountLink";
+import { HostedAdminLink } from "./HostedAdminLink";
 import { HOSTED } from "../api/helperBase";
 import { useHostedPermissions } from "../api/hostedPermissions";
 
@@ -92,6 +93,7 @@ export function AppShell() {
           </div>
           <UpdateBadge />
           <AlertsBell />
+          <HostedAdminLink />
           <HostedAccountLink />
           <GlobalSearch />
         </div>
