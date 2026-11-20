@@ -57,3 +57,28 @@ it("stays hidden when up to date", async () => {
   await new Promise((r) => setTimeout(r, 50));
   expect(screen.queryByRole("link", { name: "Update available" })).toBeNull();
 });
+
+// Owner request 2026-11-20: one button. "Check for updates" asks GitHub now; when that
+// finds an update the same button becomes "Update now", so a second press updates.
+it("checks for updates with one button, which then updates", async () => {
+  const upToDate = { ...available, behind: 0, update_available: false, latest: "a".repeat(40) };
+  stubFetch({ [`${H}/update/check`]: upToDate, [`${H}/update/apply`]: { accepted: true }, [`${H}/update/status`]: { state: "idle", message: "" } });
+  const base = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, init) =>
+    String(input) === `${H}/update/check?force=true` ? new Response(JSON.stringify(available), { status: 200 }) : base(input, init));
+  renderWithProviders(<UpdateSettings />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Check for updates" }));
+  expect(vi.mocked(fetch).mock.calls.some(([u]) => String(u) === `${H}/update/check?force=true`)).toBe(true);
+  await user.click(await screen.findByRole("button", { name: "Update now" }));
+  expect(vi.mocked(fetch).mock.calls.some(([u, init]) => String(u) === `${H}/update/apply` && init?.method === "POST")).toBe(true);
+  expect(screen.queryByRole("button", { name: "Check for updates" })).toBeNull();
+});
+
+it("has one update button, not a separate Check now", async () => {
+  stubFetch({ [`${H}/update/check`]: available, [`${H}/update/status`]: { state: "idle", message: "" } });
+  renderWithProviders(<UpdateSettings />);
+  await screen.findByRole("button", { name: "Update now" });
+  expect(screen.queryByRole("button", { name: /Check now/ })).toBeNull();
+  expect(screen.getAllByRole("button")).toHaveLength(1);
+});

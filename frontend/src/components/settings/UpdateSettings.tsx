@@ -104,7 +104,6 @@ export function UpdateSettings() {
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
               <ArrowUpCircle size={20} className="text-accent" aria-hidden />
               <p className="mr-auto text-sm">{data.behind} {data.behind === 1 ? "update" : "updates"} available.</p>
-              <Button variant="primary" disabled={apply.isPending || updating || state === "working"} onClick={() => apply.mutate()}>Update now</Button>
             </div>
           ) : (
             <p className="flex items-center gap-2 text-sm text-ok"><CheckCircle2 size={16} aria-hidden /> Football Memories is up to date.</p>
@@ -121,7 +120,11 @@ export function UpdateSettings() {
       ) : failure ? <p role="status" className="text-sm text-danger">{failure}</p>
         : state && state !== "idle" && <p role="status" className={`text-sm ${state === "error" ? "text-danger" : state === "done" ? "text-ok" : "text-fg-muted"}`}>{status.data?.message}</p>}
       {(apply.isError || recheck.isError) && <p role="alert" className="text-sm text-danger">{(apply.error ?? recheck.error)?.message}</p>}
-      {!check.isError && <Button variant="ghost" disabled={recheck.isPending} onClick={() => recheck.mutate()}><RefreshCw size={14} aria-hidden /> Check now</Button>}
+      {/* Owner request 2026-11-20: one button. It checks GitHub now; once an update is
+          found it becomes Update now, so a second press updates. */}
+      {data && !check.isError && (data.update_available
+        ? <Button variant="primary" disabled={apply.isPending || updating || state === "working"} onClick={() => apply.mutate()}><ArrowUpCircle size={14} aria-hidden /> Update now</Button>
+        : <Button disabled={recheck.isPending} onClick={() => recheck.mutate()}><RefreshCw size={14} className={recheck.isPending ? "animate-spin" : undefined} aria-hidden /> {recheck.isPending ? "Checking…" : "Check for updates"}</Button>)}
       <p className="text-xs text-fg-subtle">Updating only fast-forwards to the latest version on GitHub, rebuilds the app, restarts it and reloads this page. Your matches, downloads, settings and database are kept. A copy with local code changes is never overwritten. A copy downloaded as a ZIP is linked to GitHub the first time it checks, without changing any file.</p>
     </section>
   );

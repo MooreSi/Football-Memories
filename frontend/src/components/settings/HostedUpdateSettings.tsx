@@ -13,7 +13,7 @@ type HostedUpdate = { current: string | null; latest: string | null; available: 
 const KEY = ["hosted-update"];
 const BASE = "/_portal/api/update";
 
-async function send(path: string, body?: unknown): Promise<HostedUpdate> {
+async function send<T = HostedUpdate>(path: string, body?: unknown): Promise<T> {
   const me = await fetch("/_portal/api/me", { credentials: "same-origin", cache: "no-store" });
   if (!me.ok) throw new Error("Please sign in again.");
   const { csrf_token } = (await me.json()) as { csrf_token: string };
@@ -24,12 +24,12 @@ async function send(path: string, body?: unknown): Promise<HostedUpdate> {
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : "The update did not run. Try again later.");
-  return data as HostedUpdate;
+  return data as T;
 }
 
-export function useHostedUpdate() {
+export function useHostedUpdate(polling = false) {
   return useQuery<HostedUpdate>({
-    queryKey: KEY, enabled: HOSTED, retry: false, refetchInterval: 15 * 60 * 1000,
+    queryKey: KEY, enabled: HOSTED, retry: false, refetchInterval: polling ? 3000 : 15 * 60 * 1000,
     queryFn: async () => {
       const r = await fetch(BASE, { credentials: "same-origin", cache: "no-store" });
       if (!r.ok) throw new Error("Updates cannot be checked right now. Try again later.");
@@ -63,10 +63,25 @@ export function HostedUpdateBadge() {
   );
 }
 
+const WAIT_MS = 5 * 60 * 1000;
+
 export function HostedUpdateSettings() {
   const qc = useQueryClient();
-  const q = useHostedUpdate();
+  // Owner request 2026-11-20: after "Check for updates", wait for the updater's answer.
+  const [waitingSince, setWaitingSince] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false);
+  const q = useHostedUpdate(waitingSince !== null);
   const [updated, setUpdated] = useState(false);
+  const check = useMutation({ mutationFn: () => send<{ requested_at: string | null }>("/check"),
+    onMutate: () => setSlow(false),
+    onSuccess: (got) => { setWaitingSince(got.requested_at ?? new Date().toISOString()); void qc.invalidateQueries({ queryKey: KEY }); } });
+  useEffect(() => {
+    if (!waitingSince) return;
+    const answered = q.data?.checked_at && Date.parse(q.data.checked_at) >= Date.parse(waitingSince);
+    if (answered) { setWaitingSince(null); return; }
+    const timer = setTimeout(() => { setWaitingSince(null); setSlow(true); }, WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [waitingSince, q.data?.checked_at]);
   const apply = useMutation({ mutationFn: () => send("/apply"),
     onSuccess: (data) => { qc.setQueryData(KEY, data); setUpdated(true); } });
   const auto = useMutation({ mutationFn: (enabled: boolean) => send("/auto", { enabled }),
@@ -90,11 +105,17 @@ export function HostedUpdateSettings() {
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
               <ArrowUpCircle size={20} className="text-accent" aria-hidden />
               <p className="mr-auto text-sm">A newer version of Football Memories is ready.</p>
-              <Button variant="primary" disabled={apply.isPending} onClick={() => apply.mutate()}>Update now</Button>
             </div>
+          ) : waitingSince ? (
+            <p role="status" className="flex items-center gap-2 text-sm text-fg-muted"><RefreshCw size={14} className="animate-spin" aria-hidden /> Checking GitHub for a newer version… a new version takes a minute or two to prepare.</p>
           ) : (
             <p className="flex items-center gap-2 text-sm text-ok"><CheckCircle2 size={16} aria-hidden /> Your library is up to date.</p>
           )}
+          {slow && !data.available && <p className="text-sm text-fg-muted">Still checking. This page shows the update as soon as it is ready.</p>}
+          {/* One button: it checks now; once a newer version is ready it updates. */}
+          {!updated && (data.available
+            ? <Button variant="primary" disabled={apply.isPending} onClick={() => apply.mutate()}><ArrowUpCircle size={14} aria-hidden /> Update now</Button>
+            : <Button disabled={check.isPending || waitingSince !== null} onClick={() => check.mutate()}><RefreshCw size={14} aria-hidden /> {check.isPending || waitingSince ? "Checking…" : "Check for updates"}</Button>)}
           <label className="flex items-center gap-3 text-sm">
             <input type="checkbox" aria-label="Update automatically" className="h-4 w-4 accent-[var(--color-accent)]"
               checked={data.auto_update} disabled={auto.isPending} onChange={(e) => auto.mutate(e.target.checked)} />
@@ -108,7 +129,7 @@ export function HostedUpdateSettings() {
           {apply.isPending ? "Updating your library…" : "Restarting your library… this page reloads by itself when it is ready."}
         </p>
       )}
-      {(apply.isError || auto.isError) && <p role="alert" className="text-sm text-danger">{(apply.error ?? auto.error)?.message}</p>}
+      {(apply.isError || auto.isError || check.isError) && <p role="alert" className="text-sm text-danger">{(apply.error ?? auto.error ?? check.error)?.message}</p>}
       <p className="text-xs text-fg-subtle">New versions come from the Football Memories project on GitHub and are checked about every hour. Updating restarts your library on the new version; your matches, downloads and settings are kept.</p>
     </section>
   );

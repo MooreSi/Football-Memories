@@ -95,3 +95,35 @@ it("never asks GitHub from the page", async () => {
   await screen.findByRole("button", { name: "Update now" });
   expect(fn.mock.calls.every(([u]) => String(u).startsWith("/"))).toBe(true);
 });
+
+// Owner request 2026-11-20: one button. "Check for updates" asks the gateway's updater to
+// check GitHub now; when it reports a newer version the same button becomes "Update now".
+it("checks now, waits for the answer, then the same button updates", async () => {
+  let checked = false;
+  const fn = vi.fn(async (url: RequestInfo | URL) => {
+    const u = String(url);
+    if (u === "/_portal/api/me") return Response.json({ csrf_token: "tok" });
+    if (u === "/_portal/api/update/check") { checked = true; return Response.json({ requested_at: "2026-11-20T12:00:00Z" }); }
+    if (u === "/_portal/api/update/apply") return Response.json(status({ current: NEW, available: false }));
+    if (u === "/_portal/api/update") return Response.json(checked
+      ? status({ checked_at: "2026-11-20T12:01:00Z" })
+      : status({ current: NEW, latest: NEW, available: false, checked_at: "2026-11-20T11:00:00Z" }));
+    if (u === "/api/health") return Response.json({ status: "ok" });
+    return new Response("{}", { status: 599 });
+  });
+  vi.stubGlobal("fetch", fn);
+  await show("settings");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Check for updates" }));
+  const [[, init]] = posts(fn as never, "/_portal/api/update/check");
+  expect(new Headers(init?.headers).get("X-CSRF-Token")).toBe("tok");
+  await user.click(await screen.findByRole("button", { name: "Update now" }, { timeout: 8000 }));
+  expect(posts(fn as never, "/_portal/api/update/apply")).toHaveLength(1);
+}, 15000);
+
+it("offers only Check for updates when the library is up to date", async () => {
+  gateway(status({ current: NEW, available: false }));
+  await show("settings");
+  expect(await screen.findByRole("button", { name: "Check for updates" })).toBeEnabled();
+  expect(screen.queryByRole("button", { name: "Update now" })).toBeNull();
+});
