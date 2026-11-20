@@ -11,6 +11,22 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Public runtime hardening (spec 330, owner request 2026-11-20)
+
+`partial`, branch `codex/public-runtime-hardening`: Dockerfile changes and new tests ready;
+hosted builds/rescans and deployment pending at this checkpoint. Python runtime pinned;
+available apt security updates installed; pip removed after dependency/browser installation;
+Nginx moves from 1.27 to pinned current stable 1.30.7. No application code or user data changes.
+
+Verification 2026-11-20: three new Dockerfile tests red first, then green. `uv run --directory
+backend pytest`: **682 passed**; same with `TEST_DATABASE_URL` for development PostgreSQL:
+**682 passed**. Ruff check/format, mypy and `alembic check`: clean/no new upgrade operations.
+`npm --prefix frontend test`: **599 passed**; typecheck/build passed (existing bundle-size and
+jsdom media/canvas warnings). `npm audit`: zero findings. Production app Python audit found
+only pip 25.0.1 findings, which the new Dockerfiles remove; OS/media findings tracked in the
+Gateway report. No real Hudl/Veo account used. The image-build script correctly refused an
+uncommitted tree, so builds follow the checkpoint commit.
+
 ## Match page summary strip and tabs (spec 320, owner request 2026-11-16)
 
 `done`: Hudl and Veo match pages put a momentum timeline (playhead, click to watch) and

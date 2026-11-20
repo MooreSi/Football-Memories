@@ -11,7 +11,22 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-19)
+## Current state (2026-11-20)
+
+- **Public security review (owner request 2026-11-20), checkpoint.** Work is on
+  `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
+  `~/Football Memories Gateway`. Spec 330 pins Python/Nginx runtime images, installs available
+  system updates and removes pip after builds. New tests observed red first; backend 682 on
+  SQLite and PostgreSQL, frontend 599, lint/format/types/build/schema drift all pass.
+  **Next:** commit/push this checkpoint, build and rescan hosted images, finish the Gateway
+  report and controlled rollout. The owner's local app/helper and all library volumes are
+  untouched. Gateway audit found an MFA throttle reset, missing private cache protection,
+  unbounded portal bodies, reflected validation inputs and unbounded Argon2 memory use;
+  fixes tested offline. Internet ports 8443 and 6881 still open (unrelated services);
+  IPv6 reachability remains unverified. Do not claim complete hardening. The old full-stack
+  security runner and provisioner Docker test cannot safely run beside production; one
+  legacy tunnel test also collides with the production subnet. Owner approval requested
+  before changing that existing test.
 
 - **"Hudl stopped part-way" on every Refresh (owner report 2026-11-19).** The hosted capture
   container hit its 1.5 GB cap, the kernel killed Chromium, and the helper kept reusing the dead
