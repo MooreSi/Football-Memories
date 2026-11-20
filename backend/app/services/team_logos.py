@@ -36,6 +36,16 @@ _MISSES: dict[str, float] = {}
 # A refusal now pauses every lookup for Retry-After (or a minute) and is not a miss.
 _PAUSED_UNTIL: list[float] = [0.0]  # kept for the shared-service path; per site below
 _SITE_PAUSED: dict[str, float] = {"wikimedia": 0.0, "sportsdb": 0.0}
+# Owner report 2026-11-20: clubs whose last lookup could not ask every source (a site was
+# waiting). The shared crest service answers 503 for these, not 404, so libraries ask again.
+_UNSETTLED: set[str] = set()
+
+
+def settled(name: str) -> bool:
+    """False when the last lookup of this club could not ask every source."""
+    return hashlib.sha256(club_name(name).encode()).hexdigest() not in _UNSETTLED
+
+
 _LAST_REQUEST: list[float] = [0.0]
 _GAP_S = 1.0
 # TheSportsDB's free tier allows 30 requests a minute; ask it at most every 2.5 s.
@@ -376,7 +386,10 @@ def cached_crest(name: str, directory: Path) -> Path | None:
         if target.exists():
             return target
         now = time.monotonic()
-        if _MISSES.get(key, 0) > now or _PAUSED_UNTIL[0] > now:
+        if _MISSES.get(key, 0) > now:
+            return None
+        if _PAUSED_UNTIL[0] > now:
+            _UNSETTLED.add(key)
             return None
         _SITE_PAUSED["wikimedia"] = max(_SITE_PAUSED["wikimedia"], _PAUSED_UNTIL[0])
         shared = os.environ.get("FM_CREST_SERVICE")
@@ -412,14 +425,19 @@ def cached_crest(name: str, directory: Path) -> Path | None:
             directory.mkdir(parents=True, exist_ok=True)
             with target.open("xb") as stream:
                 stream.write(image)
+            _UNSETTLED.discard(key)
             return target
         except _Refused as refused:
             site = "sportsdb" if "thesportsdb" in str(url) else "wikimedia"
             _SITE_PAUSED[site] = time.monotonic() + refused.wait_s
+            _UNSETTLED.add(key)
             return None
         except Exception:
-            if not skipped:
+            if skipped:
+                _UNSETTLED.add(key)
+            else:
                 _MISSES[key] = time.monotonic() + _NO_CREST_S
+                _UNSETTLED.discard(key)
             return None
 
 

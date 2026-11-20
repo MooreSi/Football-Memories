@@ -19,6 +19,7 @@ SERVICE = "http://crests:8200"
 def clean(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(team_logos, "_MISSES", {})
     monkeypatch.setattr(team_logos, "_PAUSED_UNTIL", [0.0])
+    monkeypatch.setattr(team_logos, "_UNSETTLED", set())
 
 
 @pytest.fixture
@@ -165,3 +166,64 @@ def test_the_service_refuses_to_start_pointing_at_itself(
 
     with pytest.raises(RuntimeError):
         create_app()
+
+
+# Owner report 2026-11-20: a freshly started crest service answered 404 for clubs it had not
+# been able to ask everywhere (Wikipedia was rate-limiting it), and each library then kept
+# that "no crest" for an hour. Not checked everywhere is now 503: ask again later.
+def test_the_service_says_try_later_when_a_source_was_not_asked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from email.message import Message
+    from urllib.error import HTTPError
+
+    monkeypatch.setattr(team_logos, "_SITE_PAUSED", {"wikimedia": 0.0, "sportsdb": 0.0})
+
+    def fetch(url: str) -> bytes:
+        if "thesportsdb.com" in url:
+            return b'{"teams": null}'
+        headers = Message()
+        headers["Retry-After"] = "120"
+        raise HTTPError(url, 429, "Too Many Requests", headers, None)
+
+    monkeypatch.setattr(team_logos, "_fetch", fetch)
+    service = _service(tmp_path, monkeypatch)
+    answer = service.get("/crest", params={"name": "Elm Ravens"})
+    assert answer.status_code == 503
+
+
+def test_the_service_still_says_404_when_every_source_was_asked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json as _json
+
+    monkeypatch.setattr(team_logos, "_SITE_PAUSED", {"wikimedia": 0.0, "sportsdb": 0.0})
+
+    def fetch(url: str) -> bytes:
+        if "thesportsdb.com" in url:
+            return b'{"teams": null}'
+        if "commons" in url or "list=search" in url:
+            return _json.dumps({"query": {}}).encode()
+        return _json.dumps({"query": {"pages": {"-1": {"missing": ""}}}}).encode()
+
+    monkeypatch.setattr(team_logos, "_fetch", fetch)
+    assert (
+        _service(tmp_path, monkeypatch).get("/crest", params={"name": "Elm Ravens"}).status_code
+        == 404
+    )
+
+
+def test_a_library_asks_again_after_try_later(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, internet: list[str]
+) -> None:
+    calls: list[str] = []
+
+    def shared(url: str) -> tuple[int, bytes]:
+        calls.append(url)
+        return (503, b"") if len(calls) == 1 else (200, PNG)
+
+    monkeypatch.setattr(team_logos, "_shared_get", shared)
+    monkeypatch.setenv("FM_CREST_SERVICE", SERVICE)
+    assert team_logos.cached_crest("Elm Ravens", tmp_path) is None
+    assert team_logos.cached_crest("Elm Ravens", tmp_path) is not None
+    assert len(calls) == 2

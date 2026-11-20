@@ -21,6 +21,7 @@ def clock(monkeypatch):
     fake = _Clock()
     monkeypatch.setattr(team_logos, "_MISSES", {})
     monkeypatch.setattr(team_logos, "_PAUSED_UNTIL", [0.0])
+    monkeypatch.setattr(team_logos, "_UNSETTLED", set())
     monkeypatch.setattr(team_logos, "_SITE_PAUSED", {"wikimedia": 0.0, "sportsdb": 0.0})
     monkeypatch.setattr(team_logos.time, "monotonic", fake.monotonic)
     monkeypatch.setattr(team_logos.time, "sleep", fake.sleep)

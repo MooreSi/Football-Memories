@@ -31,6 +31,9 @@ def create_app() -> FastAPI:
     @app.get("/crest")
     def crest(name: Annotated[str, Query(min_length=1, max_length=200)]) -> FileResponse:
         path = team_logos.cached_crest(name, directory)
+        if path is None and not team_logos.settled(name):
+            # Owner report 2026-11-20: a source was waiting; this is not "no crest".
+            raise HTTPException(503, "Crest sources are busy; ask again later")
         if path is None:
             raise HTTPException(404, "No verified club crest found")
         return FileResponse(path, media_type="image/png")
