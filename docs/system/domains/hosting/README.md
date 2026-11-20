@@ -29,3 +29,9 @@ Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-t
   only its backend, web and capture containers. The database and volumes stay.
 - **Gotcha:** a library still on a build from before this feature has no Update tab, so it
   can only be moved by the admin (done once for all three on 2026-11-20).
+- **Check for updates** (owner request 2026-11-20): one button in Update; it becomes "Update
+  now" once a newer version is ready. In a hosted library it asks the gateway, whose
+  provisioner leaves a note (time only) in the Gateway repo's `updates/requests/check`; the
+  updater's launchd job watches that file (WatchPaths) and runs its fixed check. At most one
+  note per five minutes. The page waits until the status file's `checked_at` is at or after
+  the request time. Checked live 2026-11-20: note to updater run to new `checked_at` in seconds.
