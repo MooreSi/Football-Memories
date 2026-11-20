@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-20)
 
+- **Veo clubs, crests and reels (owner report 2026-11-20), live on the owner's app.** Each Veo
+  match names its own club (learnt from titles: NL, RCW, squad codes, spellings); a Wikipedia
+  429 no longer blocks TheSportsDB crests (Redditch United now found); Veo reels keep picked
+  team events. Hudl reels checked live: fine. Norton Lindsey, Olton Ravens, Kenilworth
+  Sporting and Solihull Academy Blue still have no crest online that the app can see.
+
 - **Hosted libraries can update themselves (spec 340, owner decision 013).** Settings >
   Update in a hosted library: version, Update now, "Update automatically"; title-bar "Update
   available" when not ticked. Gateway side (host updater, provisioner, portal API) is in the

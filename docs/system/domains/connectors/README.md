@@ -721,3 +721,22 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
 With Show Hudl on, the Library's hero, Overview, Match Profile and count used the Hudl list
 only; a Veo-only account showed "No matches yet". Shown Veo matches now join (after Hudl's),
 and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl-only.
+
+## Veo clubs, crests and reels (owner report 2026-11-20)
+
+- **Clubs:** `lib/veoClubs.ts` learns the clubs from the titles (a club named first at least
+  twice), beside the Veo team setting and Veo's team names, and matches each side through
+  initials (NL, RCW, SAFC), squad codes and age groups (AB, MA, MJPL, U9s), plurals, near
+  spellings and swapped letters, short forms and one distinctive word ("Moors"). Two possible
+  clubs, or none, leave the name as written. The owner's 286 titles: 264 resolve to 9 clubs;
+  the rest have no fixture in the title. Spelling shown is the one titles use most ("Norton
+  Lindsey", although the setting says "Lindsay"). Not learnt: "Solihull Whites" and
+  "Solihull Navys" stay their own names; whether they are Solihull Academy squads is unknown.
+- **Crests:** Wikipedia answers 429 after a handful of lookups (each club costs up to ~10
+  requests). Until 2026-11-20 that paused every source, so TheSportsDB was never asked. Now
+  each site waits on its own (`_SITE_PAUSED`), and a club not asked everywhere is not a miss.
+  TheSportsDB has Racing Club Warwick and Redditch United; none of Norton Lindsey, Olton
+  Ravens, Kenilworth Sporting, Solihull Academy Blue (checked 2026-11-20); Wikipedia was still
+  refusing then, so it is unknown there. A missing one is pasted in Settings > Club crests.
+- **Reels:** a Veo reel may include team events (`team_moments`, ids `t-...`); the reel page
+  must look at both lists, or the picked team events vanish (0 moments).
