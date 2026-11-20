@@ -13,8 +13,9 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Public runtime hardening (spec 330, owner request 2026-11-20)
 
-`partial`, branch `codex/public-runtime-hardening`: Dockerfile changes and new tests ready;
-hosted builds/rescans and deployment pending at this checkpoint. Python runtime pinned;
+`partial`, branch `codex/public-runtime-hardening`: Dockerfile changes and new tests committed
+at `4ac2237`; hosted builds/rescans and isolated import/Nginx smoke checks complete. Deployment
+pending safe integration validation or an owner verification exception. Python runtime pinned;
 available apt security updates installed; pip removed after dependency/browser installation;
 Nginx moves from 1.27 to pinned current stable 1.30.7. No application code or user data changes.
 
@@ -25,7 +26,13 @@ backend pytest`: **682 passed**; same with `TEST_DATABASE_URL` for development P
 jsdom media/canvas warnings). `npm audit`: zero findings. Production app Python audit found
 only pip 25.0.1 findings, which the new Dockerfiles remove; OS/media findings tracked in the
 Gateway report. No real Hudl/Veo account used. The image-build script correctly refused an
-uncommitted tree, so builds follow the checkpoint commit.
+uncommitted tree, then built all three hosted images at `4ac2237`. Rebuilt web has no high/
+critical scan entries; backend/capture retain unfixed media/system advisories. Images are not
+deployed; no existing library or owner app/helper changed. Gateway fixes at `b4bec39`: 305
+ordinary tests, four real-Caddy tests, portal 61 and provisioner 64 passed. The owner approved
+the tunnel fixture subnet relocation after the original production-overlap failure. Full
+integrated runner and provisioner Docker test remain guarded against production. No app CI
+workflow exists.
 
 ## Match page summary strip and tabs (spec 320, owner request 2026-11-16)
 

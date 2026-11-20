@@ -13,20 +13,24 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-20)
 
-- **Public security review (owner request 2026-11-20), checkpoint.** Work is on
+- **Public security review (owner request 2026-11-20), release pending.** Work is on
   `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
   `~/Football Memories Gateway`. Spec 330 pins Python/Nginx runtime images, installs available
   system updates and removes pip after builds. New tests observed red first; backend 682 on
   SQLite and PostgreSQL, frontend 599, lint/format/types/build/schema drift all pass.
-  **Next:** commit/push this checkpoint, build and rescan hosted images, finish the Gateway
-  report and controlled rollout. The owner's local app/helper and all library volumes are
+  Hosted images built from `4ac2237`, rescanned and import/Nginx-smoke checked with synthetic
+  upstreams; report in the Gateway repo's `docs/security-review-2026-11-20.md` (code `b4bec39`).
+  **Next:** an isolated integrated security pass or an owner verification exception before
+  rollout. Nothing from this review has been deployed. The owner's local app/helper and all library volumes are
   untouched. Gateway audit found an MFA throttle reset, missing private cache protection,
   unbounded portal bodies, reflected validation inputs and unbounded Argon2 memory use;
-  fixes tested offline. Internet ports 8443 and 6881 still open (unrelated services);
+  fixes tested offline. Further finding: quota checks do not cover backup/generated-file
+  writes, so an approved user can threaten the shared disk. Internet ports 8443 and 6881 still open (unrelated services);
   IPv6 reachability remains unverified. Do not claim complete hardening. The old full-stack
-  security runner and provisioner Docker test cannot safely run beside production; one
-  legacy tunnel test also collides with the production subnet. Owner approval requested
-  before changing that existing test.
+  security runner and provisioner Docker test cannot safely run beside production.
+  Owner approved moving the legacy tunnel fixture to its own subnet; **all four real-Caddy
+  tests now pass**. Gateway ordinary suite 305, portal 61, provisioner 64 also pass. Remaining
+  upstream advisories are documented; rebuilt web/egress have no high/critical scan entries.
 
 - **"Hudl stopped part-way" on every Refresh (owner report 2026-11-19).** The hosted capture
   container hit its 1.5 GB cap, the kernel killed Chromium, and the helper kept reusing the dead
@@ -824,6 +828,10 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
+Public-security release comes first: see the Gateway report. Finish the isolated integration
+check or obtain an explicit owner exception before deployment, address cumulative quota
+enforcement, resolve public ports 8443/6881, and verify IPv6 firewall exposure.
+
 0. **Spec 230:** with the owner, try a note and a momentum click on a real
    stream.
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
@@ -836,6 +844,11 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
    backup/restore, storage health.
 
 ## Blocked on / waiting for the owner
+
+- Public hardening deployment: safe full-stack security validation needs a separate Docker
+  environment (the populated production stack must not be torn down), or an owner exception
+  to that pre-release check. Port 8443/6881 intent still pending. Existing hosted libraries
+  continue using their old image IDs; rebuilding tags alone does not patch running services.
 
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
   Normal-user/no-export role and automation permission answered. Real capture/import and clip download verified after owner sign-in. Explicit
