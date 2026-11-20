@@ -153,8 +153,16 @@ docker compose up -d --build || fail "Docker could not start the app. See the me
 # restart; start it now rather than after Docker's back-off.
 [ -n "$(docker compose ps -q --status running backend 2>/dev/null)" ] || docker compose restart backend >/dev/null 2>&1
 ok "App containers running"
+# Owner request 2026-11-20: the helper starts at login (a launchd login item).
+# shellcheck source=scripts/mac/helper-login-item.sh
+. "$APP_DIR/scripts/mac/helper-login-item.sh" || fail "This copy is missing scripts/mac/helper-login-item.sh. Download it again from GitHub."
+if [ -x backend/.venv/bin/python3 ] && write_helper_login_item "$APP_DIR" "$INBOX"; then
+  ok "Hudl helper starts when you log in"
+else warn "The Hudl helper could not be set to start at login; start it with this installer."; fi
 if curl -fs --max-time 5 -o /dev/null http://127.0.0.1:8766/account -H "Origin: http://127.0.0.1:$PORT"; then
   ok "Hudl helper already running"
+elif [ -x backend/.venv/bin/python3 ] && start_helper_login_item; then
+  ok "Hudl helper started (log: data/helper.log)"
 elif command -v uv >/dev/null 2>&1; then
   (cd backend && nohup uv run python -m app.connectors.hudl_companion --output "$INBOX" >>"$LOG_DIR/helper.log" 2>&1 &)
   ok "Hudl helper started (log: data/helper.log)"

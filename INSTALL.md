@@ -39,7 +39,12 @@ The installer also unblocks its own folder's scripts on every run.
 
 Then it runs `docker compose up -d --build`, starts the Hudl helper on
 127.0.0.1:8766, waits for http://127.0.0.1:8765/api/health and opens the app.
-On a Mac the helper runs in the background with its log in `data/helper.log`;
+On a Mac the helper runs in the background with its log in `data/helper.log`,
+and starts by itself when you log in: the installer adds a login item,
+`~/Library/LaunchAgents/com.footballmemories.helper.plist`
+([helper-login-item.sh](scripts/mac/helper-login-item.sh)). To stop that, run
+`launchctl bootout gui/$(id -u)/com.footballmemories.helper` and delete the file.
+It is not restarted if it stops; double-click the installer to start it again;
 on Windows it runs in a minimized window titled "Football Memories Hudl
 helper", which must stay open while you use Hudl.
 

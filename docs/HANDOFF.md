@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-20)
 
+- **Helper starts at login on a Mac (owner request 2026-11-20).** The installer writes the
+  launchd login item `com.footballmemories.helper` (`scripts/mac/helper-login-item.sh`,
+  RunAtLoad only, no KeepAlive so it never races the updater's in-place restart) and starts
+  the helper through it; the old `nohup` start stays as the fallback. Already installed by
+  hand on the owner's Mac (identical file) and running under launchd. Windows unchanged.
+
 - **Veo Connect reads at once, shared Veo match links, Veo in the Library (owner requests
   2026-11-20), on `main`.** Connect lists then reads the
   matches in one sign-in. Settings > Connections > Veo has "Shared match links" (add, delete),
