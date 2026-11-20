@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import secrets
@@ -55,6 +56,18 @@ def shared_slug(link: str) -> str:
             "https://app.veo.co/matches/<match>/."
         )
     return found[1]
+
+
+def _cause(error: BaseException) -> str:
+    """An unexpected error's type and where it was raised, for the status and the helper
+    log. Never its message: Playwright errors can carry Veo addresses (golden rule 1)."""
+    frame = error.__traceback__
+    while frame is not None and frame.tb_next is not None:
+        frame = frame.tb_next
+    where = f" in {Path(frame.tb_frame.f_code.co_filename).name}:{frame.tb_lineno}" if frame else ""
+    cause = f"{type(error).__name__}{where}"
+    logging.getLogger(__name__).warning("Veo operation stopped: %s", cause)
+    return cause
 
 
 class _PublicReader:
@@ -115,6 +128,9 @@ class VeoConnection:
         self.loader = loader
         self.directory = directory
         self.path = directory / "library.json"
+        # Owner report 2026-11-20: matches read by a run that has not finished, so the
+        # next Connect or Refresh carries on from there instead of starting again.
+        self.progress_path = directory / "progress.json"
         self._session = session
         self._lock = threading.Lock()
         self._busy = False
@@ -219,7 +235,7 @@ class VeoConnection:
                 for poster in self.posters.iterdir():
                     if poster.name not in keep:
                         poster.unlink(missing_ok=True)
-            for name in ("crest.png", "club.json"):
+            for name in ("crest.png", "club.json", "progress.json"):
                 (self.directory / name).unlink(missing_ok=True)
             if shared:
                 self._write(shared)
@@ -273,17 +289,39 @@ class VeoConnection:
                     self._test(api)
                 self._refresh(api)
         except CaptureError as error:
-            self._report(state="error", message=str(error), progress=None)
-        except Exception:
+            self._report(state="error", message=f"{error}{self._kept()}", progress=None)
+        except Exception as error:
             self._report(
                 state="error",
-                message="The Veo connection stopped unexpectedly. Try again.",
+                message=f"The Veo connection stopped unexpectedly ({_cause(error)}).{self._kept()}"
+                " Try again.",
                 progress=None,
             )
         finally:
             with self._lock:
                 self._busy = False
                 self._downloading = False
+
+    def _kept(self) -> str:
+        count = len(self._progress())
+        if not count:
+            return ""
+        return (
+            f" {count} match{' read so far is' if count == 1 else 'es read so far are'} kept; "
+            "Connect or Refresh carries on from there."
+        )
+
+    def _progress(self) -> dict[str, dict[str, Any]]:
+        try:
+            items = json.loads(self.progress_path.read_text()).get("matches")
+        except (OSError, ValueError, AttributeError):
+            return {}
+        if not isinstance(items, dict):
+            return {}
+        return {k: v for k, v in items.items() if isinstance(v, dict) and v.get("id") == k}
+
+    def _save_progress(self, items: dict[str, dict[str, Any]]) -> None:
+        self._save(self.progress_path, json.dumps({"matches": items}).encode())
 
     def _clubs(self, api: Any) -> list[dict[str, Any]]:
         api.get("/api/app/user/")
@@ -339,12 +377,16 @@ class VeoConnection:
         known = {i.get("id"): i for i in self.library()}
         self._club_read = False
         library: list[dict[str, Any]] = []
+        read = self._progress()
         done = 0
         for r in recordings:
             if r not in active:
                 library.append(library_item(r))
                 continue
             done += 1
+            if f"veo-{r['identifier']}" in read:
+                library.append(read[f"veo-{r['identifier']}"])
+                continue
             self._report(
                 message=f"Reading Veo match {done} of {len(active)}…",
                 progress={
@@ -370,10 +412,13 @@ class VeoConnection:
                     else self._team_data(api, slug, str(r["identifier"]))
                 )
             library.append(item)
+            read[item["id"]] = item
+            self._save_progress(read)
         account = {i.get("slug") for i in library}
         shared, unread = self._read_shared(api, account, known)
         library += shared
         self._write(library)
+        self.progress_path.unlink(missing_ok=True)
         moments = sum(len(i["moments"]) for i in library)
         with_video = sum(1 for i in library if i["available"])
         self._report(
@@ -768,6 +813,7 @@ class VeoConnection:
 
     def reset(self) -> None:
         # A new account replaces the account's matches; shared links are not the account's.
+        self.progress_path.unlink(missing_ok=True)
         shared = [i for i in self.library() if i.get("shared")]
         if shared:
             self._write(shared)

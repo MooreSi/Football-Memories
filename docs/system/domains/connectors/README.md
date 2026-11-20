@@ -773,3 +773,25 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
   host refused this connection outright for a while after heavy lookups; nothing to fix but wait.
 - The gateway's crest service runs `fm-app-backend:hosted`; since 2026-11-20 the updater moves
   it to each new build (retag `:hosted`, recreate `crests` with both compose files).
+
+## A stopped Veo read carries on where it left off (owner report 2026-11-20)
+
+- A new hosted account (3 clubs, 286 matches, 56 with video, about 8 reads each at 1 s
+  apart: roughly 10 minutes) showed "The Veo connection stopped unexpectedly" and, on the
+  next Connect, started again from match 1. `_refresh` built the list in memory and wrote
+  `library.json` only at the end, so anything that stopped the run (an unexpected error, the
+  capture container being recreated by an update) threw away every match read.
+- Now each match read is saved to `.veo-account/progress.json` as it finishes; the next
+  Connect or Refresh reuses those matches with no request, reads the rest, writes
+  `library.json` and deletes the progress file. `library.json` is still replaced only by a
+  finished run (spec 250, `test_a_refusal_stops_the_refresh_and_keeps_the_last_library`).
+  A finished run means the next Refresh reads every match again, as before.
+- Saving new credentials (`reset`) and Disconnect (`forget`) delete the progress file, so
+  one account never carries on from another's matches.
+- An unexpected error now names its type and line, in the status and the helper log
+  (`Veo operation stopped: ...`), never its text (golden rule 1), and every stopped run says
+  how many matches were kept. The earlier cause on the lambro account is not known: its
+  capture container was recreated at 17:30 and its log went with it.
+- Hudl already worked this way: the tag sweep saves each match's tags and skips them next
+  time (`test_progress_counts_matches_already_indexed`); its catalogue listing is short and
+  keeps the last list if it stops.

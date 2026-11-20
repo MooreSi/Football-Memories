@@ -13,6 +13,14 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-20)
 
+- **A stopped Veo read carries on where it left off (owner report 2026-11-20, lambro's new
+  hosted account).** Each match read is saved to `.veo-account/progress.json`; the next
+  Connect/Refresh skips those and reads the rest; Reset/Disconnect delete it. Unexpected
+  errors now name type and line, and say how many matches were kept. Backend 758 (SQLite and
+  PostgreSQL). On `main`, **not yet deployed**: hosted libraries get it on their next Update,
+  the owner's Mac on a helper restart. Lambro's own read finished at 17:37 (286 matches, 56
+  with video); the earlier failure's cause was lost when the container was recreated.
+
 - **Veo clubs, crests and reels (owner report 2026-11-20), live on the owner's app.** Each Veo
   match names its own club (learnt from titles: NL, RCW, squad codes, spellings); a Wikipedia
   429 no longer blocks TheSportsDB crests (Redditch United now found); Veo reels keep picked
