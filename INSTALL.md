@@ -46,7 +46,11 @@ and starts by itself when you log in: the installer adds a login item,
 `launchctl bootout gui/$(id -u)/com.footballmemories.helper` and delete the file.
 It is not restarted if it stops; double-click the installer to start it again;
 on Windows it runs in a minimized window titled "Football Memories Hudl
-helper", which must stay open while you use Hudl.
+helper", which must stay open while you use Hudl. On Windows it also starts by
+itself when you sign in: the installer adds the shortcut "Football Memories Hudl
+helper" to your Startup folder
+([helper-login-item.ps1](scripts/windows/helper-login-item.ps1)); turn it off in
+Task Manager > Startup apps, or delete the shortcut.
 
 **Where the Hudl password is kept:** the macOS Keychain on a Mac, Windows
 Credential Manager on Windows (encrypted to your Windows user). Never in a file.

@@ -172,6 +172,8 @@ set "FM_INBOX=%CD%\data\inbox"
 for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"FM_HOST_INBOX=" ".env"') do set "FM_INBOX_SETTING=%%b"
 rem Only an absolute inbox path (C:\...) replaces the default .\data\inbox.
 if defined FM_INBOX_SETTING if "%FM_INBOX_SETTING:~1,1%"==":" set "FM_INBOX=%FM_INBOX_SETTING%"
+rem Owner request 2026-11-20: the helper starts when you sign in to Windows.
+call :helper_login_item
 powershell -NoProfile -ExecutionPolicy Bypass -Command "try{Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 -Headers @{Origin='http://127.0.0.1:%FM_PORT%'} 'http://127.0.0.1:8766/account' | Out-Null; exit 0}catch{exit 1}"
 if not errorlevel 1 (
   echo   Hudl helper already running.
@@ -185,6 +187,7 @@ if errorlevel 1 (
 pushd backend
 uv sync --frozen
 popd
+call :helper_login_item
 start "Football Memories Hudl helper - keep this window open" /min /d "%CD%\backend" uv run python -m app.connectors.hudl_companion --output "%FM_INBOX%"
 echo   Hudl helper started in a minimized window. Keep that window open while you use Hudl.
 :helper_done
@@ -219,6 +222,17 @@ if errorlevel 2 (
   exit /b 0
 )
 shutdown /r /t 5 /c "Football Memories: finishing WSL 2 setup"
+exit /b 0
+
+:helper_login_item
+rem A Startup-folder shortcut (scripts\windows\helper-login-item.ps1); needs backend\.venv.
+if not exist "%CD%\backend\.venv\Scripts\python.exe" exit /b 0
+powershell -NoProfile -ExecutionPolicy Bypass -File "%CD%\scripts\windows\helper-login-item.ps1" -AppDir "%CD%" -Inbox "%FM_INBOX%"
+if errorlevel 1 (
+  echo   The Hudl helper could not be set to start when you sign in.
+) else (
+  echo   Hudl helper starts when you sign in to Windows.
+)
 exit /b 0
 
 :find_chrome

@@ -92,3 +92,30 @@ def test_the_mac_installer_uses_the_login_item() -> None:
     text = COMMAND.read_text()
     assert "scripts/mac/helper-login-item.sh" in text
     assert "write_helper_login_item" in text and "start_helper_login_item" in text
+
+
+# Owner request 2026-11-20: the same on Windows. No PowerShell runs here, so these
+# check the script and the installer as text (like test_installer_scripts.py).
+PS1 = ROOT / "scripts" / "windows" / "helper-login-item.ps1"
+BAT = ROOT / "Install Football Memories.bat"
+
+
+def test_windows_login_item_is_a_startup_shortcut_to_the_helper() -> None:
+    text = PS1.read_text()
+    assert "GetFolderPath('Startup')" in text
+    assert r"backend\.venv\Scripts\python.exe" in text
+    assert "-m app.connectors.hudl_companion --output" in text
+    assert "WindowStyle = 7" in text  # minimised, as the installer's own start
+    assert "keep this window open" in text
+    # Per user, no admin: no Run key, scheduled task or service.
+    for other in ("HKLM", "Register-ScheduledTask", "schtasks", "New-Service"):
+        assert other not in text
+
+
+def test_windows_installer_sets_the_login_item_before_and_after_preparing_python() -> None:
+    lines = BAT.read_text().splitlines()
+    calls = [n for n, line in enumerate(lines) if line.strip() == "call :helper_login_item"]
+    running = next(n for n, line in enumerate(lines) if "Hudl helper already running" in line)
+    sync = next(n for n, line in enumerate(lines) if line.strip() == "uv sync --frozen")
+    assert len(calls) == 2 and calls[0] < running and sync < calls[1]
+    assert any(r"scripts\windows\helper-login-item.ps1" in line for line in lines)

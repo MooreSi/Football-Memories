@@ -17,7 +17,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   launchd login item `com.footballmemories.helper` (`scripts/mac/helper-login-item.sh`,
   RunAtLoad only, no KeepAlive so it never races the updater's in-place restart) and starts
   the helper through it; the old `nohup` start stays as the fallback. Already installed by
-  hand on the owner's Mac (identical file) and running under launchd. Windows unchanged.
+  hand on the owner's Mac (identical file) and running under launchd. **Windows:** the
+  installer saves a Startup-folder shortcut (`scripts/windows/helper-login-item.ps1`) that
+  opens the usual minimised helper window at sign-in. Checked as text only: no Windows or
+  PowerShell here, so it has not run yet; first real check is the next Windows install.
 
 - **Veo Connect reads at once, shared Veo match links, Veo in the Library (owner requests
   2026-11-20), on `main`.** Connect lists then reads the
