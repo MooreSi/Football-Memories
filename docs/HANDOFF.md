@@ -17,9 +17,11 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   hosted account).** Each match read is saved to `.veo-account/progress.json`; the next
   Connect/Refresh skips those and reads the rest; Reset/Disconnect delete it. Unexpected
   errors now name type and line, and say how many matches were kept. Backend 758 (SQLite and
-  PostgreSQL). On `main`, **not yet deployed**: hosted libraries get it on their next Update,
-  the owner's Mac on a helper restart. Lambro's own read finished at 17:37 (286 matches, 56
-  with video); the earlier failure's cause was lost when the container was recreated.
+  PostgreSQL). **Deployed 2026-11-20:** five hosted libraries (lambro included) moved to
+  `3246859` by the automatic round at about 18:12; fm-simon (automatic updates off) moved at
+  20:55 through the gateway's own `updates._move`, health ok; the owner's Mac helper restarted
+  under launchd at about 20:57. Lambro's own read finished at 17:37 (286 matches, 56 with
+  video); the earlier failure's cause was lost when the container was recreated.
 
 - **Veo clubs, crests and reels (owner report 2026-11-20), live on the owner's app.** Each Veo
   match names its own club (learnt from titles: NL, RCW, squad codes, spellings); a Wikipedia
