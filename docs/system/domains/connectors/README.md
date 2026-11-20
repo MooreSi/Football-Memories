@@ -771,5 +771,5 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
 - Crests: the shared crest service answers 503 when a source was waiting (Wikipedia 429), so
   libraries ask again instead of keeping a 404 for an hour. On 2026-11-20 Wikimedia's image
   host refused this connection outright for a while after heavy lookups; nothing to fix but wait.
-- The gateway's crest service runs `fm-app-backend:hosted`, which the updater does not move;
-  after a crest fix, retag `:hosted` and recreate `crests` (both compose files).
+- The gateway's crest service runs `fm-app-backend:hosted`; since 2026-11-20 the updater moves
+  it to each new build (retag `:hosted`, recreate `crests` with both compose files).

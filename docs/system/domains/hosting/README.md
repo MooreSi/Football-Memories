@@ -19,7 +19,8 @@ Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-t
 
 - A hosted library never reaches GitHub. The Gateway repo's host updater (launchd, hourly)
   reads `MooreSi/Football-Memories` main, builds each new commit once in its own clone as
-  `fm-app-*:hosted-<full commit>` (it never moves `:hosted`), and writes a status file the
+  `fm-app-*:hosted-<full commit>`, then moves `:hosted` and the shared crest service to it
+  (owner request 2026-11-20), and writes a status file the
   provisioner reads read-only. It takes no commands.
 - The page asks the gateway on its own origin: `GET /_portal/api/update`, `POST .../apply`,
   `POST .../auto {enabled}` (CSRF token from `/_portal/api/me`). `HostedUpdateSettings` and
