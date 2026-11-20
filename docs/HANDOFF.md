@@ -30,7 +30,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   PostgreSQL), frontend 606, lint/types/build pass; live Library checked against the running
   app. Owner decision [012](owner-decisions/012-hudl-tags-for-every-match.md) answered: with
   no age group saved, Hudl indexes every match's tags (same pacing). Backend 725 / frontend
-  607 after it. Needs the helper restarted; not yet tried against the real accounts.
+  607 after it. Live on the owner's Mac 2026-11-20: helper restarted (now under launchd),
+  frontend container rebuilt (the 8765 page had an 18 Nov build until then). The owner's
+  first Connect read was interrupted by a helper restart (Veo list last saved 06:59); press
+  Connect once to finish it. Not yet checked end to end against the real accounts.
 
 - **Public security review (owner request 2026-11-20).** This repo's part merged into `main` at the
   owner's request (2026-11-20) from `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
