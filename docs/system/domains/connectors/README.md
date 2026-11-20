@@ -755,3 +755,21 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
   so macOS may ask once to allow it access to the saved items.
 - The Downloaded page no longer lists unsaved Veo matches ("Before Veo deletes them" removed);
   match cards and pages still say when a Veo video expires soon.
+
+## A library with only shared Veo links (owner report 2026-11-20)
+
+- Slugs can contain underscores (untitled recordings: `...-2026-11-01_13-42-10-va2f73bb`).
+- **Fact (public reads 2026-11-20):** a shared match's details give `team` as an object (`name`,
+  `short_name`, `age_group`, `club{title, crest}`...), not a name; the page crashed on `.trim()`.
+  `_parse._team_name` keeps the name; the page ignores non-text teams. The match's `club` is
+  the camera's club (an NL match is under "Racing Club Warwick SFC"), so its crest is not used
+  for the title's side. Signed out, `/api/mes/` (team events, per-side stats) answers 401 and
+  the match report 403: a shared match has highlights, score, halves, teams, poster and video,
+  no team events.
+- With no Veo team saved, Library cards and the featured match name the club the match names
+  (`useVeoCardClubOf`); match pages keep "Us" (the 2026-11-15 rule).
+- Crests: the shared crest service answers 503 when a source was waiting (Wikipedia 429), so
+  libraries ask again instead of keeping a 404 for an hour. On 2026-11-20 Wikimedia's image
+  host refused this connection outright for a while after heavy lookups; nothing to fix but wait.
+- The gateway's crest service runs `fm-app-backend:hosted`, which the updater does not move;
+  after a crest fix, retag `:hosted` and recreate `crests` (both compose files).
