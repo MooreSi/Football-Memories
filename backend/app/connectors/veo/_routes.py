@@ -24,7 +24,9 @@ class VeoCredentials(BaseModel):
 
 
 class VeoAction(BaseModel):
-    action: Literal["test", "refresh", "watch", "download", "reel", "moments", "disconnect"]
+    action: Literal[
+        "test", "refresh", "shared", "watch", "download", "reel", "moments", "disconnect"
+    ]
     match_id: str | None = Field(default=None, max_length=200)
     name: str | None = Field(default=None, max_length=200)
     # Owner request 2026-11-13: a highlight reel from one Veo match.
@@ -56,6 +58,7 @@ def account(request: Request) -> dict[str, object]:
         **status,
         "download_url": link,
         "configured": state.veo_configured,
+        "shared": len(state.veo.shared_links()),
         "secret_store": getattr(state.veo_store, "label", "secret store"),
     }
 
@@ -75,7 +78,12 @@ def save(body: VeoCredentials, request: Request) -> dict[str, bool]:
 def action(body: VeoAction, request: Request) -> dict[str, bool]:
     state = request.app.state
     if not (state.veo_configured or state.veo_store.configured()):
-        raise CaptureError("Save the Veo email and password first.")
+        # Owner request 2026-11-20: shared match links need no account.
+        if body.action == "refresh" and state.veo.shared_links():
+            state.veo.start("shared")
+            return {"accepted": True}
+        if not (body.action == "shared" or state.veo.is_shared(body.match_id)):
+            raise CaptureError("Save the Veo email and password first.")
     if body.action in {"reel", "moments"}:
         if not body.match_id or not body.moment_ids:
             raise CaptureError("Choose the Veo highlights for the reel first.")
@@ -99,6 +107,39 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
     else:
         state.veo.start(body.action)
     return {"accepted": True}
+
+
+class SharedLink(BaseModel):
+    url: str = Field(min_length=10, max_length=500)
+
+
+@router.get("/shared")
+def shared_links(request: Request) -> list[dict[str, object]]:
+    """Owner request 2026-11-20: the saved shared match links, named once read."""
+    veo = request.app.state.veo
+    titles = {i.get("slug"): i.get("title") for i in veo.library() if i.get("shared")}
+    return [{**link, "title": titles.get(link["slug"])} for link in veo.shared_links()]
+
+
+@router.post("/shared")
+def add_shared(body: SharedLink, request: Request) -> dict[str, object]:
+    """Save a shared match link and read it straight away, signed out."""
+    veo = request.app.state.veo
+    slug = veo.add_shared(body.url)
+    veo.start("shared")
+    return {"saved": True, "slug": slug, "reading": True}
+
+
+class SharedSlug(BaseModel):
+    slug: str = Field(min_length=3, max_length=151)
+
+
+@router.post("/shared/delete")
+def delete_shared(body: SharedSlug, request: Request) -> dict[str, bool]:
+    """Forget a link and its match in the list. No request to Veo; downloads stay.
+    A POST: the helper allows the page GET and POST only."""
+    request.app.state.veo.remove_shared(body.slug)
+    return {"deleted": True}
 
 
 @router.get("/stream/{token}")

@@ -14,6 +14,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from app.connectors.hudl_capture import CaptureError
 from app.connectors.hudl_metadata import capture_key
@@ -25,6 +26,48 @@ MAX_PAGES = 100
 # 2: Veo's "Own"/"Opponent" sides and each side's totals (owner request 2026-11-15).
 TEAM_DATA_VERSION = 2
 NO_REPORT = {400, 403, 404, 405}
+# Owner request 2026-11-20: a shared match link is Veo's own public match page.
+_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{2,150}")
+NOT_SHARED = {403, 404}  # the match is private now, or gone: skip it, read the rest
+MAX_SHARED = 200
+
+
+def shared_slug(link: str) -> str:
+    """The match slug from a shared Veo match link (https://app.veo.co/matches/<slug>/).
+    Anything else is refused; the app never builds a Veo address from other input."""
+    try:
+        parts = urlsplit(str(link).strip())
+        port = parts.port
+    except ValueError:
+        port, parts = -1, urlsplit("")
+    found = re.fullmatch(r"/matches/([^/]+)/?", parts.path or "")
+    if (
+        parts.scheme != "https"
+        or parts.hostname != "app.veo.co"
+        or port is not None
+        or parts.username is not None
+        or not found
+        or not _SLUG.fullmatch(found[1])
+    ):
+        raise CaptureError(
+            "That is not a Veo match link. Paste the address of a shared Veo match, like "
+            "https://app.veo.co/matches/<match>/."
+        )
+    return found[1]
+
+
+class _PublicReader:
+    """A signed-out read may only ask for a shared match's own pages."""
+
+    def __init__(self, api: Any) -> None:
+        self._api = api
+
+    def get(self, path: str) -> tuple[dict[str, str], Any]:
+        found = re.match(r"^/api/app/matches/([^/?]+)/", path)
+        if not found or not _SLUG.fullmatch(found[1]) or ".." in path:
+            raise CaptureError("A shared Veo match is read from its own match pages only.")
+        result: tuple[dict[str, str], Any] = self._api.get(path)
+        return result
 
 
 class VeoConnection:
@@ -40,11 +83,18 @@ class VeoConnection:
         folder: Callable[[], Path] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         shrink: Callable[[bytes], bytes | None] | None = None,
+        public: Callable[[], Any] | None = None,
     ) -> None:
         if session is None:
             from ._client import session as real_session
 
             session = real_session
+        if public is None:
+            from ._client import public_session
+
+            public = public_session
+        self._public: Callable[[], Any] = public
+        self.shared_path = directory / "shared.json"
         if media is None:
             from . import _client as media
         self._media = media
@@ -109,8 +159,10 @@ class VeoConnection:
         if action == "disconnect":
             self.disconnect()
             return
-        if action not in {"test", "refresh", "watch", "download", "reel", "moments"}:
+        if action not in {"test", "refresh", "shared", "watch", "download", "reel", "moments"}:
             raise CaptureError("Choose Connect, Refresh, Watch or Download.")
+        if action == "shared" and not self.shared_links():
+            raise CaptureError("Add a shared match link first.")
         if action in {"watch", "download", "reel", "moments"}:
             item = self._match(match_id)
             if item is None or not item.get("available") or not item.get("slug"):
@@ -121,6 +173,8 @@ class VeoConnection:
             self._busy = True
             self._downloading = action in {"download", "reel", "moments"}
             message = "Signing in to Veo…"
+            if action == "shared":
+                message = "Reading shared Veo matches…"
             if action in {"watch", "download"} and match_id in self._videos:
                 message = "Preparing the Veo video…"
             if action in {"reel", "moments"}:
@@ -169,11 +223,16 @@ class VeoConnection:
                 else:
                     self._download(match_id, url, name)
                 return
+            if action == "shared":
+                with self._public() as api:
+                    self._refresh_shared(self._public_reader(api))
+                return
             with self._session(self.loader) as api:
                 if action == "test":
+                    # Owner request 2026-11-20: Connect reads the matches straight away,
+                    # in the same sign-in, with no separate Refresh.
                     self._test(api)
-                else:
-                    self._refresh(api)
+                self._refresh(api)
         except CaptureError as error:
             self._report(state="error", message=str(error), progress=None)
         except Exception:
@@ -213,7 +272,7 @@ class VeoConnection:
             message=(
                 f"Connected to Veo: {total} matches in {len(clubs)} "
                 f"club{'s' if len(clubs) != 1 else ''}, {total - expired} with video, "
-                f"{expired} expired. Select Refresh matches to read them."
+                f"{expired} expired. Reading them now…"
             ),
         )
 
@@ -272,6 +331,9 @@ class VeoConnection:
                     else self._team_data(api, slug, str(r["identifier"]))
                 )
             library.append(item)
+        account = {i.get("slug") for i in library}
+        shared, unread = self._read_shared(api, account, known)
+        library += shared
         self._write(library)
         moments = sum(len(i["moments"]) for i in library)
         with_video = sum(1 for i in library if i["available"])
@@ -288,7 +350,113 @@ class VeoConnection:
             },
             message=(
                 f"Read {len(library)} Veo matches: {with_video} with video and "
-                f"{moments} highlights."
+                f"{moments} highlights.{_unread(unread)}"
+            ),
+        )
+
+    # Owner request 2026-11-20: shared match links, so matches can be seen with no Veo
+    # account entered. The links are the only thing saved; matches are read like the rest.
+    def shared_links(self) -> list[dict[str, str]]:
+        try:
+            links = json.loads(self.shared_path.read_text()).get("links")
+        except (OSError, ValueError, AttributeError):
+            return []
+        return [
+            {"slug": link["slug"], "url": f"https://app.veo.co/matches/{link['slug']}/"}
+            for link in links or []
+            if isinstance(link, dict) and _SLUG.fullmatch(str(link.get("slug") or ""))
+        ]
+
+    def _save_links(self, links: list[dict[str, str]]) -> None:
+        self._save(self.shared_path, json.dumps({"links": links}).encode())
+
+    def add_shared(self, link: str) -> str:
+        slug = shared_slug(link)
+        with self._lock:
+            if self._busy:
+                raise CaptureError("Wait for the Veo operation to finish first.")
+            links = self.shared_links()
+            if all(item["slug"] != slug for item in links):
+                if len(links) >= MAX_SHARED:
+                    raise CaptureError(f"At most {MAX_SHARED} shared match links can be saved.")
+                self._save_links(
+                    [*links, {"slug": slug, "url": f"https://app.veo.co/matches/{slug}/"}]
+                )
+        return slug
+
+    def remove_shared(self, slug: str) -> None:
+        """Forget one link and its match in the cached list. No request to Veo; a match
+        already downloaded stays exactly where it is."""
+        with self._lock:
+            if self._busy:
+                raise CaptureError("Wait for the Veo operation to finish first.")
+            links = self.shared_links()
+            if all(item["slug"] != slug for item in links):
+                raise CaptureError("That shared match link is not saved.")
+            self._save_links([item for item in links if item["slug"] != slug])
+            library = self.library()
+            gone = [i for i in library if i.get("shared") and i.get("slug") == slug]
+            for item in gone:
+                self._videos.pop(str(item.get("id")), None)
+            if gone:
+                self._write([i for i in library if i not in gone])
+
+    def is_shared(self, identity: str | None) -> bool:
+        item = self._match(identity)
+        return bool(item and item.get("shared"))
+
+    def _public_reader(self, api: Any) -> _PublicReader:
+        return _PublicReader(api)
+
+    def _read_shared(
+        self, api: Any, skip: set[Any], known: dict[Any, dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Each shared match not already in the account's list: its details, video list,
+        highlights and halves (no team-split reads: those are the account's). A match Veo
+        no longer shares (403/404) keeps its last details and is counted; any other
+        refusal stops the run as usual."""
+        items: list[dict[str, Any]] = []
+        unread = 0
+        links = [link for link in self.shared_links() if link["slug"] not in skip]
+        for number, link in enumerate(links):
+            slug = link["slug"]
+            self._report(message=f"Reading shared Veo match {number + 1} of {len(links)}…")
+            try:
+                _, match = api.get(f"/api/app/matches/{slug}/")
+            except VeoRefused as refused:
+                if refused.status not in NOT_SHARED:
+                    raise
+                unread += 1
+                items += [i for i in known.values() if i.get("shared") and i.get("slug") == slug]
+                continue
+            if not isinstance(match, dict) or not match.get("identifier"):
+                unread += 1
+                continue
+            match = {**match, "slug": slug}
+            videos = highlights = periods = None
+            if match.get("is_accessible") and match.get("expiration_status") in ACTIVE:
+                _, videos = api.get(f"/api/app/matches/{slug}/videos/")
+                self._remember(f"veo-{match['identifier']}", videos)
+                _, highlights = api.get(f"/api/app/matches/{slug}/highlights/?include_ai=true")
+                _, periods = api.get(f"/api/app/matches/{slug}/periods/")
+            self._save_posters([match])
+            item = library_item(match, match, highlights, periods, videos)
+            items.append({**item, "shared": True, "url": link["url"]})
+        return items, unread
+
+    def _refresh_shared(self, api: Any) -> None:
+        """Shared matches only, signed out; the account's matches already listed stay."""
+        account = [i for i in self.library() if not i.get("shared")]
+        known = {i.get("id"): i for i in self.library()}
+        shared, unread = self._read_shared(api, {i.get("slug") for i in account}, known)
+        self._write(account + shared)
+        with_video = sum(1 for i in shared if i["available"])
+        self._report(
+            state="ready",
+            progress=None,
+            message=(
+                f"Read {len(shared)} shared Veo match{'es' if len(shared) != 1 else ''}: "
+                f"{with_video} with video.{_unread(unread)}"
             ),
         )
 
@@ -409,10 +577,17 @@ class VeoConnection:
         return None
 
     def _read_video(self, identity: str) -> str:
-        """One sign-in and one JSON read: this match's video list (no match page, no view)."""
+        """One sign-in and one JSON read: this match's video list (no match page, no view).
+        A shared match is read signed out (owner request 2026-11-20)."""
         item = self._match(identity) or {}
-        with self._session(self.loader) as api:
-            _, videos = api.get(f"/api/app/matches/{item.get('slug')}/videos/")
+        if item.get("shared"):
+            with self._public() as public:
+                _, videos = self._public_reader(public).get(
+                    f"/api/app/matches/{item.get('slug')}/videos/"
+                )
+        else:
+            with self._session(self.loader) as api:
+                _, videos = api.get(f"/api/app/matches/{item.get('slug')}/videos/")
         url = self._remember(identity, videos)
         if url is None:
             raise CaptureError("Veo has no video for this match.")
@@ -553,7 +728,12 @@ class VeoConnection:
             return []
 
     def reset(self) -> None:
-        self.path.unlink(missing_ok=True)
+        # A new account replaces the account's matches; shared links are not the account's.
+        shared = [i for i in self.library() if i.get("shared")]
+        if shared:
+            self._write(shared)
+        else:
+            self.path.unlink(missing_ok=True)
         self._report(
             state="idle",
             summary=None,
@@ -564,6 +744,15 @@ class VeoConnection:
     def close(self) -> None:
         if self._executor is not None:
             self._executor.shutdown(wait=False)
+
+
+def _unread(count: int) -> str:
+    if not count:
+        return ""
+    return (
+        f" {count} shared link{' could' if count == 1 else 's could'} not be read "
+        "(Veo may no longer share it)."
+    )
 
 
 def _mapping(value: Any) -> dict[str, Any]:

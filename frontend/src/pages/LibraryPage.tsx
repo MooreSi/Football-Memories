@@ -60,9 +60,16 @@ export function LibraryPage() {
   const veoLibrary = useVeoLibrary();
   // Owner request 2026-11-14: Show Hudl off with Show Veo on puts Veo matches in the
   // hero, latest match, overview and match profile.
-  const veoOnly = !connectionShown("hudl") && connectionShown("veo");
-  const remote = connectionShown("hudl") ? hudlLibrary
-    : { ...hudlLibrary, data: veoOnly ? veoLibrary.data?.map(veoAsHudl) : [] };
+  const showHudl = connectionShown("hudl");
+  const showVeo = connectionShown("veo");
+  const veoOnly = !showHudl && showVeo;
+  // Owner report 2026-11-20: with Hudl shown, Veo matches were left out of the hero,
+  // counts and overview, so a Veo-only account showed "No matches yet". Shown Veo
+  // matches now always join them (after Hudl's, so a same-day Hudl match leads).
+  const veoRemote = showVeo ? veoLibrary.data?.map(veoAsHudl) : [];
+  const remote = showHudl
+    ? { ...hudlLibrary, data: hudlLibrary.data || veoRemote?.length ? [...(hudlLibrary.data ?? []), ...(veoRemote ?? [])] : undefined }
+    : { ...hudlLibrary, data: veoRemote ?? [] };
   const q = useDebounced(search.trim(), 250);
 
   useEffect(() => setSearch(params.get("q") ?? ""), [params]);
@@ -83,7 +90,9 @@ export function LibraryPage() {
   const seasonLabels = [...new Set([...(seasons.data ?? []).map(s => s.name), ...(remote.data ?? []).map(m => m.season_label || "Unclassified")])].sort().reverse();
   useEffect(() => { if (remote.isSuccess && !remote.isFetching && ageGroup && ageGroups.length && !ageGroups.includes(ageGroup)) {setAgeGroup("");localStorage.removeItem("fm.hudl.age");} }, [remote.data, latest.data, ageGroup]);
   const total = seasonLabel && seasonId === undefined ? 0 : matches.data?.pages[0]?.total ?? 0;
-  const remoteCount = (remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase()))).length;
+  const remoteShown = (remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase())));
+  const remoteCount = remoteShown.length;
+  const veoCount = remoteShown.filter(m => m.source === "veo").length;
   const filtering = Boolean(q || ageGroup || seasonLabel);
   const s = stats.data;
   const featured = latest.data?.items ?? [];
@@ -97,7 +106,7 @@ export function LibraryPage() {
   useEffect(() => setHeroIndex(0), [ageGroup, seasonLabel]);
   const shown = heroMatches[Math.min(heroIndex, heroMatches.length - 1)];
   // Owner request 2026-11-15: the Veo account films more than one club; name the shown match's.
-  const club = veoOnly ? veoClubOf(shown && veoLibrary.data?.find(m => m.id === shown.id)) || hudlClub : hudlClub;
+  const club = shown?.source === "veo" ? veoClubOf(veoLibrary.data?.find(m => m.id === shown.id)) || hudlClub : hudlClub;
   const profileKinds = shown ? matchProfile(shown.moments ?? []) : s?.top_tags ?? [];
   // Owner request 2026-11-15: a Veo match's profile is Veo's team events, us v them
   // (its highlights carry no side).
@@ -144,7 +153,7 @@ export function LibraryPage() {
           links={remote.data?.length ? <>
             {shown && <Link className="text-accent hover:underline" to={`/report/match/${encodeURIComponent(shown.id)}`}>Share match report</Link>}
             <Link className="text-accent hover:underline" to="/report/season">Share season report</Link>
-            <Link className="text-accent hover:underline" to={veoOnly && club ? `/opponents?club=${encodeURIComponent(club)}` : "/opponents"}>Opponents</Link>
+            <Link className="text-accent hover:underline" to={shown?.source === "veo" && club ? `/opponents?club=${encodeURIComponent(club)}` : "/opponents"}>Opponents</Link>
           </> : undefined} />
       </aside>
 
@@ -158,7 +167,7 @@ export function LibraryPage() {
       <div className="dashboard-centre min-w-0 space-y-6">
         {heroMatches.length > 0 ? <HudlHero key={ageGroup} matches={heroMatches} club={club} age={ageGroup} index={Math.min(heroIndex, heroMatches.length - 1)} onIndex={setHeroIndex} />
           : featured.length > 0 && <FeaturedHero matches={featured} />}
-        {!veoOnly && <ContinueWatching library={remote.data} club={club} />}
+        {!veoOnly && <ContinueWatching library={hudlLibrary.data} club={club} />}
 
         <section aria-label="All matches" className="match-collection panel p-5">
           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -186,7 +195,7 @@ export function LibraryPage() {
             <label><span className="sr-only">Age group</span><select className="field w-auto rounded-full" aria-label="Age group" value={ageGroup} onChange={e=>setAgeGroup(e.target.value)}><option value="">All age groups</option>{ageGroups.map(age=><option key={age}>{age}</option>)}</select></label>
             {!matches.isPending && (
               <span className="text-xs text-fg-muted">
-                {total} offline · {remoteCount} {veoOnly ? "Veo" : "Hudl"}
+                {total} offline{showHudl && ` · ${remoteCount - veoCount} Hudl`}{showVeo && ` · ${veoCount} Veo`}
               </span>
             )}
           </div>

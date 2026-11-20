@@ -100,3 +100,36 @@ it("links the Veo match profile to Opponents for the match's own club", async ()
   expect(await within(profile).findByRole("link", { name: "Opponents" }))
     .toHaveAttribute("href", "/opponents?club=Riverside%20Juniors");
 });
+
+// Owner report 2026-11-20: Veo connected with no Hudl matches left All matches, the
+// hero and the overview empty ("0 offline · 0 Hudl"). Shown Veo matches count too.
+function renderBoth(hudlMatches: unknown[]) {
+  stubFetch({
+    "/api/matches": { total: 0, page: 1, page_size: 24, items: [] },
+    "/api/stats": { matches: 0, moments: 0, footage_seconds: 0, teams: 0, players: 0, top_tags: [], recent_moments: [] },
+    "/api/preferences": { primary_player_id: null }, "/api/teams": [], "/api/seasons": [], "/api/notes": [],
+    "/api/settings/home-teams": { hudl: null, veo: null },
+    [`${H}/library`]: hudlMatches, [`${H}/account`]: { configured: false, state: "idle", busy: false },
+    [`${H}/veo/library`]: veo, [`${H}/veo/account`]: { configured: true, state: "ready", busy: false, message: "", summary: null },
+  });
+  renderWithProviders(<LibraryPage />);
+}
+
+it("shows Veo matches in the hero, counts and overview while Hudl is shown but empty", async () => {
+  renderBoth([]);
+  const hero = await screen.findByRole("region", { name: "Featured match" });
+  expect(within(hero).getByText(/Northgate/)).toBeInTheDocument();
+  const overview = screen.getByRole("region", { name: "Overview" });
+  expect(within(overview).getByText("Matches").closest("div")?.parentElement).toHaveTextContent("2");
+  expect(within(overview).getByText("Moments").closest("div")?.parentElement).toHaveTextContent("2");
+  expect(screen.getByRole("region", { name: "All matches" })).toHaveTextContent("0 offline · 0 Hudl · 2 Veo");
+  expect(screen.queryByText("No matches yet.")).toBeNull();
+});
+
+it("counts Hudl and Veo matches together when both are shown", async () => {
+  renderBoth(hudl);
+  await screen.findByRole("region", { name: "Featured match" });
+  const overview = screen.getByRole("region", { name: "Overview" });
+  await vi.waitFor(() => expect(within(overview).getByText("Matches").closest("div")?.parentElement).toHaveTextContent("3"));
+  expect(screen.getByRole("region", { name: "All matches" })).toHaveTextContent("0 offline · 1 Hudl · 2 Veo");
+});

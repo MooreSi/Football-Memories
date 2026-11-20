@@ -217,7 +217,8 @@ existing test mock targets were relocated only in the separate split checkpoint.
 
 AccountAction.age_group scopes Test/Refresh/sync_tags metadata work. Omitted or
 empty HTTP scope means no automatic account-wide tag sweep; app sends its saved
-Library age. Direct internal legacy calls retain their prior default. Match
+Library age. **Superseded 2026-11-20 (owner decision 012):** an empty scope now indexes
+every match, with the same pacing and stop rules. Direct internal legacy calls retain their prior default. Match
 membership lists take precedence over historical title age. Status exposes the
 active scope. Switching scope cancels the old sweep at a page boundary without
 raising request concurrency/rate or changing account stop conditions.
@@ -690,3 +691,33 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   signed URLs). Gateway: capture cap raised to 2.5 GB and `Init: true` to reap Chromium.
   To diagnose next time: `docker exec <capture> cat /sys/fs/cgroup/memory.events` and the
   container log.
+
+## Veo: Connect reads straight away, and shared match links (owner request 2026-11-20)
+
+- **Connect = count, then read.** `test` now runs `_test` then `_refresh` in the same
+  sign-in, so the matches are cached without pressing Refresh. Same reads as Refresh.
+- **Shared links** (`.veo-account/shared.json`, slugs only). Settings > Connections > Veo >
+  Shared match links; helper `GET/POST /veo/shared`, `POST /veo/shared/delete` (a POST
+  because the helper's CORS allows GET and POST only). `shared_slug` accepts only
+  `https://app.veo.co/matches/<slug>/` (query and fragment dropped; any other host, port,
+  user, path or scheme refused). Adding a link reads it at once.
+- **Fact (one-off check 2026-11-20, a public match the owner gave):** plain HTTP clients get
+  CloudFront 403 for every `/api/app/` read; an empty headless browser that has opened
+  app.veo.co/ (it lands on auth.veo.co's form; nothing typed) reads `matches/<slug>/`,
+  `/videos/`, `/highlights/?include_ai=true`, `/periods/` with 200 and **no sign-in header**.
+  `analysis/matches/<slug>/match-report/` answers 403; an unknown slug 404. The match JSON
+  carries `privacy: "public"`, `team: null`.
+- `_client.public_session` is that browser; `_PublicReader` limits it to
+  `/api/app/matches/<slug>/...`. No team-split reads for shared matches (the key is left
+  out so a signed-in refresh is not told "none"). A 403/404 on a link skips it (keeps its
+  last details) and says so; 401/429/5xx stop the run as usual, no retry.
+- With no account saved, `refresh` from the page reads the shared links instead; Connect
+  still needs the account. Watch/Download of a shared match reads its video list signed out.
+- Saving a new account (`reset`) keeps the shared matches. Deleting a link removes its match
+  from the cached list only: no Veo request, its poster cache and any download stay.
+
+## Library: Veo matches beside Hudl (owner report 2026-11-20)
+
+With Show Hudl on, the Library's hero, Overview, Match Profile and count used the Hudl list
+only; a Veo-only account showed "No matches yet". Shown Veo matches now join (after Hudl's),
+and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl-only.

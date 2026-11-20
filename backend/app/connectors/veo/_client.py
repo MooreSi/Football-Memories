@@ -160,13 +160,15 @@ def signed_in_header(seen: Any) -> str:
     )
 
 
-def token_http(request: Any, authorization: str) -> Http:
-    """GETs that carry Veo's sign-in header. The header never reaches a message."""
+def token_http(request: Any, authorization: str | None) -> Http:
+    """GETs that carry Veo's sign-in header (none for a public match). The header never
+    reaches a message."""
+    headers = {"Accept": "application/json"}
+    if authorization:
+        headers["Authorization"] = authorization
 
     def http(url: str) -> tuple[int, dict[str, str], Any]:
-        response = request.get(
-            url, headers={"Accept": "application/json", "Authorization": authorization}
-        )
+        response = request.get(url, headers=headers)
         body = None
         if response.status == 200:
             try:
@@ -205,6 +207,31 @@ def session(loader: Callable[[], Any]) -> Iterator[VeoApi]:
             try:
                 browser.close()
             except Exception:  # noqa: S110 (the owner may have closed it; never log browser errors)
+                pass
+
+
+@contextmanager
+def public_session() -> Iterator[VeoApi]:
+    """Owner request 2026-11-20: shared (public) matches, read signed out. An empty
+    ephemeral browser opens Veo's root once, which lands on Veo's sign-in page; nothing is
+    typed there and no account is loaded. Check 2026-11-20: Veo's CDN refuses plain
+    HTTP clients, but this browser's reads of a public match's JSON answer 200 with no
+    sign-in header (match, videos, highlights, periods; the match report 403)."""
+    with sync_playwright() as playwright:
+        browser = launch(playwright, visible=False)
+        try:
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto(APP + "/", wait_until="domcontentloaded")
+            try:
+                page.wait_for_load_state("networkidle", timeout=30_000)
+            except Exception:  # noqa: S110 (a page that never idles still lets the reads run)
+                pass
+            yield VeoApi(token_http(context.request, None))
+        finally:
+            try:
+                browser.close()
+            except Exception:  # noqa: S110 (never log browser errors)
                 pass
 
 

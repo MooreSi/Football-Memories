@@ -3,6 +3,7 @@ import { RefreshCw, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { type VeoStatus, veoRequest } from "../../api/veo";
 import { Button } from "../ui/Button";
+import { VeoSharedLinks } from "./VeoSharedLinks";
 
 const KEY = ["veo-account"];
 
@@ -41,7 +42,7 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
         <input aria-label="Veo password" type="password" autoComplete="off" required disabled={busy}
           className="field" value={password} onChange={(e) => setPassword(e.target.value)}
           placeholder={q.data.configured ? `Saved in ${windows ? "Credential Manager" : "Keychain"} — enter to replace` : "Password"} /></label>
-      <p className="text-xs text-fg-subtle">Saved only in {where}. Connect signs in to Veo in a hidden browser and reads your match list; nothing on Veo is changed.</p>
+      <p className="text-xs text-fg-subtle">Saved only in {where}. Connect signs in to Veo in a hidden browser and reads your matches straight away; nothing on Veo is changed.</p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="primary" disabled={busy}>{save.isPending ? "Saving…" : "Save"}</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate("test")}>Connect</Button>
@@ -49,7 +50,7 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
         {q.data.configured && <Button type="button" disabled={busy} onClick={() => action.mutate("disconnect")}>Disconnect</Button>}
       </div>
     </form>
-    {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in.</p>}
+    {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in and read your matches.</p>}
     {q.data.message && <p role="status" className={`text-xs ${q.data.state === "error" ? "text-danger" : "text-fg-muted"}`}>{q.data.message}</p>}
     {q.data.progress && <div role="progressbar" aria-label="Reading Veo matches" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(q.data.progress.fraction * 100)} className="h-1.5 overflow-hidden rounded-full bg-white/10">
       <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, q.data.progress.fraction * 100)}%` }} /></div>}
@@ -61,5 +62,6 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
       {s.moments !== undefined && <li className="tile p-3"><span className="block text-lg font-semibold tabular-nums">{s.moments}</span> highlights</li>}
     </ul>}
     {(save.isError || action.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error)?.message}</p>}
+    <VeoSharedLinks disabled={q.data.busy} />
   </section>;
 }

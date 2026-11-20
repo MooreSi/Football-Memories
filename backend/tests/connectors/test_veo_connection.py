@@ -77,6 +77,8 @@ def connection(tmp_path: Path, api: FakeApi) -> VeoConnection:
     return veo
 
 
+# Owner request 2026-11-20 replaces "a test reads no match": Connect counts the account's
+# matches and then reads them in the same sign-in (test_veo_shared.py covers the rest).
 def test_test_reports_what_the_account_has(tmp_path: Path) -> None:
     api = FakeApi()
     veo = connection(tmp_path, api)
@@ -89,9 +91,10 @@ def test_test_reports_what_the_account_has(tmp_path: Path) -> None:
         "with_video": 1,
         "expired": 1,
         "expiring": 0,
+        "moments": 3,
     }
-    assert "2 matches" in status["message"]
-    assert not any("/matches/" in p for p in api.paths)  # a test reads no match
+    assert "2 Veo matches" in status["message"]
+    assert api.paths.index(LIST) < api.paths.index(f"/api/app/matches/{ACTIVE['slug']}/")
 
 
 def test_refresh_lists_every_page_and_reads_only_active_matches(tmp_path: Path) -> None:

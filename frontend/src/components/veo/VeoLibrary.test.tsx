@@ -90,6 +90,17 @@ it("offers no refresh until a Veo account is saved", async () => {
   expect(screen.getByRole("button", { name: /Refresh Veo/ })).toBeDisabled();
 });
 
+// Owner request 2026-11-20: shared match links need no account, so Refresh reads them.
+it("refreshes shared match links with no Veo account saved", async () => {
+  stubFetch({ [LIB]: [], [ACCOUNT]: { ...idle, configured: false, shared: 1 }, [ACTION]: { accepted: true } });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  const button = await screen.findByRole("button", { name: /Refresh Veo/ });
+  await vi.waitFor(() => expect(button).toBeEnabled());
+  await userEvent.setup().click(button);
+  const posts = vi.mocked(fetch).mock.calls.filter(c => String(c[0]) === ACTION).map(c => JSON.parse(String(c[1]?.body)));
+  expect(posts).toEqual([{ action: "refresh" }]);
+});
+
 // Owner request 2026-11-15: Veo cards like Hudl's, with the date and the crest/score pill.
 it("shows each Veo match's date and the crest and score pill, like a Hudl card", async () => {
   stubFetch({ [LIB]: matches, "/api/settings/home-teams": { hudl: null, veo: "Riverside U11" } });

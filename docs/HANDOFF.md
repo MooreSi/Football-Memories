@@ -11,7 +11,36 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current state (2026-11-19)
+## Current state (2026-11-20)
+
+- **Veo Connect reads at once, shared Veo match links, Veo in the Library (owner requests
+  2026-11-20), on `main`.** Connect lists then reads the
+  matches in one sign-in. Settings > Connections > Veo has "Shared match links" (add, delete),
+  read signed out (check: a public match's JSON answers 200 in an empty browser). Library
+  hero/Overview/count include shown Veo matches beside Hudl. Backend 725 (SQLite and
+  PostgreSQL), frontend 606, lint/types/build pass; live Library checked against the running
+  app. Owner decision [012](owner-decisions/012-hudl-tags-for-every-match.md) answered: with
+  no age group saved, Hudl indexes every match's tags (same pacing). Backend 725 / frontend
+  607 after it. Needs the helper restarted; not yet tried against the real accounts.
+
+- **Public security review (owner request 2026-11-20), release pending.** Work is on
+  `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
+  `~/Football Memories Gateway`. Spec 330 pins Python/Nginx runtime images, installs available
+  system updates and removes pip after builds. New tests observed red first; backend 682 on
+  SQLite and PostgreSQL, frontend 599, lint/format/types/build/schema drift all pass.
+  Hosted images built from `4ac2237`, rescanned and import/Nginx-smoke checked with synthetic
+  upstreams; report in the Gateway repo's `docs/security-review-2026-11-20.md` (code `b4bec39`).
+  **Next:** an isolated integrated security pass or an owner verification exception before
+  rollout. Nothing from this review has been deployed. The owner's local app/helper and all library volumes are
+  untouched. Gateway audit found an MFA throttle reset, missing private cache protection,
+  unbounded portal bodies, reflected validation inputs and unbounded Argon2 memory use;
+  fixes tested offline. Further finding: quota checks do not cover backup/generated-file
+  writes, so an approved user can threaten the shared disk. Internet ports 8443 and 6881 still open (unrelated services);
+  IPv6 reachability remains unverified. Do not claim complete hardening. The old full-stack
+  security runner and provisioner Docker test cannot safely run beside production.
+  Owner approved moving the legacy tunnel fixture to its own subnet; **all four real-Caddy
+  tests now pass**. Gateway ordinary suite 305, portal 61, provisioner 64 also pass. Remaining
+  upstream advisories are documented; rebuilt web/egress have no high/critical scan entries.
 
 - **"Hudl stopped part-way" on every Refresh (owner report 2026-11-19).** The hosted capture
   container hit its 1.5 GB cap, the kernel killed Chromium, and the helper kept reusing the dead

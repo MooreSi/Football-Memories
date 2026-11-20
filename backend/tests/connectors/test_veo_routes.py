@@ -40,6 +40,12 @@ class FakeConnection:
     def reset(self) -> None:
         self.was_reset = True
 
+    def shared_links(self) -> list[dict[str, str]]:  # owner request 2026-11-20
+        return []
+
+    def is_shared(self, identity: str | None) -> bool:
+        return False
+
     def library(self) -> list[dict[str, object]]:
         return [
             {

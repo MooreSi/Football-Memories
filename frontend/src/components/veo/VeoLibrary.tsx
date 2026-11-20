@@ -38,8 +38,8 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
     <div className="flex flex-wrap items-center gap-3">
       <div className="mr-auto"><h3 className="text-sm font-semibold">Connected Veo</h3>
         <p className="mt-1 text-xs text-fg-subtle">{matches.length} of {all.length} cached Veo matches · Details and highlights</p></div>
-      <Button disabled={!status.data?.configured || status.data.busy || refresh.isPending || library.isError}
-        title={status.data && !status.data.configured ? "Save your Veo account in Settings → Connections first" : undefined}
+      <Button disabled={!(status.data?.configured || status.data?.shared) || status.data.busy || refresh.isPending || library.isError}
+        title={status.data && !status.data.configured && !status.data.shared ? "Save your Veo account or a shared match link in Settings → Connections first" : undefined}
         onClick={() => refresh.mutate()}><RefreshCw size={14} /> Refresh Veo</Button>
     </div>
     {(refresh.isError || status.data?.state === "error") && <p role="alert" className="text-sm text-danger">{refresh.error?.message || status.data?.message}</p>}
