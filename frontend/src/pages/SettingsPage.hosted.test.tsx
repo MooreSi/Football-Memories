@@ -16,8 +16,10 @@ async function tabs(hosted: boolean) {
   return screen.getAllByRole("link").map((a) => a.textContent?.trim());
 }
 
-it("a hosted build shows Connections but not Update", async () => {
-  expect(await tabs(true)).toEqual(["Playback", "Storage", "Backups", "Connections"]);
+// Owner decision 013 (2026-11-20) replaces "never Update": a hosted copy has its own Update
+// section, served by the gateway (not the desktop updater).
+it("a hosted build shows Connections and its own Update", async () => {
+  expect(await tabs(true)).toEqual(["Playback", "Storage", "Backups", "Connections", "Update"]);
 });
 
 it("keeps every tab on the owner's own install (negative control)", async () => {

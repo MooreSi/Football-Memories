@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Brand } from "./BrandMark";
 import { UpdateBadge } from "./settings/UpdateSettings";
+import { HostedUpdateBadge } from "./settings/HostedUpdateSettings";
 import { AlertsBell } from "./AlertsBell";
 import { HostedAccountLink } from "./HostedAccountLink";
 import { HostedAdminLink } from "./HostedAdminLink";
@@ -91,7 +92,7 @@ export function AppShell() {
           <div className="nav-wrap">
             <PillNav />
           </div>
-          <UpdateBadge />
+          {HOSTED ? <HostedUpdateBadge /> : <UpdateBadge />}
           <AlertsBell />
           <HostedAdminLink />
           <HostedAccountLink />
