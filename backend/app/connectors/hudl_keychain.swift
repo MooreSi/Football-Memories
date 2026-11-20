@@ -34,6 +34,9 @@ if operation == "save" {
     finish(SecItemCopyMatching(request as CFDictionary, &result))
     guard let bytes = result as? Data else { exit(1) }
     FileHandle.standardOutput.write(bytes)
+} else if operation == "delete" {
+    // Owner request 2026-11-20: Disconnect forgets the saved account.
+    finish(SecItemDelete(query as CFDictionary))
 } else if operation == "exists" {
     var request = query
     request[kSecReturnAttributes as String] = true

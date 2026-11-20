@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import { type DownloadEntry, hudlAgeGroups, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../api/hudl";
 import { TeamBadge } from "../components/TeamBadge";
 import { MediaLibraryPanel } from "../components/downloads/MediaLibraryPanel";
-import { VeoExpiryPanel } from "../components/downloads/VeoExpiryPanel";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { formatBytes } from "../lib/format";
@@ -75,7 +74,6 @@ export function DownloadedPage() {
         </div>
       </header>
       {remove.error && <p role="alert" className="text-sm text-danger">{remove.error.message}</p>}
-      <VeoExpiryPanel />
       {index.data && index.data.length > 0 && <MediaLibraryPanel entries={index.data} />}
       {index.isPending ? <Spinner label="Reading downloads" /> : index.isError ? (
         <EmptyState icon={HardDriveDownload} title="Downloads unavailable">Start the desktop helper to see what has been downloaded.</EmptyState>

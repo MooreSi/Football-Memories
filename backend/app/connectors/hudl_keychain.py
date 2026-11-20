@@ -110,6 +110,28 @@ class Keychain:
         except CaptureError:
             return False
 
+    def delete(self) -> None:
+        """Owner request 2026-11-20: forget the saved account. Nothing saved is fine."""
+        try:
+            result = subprocess.run(
+                [
+                    str(self._executable()),
+                    *([] if self.service == "Hudl" else [self.service]),
+                    "delete",
+                ],
+                capture_output=True,
+                timeout=180,
+                check=False,
+            )
+        except CaptureError:
+            raise
+        except Exception:
+            raise CaptureError(
+                "Keychain access failed. Check this Mac's Keychain permissions."
+            ) from None
+        if result.returncode not in (0, 3):  # 3: no item saved
+            raise CaptureError(f"Keychain could not remove the saved {self.service} account.")
+
 
 class _Advapi32:
     """Windows Credential Manager through advapi32 (ctypes, no extra package)."""
@@ -153,6 +175,8 @@ class _Advapi32:
         ]
         self.api.CredReadW.restype = wintypes.BOOL
         self.api.CredFree.argtypes = [ctypes.c_void_p]
+        self.api.CredDeleteW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD]
+        self.api.CredDeleteW.restype = wintypes.BOOL
 
     def write(self, target: str, user: str, blob: bytes) -> None:
         ctypes = self.ctypes
@@ -166,6 +190,13 @@ class _Advapi32:
         credential.Persist = self.CRED_PERSIST_LOCAL_MACHINE
         if not self.api.CredWriteW(ctypes.byref(credential), 0):
             raise OSError(ctypes.get_last_error(), "CredWriteW failed")
+
+    def delete(self, target: str) -> None:
+        ctypes = self.ctypes
+        if not self.api.CredDeleteW(target, self.CRED_TYPE_GENERIC, 0):
+            if ctypes.get_last_error() == 1168:  # ERROR_NOT_FOUND: already gone
+                return
+            raise OSError(ctypes.get_last_error(), "CredDeleteW failed")
 
     def read(self, target: str) -> tuple[str, bytes] | None:
         ctypes = self.ctypes
@@ -230,6 +261,14 @@ class WindowsCredentialStore:
             return self.api.read(self.target) is not None
         except Exception:
             return False
+
+    def delete(self) -> None:
+        try:
+            self.api.delete(self.target)
+        except Exception:
+            raise CaptureError(
+                f"Windows Credential Manager could not remove the {self.service} account."
+            ) from None
 
 
 _CAPTURE_KEY: bytes | None = None
@@ -304,6 +343,9 @@ class SealedFileStore:
 
     def configured(self) -> bool:
         return self.path.is_file()
+
+    def delete(self) -> None:
+        self.path.unlink(missing_ok=True)
 
 
 def _hosted() -> bool:

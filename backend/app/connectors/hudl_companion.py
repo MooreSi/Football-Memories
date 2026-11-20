@@ -608,6 +608,18 @@ def create_companion(output: Path) -> FastAPI:
         request.app.state.account.reset()
         return {"saved": True}
 
+    @app.post("/account/forget")
+    def account_forget(request: Request) -> dict[str, bool]:
+        """Owner request 2026-11-20: forget the Hudl account (login, match list, tags,
+        posters). Downloads and the download index stay."""
+        with request.app.state.hudl_gate:
+            if request.app.state.capture.status()["state"] not in {"idle", "done", "error"}:
+                raise CaptureError("A URL capture is running. Wait for it to finish.")
+            request.app.state.account.forget()
+            request.app.state.keychain.delete()
+            request.app.state.account_configured = False
+        return {"forgotten": True}
+
     @app.post("/account/action", status_code=202)
     def account_action(body: AccountAction, request: Request) -> dict[str, bool]:
         with request.app.state.hudl_gate:

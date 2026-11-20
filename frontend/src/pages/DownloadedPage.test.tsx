@@ -138,3 +138,15 @@ it("labels a Veo download with the club its title names", async () => {
   renderWithProviders(<DownloadedPage />);
   expect(await screen.findByRole("article", { name: /Hill Town vs\. Northgate CB/ })).toBeInTheDocument();
 });
+
+// Owner request 2026-11-20: Downloaded shows only what is saved here (matches, reels,
+// moments); the "Before Veo deletes them" list of unsaved Veo matches is not on it.
+it("shows no list of Veo matches that are not saved", async () => {
+  stubFetch({ [`${H}/downloads/index`]: entries, [`${H}/library`]: library,
+    [`${H}/veo/library`]: [{ id: "veo-x", source: "veo", title: "261108 NL vs A", available: true, moments: [] }],
+    [`${H}/veo/account`]: { configured: true, busy: false, state: "ready", message: "", summary: null } });
+  renderWithProviders(<DownloadedPage />);
+  await screen.findByRole("heading", { level: 1 });
+  await new Promise((r) => setTimeout(r, 50));
+  expect(screen.queryByText(/Before Veo deletes them/)).toBeNull();
+});

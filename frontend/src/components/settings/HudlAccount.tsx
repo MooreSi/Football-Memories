@@ -7,6 +7,7 @@ import { RefreshCw, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
+import { ForgetAccount } from "./ForgetAccount";
 
 const BASE = HUDL;
 const KEY = ["hudl-account"];
@@ -98,6 +99,9 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
     onSuccess: () => { setPassword(""); setSaved(true); void client.invalidateQueries({ queryKey: KEY }); } });
   const action = useMutation({ mutationFn: (body: { action: string; match_id?: string }) => request("/account/action", body),
     onSuccess: () => client.invalidateQueries({ queryKey: KEY }) });
+  // Owner request 2026-11-20: Disconnect forgets the account and its cached matches.
+  const forget = useMutation({ mutationFn: () => request("/account/forget", {}),
+    onSuccess: () => { for (const key of [KEY, ["hudl-library"]]) void client.invalidateQueries({ queryKey: key }); } });
   if (q.isError) return null; // The existing capture section provides desktop-helper setup.
   if (q.isPending) return <p className="text-xs text-fg-muted">Checking saved Hudl connection…</p>;
   const busy = q.data.busy || save.isPending || action.isPending;
@@ -120,12 +124,12 @@ export function HudlAccount({ onConnectionChange }: { onConnectionChange?: (stat
         <Button type="submit" variant="primary" disabled={busy}>{save.isPending ? "Saving…" : "Save"}</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate({ action: "test" })}>Connect</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate({ action: "refresh" })}><RefreshCw size={14} /> Refresh matches</Button>
-        {q.data.session_active && <Button type="button" disabled={busy} onClick={() => action.mutate({ action: "disconnect" })}>Disconnect</Button>}
+        {q.data.configured && <ForgetAccount service="Hudl" where={where} disabled={busy} pending={forget.isPending} onForget={() => forget.mutate()} />}
       </div>
     </form>
     {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in.</p>}
     <p role="status" className={`text-xs ${q.data.state === "error" ? "text-danger" : "text-fg-muted"}`}>{q.data.message}</p>
-    {(save.isError || action.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error)?.message}</p>}
+    {(save.isError || action.isError || forget.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error ?? forget.error)?.message}</p>}
     {q.data.filename && <Link to="/import" className="inline-flex text-sm font-semibold text-accent underline">Import downloaded match</Link>}
     {q.data.matches.length > 0 && <p className="text-xs text-fg-subtle">{q.data.matches.length} matches cached. Watch and download them from <Link to="/" className="text-accent underline">Library</Link> or <Link to="/clips" className="text-accent underline">Clips</Link>.</p>}
   </section>;

@@ -200,6 +200,44 @@ class VeoConnection:
                 filename=None,
             )
 
+    def forget(self) -> None:
+        """Owner request 2026-11-20: Disconnect forgets the account: in-memory video
+        addresses, the account's matches, their posters and the club's crest and names.
+        Shared match links are not the account's and stay, with their matches and posters.
+        Downloads are never touched. No request to Veo."""
+        with self._lock:
+            if self._busy:
+                raise CaptureError("Wait for the Veo operation to finish, then disconnect.")
+            self._busy = True
+        try:
+            self._videos.clear()
+            self._stream = None
+            shared = [i for i in self.library() if i.get("shared")]
+            keep = {f"{capture_key(str(i.get('id')))}.jpg" for i in shared}
+            if self.posters.is_dir():
+                for poster in self.posters.iterdir():
+                    if poster.name not in keep:
+                        poster.unlink(missing_ok=True)
+            for name in ("crest.png", "club.json"):
+                (self.directory / name).unlink(missing_ok=True)
+            if shared:
+                self._write(shared)
+            else:
+                self.path.unlink(missing_ok=True)
+            self._report(
+                state="idle",
+                summary=None,
+                progress=None,
+                match_id=None,
+                stream_url=None,
+                filename=None,
+                message="Disconnected. The saved Veo account and its cached matches were "
+                "removed; your downloads are kept.",
+            )
+        finally:
+            with self._lock:
+                self._busy = False
+
     def _match(self, identity: str | None) -> dict[str, Any] | None:
         return next((i for i in self.library() if i.get("id") == identity), None)
 

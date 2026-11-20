@@ -47,24 +47,34 @@ it("cannot test before an account is saved, and names Credential Manager on Wind
   expect(screen.getByText(/Saved only in Windows Credential Manager/)).toBeInTheDocument();
 });
 
-it("disconnects a connected account without forgetting it", async () => {
+// Owner request 2026-11-20 (replaces "disconnects without forgetting it"): Disconnect asks
+// first, then forgets the account: the saved login and the cached matches go; downloads stay.
+it("asks before disconnecting, then forgets the Veo account", async () => {
   stubFetch({
     [`${BASE}/veo/account`]: { ...idle, configured: true, state: "ready", message: "Connected to Veo", summary: null },
-    [`${BASE}/veo/action`]: { accepted: true },
+    [`${BASE}/veo/forget`]: { forgotten: true }, [`${BASE}/veo/shared`]: [],
   });
   const user = userEvent.setup();
   renderWithProviders(<VeoAccount />);
   await user.click(await screen.findByRole("button", { name: "Disconnect" }));
-  expect(body("/veo/action")).toEqual({ action: "disconnect" });
+  expect(screen.getByText(/downloaded matches, reels and moments are kept/i)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(vi.mocked(fetch).mock.calls.some(([u]) => u === `${BASE}/veo/forget`)).toBe(false);
+  await user.click(screen.getByRole("button", { name: "Disconnect" }));
+  await user.click(screen.getByRole("button", { name: "Disconnect and remove" }));
+  await vi.waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u, i]) => u === `${BASE}/veo/forget` && i?.method === "POST")).toBe(true));
+  expect(vi.mocked(fetch).mock.calls.some(([u]) => u === `${BASE}/veo/action`)).toBe(false);
 });
 
-// Owner request 2026-11-14 (replaces "no Disconnect before it is connected"): the Veo
-// box always has Disconnect once an account is saved, even after the helper restarts.
+// Owner request 2026-11-14: the Veo box always has Disconnect once an account is saved,
+// even after the helper restarts (since 2026-11-20 it forgets the account).
 it("offers Disconnect whenever a Veo account is saved", async () => {
-  stubFetch({ [`${BASE}/veo/account`]: { ...idle, configured: true }, [`${BASE}/veo/action`]: { accepted: true } });
+  stubFetch({ [`${BASE}/veo/account`]: { ...idle, configured: true }, [`${BASE}/veo/forget`]: { forgotten: true }, [`${BASE}/veo/shared`]: [] });
+  const user = userEvent.setup();
   renderWithProviders(<VeoAccount />);
-  await userEvent.setup().click(await screen.findByRole("button", { name: "Disconnect" }));
-  expect(body("/veo/action")).toEqual({ action: "disconnect" });
+  await user.click(await screen.findByRole("button", { name: "Disconnect" }));
+  await user.click(screen.getByRole("button", { name: "Disconnect and remove" }));
+  await vi.waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u]) => u === `${BASE}/veo/forget`)).toBe(true));
 });
 
 it("offers no Disconnect with no Veo account saved", async () => {

@@ -74,6 +74,17 @@ def save(body: VeoCredentials, request: Request) -> dict[str, bool]:
     return {"saved": True}
 
 
+@router.post("/forget")
+def forget(request: Request) -> dict[str, bool]:
+    """Owner request 2026-11-20: forget the Veo account and its cached data; downloads and
+    shared match links stay."""
+    state = request.app.state
+    state.veo.forget()
+    state.veo_store.delete()
+    state.veo_configured = False
+    return {"forgotten": True}
+
+
 @router.post("/action", status_code=202)
 def action(body: VeoAction, request: Request) -> dict[str, bool]:
     state = request.app.state

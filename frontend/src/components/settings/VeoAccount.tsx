@@ -3,6 +3,7 @@ import { RefreshCw, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { type VeoStatus, veoRequest } from "../../api/veo";
 import { Button } from "../ui/Button";
+import { ForgetAccount } from "./ForgetAccount";
 import { VeoSharedLinks } from "./VeoSharedLinks";
 
 const KEY = ["veo-account"];
@@ -23,8 +24,11 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
   }, [q.data, onConnectionChange]);
   const save = useMutation({ mutationFn: () => veoRequest("/credentials", { username, password }),
     onSuccess: () => { setPassword(""); setSaved(true); void client.invalidateQueries({ queryKey: KEY }); } });
-  const action = useMutation({ mutationFn: (name: "test" | "refresh" | "disconnect") => veoRequest("/action", { action: name }),
+  const action = useMutation({ mutationFn: (name: "test" | "refresh") => veoRequest("/action", { action: name }),
     onSuccess: () => client.invalidateQueries({ queryKey: KEY }) });
+  // Owner request 2026-11-20: Disconnect forgets the account and its cached matches.
+  const forget = useMutation({ mutationFn: () => veoRequest("/forget", {}),
+    onSuccess: () => { for (const key of [KEY, ["veo-library"], ["veo-shared"]]) void client.invalidateQueries({ queryKey: key }); } });
   if (q.isPending) return <p className="text-xs text-fg-muted">Checking saved Veo connection…</p>;
   if (q.isError) return <p className="text-sm text-fg-muted">Start the desktop helper (the same one Hudl uses) to connect Veo.</p>;
   const busy = q.data.busy || save.isPending || action.isPending;
@@ -47,7 +51,7 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
         <Button type="submit" variant="primary" disabled={busy}>{save.isPending ? "Saving…" : "Save"}</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate("test")}>Connect</Button>
         <Button type="button" disabled={busy || !q.data.configured} onClick={() => action.mutate("refresh")}><RefreshCw size={14} /> Refresh matches</Button>
-        {q.data.configured && <Button type="button" disabled={busy} onClick={() => action.mutate("disconnect")}>Disconnect</Button>}
+        {q.data.configured && <ForgetAccount service="Veo" where={where} disabled={busy} pending={forget.isPending} onForget={() => forget.mutate()} />}
       </div>
     </form>
     {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in and read your matches.</p>}
@@ -61,7 +65,7 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
       {s.expiring > 0 && <li className="tile p-3"><span className="block text-lg font-semibold tabular-nums text-warn">{s.expiring}</span> expiring soon</li>}
       {s.moments !== undefined && <li className="tile p-3"><span className="block text-lg font-semibold tabular-nums">{s.moments}</span> highlights</li>}
     </ul>}
-    {(save.isError || action.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error)?.message}</p>}
+    {(save.isError || action.isError || forget.isError) && <p role="alert" className="text-sm text-danger">{(save.error ?? action.error ?? forget.error)?.message}</p>}
     <VeoSharedLinks disabled={q.data.busy} />
   </section>;
 }

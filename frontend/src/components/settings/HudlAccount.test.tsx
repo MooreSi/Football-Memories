@@ -46,3 +46,22 @@ describe("HudlAccount", () => {
     expect(screen.queryByText(/Keychain/)).toBeNull();
   });
 });
+
+// Owner request 2026-11-20: Disconnect forgets the Hudl account (saved login, cached match
+// list, tags and posters) after asking; it is offered whenever an account is saved.
+it("asks before disconnecting, then forgets the Hudl account", async () => {
+  stubFetch({ [`${BASE}/account`]: { ...status, configured: true }, [`${BASE}/account/forget`]: { forgotten: true } });
+  const user = userEvent.setup();
+  renderWithProviders(<HudlAccount />);
+  await user.click(await screen.findByRole("button", { name: "Disconnect" }));
+  expect(screen.getByText(/downloaded matches, reels and moments are kept/i)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Disconnect and remove" }));
+  await vi.waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u, i]) => u === `${BASE}/account/forget` && i?.method === "POST")).toBe(true));
+});
+
+it("offers no Disconnect with no Hudl account saved", async () => {
+  stubFetch({ [`${BASE}/account`]: status });
+  renderWithProviders(<HudlAccount />);
+  await screen.findByRole("button", { name: "Save" });
+  expect(screen.queryByRole("button", { name: "Disconnect" })).toBeNull();
+});

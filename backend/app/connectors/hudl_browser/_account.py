@@ -9,6 +9,7 @@ from __future__ import annotations
 import contextlib
 import re
 import secrets
+import shutil
 import tempfile
 import threading
 import time
@@ -230,6 +231,41 @@ class BrowserConnection:
                 message="Credentials saved. Select Test to connect.",
             )
         self._executor.submit(self._close)
+
+    def forget(self) -> None:
+        """Owner request 2026-11-20: Disconnect forgets the account. The session closes and
+        the cached match list and per-match tags and posters are removed. Downloads, the
+        download index, the folder setting and reel cards stay. A background tag sweep is
+        stopped first; any other Hudl work must finish."""
+        deadline = time.monotonic() + 60
+        while True:
+            with self._lock:
+                if not self._pending:
+                    self._pending = 1
+                    break
+                sweeping = self._syncing and self._pending == 1
+                if sweeping:
+                    self._cancel_sync.set()
+            if not sweeping or time.monotonic() > deadline:
+                raise CaptureError("Wait for the Hudl operation to finish, then disconnect.")
+            time.sleep(0.2)
+        try:
+            self._executor.submit(self._close).result(timeout=60)
+            self.catalogue.path.unlink(missing_ok=True)
+            shutil.rmtree(self.details.directory, ignore_errors=True)
+            with self._lock:
+                self._tag_age = None
+                self._state.update(
+                    state="idle",
+                    stream_url=None,
+                    filename=None,
+                    match_id=None,
+                    message="Disconnected. The saved Hudl account and its cached matches "
+                    "were removed; your downloads are kept.",
+                )
+        finally:
+            with self._lock:
+                self._pending -= 1
 
     def _close(self) -> None:
         if self._browser:
