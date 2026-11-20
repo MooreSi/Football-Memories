@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current state (2026-11-20)
 
+- **Hosted libraries can update themselves (spec 340, owner decision 013).** Settings >
+  Update in a hosted library: version, Update now, "Update automatically"; title-bar "Update
+  available" when not ticked. Gateway side (host updater, provisioner, portal API) is in the
+  Gateway repo, branch `codex/public-security-hardening`, deployed. All three hosted libraries
+  moved to `9910cd9`. Not yet clicked through by a signed-in family.
+
 - **Helper starts at login on a Mac (owner request 2026-11-20).** The installer writes the
   launchd login item `com.footballmemories.helper` (`scripts/mac/helper-login-item.sh`,
   RunAtLoad only, no KeepAlive so it never races the updater's in-place restart) and starts

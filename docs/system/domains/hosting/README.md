@@ -14,3 +14,18 @@ build time, including packages already present in the base. Pip is removed only 
 dependencies (and, for capture, Chromium) are installed. Running containers do not need it.
 Never rebuild/redeploy the owner's local stack as a side effect of hosted maintenance.
 Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-test an image.
+
+## Library updates (spec 340, owner decision 013, 2026-11-20)
+
+- A hosted library never reaches GitHub. The Gateway repo's host updater (launchd, hourly)
+  reads `MooreSi/Football-Memories` main, builds each new commit once in its own clone as
+  `fm-app-*:hosted-<full commit>` (it never moves `:hosted`), and writes a status file the
+  provisioner reads read-only. It takes no commands.
+- The page asks the gateway on its own origin: `GET /_portal/api/update`, `POST .../apply`,
+  `POST .../auto {enabled}` (CSRF token from `/_portal/api/me`). `HostedUpdateSettings` and
+  `HostedUpdateBadge`; the title-bar button shows only when an update is ready and the tick
+  box is off.
+- A library's version is a provisioner file beside its database password; moving recreates
+  only its backend, web and capture containers. The database and volumes stay.
+- **Gotcha:** a library still on a build from before this feature has no Update tab, so it
+  can only be moved by the admin (done once for all three on 2026-11-20).
