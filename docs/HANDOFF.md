@@ -16,7 +16,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 - **Hosted libraries can update themselves (spec 340, owner decision 013).** Settings >
   Update in a hosted library: version, Update now, "Update automatically"; title-bar "Update
   available" when not ticked. Gateway side (host updater, provisioner, portal API) is in the
-  Gateway repo, branch `codex/public-security-hardening`, deployed. All three hosted libraries
+  Gateway repo (GitHub football-memories-frontend), merged to its main 2026-11-20, deployed. All three hosted libraries
   moved to `9910cd9`. Not yet clicked through by a signed-in family.
 
 - **Helper starts at login on a Mac (owner request 2026-11-20).** The installer writes the
@@ -42,7 +42,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Connect once to finish it. Not yet checked end to end against the real accounts.
 
 - **Public security review (owner request 2026-11-20).** This repo's part merged into `main` at the
-  owner's request (2026-11-20) from `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
+  owner's request (2026-11-20) from `codex/public-runtime-hardening`; Gateway work (merged to the Gateway repo main 2026-11-20) is in
   `~/Football Memories Gateway`. Spec 330 pins Python/Nginx runtime images, installs available
   system updates and removes pip after builds. New tests observed red first; backend 682 on
   SQLite and PostgreSQL, frontend 599, lint/format/types/build/schema drift all pass.
