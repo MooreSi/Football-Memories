@@ -7,7 +7,7 @@ import { connectionShown } from "../../lib/connections";
 import { Button } from "../ui/Button";
 import { ScoreBadge } from "../hudl/HudlLibrary";
 import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
-import { useVeoClubOf } from "../../lib/useVeoClub";
+import { useVeoCardClubOf } from "../../lib/useVeoClub";
 
 export type VeoFilters = { age: string; season: string; search: string };
 
@@ -15,7 +15,7 @@ export type VeoFilters = { age: string; season: string; search: string };
 export function VeoLibrary({ filters }: { filters: VeoFilters }) {
   const shown = connectionShown("veo");
   const library = useVeoLibrary();
-  const veoClubOf = useVeoClubOf();
+  const veoClubOf = useVeoCardClubOf();
   // Owner request 2026-11-15: Refresh Veo here, like Refresh Hudl (the same action as
   // Settings → Connections → Veo → Refresh matches).
   const status = useVeoStatus();

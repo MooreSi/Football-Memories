@@ -61,6 +61,14 @@ def best_video(videos: list[dict[str, Any]] | None) -> dict[str, Any] | None:
     return chosen[0] if chosen else None
 
 
+def _team_name(team: object) -> str | None:
+    """Veo's team: a name in the match list, an object (name, short_name, age_group...) in a
+    shared match's details (owner report 2026-11-20)."""
+    if isinstance(team, dict):
+        team = team.get("name")
+    return " ".join(team.split())[:200] or None if isinstance(team, str) else None
+
+
 def library_item(
     recording: dict[str, Any],
     detail: dict[str, Any] | None = None,
@@ -76,7 +84,10 @@ def library_item(
     video = best_video(videos)
     available = bool(recording.get("is_accessible")) and status in ACTIVE and video is not None
     score = _dict(_dict(detail.get("info")).get("stats")).get("score_aggregated")
-    group = age_group(f"{recording.get('team') or ''} {title}")
+    team_info = _dict(recording.get("team")) or _dict(detail.get("team"))
+    team = _team_name(recording.get("team")) or _team_name(detail.get("team"))
+    team_age = team_info.get("age_group") if isinstance(team_info.get("age_group"), str) else ""
+    group = age_group(f"{team or ''} {team_age} {title}")
     moments = [m for m in (moment(h) for h in highlights or []) if m] if available else []
     return {
         "id": identity,
@@ -84,7 +95,7 @@ def library_item(
         "slug": recording.get("slug"),
         "title": title,
         "url": f"https://app.veo.co{recording.get('url') or ''}",
-        "team": recording.get("team") or None,
+        "team": team,
         "age_group": group,
         "age_groups": [] if group == "Unclassified" else [group],
         "season_label": season_label(title),

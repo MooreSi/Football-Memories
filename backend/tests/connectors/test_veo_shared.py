@@ -281,3 +281,10 @@ def test_a_refused_video_list_for_a_shared_match_says_veo(tmp_path: Path) -> Non
     again, _ = make(tmp_path, SharedApi(), SharedApi(refuse=f"/api/app/matches/{SLUG}/videos/"))
     again.start("watch", f"veo-{SHARED_ID}")
     assert again.status()["state"] == "error" and "Veo" in again.status()["message"]
+
+
+# Owner report 2026-11-20: a real shared link was refused; Veo's untitled recordings carry
+# the recording time with underscores in the address.
+def test_a_link_with_underscores_is_a_veo_match() -> None:
+    link = "https://app.veo.co/matches/20261101-untitled-recording-2026-11-01_13-42-10-va2f73bb/"
+    assert shared_slug(link) == "20261101-untitled-recording-2026-11-01_13-42-10-va2f73bb"

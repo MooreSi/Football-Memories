@@ -8,7 +8,11 @@
  *  "Redditch United MA", "Olton Ravens TB"), plurals and spellings ("Blues", "Lindsay"), and
  *  short forms ("Redditch", "Kenilworth"). The clubs are learnt from the titles themselves. */
 
-type Titled = { title: string; team?: string | null };
+type Titled = { title: string; team?: unknown };
+
+/** Veo's team name, when it is one (owner report 2026-11-20: a shared match once sent an
+ *  object here and the Library page stopped). */
+const teamName = (team: unknown): string | null => (typeof team === "string" && team.trim() ? team.trim() : null);
 
 const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
 const singular = (w: string) => (w.length > 3 && w.endsWith("s") && !w.endsWith("ss") ? w.slice(0, -1) : w);
@@ -145,7 +149,7 @@ export function veoClubNames(matches: Titled[], home: string | null): string[] {
     clubs.push({ name: written, spellings: new Map([[written, weight]]) });
   };
   if (home?.trim()) add(home, 1, false);
-  for (const m of matches) if (m.team?.trim()) add(m.team, 0, false);
+  for (const m of matches) { const t = teamName(m.team); if (t) add(t, 0, false); }
   // Recurring first sides, longest names first so short forms fold into them.
   const counts = new Map<string, { words: string[]; n: number }>();
   for (const m of matches) {
@@ -166,5 +170,5 @@ export function veoClubNames(matches: Titled[], home: string | null): string[] {
 export function veoClubOf(match_: Titled, known: string[]): string {
   const pair = sides(match_.title);
   if (pair) return match(pair[0], known) ?? match(pair[1], known) ?? pair[0];
-  return match_.team?.trim() || "Other";
+  return teamName(match_.team) || "Other";
 }

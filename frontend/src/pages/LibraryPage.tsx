@@ -30,7 +30,7 @@ import { useVeoLibrary } from "../api/veo";
 import { connectionShown } from "../lib/connections";
 import { veoAsHudl } from "../lib/veoAsHudl";
 import { teamSplit } from "../lib/veoTeamSplit";
-import { useVeoClubOf } from "../lib/useVeoClub";
+import { useVeoCardClubOf } from "../lib/useVeoClub";
 
 import { useArchiveFilters } from "../lib/archiveFilters";
 
@@ -99,7 +99,7 @@ export function LibraryPage() {
   const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
   // Our side: the player's "Plays for", else the newest imported team (owner report 2026-11-12).
   const hudlClub = useHomeClub();
-  const veoClubOf = useVeoClubOf();
+  const veoClubOf = useVeoCardClubOf();
   // Owner request 2026-11-11: the right panel and the Match Profile follow the match shown
   // in the hero; the overview counts the selected age group and season.
   const [heroIndex, setHeroIndex] = useState(0);

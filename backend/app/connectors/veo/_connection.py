@@ -27,7 +27,8 @@ MAX_PAGES = 100
 TEAM_DATA_VERSION = 2
 NO_REPORT = {400, 403, 404, 405}
 # Owner request 2026-11-20: a shared match link is Veo's own public match page.
-_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{2,150}")
+# Owner report 2026-11-20: untitled recordings carry the time with underscores.
+_SLUG = re.compile(r"[a-z0-9][a-z0-9_-]{2,150}")
 NOT_SHARED = {403, 404}  # the match is private now, or gone: skip it, read the rest
 MAX_SHARED = 200
 

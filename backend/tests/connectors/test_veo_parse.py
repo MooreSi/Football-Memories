@@ -199,3 +199,23 @@ def test_team_moments_name_the_side_and_lead_into_the_event() -> None:
         },
     ]
     assert team_moments(None) == [] and team_moments({"events": "x"}) == []
+
+
+# Owner report 2026-11-20: a shared match's details give Veo's team as an object (seen on
+# a public match: name, short_name, age_group, club...), not a name; the Library page then
+# failed on it. The team is kept as its name, and its age group is used.
+def test_a_team_given_as_an_object_is_kept_as_its_name() -> None:
+    from app.connectors.veo._parse import library_item
+    from tests.connectors.veo_fixtures.synthetic import detail, recording
+
+    team = {
+        "name": "Riverside Juniors ",
+        "short_name": "RJ",
+        "age_group": "U11",
+        "club": {"title": "x"},
+    }
+    item = library_item(recording(team=team, title="RJ vs Northgate"), detail(team=team))
+    assert item["team"] == "Riverside Juniors"
+    assert item["age_group"] == "U11"
+    nameless = library_item(recording(team={"id": 7}, title="RJ vs Northgate"))
+    assert nameless["team"] is None

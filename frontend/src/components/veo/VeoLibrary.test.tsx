@@ -123,3 +123,22 @@ it("names the club each Veo title names on its score pill", async () => {
   const b = screen.getByRole("link", { name: /Town/ });
   expect(within(b).getByRole("group", { name: /^Hill Town \d+, Town/ })).toBeInTheDocument();
 });
+
+// Owner report 2026-11-20: with only shared match links and no Veo team saved, cards named
+// no club (so no crest), and a team sent as an object stopped the page.
+it("names the club from the match when no Veo team is saved, and survives an odd team", async () => {
+  stubFetch({
+    [LIB]: [
+      { id: "veo-s", source: "veo", title: "261109 RCW vs SBITC Eagles", team: "Racing Club Warwick", age_group: "U11", age_groups: ["U11"],
+        season_label: "2026/27", available: true, score: { ours: 3, theirs: 3 }, moments: [], shared: true },
+      { id: "veo-t", source: "veo", title: "261115 NL vs Bolehall swifts", team: { name: "Odd" }, age_group: "Unclassified",
+        season_label: "2026/27", available: true, score: { ours: 1, theirs: 4 }, moments: [], shared: true },
+    ],
+    "/api/settings/home-teams": { hudl: null, veo: null },
+  });
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  const card = await screen.findByRole("link", { name: /SBITC/ });
+  expect(await within(card).findByRole("group", { name: "Racing Club Warwick 3, SBITC Eagles 3" })).toBeInTheDocument();
+  const other = screen.getByRole("link", { name: /Bolehall/ });
+  expect(await within(other).findByRole("group", { name: "NL 1, Bolehall swifts 4" })).toBeInTheDocument();
+});

@@ -109,7 +109,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
     return { item, match, moments };
   });
   // Owner request 2026-11-15: a Veo reel is one match; name the club its title names.
-  const club = isVeo ? veoClubOf(rows[0]?.match as { title: string; team?: string | null } | undefined) : hudlClub;
+  const club = isVeo ? veoClubOf(rows[0]?.match as { title: string; team?: unknown } | undefined) : hudlClub;
   const totalMoments = rows.reduce((n, r) => n + r.moments.length, 0);
   const seasons = [...new Set(rows.map((r) => r.match?.season_label).filter(Boolean))];
   const [edited, setName] = useState<string | null>(null);
