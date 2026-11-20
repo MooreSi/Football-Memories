@@ -21,6 +21,7 @@ def clock(monkeypatch):
     fake = _Clock()
     monkeypatch.setattr(team_logos, "_MISSES", {})
     monkeypatch.setattr(team_logos, "_PAUSED_UNTIL", [0.0])
+    monkeypatch.setattr(team_logos, "_SITE_PAUSED", {"wikimedia": 0.0, "sportsdb": 0.0})
     monkeypatch.setattr(team_logos.time, "monotonic", fake.monotonic)
     monkeypatch.setattr(team_logos.time, "sleep", fake.sleep)
     return fake
@@ -157,10 +158,11 @@ def test_a_rate_limited_lookup_is_retried_soon(tmp_path, monkeypatch, clock) -> 
 
     monkeypatch.setattr("app.services.team_logos._fetch", fetch)
     assert cached_crest("Chelsea", tmp_path) is None
-    # Inside Wikipedia's Retry-After window nothing is asked, for this club or any other.
+    # Inside Wikipedia's Retry-After window Wikipedia is not asked, for this club or any
+    # other. (Owner report 2026-11-20: other sources still are; see the tests below.)
     assert cached_crest("Chelsea", tmp_path) is None
     assert cached_crest("Fulham", tmp_path) is None
-    assert len(calls) == 1
+    assert [u for u in calls if "wiki" in u] == calls[:1]
     clock.now += 31
     path = cached_crest("Chelsea", tmp_path)
     assert path is not None and path.read_bytes().endswith(b"chelsea")
@@ -582,3 +584,60 @@ def test_a_club_with_club_in_its_name_is_matched(tmp_path, monkeypatch) -> None:
     )
     assert cached_crest("Sporting Club Riverside", tmp_path) is not None
     assert downloads == [badge + "/small"]
+
+
+# Owner report 2026-11-20: Veo clubs kept their initials. Wikipedia answers 429 after a few
+# lookups, and that refusal paused every source, so TheSportsDB (which has some of them)
+# was never asked, and the page gave up.
+def _refusing_wikipedia(monkeypatch, sportsdb: bytes):  # noqa: ANN202
+    asked: list[str] = []
+
+    def fetch(url):
+        if "wikipedia.org" in url or "wikimedia.org" in url:
+            asked.append("wikipedia")
+            raise _rate_limited(url, "120")
+        if "thesportsdb.com/api/" in url:
+            asked.append("sportsdb")
+            return sportsdb
+        asked.append("download")
+        return b"\x89PNG\r\n\x1a\nbadge"
+
+    monkeypatch.setattr("app.services.team_logos._fetch", fetch)
+    return asked
+
+
+def test_a_wikipedia_refusal_still_lets_thesportsdb_answer(tmp_path, monkeypatch) -> None:
+    from app.services.team_logos import cached_crest
+
+    badge = "https://r2.thesportsdb.com/images/media/team/badge/abc123.png"
+    asked = _refusing_wikipedia(
+        monkeypatch,
+        _sportsdb({"strTeam": "Redbrook United", "strSport": "Soccer", "strBadge": badge}),
+    )
+    assert cached_crest("Redbrook United", tmp_path) is not None
+    assert asked == ["wikipedia", "sportsdb", "download"]
+
+
+def test_while_wikipedia_waits_other_clubs_skip_it_and_ask_thesportsdb(
+    tmp_path, monkeypatch, clock
+) -> None:
+    from app.services.team_logos import cached_crest
+
+    asked = _refusing_wikipedia(monkeypatch, _sportsdb())
+    cached_crest("Elm Ravens", tmp_path)
+    asked.clear()
+    cached_crest("Kenmore Sporting", tmp_path)
+    assert asked == ["sportsdb"]  # Wikipedia not asked inside its Retry-After window
+
+
+def test_a_club_not_found_while_wikipedia_waits_is_asked_again_later(
+    tmp_path, monkeypatch, clock
+) -> None:
+    from app.services.team_logos import cached_crest
+
+    asked = _refusing_wikipedia(monkeypatch, _sportsdb())
+    assert cached_crest("Elm Ravens", tmp_path) is None
+    clock.now += 121
+    asked.clear()
+    cached_crest("Elm Ravens", tmp_path)
+    assert "wikipedia" in asked  # not remembered for a day as "no crest"

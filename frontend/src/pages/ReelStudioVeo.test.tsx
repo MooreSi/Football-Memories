@@ -141,3 +141,23 @@ it("names a Veo reel with the club the match title names", async () => {
   studio({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h1"] }] });
   await vi.waitFor(() => expect(screen.getByRole("textbox", { name: "Reel name" })).toHaveValue("Racing Club Warwick vs. Northgate CB"));
 });
+
+// Owner report 2026-11-20: ticking Veo's team events (OUR GOAL, CORNER...) on the match page
+// and pressing Make highlight reel showed 0 moments; the reel page only looked at Veo's own
+// highlights.
+it("keeps the team events picked on the match page in the reel", async () => {
+  const withEvents = [{ ...veo[0], team_moments: [
+    { id: "t-own-goal-125000", category: "OUR GOAL", time_s: 115, duration_s: 15, team: true, side: "own" },
+    { id: "t-opponent-corner-kick-400000", category: "OPPONENT CORNER KICK", time_s: 390, duration_s: 15, team: true, side: "opponent" }] }];
+  stub();
+  const base = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (input, init) =>
+    String(input) === `${H}/veo/library` ? new Response(JSON.stringify(withEvents), { status: 200 }) : base(input, init));
+  studio({ source: "veo", items: [{ match_id: "veo-a", moment_ids: ["h1", "t-own-goal-125000", "t-opponent-corner-kick-400000"] }] });
+  expect(await screen.findByText(/3 moments from 1 match/)).toBeInTheDocument();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: /Make highlight reel/ }));
+  await vi.waitFor(() => expect(posts().some(p => p.url === `${H}/veo/action`)).toBe(true));
+  expect(posts().find(p => p.url === `${H}/veo/action`)!.body.moment_ids)
+    .toEqual(["h1", "t-own-goal-125000", "t-opponent-corner-kick-400000"]);
+});

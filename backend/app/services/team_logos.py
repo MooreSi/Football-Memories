@@ -34,7 +34,8 @@ _MISSES: dict[str, float] = {}
 # Owner report 2026-11-13: a page of crests asked Wikipedia for dozens of clubs at once,
 # Wikipedia answered 429, and those clubs were remembered as "no crest" for a day.
 # A refusal now pauses every lookup for Retry-After (or a minute) and is not a miss.
-_PAUSED_UNTIL: list[float] = [0.0]
+_PAUSED_UNTIL: list[float] = [0.0]  # kept for the shared-service path; per site below
+_SITE_PAUSED: dict[str, float] = {"wikimedia": 0.0, "sportsdb": 0.0}
 _LAST_REQUEST: list[float] = [0.0]
 _GAP_S = 1.0
 # TheSportsDB's free tier allows 30 requests a minute; ask it at most every 2.5 s.
@@ -377,17 +378,32 @@ def cached_crest(name: str, directory: Path) -> Path | None:
         now = time.monotonic()
         if _MISSES.get(key, 0) > now or _PAUSED_UNTIL[0] > now:
             return None
+        _SITE_PAUSED["wikimedia"] = max(_SITE_PAUSED["wikimedia"], _PAUSED_UNTIL[0])
         shared = os.environ.get("FM_CREST_SERVICE")
         if shared:
             return _shared_crest(shared, name, key, target, directory)
+        # Owner report 2026-11-20: a refusal from Wikipedia paused every source, so clubs
+        # TheSportsDB knows kept their initials. Each site now waits on its own; a club
+        # that was not asked everywhere is not remembered as having no crest.
+        skipped = False
         try:
-            url = (
-                logo_candidate(name)
-                or _wikipedia_crest(name)
-                or _wikipedia_search(name)
-                or _sportsdb_crest(name)
-                or _commons_crest(name)
-            )
+            url = logo_candidate(name)
+            for source, site in (
+                (_wikipedia_crest, "wikimedia"),
+                (_wikipedia_search, "wikimedia"),
+                (_sportsdb_crest, "sportsdb"),
+                (_commons_crest, "wikimedia"),
+            ):
+                if url:
+                    break
+                if _SITE_PAUSED[site] > time.monotonic():
+                    skipped = True
+                    continue
+                try:
+                    url = source(name)
+                except _Refused as refused:
+                    _SITE_PAUSED[site] = time.monotonic() + refused.wait_s
+                    skipped = True
             if not url:
                 raise ValueError("No club crest found")
             image = _paced_fetch(url)
@@ -398,10 +414,12 @@ def cached_crest(name: str, directory: Path) -> Path | None:
                 stream.write(image)
             return target
         except _Refused as refused:
-            _PAUSED_UNTIL[0] = time.monotonic() + refused.wait_s
+            site = "sportsdb" if "thesportsdb" in str(url) else "wikimedia"
+            _SITE_PAUSED[site] = time.monotonic() + refused.wait_s
             return None
         except Exception:
-            _MISSES[key] = time.monotonic() + _NO_CREST_S
+            if not skipped:
+                _MISSES[key] = time.monotonic() + _NO_CREST_S
             return None
 
 

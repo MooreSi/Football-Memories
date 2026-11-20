@@ -100,8 +100,12 @@ function Studio({ selection }: { selection: ReelSelection }) {
     ? (m.age_group && m.age_group !== "Unclassified" ? m.age_group : undefined) : hudlAgeGroups(m as Parameters<typeof hudlAgeGroups>[0])[0];
   const rows = (isVeo ? selection.items.slice(0, 1) : selection.items).map((item) => {
     const match = (library.data as { id: string; title: string; season_label?: string; age_group?: string; age_groups?: string[];
-      moments?: { id: string; category: string; time_s: number; duration_s: number }[]; score?: { ours: number; theirs: number } | null; team_data?: VeoTeamData | null }[] | undefined)?.find((m) => m.id === item.match_id);
-    const moments = (match?.moments ?? []).filter((m) => item.moment_ids?.length ? item.moment_ids.includes(m.id) : item.codes?.includes(m.category));
+      moments?: { id: string; category: string; time_s: number; duration_s: number }[]; score?: { ours: number; theirs: number } | null; team_data?: VeoTeamData | null;
+      team_moments?: { id: string; category: string; time_s: number; duration_s: number }[] }[] | undefined)?.find((m) => m.id === item.match_id);
+    // Owner report 2026-11-20: a Veo match page also offers Veo's team events; a reel of
+    // those showed 0 moments when only Veo's own highlights were looked at here.
+    const pool = [...(match?.moments ?? []), ...(isVeo ? match?.team_moments ?? [] : [])].sort((a, b) => a.time_s - b.time_s);
+    const moments = pool.filter((m) => item.moment_ids?.length ? item.moment_ids.includes(m.id) : item.codes?.includes(m.category));
     return { item, match, moments };
   });
   // Owner request 2026-11-15: a Veo reel is one match; name the club its title names.
