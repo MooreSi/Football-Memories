@@ -740,3 +740,18 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
   refusing then, so it is unknown there. A missing one is pasted in Settings > Club crests.
 - **Reels:** a Veo reel may include team events (`team_moments`, ids `t-...`); the reel page
   must look at both lists, or the picked team events vanish (0 moments).
+
+## Disconnect forgets the account (owner request 2026-11-20)
+
+- Settings > Connections > Disconnect (Hudl or Veo) asks first, then calls `/account/forget`
+  or `/veo/forget`: the saved login is deleted from the secret store (new `delete()` on
+  Keychain, Credential Manager and the sealed store; the Swift bridge gained "delete"), and the
+  account's cache goes: Hudl `matches.json` + `details/`; Veo account matches, their posters,
+  `crest.png`, `club.json`. Kept: downloads, `downloads-index.json`, `downloads.json`,
+  `media-library.json`, `reel-cards/`, Veo shared links and their matches.
+- The internal `disconnect` action (close the Hudl session, e.g. before a manual capture) is
+  unchanged; only the Settings buttons forget.
+- Changing the Swift file rebuilds the Keychain helper (its file name carries the source hash),
+  so macOS may ask once to allow it access to the saved items.
+- The Downloaded page no longer lists unsaved Veo matches ("Before Veo deletes them" removed);
+  match cards and pages still say when a Veo video expires soon.
