@@ -32,15 +32,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   no age group saved, Hudl indexes every match's tags (same pacing). Backend 725 / frontend
   607 after it. Needs the helper restarted; not yet tried against the real accounts.
 
-- **Public security review (owner request 2026-11-20), release pending.** Work is on
-  `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
+- **Public security review (owner request 2026-11-20).** This repo's part merged into `main` at the
+  owner's request (2026-11-20) from `codex/public-runtime-hardening`; Gateway work is on `codex/public-security-hardening` in
   `~/Football Memories Gateway`. Spec 330 pins Python/Nginx runtime images, installs available
   system updates and removes pip after builds. New tests observed red first; backend 682 on
   SQLite and PostgreSQL, frontend 599, lint/format/types/build/schema drift all pass.
   Hosted images built from `4ac2237`, rescanned and import/Nginx-smoke checked with synthetic
   upstreams; report in the Gateway repo's `docs/security-review-2026-11-20.md` (code `b4bec39`).
   **Next:** an isolated integrated security pass or an owner verification exception before
-  rollout. Nothing from this review has been deployed. The owner's local app/helper and all library volumes are
+  rollout of the hosted gateway. Installs pick up the new images on their next Update. The owner's local app/helper and all library volumes are
   untouched. Gateway audit found an MFA throttle reset, missing private cache protection,
   unbounded portal bodies, reflected validation inputs and unbounded Argon2 memory use;
   fixes tested offline. Further finding: quota checks do not cover backup/generated-file
@@ -847,6 +847,10 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
 
 ## Next steps (in order)
 
+Public-security release comes first: see the Gateway report. Finish the isolated integration
+check or obtain an explicit owner exception before deployment, address cumulative quota
+enforcement, resolve public ports 8443/6881, and verify IPv6 firewall exposure.
+
 0. **Spec 230:** with the owner, try a note and a momentum click on a real
    stream.
 1. **Phase 4 leftovers:** calendar and card-gallery views of the timeline;
@@ -859,6 +863,11 @@ Dev with hot reload: same file, "Run for development". Checks: [TESTING.md](../T
    backup/restore, storage health.
 
 ## Blocked on / waiting for the owner
+
+- Public hardening deployment: safe full-stack security validation needs a separate Docker
+  environment (the populated production stack must not be torn down), or an owner exception
+  to that pre-release check. Port 8443/6881 intent still pending. Existing hosted libraries
+  continue using their old image IDs; rebuilding tags alone does not patch running services.
 
 - [owner-decisions/002-hudl-access.md](owner-decisions/002-hudl-access.md):
   Normal-user/no-export role and automation permission answered. Real capture/import and clip download verified after owner sign-in. Explicit

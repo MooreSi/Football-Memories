@@ -2,9 +2,10 @@
 # user, in that user's own capture container. Headless Playwright Chromium only; the sealed
 # per-user secret store; listens on the user's private network. Built by the gateway repo's
 # scripts/build-app-images.sh as fm-app-capture:hosted. The owner's install never uses it.
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
@@ -17,6 +18,7 @@ RUN grep -v '^-e ' requirements.lock > /tmp/req.txt && pip install --no-cache-di
 # Playwright's own Chromium and the system libraries it needs, at a fixed shared path.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN python -m playwright install --with-deps chromium && rm -rf /var/lib/apt/lists/*
+RUN python -m pip uninstall -y pip
 
 COPY app ./app
 

@@ -8,7 +8,7 @@ RUN npm ci
 COPY . .
 RUN VITE_FM_HOSTED=$FM_HOSTED npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:stable-alpine@sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b4975c54193075997b3a97e3
 ARG FM_HOSTED=0
 COPY nginx.conf nginx.hosted.conf /tmp/nginx/
 RUN if [ "$FM_HOSTED" = "1" ]; then cp /tmp/nginx/nginx.hosted.conf /etc/nginx/conf.d/default.conf; \

@@ -3,7 +3,21 @@
 **Shared status log. Any agent picking up a task updates this file**: claim a row (name and date
 under Owner), flip its Status as you go, leave a one-line Note (commit / blocker / decision).
 
-_Last updated: 2026-11-18 (night). Phase 1 done (gateway 391158a); phase 3 built and switched off; phase 2 ready for the owner's sign-off._
+_Last updated: 2026-11-20. The public site is live by port forwarding (the tunnel remains off).
+Public security fixes are built/tested on branches; release pending safe integrated validation._
+
+## Public security review (2026-11-20)
+
+Gateway branch `codex/public-security-hardening`, code `b4bec39`; app branch
+`codex/public-runtime-hardening`, image build `4ac2237`. Report:
+[public security review](https://github.com/MooreSi/football-memories-frontend/blob/codex/public-security-hardening/docs/security-review-2026-11-20.md).
+Five application weaknesses patched offline; available image fixes built/rescanned; no
+deployment. Gateway 305 + four Caddy tests, portal 61, provisioner 64 passed. App backend 682
+on SQLite and PostgreSQL, frontend 599, all normal checks passed. Owner approved relocating
+the tunnel fixture to its own subnet; no security assertion weakened. Full security runner
+and provisioner Docker test require an isolated environment, not the populated live stack.
+Open: cumulative quota bypass for backups/generated files, internet ports 8443/6881,
+unverified IPv6 exposure, remaining upstream image advisories. Do not call this a clean sign-off.
 
 ## Status key
 `not started` · `in progress` · `blocked` (say why) · `done` (date + commit)
