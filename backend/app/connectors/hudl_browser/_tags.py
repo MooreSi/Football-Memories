@@ -34,7 +34,8 @@ def _sync_tags(connection: BrowserConnection) -> None:
     items = [
         m
         for m in connection.catalogue.items()
-        if age is None or (age and age in (m.get("age_groups") or [m.get("age_group")]))
+        # Owner decision 012 (2026-11-20): no age group saved ("") means every match.
+        if not age or age in (m.get("age_groups") or [m.get("age_group")])
     ]
     now = time.time()
 

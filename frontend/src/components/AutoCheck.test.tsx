@@ -48,3 +48,13 @@ it("looks for new Hudl matches again on coming back to the app once the list is 
   comeBack();
   await vi.waitFor(() => expect(posted("/account/action")).toEqual(["refresh"]));
 });
+
+// Owner decision 012 (2026-11-20): with no age group saved, a Hudl match never indexed
+// still gets its tags read, without pressing Refresh.
+it("indexes Hudl tags with no age group saved", async () => {
+  vi.useFakeTimers({ now, toFake: ["Date"] });
+  stubFetch({ ...routes(now / 1000, now / 1000),
+    [`${H}/library`]: [{ id: "m1", title: "261108 U11 v Stoke", age_group: "U11", age_groups: ["U11"], capture_key: "k" }] });
+  renderWithProviders(<Checks />, "/");
+  await vi.waitFor(() => expect(posted("/account/action")).toEqual(["sync_tags"]));
+});

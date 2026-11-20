@@ -18,12 +18,19 @@ def test_indexing_only_visits_selected_age_memberships(tmp_path):
     c._executor.shutdown()
 
 
-def test_empty_scope_does_not_scan_the_entire_account(tmp_path):
+# Owner decision 012 (2026-11-20) replaces "empty scope does not scan the entire
+# account": with no age group saved, every match is indexed, still one at a time.
+def test_empty_scope_indexes_every_match_one_at_a_time(tmp_path):
     c = connection_with(tmp_path, ["one", "two"])
+    c.catalogue.items.return_value = [
+        {"id": "one", "age_groups": ["U10"], "age_group": "U10"},
+        {"id": "two", "age_groups": [], "age_group": "Unclassified"},
+    ]
     c._tag_age = ""
     with patch.object(c, "_observe", return_value=tagged()) as observe:
         c._sync_tags()
-    observe.assert_not_called()
+    assert [call.args[0] for call in observe.call_args_list] == ["one", "two"]
+    assert c.details.read("one")["tag_status"] and c.details.read("two")["tag_status"]
     c._executor.shutdown()
 
 

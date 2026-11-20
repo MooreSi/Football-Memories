@@ -11,7 +11,8 @@ const TRIED = "fm.hudl.autocheck.tried";
 /** Owner request (2026-11-10): opening the app checks Hudl for new matches and records
  *  tag metadata for any match that has none. Owner request 2026-11-15: also on coming
  *  back to the app, so new matches appear without reloading; still at most one list
- *  re-read per six hours. */
+ *  re-read per six hours. Owner decision 012 (2026-11-20): with no age group saved, every
+ *  match's tags are indexed. */
 export function useHudlAutoCheck() {
   const status = useHudlStatus();
   const library = useHudlLibrary();
@@ -26,7 +27,7 @@ export function useHudlAutoCheck() {
     if ((!changedScope && done.current===`${age}/${returns}`) || (status.data.busy && !changedScope)) return;
     done.current = `${age}/${returns}`;
     const now = Date.now();
-    const found = changedScope ? "sync_tags" : autoCheck(status.data, age ? library.data?.filter(m=>hudlAgeGroups(m).includes(age)) : [], now, lastTried(TRIED));
+    const found = changedScope ? "sync_tags" : autoCheck(status.data, age ? library.data?.filter(m=>hudlAgeGroups(m).includes(age)) : library.data, now, lastTried(TRIED));
     // Coming back only re-reads an old list (which indexes new matches after); the tag
     // sweep for older gaps stays once per app load, as before.
     const action = returns > 0 && !changedScope && found === "sync_tags" ? null : found;
