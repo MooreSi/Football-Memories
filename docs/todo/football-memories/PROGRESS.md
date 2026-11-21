@@ -11,6 +11,16 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Season performance story (spec 440, 2026-11-21)
+
+`done`, branch `codex/season-performance`: Season story uses goalkeeper/outfield
+whole-season stats and football summary text, replacing monthly moment picks.
+Mixed-role seasons keep both; bars/ring show totals and weighted save percentage.
+Twenty outfield categories include fouls, defensive/attacking 1v1 encounters,
+assists, key passes, tackles, interceptions, blocks, clearances, dribbles and more.
+Action aliases survive the existing parser/cache allowlist; labels appear on the
+next normal match read. Missing stays unknown; sources and sample coverage remain.
+
 ## Player football records (spec 430, 2026-11-21)
 
 `done`, branch `codex/player-record-stats`: replaces four moment-volume cards with
@@ -618,6 +628,36 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-21 Season performance story (spec 440)
+- Test-first: backend duel/foul parse/cache regression observed red (empty actions),
+  frontend 1v1/foul regression red (missing events), five season aggregation tests
+  red against the empty new contract, four presentation tests red against a bare
+  section. All then green. Old monthly-story assertions replaced for the owner's
+  explicitly requested retirement; other existing assertions remain unchanged.
+- `cd frontend && npm test`: **688 passed**; `npm run typecheck` and `npm run build`
+  pass. Existing jsdom media/canvas notices and bundle-size warning remain.
+- `cd backend && uv run pytest`: **772 passed** (SQLite, 68.09s); then
+  `TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest`:
+  **772 passed** (PostgreSQL, 98.49s). Includes network/fixture guards. Existing Starlette warning.
+- `uv run ruff check app tests`, `uv run ruff format --check app tests`,
+  `uv run mypy app`: pass. `FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories uv run alembic check`:
+  no new upgrade operations.
+- Offline Playwright/installed Chrome with all requests synthetic: 1440px mixed-role
+  season, 375px mixed-role season, older-season switch and missing categories;
+  weighted 65% keeper example and 7 older-season passes verified. No page errors or
+  horizontal overflow. Count bars/ring and source captions reviewed at both sizes,
+  preserving reference 03 hierarchy and the approved shared dark palette.
+- `docker compose build frontend && docker compose up -d --no-deps frontend`:
+  local frontend deployed. Nginx config, `/api/health` and served HTML/JS
+  `index-BozlOEQQ.js` checked for both role panels and new 1v1 labels.
+- Host helper status read locally (no source requests): Hudl/Veo ready, not busy,
+  no sync. Sent launchd SIGTERM, waited for graceful exit, kickstarted login item;
+  both local status endpoints healthy. New parser aliases now loaded. Backend
+  container unchanged; no schema/config update needed. Hosted installs follow
+  existing update preferences; no source account accessed or archive files changed.
+- No GitHub Actions workflows exist in this repository.
+
 
 ### 2026-11-21 Player football records (spec 430)
 - New aggregation tests observed red (four behavior failures against an empty

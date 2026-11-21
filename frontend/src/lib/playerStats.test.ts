@@ -95,3 +95,16 @@ it("excludes period and set-piece labels from match player rows", () => {
     t("yellow", "YELLOW SET PIECE", 20), t("bib", "BIB SET PIECE", 30)] };
   expect(playerStats(m, "Example FC", matchGoals(m, "Example FC")).map(p => p.name)).toEqual(["Sam Start"]);
 });
+
+it("counts explicit 1v1 and generic foul actions without inferring wins or foul direction", () => {
+  const m = { moments: [{ ...t("sam", "Sam Example", 20), actions: ["defensive1v1", "attacking1v1", "fouls"] },
+    t("ali", "Ali Demo", 20), t("team", "ASTON VILLA DEF 1V1", 20)] };
+  const rows = playerStats(m, "Aston Villa", matchGoals(m, "Aston Villa"));
+  expect(rows[1].events.defensive1v1?.map(e => e.id)).toEqual(["sam"]);
+  expect(rows[1].events.attacking1v1).toHaveLength(1);
+  expect(rows[1].events.fouls).toHaveLength(1);
+  expect(rows[0].events.defensive1v1).toEqual([]);
+  expect(rows[1].events.foulsWon).toBeNull();
+  expect(rows[1].events.foulsConceded).toBeNull();
+  expect(rows[1].events.successfulDribbles).toBeNull();
+});

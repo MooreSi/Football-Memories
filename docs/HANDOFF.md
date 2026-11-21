@@ -13,6 +13,22 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Season performance story (spec 440), branch `codex/season-performance`.**
+  Replaces monthly moment picks and prose with season totals, separate Goalkeeping
+  and Outfield panels, shared-scale count bars and a save-percentage ring. Mixed-role
+  seasons retain both. Outfield includes all twenty supported metrics, adding generic
+  fouls and defensive/attacking 1v1 encounters (never assumed wins). Saved corrections,
+  likely/overlap/estimate labels, missing-versus-zero and known-save sample coverage
+  are preserved. New action aliases survive the normal parser/cache path; existing
+  matches gain discarded labels on their next normal read. No source account accessed.
+  Focused tests observed red/green; frontend 688/typecheck/build pass, desktop/375px
+  synthetic browser review passed. Backend 772 each SQLite/PostgreSQL; lint,
+  format, types and schema checks pass. Local frontend rebuilt/recreated; health,
+  Nginx and served `index-BozlOEQQ.js` verified. Helper gracefully restarted with
+  Hudl/Veo idle; both local status endpoints healthy. Backend container unchanged.
+  Hosted installs follow their existing update settings.
+
+
 - **Player football records (spec 430), branch `codex/player-record-stats`.**
   My Player replaces all four moment-volume records with position-specific totals.
   Outfield: goals scored, shots on target, chances, passes. Keeper: goals saved,

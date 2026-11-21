@@ -817,3 +817,13 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
   source moments, 14 Crossing and 10 Regain; served comparison matches the direct
   labels for all 13 outfield players. The selected 19-Passing source example is an
   inferred keeper, so it is intentionally absent from the outfield comparison.
+
+## Season duel/foul actions (spec 440, 2026-11-21)
+
+The existing player-action allowlist now includes `defensive1v1`, `attacking1v1`
+and generic `fouls`. Def/Defensive/Defending 1v1 and Att/Attacking/Attack 1v1 are
+encounters only: they do not establish a win, tackle, successful dribble or foul
+direction. The offline parser/cache regression proves all three survive while
+ambiguous 1v1, Defending and Dribbling labels establish none of those outcomes.
+Existing caches gain discarded labels only on their next normal match read; no
+automatic source reread or request policy change is introduced.

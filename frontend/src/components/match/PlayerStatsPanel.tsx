@@ -9,9 +9,9 @@ import type { GoalsSource, MatchGoals } from "../../lib/goals";
 import { PLAYER_METRICS, playerStats, type PlayerMetric } from "../../lib/playerStats";
 
 const STAT_GROUPS: { id: string; label: string; keys: PlayerMetric[] }[] = [
-  { id: "attacking", label: "Attacking", keys: ["goals", "assists", "keyPasses", "passes", "shots", "chances", "crosses", "successfulDribbles"] },
-  { id: "defending", label: "Defending", keys: ["tackles", "interceptions", "blocks", "clearances", "regains"] },
-  { id: "discipline", label: "Possession & discipline", keys: ["foulsWon", "foulsConceded", "offsides", "possessionLost"] },
+  { id: "attacking", label: "Attacking", keys: ["goals", "assists", "keyPasses", "passes", "shots", "chances", "crosses", "successfulDribbles", "attacking1v1"] },
+  { id: "defending", label: "Defending", keys: ["tackles", "interceptions", "blocks", "clearances", "regains", "defensive1v1"] },
+  { id: "discipline", label: "Possession & discipline", keys: ["fouls", "foulsWon", "foulsConceded", "offsides", "possessionLost"] },
 ];
 
 type Selection = { name: string; metric: "moments" | PlayerMetric };

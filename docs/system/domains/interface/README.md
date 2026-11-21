@@ -378,3 +378,22 @@ U10 v Stoke City reads 12-9.
   sample has no percentage. Imported per-match moment counts carry no action stats.
 - Saved-assignment loading failures replace totals with an error so uncorrected
   guesses are never silently presented as the owner's saved records.
+
+### Season performance story (spec 440, 2026-11-21)
+
+- Season story replaces monthly moment picks with separate Goalkeeping and Outfield
+  totals. Both appear for mixed-role seasons. Whole-season count bars share a scale
+  within each role; the keeper percentage ring has its own 0–100% scale. No ratings.
+- `seasonStories` groups dated matches July–June, newest first. Undated data uses a
+  valid served season label, otherwise Unclassified (last). Only the player's tags
+  or saved scorer/keeper assignments create a season. Duplicate source ids count once.
+- The hub passes imported `p.per_match` separately from the cached library; passing the
+  combined moments series would count cached matches twice. Imported moment volumes
+  do not establish actions and their missing breakdown is explained.
+- Shared preparation/aggregation in `playerRecords` keeps season and all-time source
+  attribution consistent. Role counts come from actual per-match keeper/outfield rows,
+  with profile position choosing the placeholder only when no role data exists.
+- Outfield groups display twenty categories. Def/Att 1v1 means recorded encounters,
+  never wins; generic fouls do not imply won/conceded or sum those overlapping categories.
+  Missing metrics have no bar; recorded zeros do. Summary text uses available football
+  totals, labels likely/involvement estimates and omits moment-volume performance claims.

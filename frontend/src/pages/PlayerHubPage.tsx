@@ -107,7 +107,7 @@ export function PlayerHubPage() {
 
           <RecordsPanel library={remote.data} name={p.display_name} position={p.position} club={club} />
           <TopMoments playerId={p.id} name={p.display_name} library={remote.data} club={club} />
-          <SeasonStory series={perMatch} name={p.display_name} />
+          <SeasonStory series={p.per_match} library={remote.data} name={p.display_name} position={p.position} club={club} />
           <MilestonesTimeline series={milestoneSeries} name={p.display_name} />
           <OpponentMap series={perMatch} />
 

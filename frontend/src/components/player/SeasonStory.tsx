@@ -1,40 +1,41 @@
-import { BookOpen, Play } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { BookOpen } from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import type { HudlMatch } from "../../api/hudl";
+import { useGoalEntries, type GoalsEntries } from "../../lib/goals";
 import type { MatchCount } from "../../lib/records";
-import { monthName, seasonStories } from "../../lib/seasonStory";
+import { seasonStories } from "../../lib/seasonStory";
+import { GoalkeepingSeason, OutfieldSeason } from "./SeasonPerformance";
+const EMPTY_ENTRIES: GoalsEntries = {};
 
-/** Owner request 2026-11-13: each season told in a few sentences, with a match of the
- *  month to watch. Newest season first. */
-export function SeasonStory({ series, name, today }: { series: MatchCount[]; name: string; today?: Date }) {
-  const stories = seasonStories(series, name, today);
+/** Reference 03 hierarchy in the shared dark palette, with whole-season action totals. */
+export function SeasonStory({ library, series, name, position, club, today }: { library: HudlMatch[] | undefined; series: MatchCount[]; name: string; position: string | null; club: string | null; today?: Date }) {
+  const entries = useGoalEntries();
+  const stories = useMemo(() => seasonStories({ library, series, name, position, club, entries: entries.data ?? EMPTY_ENTRIES, today }),
+    [library, series, name, position, club, entries.data, today]);
   const [chosen, setChosen] = useState<string | null>(null);
-  if (stories.length === 0) return null;
-  const story = stories.find((s) => s.season === chosen) ?? stories[0];
-  return <section aria-label="Season story" className="panel space-y-4 p-5">
+  const id = useId();
+  if (!stories.length) return null;
+  const story = stories.find(s => s.season === chosen) ?? stories[0];
+  return <section aria-label="Season story" className="panel min-w-0 space-y-5 p-4 sm:p-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="flex items-center gap-2 text-lg font-semibold"><BookOpen size={18} className="text-accent" aria-hidden /> Season story</h2>
+      <div><h2 className="flex items-center gap-2 text-lg font-semibold"><BookOpen size={18} className="text-accent" aria-hidden />Season story</h2>
+        <p className="mt-1 text-xs text-fg-subtle">A season of football, broken down by role</p></div>
       <div role="tablist" aria-label="Seasons" className="flex flex-wrap gap-1.5">
-        {stories.map((s) => <button key={s.season} type="button" role="tab" aria-selected={s.season === story.season}
+        {stories.map(s => <button key={s.season} id={`${id}-${s.season}`} type="button" role="tab" aria-selected={s.season === story.season} aria-controls={`${id}-panel`}
           onClick={() => setChosen(s.season)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold transition ${s.season === story.season ? "bg-accent text-ink-950" : "border border-line text-fg-muted hover:text-fg"}`}>{s.season}</button>)}
+          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${s.season === story.season ? "bg-accent text-ink-950" : "border border-line text-fg-muted hover:text-fg"}`}>{s.season}</button>)}
       </div>
     </div>
-    <p role="tabpanel" className="max-w-3xl text-[15px] leading-relaxed text-fg">{story.text}</p>
-    <ul aria-label="Match of the month" className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {story.months.map((m) => <li key={m.month} className="tile flex min-w-0 flex-col gap-1.5 p-3.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-semibold">{monthName(m.month)}</span>
-          <span className="shrink-0 text-xs tabular-nums text-fg-subtle">{m.moments.toLocaleString("en-GB")} in {m.matches}</span>
+    {entries.isError ? <p role="alert" className="text-sm text-warn">Could not load saved goals and keepers. Refresh to see the season stats.</p>
+      : entries.isPending ? <p className="text-sm text-fg-muted">Loading season stats…</p>
+      : <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${story.season}`} className="space-y-5">
+        <div className="rounded-2xl border border-line bg-linear-to-br from-accent/10 to-transparent p-4 sm:p-5">
+          <p className="mb-2 text-xs font-semibold tracking-widest text-accent uppercase">{story.season} · Season overview</p>
+          <p className="max-w-4xl text-[15px] leading-relaxed text-fg">{story.text}</p>
         </div>
-        <div className="h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-linear-to-r from-[#2563eb] to-[#38bdf8]"
-          style={{ width: `${Math.max(4, (m.moments / Math.max(...story.months.map((x) => x.moments))) * 100)}%` }} /></div>
-        <Link to={m.pick.href} className="flex min-w-0 items-center gap-2 text-xs text-fg-muted hover:text-accent">
-          <Play size={12} className="shrink-0 text-accent" aria-hidden />
-          <span className="truncate">Match of the month: vs {m.pick.opponent}</span>
-          <span className="ml-auto shrink-0 tabular-nums text-pin">{m.pick.moments}</span>
-        </Link>
-      </li>)}
-    </ul>
+        {story.goalkeeping && <GoalkeepingSeason cards={story.goalkeeping} games={story.keeperMatches} />}
+        {story.outfield && <OutfieldSeason cards={story.outfield} games={story.outfieldMatches} />}
+        <p className="text-xs leading-relaxed text-fg-subtle">Whole-season totals from cached match data. — means unrecorded; zero means a recorded category with no matching events. Each stat shows its source and coverage. Imported moment counts alone do not provide action stats.</p>
+      </div>}
   </section>;
 }

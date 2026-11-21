@@ -1,30 +1,54 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+import type { HudlMatch } from "../../api/hudl";
+import { EMPTY_ENTRY } from "../../lib/goals";
+import { renderWithProviders, stubFetch } from "../../test/render";
 import { SeasonStory } from "./SeasonStory";
-
-const series = [
-  { match_id: 1, match_date: "2025-09-06", opponent: "Rovers", moments: 10 },
-  { match_id: 2, match_date: "2026-09-19", opponent: "Town", moments: 30, href: "/hudl/t?player=Sam" },
-  { match_id: 3, match_date: "2026-10-03", opponent: "Rovers", moments: 18 },
+const library: HudlMatch[] = [
+  { id: "old", title: "250901 U10 v Town", age_group: "U10", capture_key: "old", moments: [{ id: "p", category: "Sam Example", time_s: 10, duration_s: 10, actions: ["passes"] }] },
+  { id: "keeper", title: "260901 U11 v Rovers", age_group: "U11", capture_key: "keeper", moments: [{ id: "k", category: "Sam Example", time_s: 10, duration_s: 10 }] },
+  { id: "out", title: "260908 U11 v City", age_group: "U11", capture_key: "out", moments: [{ id: "o", category: "Sam Example", time_s: 10, duration_s: 10, actions: ["passes", "crosses", "regains", "defensive1v1", "attacking1v1", "fouls"] }] },
 ];
+const props = { library, series: [], name: "Sam Example", position: "Goalkeeper", club: "Aston Villa", today: new Date("2026-11-21T12:00:00Z") };
+afterEach(() => vi.unstubAllGlobals());
 
-it("tells the newest season first and switches to another season", async () => {
-  render(<MemoryRouter><SeasonStory series={series} name="Sam Example" today={new Date("2026-11-13T12:00:00")} /></MemoryRouter>);
-  const panel = screen.getByRole("region", { name: "Season story" });
-  expect(within(panel).getByRole("tab", { name: "2026/27" })).toHaveAttribute("aria-selected", "true");
-  expect(within(panel).getByText(/2026\/27 so far: 2 matches and 48 moments/)).toBeInTheDocument();
-  const months = within(panel).getByRole("list", { name: "Match of the month" });
-  const items = within(months).getAllByRole("listitem");
-  expect(items).toHaveLength(2);
-  expect(within(items[0]).getByText("September 2026")).toBeInTheDocument();
-  expect(within(items[0]).getByRole("link", { name: /vs Town/ })).toHaveAttribute("href", "/hudl/t?player=Sam");
+it("replaces monthly moments with separate season role charts and switches season", async () => {
+  stubFetch({ "/api/goals": { keeper: { ...EMPTY_ENTRY, keepers: [{ name: "Sam Example", saves: 3 }], added: [{ id: "g", side: "theirs" }] } } });
+  renderWithProviders(<SeasonStory {...props} />);
+  const panel = await screen.findByRole("region", { name: "Season story" });
+  const keeper = await within(panel).findByRole("region", { name: "Goalkeeping season stats" });
+  expect(within(keeper).getByRole("meter", { name: "Save percentage" })).toHaveAttribute("aria-valuenow", "75");
+  expect(within(keeper).getByText("3")).toBeInTheDocument();
+  const outfield = within(panel).getByRole("region", { name: "Outfield season stats" });
+  expect(within(outfield).getByRole("meter", { name: "Passes" })).toHaveAttribute("aria-valuenow", "1");
+  expect(within(outfield).getByRole("meter", { name: "Defensive 1v1s" })).toHaveAttribute("aria-valuenow", "1");
+  expect(within(panel).queryByRole("list", { name: "Match of the month" })).toBeNull();
+  expect(within(panel).getByRole("tabpanel")).toHaveTextContent("3 saves");
   await userEvent.setup().click(within(panel).getByRole("tab", { name: "2025/26" }));
-  expect(within(panel).getByText(/^2025\/26: 1 match and 10 moments/)).toBeInTheDocument();
+  expect(within(panel).queryByRole("region", { name: "Goalkeeping season stats" })).toBeNull();
+  expect(within(panel).getByRole("tabpanel")).toHaveTextContent("1 pass");
+  expect(within(panel).getByRole("tab", { name: "2025/26" })).toHaveAttribute("aria-selected", "true");
+});
+
+it("displays unrecorded stats without drawing a fabricated performance bar", async () => {
+  stubFetch({ "/api/goals": {} });
+  renderWithProviders(<SeasonStory {...props} library={[library[0]]} position="Forward" />);
+  const panel = await screen.findByRole("region", { name: "Outfield season stats" });
+  expect(within(panel).getByRole("group", { name: "Attacking 1v1s" })).toHaveTextContent("—");
+  expect(within(panel).queryByRole("meter", { name: "Attacking 1v1s" })).toBeNull();
+  expect(within(panel).getByText(/recorded encounters, not wins/i)).toBeInTheDocument();
+});
+
+it("shows a saved-data failure instead of uncorrected season totals", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
+  renderWithProviders(<SeasonStory {...props} />);
+  expect(await screen.findByRole("alert")).toHaveTextContent("Could not load saved goals and keepers");
+  expect(screen.queryByRole("meter")).toBeNull();
 });
 
 it("is left out with no matches", () => {
-  render(<MemoryRouter><SeasonStory series={[]} name="Sam" /></MemoryRouter>);
+  stubFetch({ "/api/goals": {} });
+  renderWithProviders(<SeasonStory {...props} library={[]} />);
   expect(screen.queryByRole("region", { name: "Season story" })).toBeNull();
 });

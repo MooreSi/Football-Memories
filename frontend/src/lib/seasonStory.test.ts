@@ -1,53 +1,73 @@
 import { expect, it } from "vitest";
+import type { HudlMatch } from "../api/hudl";
+import { EMPTY_ENTRY, type GoalsEntries } from "./goals";
 import { seasonStories } from "./seasonStory";
+const name = "Sam Example";
+const tag = (id: string, category = name, actions?: string[]) => ({ id, category, time_s: 10, duration_s: 10, actions });
+const match = (id: string, title: string, moments = [tag(id)]): HudlMatch => ({ id, title, moments, age_group: "U11", capture_key: id });
+const options = { library: [] as HudlMatch[], series: [], name, position: null, club: "Aston Villa", entries: {} as GoalsEntries, today: new Date("2026-11-21T12:00:00Z") };
 
-// Owner request 2026-11-13: a season story on the player hub. Synthetic matches.
-const m = (date: string, moments: number, opponent: string, href?: string) => ({ match_id: Number(date.replace(/-/g, "")), match_date: date, opponent, moments, href });
-const TODAY = new Date("2026-11-13T12:00:00");
-const series = [
-  m("2025-09-06", 10, "Rovers"), m("2026-03-01", 20, "Northgate"), // 2025/26: 2 matches, 15 a match
-  m("2026-09-05", 12, "Rovers"), m("2026-09-19", 30, "Town", "/hudl/t?player=Sam"), m("2026-10-03", 18, "Rovers"), // 2026/27
-];
-
-it("groups matches into football seasons, newest first", () => {
-  const stories = seasonStories(series, "Sam Example", TODAY);
-  expect(stories.map((s) => s.season)).toEqual(["2026/27", "2025/26"]);
-  expect(stories[0]).toMatchObject({ matches: 3, moments: 60, average: 20 });
-  expect(stories[1]).toMatchObject({ matches: 2, moments: 30, average: 15 });
-});
-
-it("finds the best match, busiest month, most-met opponent and the change on last season", () => {
-  const [now, before] = seasonStories(series, "Sam Example", TODAY);
-  expect(now.best).toMatchObject({ opponent: "Town", moments: 30 });
-  expect(now.busiestMonth).toEqual({ month: "2026-09", moments: 42 });
-  expect(now.opponent).toEqual({ name: "Rovers", times: 2 });
-  expect(now.change).toBe(33);
-  expect(before.change).toBeNull();
-});
-
-it("picks a match of the month for every month played, linked to the match", () => {
-  const [now] = seasonStories(series, "Sam Example", TODAY);
-  expect(now.months).toEqual([
-    { month: "2026-09", moments: 42, matches: 2, pick: expect.objectContaining({ opponent: "Town", href: "/hudl/t?player=Sam" }) },
-    { month: "2026-10", moments: 18, matches: 1, pick: expect.objectContaining({ opponent: "Rovers", href: "/matches/20261003" }) },
+it("aggregates each season's football actions without counting unrelated players or duplicate matches", () => {
+  const m = match("a", "260701 U11 v Rovers", [tag("s", name, ["passes", "shots", "chances", "crosses", "regains", "fouls", "defensive1v1", "attacking1v1"]),
+    tag("other", "Alex Sample", ["passes"]), tag("g", "ASTON VILLA GOAL")]);
+  const stories = seasonStories({ ...options, library: [m, m, match("b", "260630 U10 v Town", [tag("old", name, ["passes"])]),
+    match("other", "270701 U12 v Town", [tag("a", "Alex Sample", ["passes"])])],
+    entries: { a: { ...EMPTY_ENTRY, scorers: { g: name } } } });
+  expect(stories.map(s => s.season)).toEqual(["2026/27", "2025/26"]);
+  expect(stories[0].matches).toBe(1);
+  expect(stories[0].goalkeeping).toBeNull();
+  expect(stories[0].outfield?.filter(c => c.value !== null).map(c => [c.label, c.value])).toEqual([
+    ["Goals scored", 1], ["Passes", 1], ["Shots on target", 1], ["Chances", 1], ["Crosses", 1],
+    ["Defensive 1v1s", 1], ["Attacking 1v1s", 1], ["Fouls", 1], ["Regains", 1],
   ]);
+  expect(stories[0].text).toContain("Sam's 2026/27 so far");
+  expect(stories[0].text).toContain("1 goal");
+  expect(stories[0].text).toContain("1 pass");
+  expect(stories[0].text).not.toMatch(/moment|busiest|best game|\b(he|she|his|her)\b/i);
+  expect(stories[1].outfield?.find(c => c.label === "Passes")?.value).toBe(1);
 });
 
-it("writes the story with the player's first name and no guessed pronouns", () => {
-  const [now, before] = seasonStories(series, "Sam Example", TODAY);
-  expect(now.text).toBe(
-    "2026/27 so far: 3 matches and 60 moments, 20 a match, up 33% on 2025/26. " +
-      "Sam's best game was 30 moments vs Town on 19 Sep. September was the busiest month with 42 moments. " +
-      "Rovers came up most often, 2 times.",
-  );
-  expect(before.text).toBe(
-    "2025/26: 2 matches and 30 moments, 15 a match. Sam's best game was 20 moments vs Northgate on 1 Mar. " +
-      "March was the busiest month with 20 moments.",
-  );
-  for (const story of [now, before]) expect(story.text).not.toMatch(/\b(he|she|his|her|him)\b/i);
+it("keeps goalkeeping and outfield separate in a mixed-role season and weights save percentage", () => {
+  const library = [match("k1", "260901 U11 v Town"), match("k2", "260908 U11 v City"), match("k3", "260915 U11 v Rovers"),
+    match("out", "260920 U11 v Town", [tag("pass", name, ["passes"])])];
+  const keeperEntry = (id: string, saves: number | null, conceded: number) => ({ ...EMPTY_ENTRY, keepers: [{ name, saves }],
+    added: Array.from({ length: conceded }, (_, i) => ({ id: `${id}-${i}`, side: "theirs" as const })) });
+  const [story] = seasonStories({ ...options, position: "Goalkeeper", library,
+    entries: { k1: keeperEntry("a", 9, 1), k2: keeperEntry("b", 1, 3), k3: keeperEntry("c", null, 2) } });
+  expect(story.keeperMatches).toBe(3);
+  expect(story.outfieldMatches).toBe(1);
+  expect(story.goalkeeping?.map(c => c.value)).toEqual([10, 6, 14, 71]);
+  expect(story.goalkeeping?.[3].note).toContain("2 matches");
+  expect(story.outfield?.find(c => c.label === "Passes")?.value).toBe(1);
+  expect(story.text).toContain("10 saves");
+  expect(story.text).toContain("6 goals conceded");
+  expect(story.text).toContain("71% save percentage");
+  expect(story.text).toContain("Outfield");
 });
 
-it("has no stories without dated matches", () => {
-  expect(seasonStories([], "Sam")).toEqual([]);
-  expect(seasonStories([{ match_id: 1, match_date: "", opponent: "X", moments: 3 }], "Sam")).toEqual([]);
+it("preserves missing versus recorded zero, labels likely goals and team overlaps", () => {
+  const [story] = seasonStories({ ...options, library: [match("a", "260901 U11 v Town", [tag("s"),
+    { ...tag("shot", "ASTON VILLA ON TARGET"), time_s: 100 }, tag("g", "ASTON VILLA GOAL")])] });
+  expect(story.outfield?.find(c => c.label === "Shots on target")).toMatchObject({ value: 0 });
+  expect(story.outfield?.find(c => c.label === "Passes")).toMatchObject({ value: null });
+  expect(story.outfield?.find(c => c.label === "Goals scored")?.note).toContain("1 likely");
+  expect(story.text).toContain("likely");
+  expect(story.text).not.toContain("0 passes");
+});
+
+it("retains imported-only seasons without turning moment volume into performance", () => {
+  const [story] = seasonStories({ ...options, position: "GK", series: [{ match_id: 1, match_date: "2025-10-01", opponent: "Town", moments: 200 }] });
+  expect(story.season).toBe("2025/26");
+  expect(story.goalkeeping?.map(c => c.value)).toEqual([null, null, null, null]);
+  expect(story.outfield).toBeNull();
+  expect(story.text).toContain("No goalkeeping stats recorded");
+  expect(story.importedMatches).toBe(1);
+});
+
+it("keeps undated matches unclassified and counts saved assignments without player tags", () => {
+  const [story] = seasonStories({ ...options, library: [match("a", "Undated fixture", [])],
+    entries: { a: { ...EMPTY_ENTRY, added: [{ id: "g", side: "ours" }], scorers: { g: name } } } });
+  expect(story.season).toBe("Unclassified");
+  expect(story.outfield?.find(c => c.label === "Goals scored")?.value).toBe(1);
+  expect(seasonStories(options)).toEqual([]);
 });

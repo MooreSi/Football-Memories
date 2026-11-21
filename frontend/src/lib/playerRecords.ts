@@ -1,19 +1,24 @@
 import { sameCode } from "./codes";
-import { type GoalsEntries, type GoalsSource, matchGoals } from "./goals";
-import { playerStats, type PlayerMetric } from "./playerStats";
+import { type GoalsEntries, type GoalsSource, type MatchGoals, type Keeper, matchGoals } from "./goals";
+import { PLAYER_METRICS, playerStats, type PlayerMetric, type PlayerStat } from "./playerStats";
 
 export type FootballRecord = { label: string; value: number | null; note: string; percent?: boolean };
 const sample = (n: number) => `${n} ${n === 1 ? "match" : "matches"}`;
 
-/** All cached matches, using the same assignments and action sources as match stats. */
-export function footballRecords(matches: (GoalsSource & { id: string })[], name: string, position: string | null, club: string | null, entries: GoalsEntries): { keeper: boolean; cards: FootballRecord[] } {
-  const data = [...new Map(matches.map(m => [m.id, m])).values()].map(match => {
+export type FootballRecordData = { id: string; goals: MatchGoals; keeper: Keeper | undefined; player: PlayerStat | undefined };
+export const goalkeeperPosition = (position: string | null) => /^(GK|G\.?K\.?|goal\s*keeper|keeper)$/i.test(position?.trim() ?? "");
+
+/** Prepare attribution once so season panels can share it across roles. */
+export function footballRecordData(matches: (GoalsSource & { id: string })[], name: string, club: string | null, entries: GoalsEntries): FootballRecordData[] {
+  return [...new Map(matches.map(m => [m.id, m])).values()].map(match => {
     const goals = matchGoals(match, club, entries[match.id]);
-    return { goals, keeper: goals.keepers.find(k => k.name && sameCode(k.name, name)),
+    return { id: match.id, goals, keeper: goals.keepers.find(k => k.name && sameCode(k.name, name)),
       player: playerStats(match, club, goals).find(p => sameCode(p.name, name)) };
   });
+}
+
+export function summarizeFootballRecords(data: FootballRecordData[], name: string, keeper: boolean, allOutfield = false): { keeper: boolean; cards: FootballRecord[] } {
   const keepers = data.flatMap(d => d.keeper ? [d.keeper] : []);
-  const keeper = position?.trim() ? /^(GK|G\.?K\.?|goal\s*keeper|keeper)$/i.test(position.trim()) : keepers.length > 0;
   if (keeper) {
     const known = keepers.filter(k => k.saves !== null);
     const saves = known.reduce((n, k) => n + k.saves!, 0);
@@ -31,7 +36,8 @@ export function footballRecords(matches: (GoalsSource & { id: string })[], name:
     { key: "goals", label: "Goals scored" }, { key: "shots", label: "Shots on target" },
     { key: "chances", label: "Chances" }, { key: "passes", label: "Passes" },
   ];
-  return { keeper, cards: metrics.map(({ key, label }) => {
+  const shownMetrics = allOutfield ? PLAYER_METRICS.map(m => ({ ...m, label: m.key === "goals" ? "Goals scored" : m.label })) : metrics;
+  return { keeper, cards: shownMetrics.map(({ key, label }) => {
     const rows = data.flatMap(d => d.player && d.player.events[key] !== null ? [d.player] : []);
     // Corrected untimed goals count even without a remaining outfield tag window.
     if (key === "goals") {
@@ -44,4 +50,11 @@ export function footballRecords(matches: (GoalsSource & { id: string })[], name:
     return { label, value: rows.length ? rows.reduce((n, p) => n + p.events[key]!.length, 0) : null,
       note: rows.length ? `${sources.includes("actions") ? "Player actions" : ""}${sources.includes("actions") && sources.includes("overlap") ? " + " : ""}${sources.includes("overlap") ? "Team-tag overlap (involvement)" : ""} · ${sample(rows.length)}` : "Not recorded" };
   }) };
+}
+
+/** All cached matches, using the same assignments and action sources as match stats. */
+export function footballRecords(matches: (GoalsSource & { id: string })[], name: string, position: string | null, club: string | null, entries: GoalsEntries): { keeper: boolean; cards: FootballRecord[] } {
+  const data = footballRecordData(matches, name, club, entries);
+  const keeper = position?.trim() ? goalkeeperPosition(position) : data.some(d => d.keeper);
+  return summarizeFootballRecords(data, name, keeper);
 }

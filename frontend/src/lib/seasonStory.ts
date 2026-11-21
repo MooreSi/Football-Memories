@@ -1,65 +1,70 @@
+import type { HudlMatch } from "../api/hudl";
+import { sameCode } from "./codes";
+import type { GoalsEntries } from "./goals";
+import { fixtureDate } from "./hudlFixture";
 import type { MatchCount } from "./records";
+import { footballRecordData, goalkeeperPosition, summarizeFootballRecords, type FootballRecord, type FootballRecordData } from "./playerRecords";
 
-/** Owner request 2026-11-13: a short story of each football season (July to June) from
- *  the moments tagged with the player in each match. Uses the player's first name,
- *  never a guessed pronoun. */
-export type MonthPick = { month: string; moments: number; matches: number; pick: MatchCount & { href: string } };
-export type SeasonStoryData = {
-  season: string; matches: number; moments: number; average: number; best: MatchCount;
-  busiestMonth: { month: string; moments: number }; opponent: { name: string; times: number } | null;
-  change: number | null; months: MonthPick[]; text: string;
-};
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-export const monthName = (key: string) => `${MONTHS[Number(key.slice(5, 7)) - 1]} ${key.slice(0, 4)}`;
-const shortDay = (date: string) => `${Number(date.slice(8, 10))} ${MONTHS[Number(date.slice(5, 7)) - 1].slice(0, 3)}`;
-const round1 = (n: number) => Math.round(n * 10) / 10;
-const count = (n: number, word: string) => `${n.toLocaleString("en-GB")} ${word}${n === 1 ? "" : word.endsWith("ch") ? "es" : "s"}`;
-
-function seasonOf(date: string): string {
-  const year = Number(date.slice(0, 4));
-  const start = Number(date.slice(5, 7)) >= 7 ? year : year - 1;
+type Options = { library: HudlMatch[] | undefined; series: MatchCount[]; name: string; position: string | null; club: string | null; entries: GoalsEntries; today?: Date };
+export type SeasonStoryData = { season: string; matches: number; importedMatches: number; keeperMatches: number; outfieldMatches: number; goalkeeping: FootballRecord[] | null; outfield: FootballRecord[] | null; text: string };
+const count = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en-GB")} ${n === 1 ? one : many}`;
+function seasonOf(date: Date): string {
+  const start = date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1;
   return `${start}/${String((start + 1) % 100).padStart(2, "0")}`;
 }
-
-export function seasonStories(series: MatchCount[], name: string, today: Date = new Date()): SeasonStoryData[] {
+function seasonLabel(label: string | undefined): string {
+  const parts = /^(20\d{2})[/-](\d{2})$/.exec(label ?? "");
+  return parts && Number(parts[2]) === (Number(parts[1]) + 1) % 100 ? `${parts[1]}/${parts[2]}` : "Unclassified";
+}
+const stat = (cards: FootballRecord[], label: string) => cards.find(c => c.label === label)?.value ?? null;
+function summary(story: Omit<SeasonStoryData, "text">, name: string, current: string): string {
   const first = name.trim().split(/\s+/)[0] || name;
-  const groups = new Map<string, MatchCount[]>();
-  for (const m of [...series].filter((x) => x.match_date).sort((a, b) => a.match_date.localeCompare(b.match_date))) {
-    groups.set(seasonOf(m.match_date), [...(groups.get(seasonOf(m.match_date)) ?? []), m]);
+  const text = [`${first}'s ${story.season}${story.season === current ? " so far" : ""}.`];
+  if (story.goalkeeping) {
+    const saves = stat(story.goalkeeping, "Goals saved"), conceded = stat(story.goalkeeping, "Goals conceded");
+    const faced = stat(story.goalkeeping, "Shots faced"), percentage = stat(story.goalkeeping, "Save percentage");
+    const facts = [saves === null ? null : count(saves, "save"), conceded === null ? null : count(conceded, "goal conceded", "goals conceded"),
+      percentage === null ? null : `${percentage}% save percentage from ${count(faced!, "recorded shot")}`].filter(Boolean);
+    text.push(facts.length ? `Goalkeeping in ${count(story.keeperMatches, "match", "matches")}: ${facts.join(", ")}.` : "No goalkeeping stats recorded for this season.");
   }
-  const current = seasonOf(today.toISOString().slice(0, 10));
-  const ordered = [...groups.keys()].sort();
-  const stories = ordered.map((season, index): SeasonStoryData => {
-    const list = groups.get(season)!;
-    const moments = list.reduce((sum, m) => sum + m.moments, 0);
-    const average = round1(moments / list.length);
-    const best = list.reduce((top, m) => (m.moments > top.moments ? m : top), list[0]);
-    const byMonth = new Map<string, MatchCount[]>();
-    for (const m of list) byMonth.set(m.match_date.slice(0, 7), [...(byMonth.get(m.match_date.slice(0, 7)) ?? []), m]);
-    const months = [...byMonth].map(([month, ms]) => {
-      const pick = ms.reduce((top, m) => (m.moments > top.moments ? m : top), ms[0]);
-      return { month, moments: ms.reduce((sum, m) => sum + m.moments, 0), matches: ms.length, pick: { ...pick, href: pick.href ?? `/matches/${pick.match_id}` } };
-    });
-    const busiest = months.reduce((top, m) => (m.moments > top.moments ? m : top), months[0]);
-    const met = new Map<string, number>();
-    for (const m of list) met.set(m.opponent, (met.get(m.opponent) ?? 0) + 1);
-    const [opponentName, times] = [...met].reduce((top, e) => (e[1] > top[1] ? e : top));
-    const previous = index > 0 ? groups.get(ordered[index - 1])! : null;
-    const before = previous ? previous.reduce((sum, m) => sum + m.moments, 0) / previous.length : null;
-    const change = before ? Math.round(((moments / list.length - before) / before) * 100) : null;
-    const trend = change === null ? "" : change > 0 ? `, up ${change}% on ${ordered[index - 1]}` : change < 0 ? `, down ${-change}% on ${ordered[index - 1]}` : `, level with ${ordered[index - 1]}`;
-    const text = [
-      `${season}${season === current ? " so far" : ""}: ${count(list.length, "match")} and ${count(moments, "moment")}, ${average.toLocaleString("en-GB")} a match${trend}.`,
-      `${first}'s best game was ${count(best.moments, "moment")} vs ${best.opponent} on ${shortDay(best.match_date)}.`,
-      `${MONTHS[Number(busiest.month.slice(5, 7)) - 1]} was the busiest month with ${count(busiest.moments, "moment")}.`,
-      times >= 2 ? `${opponentName} came up most often, ${times} times.` : "",
-    ].filter(Boolean).join(" ");
-    return {
-      season, matches: list.length, moments, average, best,
-      busiestMonth: { month: busiest.month, moments: busiest.moments },
-      opponent: times >= 2 ? { name: opponentName, times } : null, change, months, text,
-    };
+  if (story.outfield) {
+    const facts = [["Goals scored", "goal", "goals"], ["Shots on target", "shot on target", "shots on target"],
+      ["Passes", "pass", "passes"], ["Chances", "chance", "chances"], ["Crosses", "cross", "crosses"], ["Regains", "regain", "regains"]]
+      .flatMap(([label, one, many]) => { const value = stat(story.outfield!, label); return value === null ? [] : [count(value, one, many)]; });
+    text.push(facts.length ? `Outfield in ${count(story.outfieldMatches, "match", "matches")}: ${facts.join(", ")}.` : "No outfield stats recorded for this season.");
+  }
+  if ([...(story.goalkeeping ?? []), ...(story.outfield ?? [])].some(c => /likely|estimates|overlap/.test(c.note))) text.push("Includes likely assignments or tagged involvement; sources are shown below.");
+  if (story.importedMatches) text.push(`${count(story.importedMatches, "imported match", "imported matches")} without an action breakdown.`);
+  return text.join(" ");
+}
+
+/** Football seasons by match date (July–June), with role-separated whole-season totals. */
+export function seasonStories({ library, series, name, position, club, entries, today = new Date() }: Options): SeasonStoryData[] {
+  const matches = [...new Map((library ?? []).map(m => [m.id, m])).values()];
+  const lookup = new Map(matches.map(m => [m.id, m]));
+  const groups = new Map<string, { data: FootballRecordData[]; imports: Set<number> }>();
+  const group = (season: string) => { if (!groups.has(season)) groups.set(season, { data: [], imports: new Set() }); return groups.get(season)!; };
+  // Only the player's own tags/assignments can create a season, never a teammate's match.
+  const relevant = matches.filter(m => m.moments?.some(t => sameCode(t.category, name))
+    || entries[m.id]?.keepers.some(k => sameCode(k.name, name))
+    || Object.values(entries[m.id]?.scorers ?? {}).some(s => sameCode(s, name)));
+  for (const row of footballRecordData(relevant, name, club, entries)) {
+    const match = lookup.get(row.id)!;
+    const date = fixtureDate(match.title);
+    group(date ? seasonOf(date) : seasonLabel(match.season_label)).data.push(row);
+  }
+  for (const match of series) {
+    const date = match.match_date ? new Date(`${match.match_date}T12:00:00`) : null;
+    group(date && Number.isFinite(date.getTime()) ? seasonOf(date) : "Unclassified").imports.add(match.match_id);
+  }
+  return [...groups].sort(([a], [b]) => a === "Unclassified" ? 1 : b === "Unclassified" ? -1 : b.localeCompare(a)).map(([season, { data, imports }]) => {
+    const keeperMatches = data.filter(d => d.keeper).length;
+    const outfieldMatches = data.filter(d => d.player || d.goals.goals.some(g => g.side === "ours" && g.scorer && sameCode(g.scorer, name))).length;
+    const showKeeper = keeperMatches > 0 || goalkeeperPosition(position) && !outfieldMatches;
+    const showOutfield = outfieldMatches > 0 || !showKeeper;
+    const story = { season, matches: data.length + imports.size, importedMatches: imports.size, keeperMatches, outfieldMatches,
+      goalkeeping: showKeeper ? summarizeFootballRecords(data, name, true).cards : null,
+      outfield: showOutfield ? summarizeFootballRecords(data, name, false, true).cards : null };
+    return { ...story, text: summary(story, name, seasonOf(today)) };
   });
-  return stories.reverse();
 }

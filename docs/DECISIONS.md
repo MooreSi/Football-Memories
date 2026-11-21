@@ -4,6 +4,16 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-042 (2026-11-21) Season story summarizes football performance by role
+Owner replaces monthly moment picks with whole-season goalkeeper and outfield totals.
+Keep both panels for mixed-role seasons; profile position is only an empty-data fallback,
+not a historical lineup. Reuse match assignments/action sources and label estimates and
+team-tag involvement. Show all twenty supported outfield categories, including generic
+fouls and recorded defensive/attacking 1v1 encounters; do not infer duel wins or foul
+direction. Generic fouls, fouls won and fouls conceded are separate categories, never a
+summed foul total. Keeper save percentage comes from aggregate saves/shots in the same
+known-save match sample. July–June dates determine seasons; undated data stays separate.
+
 ## D-041 (2026-11-21) Football totals replace moment-volume player records
 Owner requested all four Records and streaks cards change by position. Outfield uses
 goals scored, shots on target, chances and passes. Choose shots faced and save percentage

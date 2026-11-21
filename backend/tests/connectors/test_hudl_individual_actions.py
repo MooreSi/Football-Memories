@@ -97,3 +97,43 @@ def test_hierarchical_individual_action_label_is_supported_without_retaining_raw
     item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
     item["tags"] += [{"key": "HUDL_LABEL", "values": ["INDIVIDUAL ACTION ▶ PASSING"]}]
     assert parse_moments([data], VIDEO, set())[0].actions == ("passes",)
+
+
+def test_season_duel_and_foul_actions_survive_parser_and_cache_without_assumed_outcomes(tmp_path):
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [
+        {
+            "key": "Individual action",
+            "values": [
+                "Def 1v1",
+                "Att 1v1",
+                "Foul",
+                "1v1",
+                "Defending",
+                "Dribbling",
+            ],
+        }
+    ]
+    moment = parse_moments([data], VIDEO, set())[0]
+    assert moment.actions == ("defensive1v1", "attacking1v1", "fouls")
+    cache = MatchCache(tmp_path)
+    cache.write(
+        "synthetic-duels",
+        {
+            "moments": [
+                {
+                    "id": "p",
+                    "category": "Sam Example",
+                    "time_s": 1,
+                    "duration_s": 10,
+                    "actions": list(moment.actions),
+                }
+            ]
+        },
+    )
+    assert cache.read("synthetic-duels")["moments"][0]["actions"] == [
+        "defensive1v1",
+        "attacking1v1",
+        "fouls",
+    ]
