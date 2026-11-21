@@ -1,6 +1,6 @@
 # 360: Goals and offsides in Player stats
 
-**Status:** Shipped (feature branch; deployment pending)
+**Status:** Shipped (main; locally deployed 2026-11-21)
 **Sensitive:** no
 
 ## What changes
@@ -36,4 +36,7 @@ None needed; synthetic offline fixtures only.
 - Offline synthetic browser review at desktop and in a 375px iframe, using
   reference 02 styling: eight metrics, likely label and goal/offside clip review.
   No manual real-account verification; no footage changed.
-- No CI workflow exists. Merge and local frontend deployment pending.
+- Merged/pushed to main at `e27c6b7`, frontend rebuilt/recreated locally.
+  Health and Nginx checks passed; live `index-Cx_eLs_S.js` bundle verified.
+  Backend/helper left running; hosted rollout follows existing update preferences.
+  No CI workflow exists. Deployment record is a docs-only checkpoint.

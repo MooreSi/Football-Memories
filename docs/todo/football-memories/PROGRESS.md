@@ -25,7 +25,11 @@ PostgreSQL. Ruff check/format, mypy, schema check, frontend typecheck/build pass
 Existing Starlette/jsdom and bundle warnings remain. Browser checked offline with
 synthetic data at desktop and 375px against reference 02 styling, including clip
 review. No manual real-account verification or footage changes. No CI workflow.
-Merge and frontend deployment pending.
+Merged/pushed to `main` at `e27c6b7` and deployed locally on 2026-11-21 with
+`docker compose up -d --build --no-deps frontend`. Health returns ok; Nginx config
+passes; served `index-Cx_eLs_S.js` verified with Goals/Offsides wording. Backend
+and helper left running. Hosted libraries follow existing update preferences.
+Deployment record is a docs-only checkpoint after the green source checks.
 
 ## Match player comparison (spec 350, owner request 2026-11-21)
 
