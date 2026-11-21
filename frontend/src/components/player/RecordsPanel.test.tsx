@@ -1,29 +1,35 @@
-import { render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { expect, it } from "vitest";
+import { screen, within } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { EMPTY_ENTRY } from "../../lib/goals";
+import { renderWithProviders, stubFetch } from "../../test/render";
 import { RecordsPanel } from "./RecordsPanel";
 
-const series = [
-  { match_id: 1, match_date: "2026-09-06", opponent: "Rovers", moments: 10 },
-  { match_id: 2, match_date: "2026-10-04", opponent: "Northgate", moments: 30, href: "/hudl/n?player=Sam" },
-];
+afterEach(() => vi.unstubAllGlobals());
 
-it("shows the best match with its link, best month, run and next milestone", () => {
-  render(<MemoryRouter><RecordsPanel series={series} /></MemoryRouter>);
+it("replaces moment milestones with the four outfield records", async () => {
+  stubFetch({ "/api/goals": {} });
+  renderWithProviders(<RecordsPanel library={[]} name="Sam Example" position="Forward" club={null} />);
   const panel = screen.getByRole("region", { name: "Records and streaks" });
-  const best = within(panel).getByRole("group", { name: "Best match" });
-  expect(best).toHaveTextContent("30");
-  expect(best).toHaveTextContent("vs Northgate");
-  expect(within(best).getByRole("link")).toHaveAttribute("href", "/hudl/n?player=Sam");
-  expect(within(panel).getByRole("group", { name: "Best month" })).toHaveTextContent("October 2026");
-  expect(within(panel).getByRole("group", { name: "Above-average run" })).toHaveTextContent("1");
-  const next = within(panel).getByRole("group", { name: "Next milestone" });
-  expect(next).toHaveTextContent("50");
-  expect(within(next).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
-  expect(within(panel).getByText("New personal best")).toBeInTheDocument();
+  await within(panel).findByRole("group", { name: "Goals scored" });
+  expect(within(panel).getAllByRole("group").map(el => el.getAttribute("aria-label"))).toEqual([
+    "Goals scored", "Shots on target", "Chances", "Passes",
+  ]);
+  expect(within(panel).getAllByText("—")).toHaveLength(4);
+  expect(within(panel).queryByText("Next milestone")).toBeNull();
 });
 
-it("is left out when there are no matches", () => {
-  render(<MemoryRouter><RecordsPanel series={[]} /></MemoryRouter>);
-  expect(screen.queryByRole("region", { name: "Records and streaks" })).toBeNull();
+it("uses saved goalkeeper records and formats the save percentage", async () => {
+  stubFetch({ "/api/goals": { a: { ...EMPTY_ENTRY, keepers: [{ name: "Sam Example", saves: 3 }],
+    added: [{ id: "g", side: "theirs" }] } } });
+  renderWithProviders(<RecordsPanel library={[{ id: "a", title: "Synthetic match", age_group: "U11", capture_key: "a" }]} name="Sam Example" position="Goalkeeper" club={null} />);
+  expect(await screen.findByRole("group", { name: "Save percentage" })).toHaveTextContent("75%");
+  expect(screen.getByRole("group", { name: "Goals conceded" })).toHaveTextContent("1");
+  expect(screen.getAllByRole("group")).toHaveLength(4);
+});
+
+it("does not show uncorrected totals when saved assignments fail to load", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
+  renderWithProviders(<RecordsPanel library={[]} name="Sam Example" position="GK" club={null} />);
+  expect(await screen.findByRole("alert")).toHaveTextContent("Could not load saved goals and keepers");
+  expect(screen.queryByRole("group")).toBeNull();
 });

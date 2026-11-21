@@ -13,6 +13,20 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Player football records (spec 430), branch `codex/player-record-stats`.**
+  My Player replaces all four moment-volume records with position-specific totals.
+  Outfield: goals scored, shots on target, chances, passes. Keeper: goals saved,
+  goals conceded, shots faced, save percentage. Reuses match scorer/keeper edits
+  and action sources; likely/overlap/estimated counts stay labelled. Missing data
+  stays a dash. Shots faced/percentage use only the same matches with known saves;
+  coverage appears on each card. Explicit profile position wins; unset position
+  can use keeper evidence. Imported moment counts alone cannot supply action totals.
+  Synthetic desktop/375px review passed; no source account accessed. Frontend 685,
+  backend 771 each SQLite/PostgreSQL; lint/format/types/build/schema pass. Local
+  frontend rebuilt/recreated; health/Nginx and served `index-DcpX92b7.js` verified.
+  Hosted installs follow their existing update preferences.
+
+
 - **Player label filter (spec 420), merged/pushed `main` at `2f81736`.** Owner reported
   Period Start as a player. Metadata-only audit: 230 nonempty cached matches,
   406 distinct categories. Eight administrative/set-piece labels passed shared

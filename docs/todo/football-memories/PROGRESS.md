@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Player football records (spec 430, 2026-11-21)
+
+`done`, branch `codex/player-record-stats`: replaces four moment-volume cards with
+outfield goals/shots/chances/passes or keeper saves/conceded/shots faced/save percentage.
+Shares match action/scorer/keeper sources and saved corrections; labels uncertainty,
+partial match coverage and team-tag involvement. Unknown stays a dash. Keeper ratios
+use one consistent known-save sample; explicit profile position overrides inference.
+The old panel expectations were replaced for the owner's requested four-card change.
+
 ## Player label filter (spec 420, 2026-11-21)
 
 `done`, branch `codex/player-label-filter`: shared `looksLikePlayer` excludes
@@ -609,6 +618,30 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-21 Player football records (spec 430)
+- New aggregation tests observed red (four behavior failures against an empty
+  implementation), then green; 7 focused tests pass. Existing panel expectations
+  replaced for the explicitly requested four-card behavior change.
+- `cd frontend && npm test && npm run typecheck && npm run build`: 685 passed,
+  typecheck/build pass. Existing jsdom media/canvas notices and bundle-size warning.
+- `cd backend && uv run pytest`: 771 passed (SQLite); then
+  `TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest`:
+  771 passed (PostgreSQL). Network/fixture guards included. Existing Starlette warning.
+- `uv run ruff check app tests`, `uv run ruff format --check app tests`,
+  `uv run mypy app`: pass; `FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories uv run alembic check`:
+  no new upgrade operations.
+- Offline Playwright with synthetic HTTP routes, installed Chrome: keeper 1440px
+  and 375px plus outfield 375px; four cards, 75% example, direct pass count and
+  no horizontal overflow. Screenshots visually compared with reference 03's
+  hierarchy and current dark-palette design rules. First browser attempt required
+  installed Chrome instead of absent bundled Chromium; preview routing corrected.
+- `docker compose build frontend && docker compose up -d --no-deps frontend`:
+  deployed locally; Nginx config and `/api/health` pass. Served HTML points to
+  `index-DcpX92b7.js`; its four-card football records verified. Backend/helper untouched.
+- No real account accessed; no library files changed. Hosted instances use existing
+  update settings. No GitHub Actions workflows in this repository.
+
 
 ### 2026-11-13 Match insights (spec 230, branch spec-230-match-insights)
 

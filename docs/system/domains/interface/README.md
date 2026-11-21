@@ -364,3 +364,17 @@ U10 v Stoke City reads 12-9.
 - Defensive variants include Period End, plural coach clips, technical/tactical focus
   and other one-word set-piece prefixes. The label remains a tag; only its treatment
   as a player changes. This remains a heuristic over free-text codes, not a roster.
+
+### Player records (spec 430, 2026-11-21)
+
+- My Player's Records and streaks now displays football totals, replacing the four
+  moment-volume records. `footballRecords` uses cached match goals/keepers and
+  `playerStats`, including saved corrections and direct-action priority. Source labels
+  distinguish likely scorers, estimated keepers and team overlap from player actions.
+- Profile GK/Goalkeeper/Keeper selects keeper stats; with no explicit position,
+  named keeper evidence selects them. An explicit outfield position wins.
+- Keeper shots faced and save percentage use the same subset with known saves,
+  never the larger conceded sample; card notes show match coverage. A zero-shot
+  sample has no percentage. Imported per-match moment counts carry no action stats.
+- Saved-assignment loading failures replace totals with an error so uncorrected
+  guesses are never silently presented as the owner's saved records.

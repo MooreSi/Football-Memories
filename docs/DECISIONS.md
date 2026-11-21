@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-041 (2026-11-21) Football totals replace moment-volume player records
+Owner requested all four Records and streaks cards change by position. Outfield uses
+goals scored, shots on target, chances and passes. Choose shots faced and save percentage
+as the two additional keeper metrics alongside saves and conceded. Reuse existing match
+attribution/corrections, preserving likely and overlap labels; unavailable stays unknown.
+Ratios and shots faced only include matches with known saves, with visible coverage.
+Profile position takes priority; keeper evidence is the fallback when position is unset.
+
 ## D-040 (2026-11-21) Infer keepers within periods and retain unknown assignments
 Owner reported an outfield player selected as keeper and incorrect conceded totals.
 Goal-kick overlap is uncertain evidence: weight timing across multiple kicks, allow
