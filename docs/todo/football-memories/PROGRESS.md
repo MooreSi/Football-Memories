@@ -11,6 +11,26 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Estimated minutes and presentation exploration (spec 380, 2026-11-21)
+
+`done`, branch `codex/estimated-player-minutes`: automatic approximate outfield
+minutes from first/last touch in each tagged period, subtracting known keeper spells.
+Clearly labelled with method and uncertainty. Confirmed minutes override; sorting
+uses the displayed value. No reliable lineup/substitution metadata exists in the
+cached shape. Sparse tags may miss edges or absences; missing period markers may
+include breaks. Single isolated touches stay unknown. Three conversation mockups:
+Compact summary, Action profile, Comparison rows, using only supplied screenshot
+counts. No production layout replacement; recommend comparison rows + expanded bars.
+Finishing has no current app definition/mapping; advise clip category, not quality score.
+
+Verification: new behavioral tests observed red with null stub (not merely missing
+module), then green. `npm test`: **645 passed**, `npm run typecheck` and build pass.
+`uv run pytest -q` and PostgreSQL equivalent: **771 passed each**; ruff check/format,
+mypy and alembic check pass. Existing jsdom/Starlette/bundle warnings remain.
+Minutes explanation reviewed in a synthetic 375px browser frame. Mockups reviewed
+at desktop and phone widths. No source account accessed or library files changed.
+No existing tests changed; only new cases appended. No CI workflow configured.
+
 ## Individual player actions and full comparison (spec 370, 2026-11-21)
 
 `done`, branch `codex/player-individual-actions`: preserve allowlisted Individual

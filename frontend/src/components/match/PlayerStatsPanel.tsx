@@ -1,3 +1,4 @@
+import { estimatePlayerMinutes } from "../../lib/estimatedMinutes";
 import { useMemo, useState } from "react";
 import { codeKey } from "../../lib/codes";
 import { usePlayerMinutes } from "../../lib/playerMinutes";
@@ -17,13 +18,14 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
   match: GoalsSource & { id: string }; club: string | null; goals: MatchGoals; onSeek: (t: number) => void;
 }) {
   const players = useMemo(() => playerStats(match, club, goals), [match, club, goals]);
+  const estimates = useMemo(() => Object.fromEntries(players.map(p => [codeKey(p.name), estimatePlayerMinutes(match.moments ?? [], p.name, goals.spells)])), [players, match.moments, goals.spells]);
   const minutes = usePlayerMinutes(match.id, players.length > 0);
   const [group, setGroup] = useState("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("name");
   const [selection, setSelection] = useState<Selection | null>(null);
   const shown = players.filter(p => p.name.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => {
-    const count = (p: typeof a) => sort === "minutes" ? minutes.data?.[codeKey(p.name)] ?? -1 : sort === "moments" ? p.moments.length : p.events[sort as PlayerMetric]?.length ?? -1;
+    const count = (p: typeof a) => sort === "minutes" ? minutes.data?.[codeKey(p.name)] ?? estimates[codeKey(p.name)] ?? -1 : sort === "moments" ? p.moments.length : p.events[sort as PlayerMetric]?.length ?? -1;
     return (sort === "name" ? 0 : count(b) - count(a)) || a.name.localeCompare(b.name);
   });
   const selected = players.find(p => p.name === selection?.name);
@@ -63,7 +65,7 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
               <button type="button" className="text-xs text-accent hover:underline" onClick={() => setSelection({ name: p.name, metric: "moments" })}>
                 {p.moments.length} tagged {p.moments.length === 1 ? "moment" : "moments"}</button>
             </div>
-            <PlayerMinutes matchId={match.id} name={p.name} />
+            <PlayerMinutes matchId={match.id} name={p.name} estimate={estimates[codeKey(p.name)]} />
             {STAT_GROUPS.filter(g => group === "all" || g.id === group).map(g => <div key={g.id} className="mt-3">
               <h4 className="mb-2 text-[11px] tracking-wider text-fg-subtle uppercase">{g.label}</h4>
               <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">

@@ -314,3 +314,14 @@ U10 v Stoke City reads 12-9.
   preferences using a hashed key that fits its 80-character column; names are
   canonicalized. Values survive backup/restart, accept zero and can be cleared.
   Query cache updates both the row and minutes sort immediately after saving.
+
+### Estimated minutes (spec 380, owner request 2026-11-21)
+
+- Supersedes spec 370’s confirmed-only display: timed player tags now supply an
+  explicitly approximate fallback. Use first/last estimated touches per END HALF
+  period; subtract union of known keeper spells. No inferred substitutions or
+  extrapolation to period edges. A single distinct touch cannot estimate minutes.
+- Sparse tags can underestimate unobserved edges or overestimate absences; without
+  END HALF markers breaks may be counted. This is stated in each estimated row.
+  Confirmed preferences (including zero) win; clearing restores the fallback.
+- The comparison sort uses the same confirmed/estimated value shown in each row.

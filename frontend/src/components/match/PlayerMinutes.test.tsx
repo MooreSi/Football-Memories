@@ -53,3 +53,17 @@ it("shows saved zero and clears it without replacing it with an estimate", async
   expect(await screen.findByText("—")).toBeInTheDocument();
   expect(puts).toEqual([{ match_id: "a", player: "Sam Example", minutes: null }]);
 });
+
+it("labels inferred minutes and explains their limitations", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 200 })));
+  renderWithProviders(<PlayerMinutes matchId="a" name="Sam Example" estimate={38} />);
+  expect(await screen.findByText("≈38")).toBeInTheDocument();
+  expect(screen.getByText(/Estimated from first to last player tag/)).toHaveTextContent("Substitutions and untagged time may change actual minutes");
+});
+
+it("keeps confirmed minutes ahead of an estimate", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response('{"SAM EXAMPLE":42}', { status: 200 })));
+  renderWithProviders(<PlayerMinutes matchId="a" name="Sam Example" estimate={38} />);
+  expect(await screen.findByText("42")).toBeInTheDocument();
+  expect(screen.queryByText("≈38")).not.toBeInTheDocument();
+});

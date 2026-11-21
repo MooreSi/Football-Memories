@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-039 (2026-11-21) Estimate playing minutes, explicitly
+Owner supersedes D-038’s confirmed-only display. Existing cached player metadata has
+named timed tags, not dependable lineup/substitution records. Use first-to-last
+approximate touch within END HALF-delimited periods, excluding known keeper spells;
+state that absences, untagged edges and missing period boundaries can affect it.
+Two distinct touches in a period are required; no padded-clip sum or extrapolation.
+Saved confirmed values (including zero) still win and clearing restores an estimate.
+Presentation exploration stays separate until the owner chooses a layout.
+
 ## D-038 (2026-11-21) Preserve player action labels; confirm playing time explicitly
 Owner identified Passing under Individual action on player moments. The earlier
 code-name-only search missed it because the parser discarded non-HUDL_CODE labels.
