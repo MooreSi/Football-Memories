@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
+from app.connectors.hudl_actions import player_actions
 from app.services.media import MediaError, probe
 from app.services.paths import sanitize_component
 from app.services.publish import publish_new
@@ -36,6 +37,7 @@ class Moment:
     duration_s: float
     category: str
     players: tuple[str, ...]
+    actions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -137,6 +139,7 @@ def parse_moments(
                         (end - start) / 1000,
                         "Player involvement" if code in player_codes else code,
                         (code,) if code in player_codes else (),
+                        player_actions(item.get("tags", [])) if len(codes) == 1 else (),
                     )
                     if event_id in result and result[event_id] != moment:
                         raise CaptureError("Tag data changed during capture; start again.")

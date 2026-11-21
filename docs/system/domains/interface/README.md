@@ -299,3 +299,18 @@ U10 v Stoke City reads 12-9.
 - Offsides match our OFFSIDE/OFFSIDES tags using the existing outfield overlap
   windows; an opposition offside is excluded. Eight metrics use four columns on
   desktop and two on phones.
+
+### Full player actions and playing time (spec 370, 2026-11-21)
+
+- Player comparisons prefer `moment.actions` linked to the same player over
+  team-event overlap for each available metric; never add both sources. Every
+  direct-action event counts once for that player, not overlapping teammates.
+  The clips panel names its source; direct count cells say Player action.
+- Seventeen stats are grouped into Attacking, Defending, Possession & discipline.
+  Stats shown filters the same group across players; All stats remains the default.
+  Missing labels stay unrecorded. Goals keep the existing scorer logic.
+- Minutes played is an explicit user-confirmed number, never clip lengths or a
+  first/last-tag estimate. `/api/player-minutes` stores a match-specific map in
+  preferences using a hashed key that fits its 80-character column; names are
+  canonicalized. Values survive backup/restart, accept zero and can be cleared.
+  Query cache updates both the row and minutes sort immediately after saving.

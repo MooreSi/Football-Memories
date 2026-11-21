@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-038 (2026-11-21) Preserve player action labels; confirm playing time explicitly
+Owner identified Passing under Individual action on player moments. The earlier
+code-name-only search missed it because the parser discarded non-HUDL_CODE labels.
+Preserve supported action values on each original moment and prefer that direct
+link over team overlaps, without counting both. Generic defensive/dribbling labels
+do not establish a specific action or success. Minutes played is confirmed by the
+owner and stored per player/match in preferences, never inferred from clip lengths.
+
 ## D-037 (2026-11-21) Player comparison shows tagged involvement, never invented actions
 Owner requested outfield pass/shot totals on the match page. The cached data has
 player windows and team events, not action attribution. Show overlapping own-team

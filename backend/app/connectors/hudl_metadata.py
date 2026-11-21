@@ -13,6 +13,8 @@ from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from app.connectors.hudl_actions import SUPPORTED_ACTIONS
+
 if TYPE_CHECKING:
     from app.connectors.hudl_capture import Moment
 
@@ -107,6 +109,19 @@ class MatchCache:
                         "time_s": start,
                         "duration_s": length,
                         "category": item["category"][:200],
+                        **(
+                            {
+                                "actions": list(
+                                    dict.fromkeys(
+                                        a
+                                        for a in item["actions"]
+                                        if isinstance(a, str) and a in SUPPORTED_ACTIONS
+                                    )
+                                )
+                            }
+                            if isinstance(item.get("actions"), list)
+                            else {}
+                        ),
                     }
                 )
         if details.get("tag_status") in {"unsynced", "synced", "none", "unavailable"}:

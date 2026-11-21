@@ -4,7 +4,7 @@ import { helperBase, helperFetch, localiseHelperUrls } from './helperBase';
 import { useHelperEnabled } from './hostedPermissions';
 import { displayLibrary } from '../lib/hudlPlayer';
 export const HUDL = helperBase();
-export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number};
+export type HudlMoment = {id:string; category:string; time_s:number; duration_s:number; actions?:string[]};
 export type HudlMatch = {id:string; title:string; age_group:string; age_groups?:string[]; capture_key:string; season_label?:string; tag_status?:"synced"|"unsynced"|"none"|"unavailable"; tag_error?:string; thumbnail_url?:string|null; poster_url?:string|null; poster_checked_at?:number; moments?:HudlMoment[]; duration_s?:number;
  /** Owner request 2026-11-14: a Veo match standing in on the Library when Hudl is hidden. */
  source?:"veo"; score?:{ours:number;theirs:number}|null};

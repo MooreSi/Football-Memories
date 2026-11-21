@@ -11,6 +11,25 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Individual player actions and full comparison (spec 370, 2026-11-21)
+
+`done`, branch `codex/player-individual-actions`: preserve allowlisted Individual
+action labels on the original player moments through parser/cache/normal library;
+prefer these to overlapping team events. Added all requested action metrics, grouped
+stats filter, explicit source labels and confirmed minutes edit/clear/sort. Minutes
+live in backed-up preferences, independently per player/match; no schema migration.
+Generic Defensive action / ATT or DEF 1v1 / Dribbling & RWTB are not relabelled as
+specific actions or successful dribbles. Existing goal and keeper logic retained.
+
+Verification: new tests observed red before implementation. Backend **771 passed**
+each on SQLite and development PostgreSQL; frontend **638 passed**. Ruff check/format,
+mypy, schema check and frontend typecheck/build passed. Existing Starlette/jsdom and
+bundle warnings remain. Offline desktop/375px reference 02 review: group filtering,
+minutes editing/save, action counts and source-bearing clips. Owner signed into Chrome
+for requested read-only Cardiff 9v9 inspection: 181 Passing-filter results, 19 with one
+player selected. No source roster/payload/session data committed. Deployment and live
+helper metadata verification pending. No CI workflow exists.
+
 ## Player goals and offsides (spec 360, owner request 2026-11-21)
 
 `done`, branch `codex/player-goals-offsides`: add Goals/Offsides and sort options,

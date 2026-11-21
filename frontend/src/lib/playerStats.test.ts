@@ -55,3 +55,37 @@ it("counts overlapping own offsides once and leaves missing offside codes unreco
   expect(rows[0].events.offsides).toEqual([]);
   expect(playerStats(match, "Aston Villa", matchGoals(match, "Aston Villa"))[1].events.offsides).toBeNull();
 });
+it("prefers player-linked Passing labels without crediting overlapping teammates or doubling team events", () => {
+  const m = { moments: [
+    { ...t("sam", "Sam Example", 20), actions: ["passes"] }, t("ali", "Ali Demo", 20),
+    t("team", "ASTON VILLA PASS", 22),
+  ] };
+  const rows = playerStats(m, "Aston Villa", matchGoals(m, "Aston Villa"));
+  expect(rows[1].events.passes?.map(e => e.id)).toEqual(["sam"]);
+  expect(rows[0].events.passes).toEqual([]);
+  expect(rows[1].sources.passes).toBe("actions");
+});
+it("counts each requested player action explicitly and does not turn unnamed dribbling into success", () => {
+  const m = { moments: [{ ...t("sam", "Sam Example", 20), actions: ["assists", "keyPasses", "interceptions", "blocks", "clearances",
+    "foulsWon", "foulsConceded", "successfulDribbles", "possessionLost"] }, t("ali", "Ali Demo", 20),
+    t("generic", "ASTON VILLA DRIBBLING", 20)] };
+  const rows = playerStats(m, "Aston Villa", matchGoals(m, "Aston Villa"));
+  expect(rows[1].events.assists?.map(e => e.id)).toEqual(["sam"]);
+  expect(rows[1].events.keyPasses).toHaveLength(1);
+  expect(rows[1].events.interceptions).toHaveLength(1);
+  expect(rows[1].events.blocks).toHaveLength(1);
+  expect(rows[1].events.clearances).toHaveLength(1);
+  expect(rows[1].events.foulsWon).toHaveLength(1);
+  expect(rows[1].events.foulsConceded).toHaveLength(1);
+  expect(rows[1].events.successfulDribbles).toHaveLength(1);
+  expect(rows[1].events.possessionLost).toHaveLength(1);
+  expect(rows[0].events.assists).toEqual([]);
+});
+it("keeps explicit team-event fallback separate from unavailable individual stats", () => {
+  const m = { moments: [t("sam", "Sam Example", 20), t("block", "ASTON VILLA BLOCK", 22), t("foul", "ASTON VILLA FOUL", 22)] };
+  const row = playerStats(m, "Aston Villa", matchGoals(m, "Aston Villa"))[0];
+  expect(row.events.blocks?.map(e => e.id)).toEqual(["block"]);
+  expect(row.sources.blocks).toBe("overlap");
+  expect(row.events.foulsWon).toBeNull();
+  expect(row.events.successfulDribbles).toBeNull();
+});

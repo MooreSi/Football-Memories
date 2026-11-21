@@ -1,0 +1,99 @@
+"""Synthetic player-label metadata; no real account, roster or response dumps."""
+
+from app.connectors.hudl_capture import parse_moments
+from app.connectors.hudl_metadata import MatchCache
+from tests.connectors.test_hudl_capture import VIDEO, payload
+
+
+def labelled_payload():
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [
+        {"key": "Individual action", "values": ["Passing", "Interception"]},
+        {"key": "Private note", "values": ["https://example.invalid/?token=FAKE_SECRET"]},
+    ]
+    return data
+
+
+def test_individual_actions_remain_linked_to_the_original_player_moment():
+    moment = parse_moments([labelled_payload()], VIDEO, set())[0]
+    assert moment.actions == ("passes", "interceptions")
+    assert moment.category == "SAM EXAMPLE"
+    assert moment.source_event_id == "synthetic-session:synthetic-stable-id"
+
+
+def test_only_supported_action_values_survive_the_cache(tmp_path):
+    cache = MatchCache(tmp_path)
+    cache.write(
+        "synthetic",
+        {
+            "moments": [
+                {
+                    "id": "p",
+                    "category": "Sam Example",
+                    "time_s": 1,
+                    "duration_s": 10,
+                    "actions": ["passes", "interceptions", "FAKE_SECRET"],
+                }
+            ]
+        },
+    )
+    saved = cache.read("synthetic")["moments"][0]
+    assert saved["actions"] == ["passes", "interceptions"]
+    assert "FAKE_SECRET" not in next(tmp_path.glob("*.json")).read_text()
+    assert "FAKE_SECRET" in "planted FAKE_SECRET"
+
+
+def test_unsuccessful_or_unspecified_dribbling_does_not_count_as_success():
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [{"key": "Individual action", "values": ["Dribbling", "Unsuccessful"]}]
+    assert parse_moments([data], VIDEO, set())[0].actions == ()
+
+
+def test_successful_dribble_has_an_explicit_outcome():
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [{"key": "Individual action", "values": ["Successful dribble"]}]
+    assert parse_moments([data], VIDEO, set())[0].actions == ("successfulDribbles",)
+
+
+def test_stream_preserves_actions_through_the_normal_metadata_cache(tmp_path):
+    from unittest.mock import MagicMock, patch
+
+    from app.connectors.hudl_browser import BrowserConnection
+    from tests.connectors.test_hudl_optional_tags import MASTER_BODY, MEDIA, observation
+
+    connection = BrowserConnection(MagicMock(), MagicMock(), tmp_path / "inbox")
+    connection._page = MagicMock()
+    connection._page.locator.return_value.first.evaluate.return_value = 8.0
+    observed = observation()
+    observed.payloads = [labelled_payload()]
+    with (
+        patch.object(connection, "_observe", return_value=observed),
+        patch(
+            "app.connectors.hudl_browser._account.fetch_media",
+            side_effect=[MASTER_BODY.encode(), MEDIA],
+        ),
+    ):
+        connection._prepare_stream(VIDEO)
+    saved = connection.details.read(VIDEO)["moments"][0]
+    assert saved["actions"] == ["passes", "interceptions"]
+    assert saved["id"] == "synthetic-session:synthetic-stable-id"
+    connection._executor.shutdown()
+
+
+def test_shared_code_moment_does_not_assign_a_player_action_to_both_codes():
+    data = labelled_payload()
+    data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]["tags"][0]["values"] = [
+        "Sam Example",
+        "Ali Demo",
+    ]
+    assert [m.actions for m in parse_moments([data], VIDEO, set())] == [(), ()]
+
+
+def test_hierarchical_individual_action_label_is_supported_without_retaining_raw_labels():
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [{"key": "HUDL_LABEL", "values": ["INDIVIDUAL ACTION ▶ PASSING"]}]
+    assert parse_moments([data], VIDEO, set())[0].actions == ("passes",)

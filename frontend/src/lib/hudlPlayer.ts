@@ -40,7 +40,7 @@ const SITUATION = new Set(
     "cross pass passing tackle foul offside penalty counter attack attacking defence defensive defending " +
     "transition build regain turnover compactness regrouping managing contested opposition final def gk keeper " +
     "distribution claim block clearance header dribble switch recovery duel aerial won lost restart sub " +
-    "half end injury best practice warm substitution kickoff").split(" "),
+    "half end injury best practice warm substitution kickoff dribbling assists assist interception interceptions blocks clearances successful unsuccessful conceded fouled").split(" "),
 );
 
 /** A code of two or three plain words with no football vocabulary is taken to be a player. */

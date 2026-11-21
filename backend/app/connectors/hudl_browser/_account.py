@@ -578,6 +578,7 @@ class BrowserConnection:
                             "time_s": m.time_s,
                             "duration_s": m.duration_s,
                             "category": m.category,
+                            **({"actions": list(m.actions)} if m.actions else {}),
                         }
                         for m in moments
                     ],
@@ -696,6 +697,7 @@ class BrowserConnection:
                         "time_s": m.time_s,
                         "duration_s": m.duration_s,
                         "category": m.category,
+                        **({"actions": list(m.actions)} if m.actions else {}),
                     }
                     for m in moments
                 ],
@@ -769,6 +771,7 @@ class BrowserConnection:
                         "time_s": m.time_s,
                         "duration_s": m.duration_s,
                         "category": m.category,
+                        **({"actions": list(m.actions)} if m.actions else {}),
                     }
                     for m in moments
                 ],

@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Individual player actions and full stats (spec 370), branch `codex/player-individual-actions`.**
+  Confirmed in the owner-selected Cardiff 9v9 Hudl UI: Passing is a label on player
+  moments (181 source clips, 19 for one selected player), which the old HUDL_CODE-only
+  parser discarded. Supported actions now survive parser/cache/library and take priority
+  over overlapping team tags. All requested stats added, grouped/filterable; missing
+  values stay unrecorded. Minutes played is explicitly confirmed, saved per match/player
+  in preferences, clearable, sortable and backed up. Frontend 638; backend 771 each on
+  SQLite/PostgreSQL; lint/format/types/build/schema all pass. Synthetic desktop/375px
+  browser review complete. Deployment and helper Cardiff read pending.
+
 - **Player stats Goals and Offsides (spec 360), merged to `main` at `e27c6b7`.**
   Goals reuse saved/likely scorers from Goals and keepers, with a visible likely
   marker and reviewable clips. Untimed owner-added goals count without a seek

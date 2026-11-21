@@ -71,3 +71,20 @@ it("sorts by offsides and opens the matching tagged clip", async () => {
   await user.click(screen.getByRole("button", { name: /0:22.*OFFSIDE/ }));
   expect(seek).toHaveBeenCalledWith(22);
 });
+
+it("shows requested stats in groups and identifies direct player-action clips", async () => {
+  const user = userEvent.setup(), seek = vi.fn();
+  const m = { id: "actions", moments: [{ ...t("sam", "Sam Example", 20), actions: ["passes", "assists", "keyPasses", "interceptions", "blocks", "clearances", "foulsWon", "foulsConceded", "successfulDribbles", "possessionLost"] }] };
+  renderWithProviders(<PlayerStatsPanel match={m} club="Aston Villa" goals={matchGoals(m, "Aston Villa")} onSeek={seek} />);
+  const sam = screen.getByRole("article", { name: "Sam Example" });
+  expect(within(sam).getByRole("button", { name: "Assists: 1" })).toBeInTheDocument();
+  expect(within(sam).getByRole("button", { name: "Key passes: 1" })).toBeInTheDocument();
+  await user.selectOptions(screen.getByLabelText("Stats shown"), "defending");
+  expect(within(sam).getByRole("button", { name: "Interceptions: 1" })).toBeInTheDocument();
+  expect(within(sam).queryByRole("button", { name: "Passes: 1" })).toBeNull();
+  await user.selectOptions(screen.getByLabelText("Stats shown"), "all");
+  await user.click(within(sam).getByRole("button", { name: "Passes: 1" }));
+  expect(screen.getByText("Source: Individual action labels on this player’s clips.")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /0:20.*individual action/i }));
+  expect(seek).toHaveBeenCalledWith(20);
+});

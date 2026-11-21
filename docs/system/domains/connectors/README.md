@@ -795,3 +795,20 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
 - Hudl already worked this way: the tag sweep saves each match's tags and skips them next
   time (`test_progress_counts_matches_already_indexed`); its catalogue listing is short and
   keeps the last list if it stops.
+
+## Player Individual action labels (spec 370, 2026-11-21)
+
+- The original parser retained only HUDL_CODE, so a player tag's non-code labels
+  (Individual action → Passing, Crossing, Regain, etc.) never reached the cache.
+  Searching cached code names for PASS therefore did not establish that passing
+  was unavailable. Read-only Cardiff 9v9 UI check: 181 Passing-tagged clips; one
+  selected player has 19. No roster, raw payload or account data is committed.
+- `hudl_actions.py` extracts only allowlisted action values from non-code tags,
+  including hierarchical Individual action labels. `Moment.actions` remains on
+  the original moment; parsing, all three normal cache-write paths and MatchCache
+  preserve it. Shared multi-code moments do not assign the same action to two
+  player codes. Unknown labels are discarded, not persisted.
+- Existing caches gain these fields on the next normal match open/read. This
+  does not trigger a new sweep or change request pacing. Generic Defensive action,
+  ATT/DEF 1v1 and Dribbling & RWTB do not prove specific defensive actions or a
+  successful dribble; do not substitute them for those stats.
