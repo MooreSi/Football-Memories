@@ -39,4 +39,6 @@ Ruff check/format, mypy, Alembic schema check and frontend typecheck/build pass.
 Synthetic desktop/375px panel checked; 229 cached matches audited read-only.
 New regressions observed red; original tests unchanged. No real account read,
 source metadata modified, or library file overwritten. No CI workflow configured.
-Local deployment follows the verified commit.
+Merged/pushed main `70bbc49`; local frontend rebuilt/recreated. Health and Nginx
+pass; served `index-DgovPcoI.js` verified. Backend/helper unchanged. Hosted installs
+follow their existing update preferences.

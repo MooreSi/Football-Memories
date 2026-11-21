@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
-- **Goalkeeper attribution (spec 400), branch `codex/keeper-attribution`.** Fixes
+- **Goalkeeper attribution (spec 400), merged to `main` at `70bbc49`.** Fixes
   outfield overlap, suppressed returning keepers across short periods, and first-name
   fallback for unresolved goals. Weighted pre-kick evidence, independent periods,
   repeated support, tie/empty-period abstention; ball-in timing and unnamed totals.
@@ -23,7 +23,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   Manual local-cache audit: 229 matches across ages/seasons, 180 with spells;
   281/965 conceded goals remain unassigned rather than attributed without evidence.
   No real source account accessed; source cache/footage untouched. Verification: frontend 656, backend 771 each on SQLite/PostgreSQL;
-  lint/format/types/build/schema pass. Local deployment pending. Separate managed worktree avoids concurrent stats edits.
+  lint/format/types/build/schema pass. Deployed locally: frontend rebuilt/recreated;
+  health/Nginx pass and served `index-DgovPcoI.js` verified. Backend/helper untouched.
+  Hosted installs follow their update preferences. Separate managed worktree avoided
+  concurrent stats edits.
 
 
 - **Estimated player minutes (spec 380), merged to `main` at `0ee9991`.**

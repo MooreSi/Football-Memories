@@ -13,7 +13,7 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Goalkeeper attribution (spec 400, 2026-11-21)
 
-`done` (code; local deployment pending), branch `codex/keeper-attribution`: weight pre-kick tags without discarding
+`done`, branch `codex/keeper-attribution`, merged to `main` at `70bbc49`: weight pre-kick tags without discarding
 plausible candidates, include long tags, infer each period independently, retain
 returning keepers, reject ties/single-kick guesses and deduplicate kick ids. Use
 ball-in time for conceded goals. Explicit goal assignments win; multiple confirmed
@@ -32,7 +32,11 @@ Verification: frontend `npm test`: **656 passed**; typecheck/build pass.
 Backend `uv run pytest -q`: **771 passed** on SQLite; PostgreSQL equivalent with
 `memories_test_keepers`: **771 passed**. Ruff check/format, mypy and Alembic schema
 check pass. Existing jsdom/Starlette/chunk-size warnings remain. No CI workflow.
-Local deployment pending. New regressions observed red before fixes (rotation,
+Deployed locally: `docker compose build frontend` then
+`docker compose up -d --no-deps frontend`; health returns ok, Nginx config passes,
+served `index-DgovPcoI.js` contains the new unknown/estimate explanations. Backend
+and helper left running. No live source account opened. Hosted libraries follow
+existing update preferences. This deployment record is docs-only. New regressions observed red before fixes (rotation,
 ambiguous evidence, unsupported periods, manual assignment, UI unknown option,
 timing-overlap aggregation, final padded shot, unknown saves, duplicate kicks).
 Original tests unchanged. Synthetic desktop and 375px iframe review complete.
