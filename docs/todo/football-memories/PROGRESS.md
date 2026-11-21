@@ -31,6 +31,11 @@ Minutes explanation reviewed in a synthetic 375px browser frame. Mockups reviewe
 at desktop and phone widths. No source account accessed or library files changed.
 No existing tests changed; only new cases appended. No CI workflow configured.
 
+Deployment: merged/pushed main `0ee9991`; rebuilt/recreated frontend only. Health
+and Nginx config pass; served `index-64qTA5xo.js` contains estimate explanation.
+Backend/helper left running; no source account read. Synthetic preview servers stopped
+and temporary source files removed. Design alternatives remain inline conversation content.
+
 ## Individual player actions and full comparison (spec 370, 2026-11-21)
 
 `done`, branch `codex/player-individual-actions`: preserve allowlisted Individual

@@ -13,14 +13,15 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
-- **Estimated player minutes (spec 380), branch `codex/estimated-player-minutes`.**
+- **Estimated player minutes (spec 380), merged to `main` at `0ee9991`.**
   Owner now requests automatic estimates: first-to-last approximate player touch per
   END HALF-delimited period, subtracting known keeper spells. Visible estimate/method/
   uncertainty; manual confirmed values still override, sorting uses the same value.
   Three presentation alternatives delivered in conversation; production stats layout
   unchanged pending a choice. Finishing is not a defined app metric; advise clip category
   rather than a quality score. Frontend 645; backend 771 on each database; lint/format/types/build/schema pass.
-  Synthetic phone review complete. No real account accessed.
+  Synthetic phone review complete. No real account accessed. Frontend rebuilt/deployed
+  locally; health, Nginx and served `index-64qTA5xo.js` estimate text verified.
 
 - **Individual player actions and full stats (spec 370), merged to `main` at `49b5820`.**
   Confirmed in the owner-selected Cardiff 9v9 Hudl UI: Passing is a label on player
