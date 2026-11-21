@@ -35,6 +35,12 @@ source disclosure and Passes clip review. Screenshot `/tmp/football-action-profi
 No live account accessed; no source or library writes. Temporary preview files/servers
 removed. No CI workflow exists.
 
+Deployment: feature branch pushed, main advanced to `89144c3` without changing the
+other task’s checkout. Built/recreated only frontend from the isolated worktree using
+the owner’s existing Compose environment. Health ok, Nginx config pass; served
+`index-DYcDAzFm.js` contains Recorded contributions / Sources and unrecorded stats.
+Backend/helper left running; keeper fix included. Hosted updates follow existing settings.
+
 ## Goalkeeper attribution (spec 400, 2026-11-21)
 
 `done`, branch `codex/keeper-attribution`, merged to `main` at `70bbc49`: weight pre-kick tags without discarding
