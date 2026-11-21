@@ -7,6 +7,8 @@ import re
 from typing import Any
 
 _ALIASES = {
+    "penaltiesSaved": ("Penalty saved", "Penalties saved", "Penalty stopped", "Penalties stopped"),
+    "penaltiesScored": ("Penalty scored", "Penalties scored"),
     "passes": ("Pass", "Passes", "Passing", "Pass completed", "Successful pass"),
     "assists": ("Assist", "Assists", "Assisting"),
     "keyPasses": ("Key pass", "Key passes", "Chance created", "Chances created"),

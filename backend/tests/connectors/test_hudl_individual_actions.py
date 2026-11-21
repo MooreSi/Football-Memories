@@ -137,3 +137,35 @@ def test_season_duel_and_foul_actions_survive_parser_and_cache_without_assumed_o
         "attacking1v1",
         "fouls",
     ]
+
+
+def test_penalty_outcomes_require_explicit_labels_and_survive_cache(tmp_path):
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [
+        {
+            "key": "Individual action",
+            "values": ["Penalty stopped", "Penalty scored", "Penalty", "Penalty missed"],
+        }
+    ]
+    moment = parse_moments([data], VIDEO, set())[0]
+    assert moment.actions == ("penaltiesSaved", "penaltiesScored")
+    cache = MatchCache(tmp_path)
+    cache.write(
+        "synthetic-penalty",
+        {
+            "moments": [
+                {
+                    "id": "p",
+                    "category": "Sam Example",
+                    "time_s": 1,
+                    "duration_s": 10,
+                    "actions": list(moment.actions),
+                }
+            ]
+        },
+    )
+    assert cache.read("synthetic-penalty")["moments"][0]["actions"] == [
+        "penaltiesSaved",
+        "penaltiesScored",
+    ]

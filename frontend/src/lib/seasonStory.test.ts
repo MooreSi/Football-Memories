@@ -17,7 +17,7 @@ it("aggregates each season's football actions without counting unrelated players
   expect(stories[0].matches).toBe(1);
   expect(stories[0].goalkeeping).toBeNull();
   expect(stories[0].outfield?.filter(c => c.value !== null).map(c => [c.label, c.value])).toEqual([
-    ["Goals scored", 1], ["Passes", 1], ["Shots on target", 1], ["Chances", 1], ["Crosses", 1],
+    ["Games played", 1], ["Goals scored", 1], ["Passes", 1], ["Shots on target", 1], ["Chances", 1], ["Crosses", 1],
     ["Defensive 1v1s", 1], ["Attacking 1v1s", 1], ["Fouls", 1], ["Regains", 1],
   ]);
   expect(stories[0].text).toContain("Sam's 2026/27 so far");
@@ -27,7 +27,7 @@ it("aggregates each season's football actions without counting unrelated players
   expect(stories[1].outfield?.find(c => c.label === "Passes")?.value).toBe(1);
 });
 
-it("keeps goalkeeping and outfield separate in a mixed-role season and weights save percentage", () => {
+it("keeps only goalkeeper stats for a selected goalkeeper and weights save percentage", () => {
   const library = [match("k1", "260901 U11 v Town"), match("k2", "260908 U11 v City"), match("k3", "260915 U11 v Rovers"),
     match("out", "260920 U11 v Town", [tag("pass", name, ["passes"])])];
   const keeperEntry = (id: string, saves: number | null, conceded: number) => ({ ...EMPTY_ENTRY, keepers: [{ name, saves }],
@@ -36,13 +36,13 @@ it("keeps goalkeeping and outfield separate in a mixed-role season and weights s
     entries: { k1: keeperEntry("a", 9, 1), k2: keeperEntry("b", 1, 3), k3: keeperEntry("c", null, 2) } });
   expect(story.keeperMatches).toBe(3);
   expect(story.outfieldMatches).toBe(1);
-  expect(story.goalkeeping?.map(c => c.value)).toEqual([10, 6, 14, 71]);
+  expect(story.goalkeeping?.slice(0, 4).map(c => c.value)).toEqual([10, 6, 14, 71]);
   expect(story.goalkeeping?.[3].note).toContain("2 matches");
-  expect(story.outfield?.find(c => c.label === "Passes")?.value).toBe(1);
+  expect(story.outfield).toBeNull();
   expect(story.text).toContain("10 saves");
   expect(story.text).toContain("6 goals conceded");
   expect(story.text).toContain("71% save percentage");
-  expect(story.text).toContain("Outfield");
+  expect(story.text).not.toContain("Outfield");
 });
 
 it("preserves missing versus recorded zero, labels likely goals and team overlaps", () => {
@@ -58,7 +58,7 @@ it("preserves missing versus recorded zero, labels likely goals and team overlap
 it("retains imported-only seasons without turning moment volume into performance", () => {
   const [story] = seasonStories({ ...options, position: "GK", series: [{ match_id: 1, match_date: "2025-10-01", opponent: "Town", moments: 200 }] });
   expect(story.season).toBe("2025/26");
-  expect(story.goalkeeping?.map(c => c.value)).toEqual([null, null, null, null]);
+  expect(story.goalkeeping?.slice(0, 4).map(c => c.value)).toEqual([null, null, null, null]);
   expect(story.outfield).toBeNull();
   expect(story.text).toContain("No goalkeeping stats recorded");
   expect(story.importedMatches).toBe(1);
@@ -70,4 +70,14 @@ it("keeps undated matches unclassified and counts saved assignments without play
   expect(story.season).toBe("Unclassified");
   expect(story.outfield?.find(c => c.label === "Goals scored")?.value).toBe(1);
   expect(seasonStories(options)).toEqual([]);
+});
+
+it("uses explicit My Player position for every season rather than showing a second role", () => {
+  const library = [match("a", "260901 U11 v Town", [tag("pass", name, ["passes"])])];
+  const [keeper] = seasonStories({ ...options, library, position: "Goalkeeper" });
+  expect(keeper.outfield).toBeNull();
+  expect(keeper.goalkeeping).not.toBeNull();
+  const [outfield] = seasonStories({ ...options, library, position: "Forward", entries: { a: { ...EMPTY_ENTRY, keepers: [{ name, saves: 3 }] } } });
+  expect(outfield.goalkeeping).toBeNull();
+  expect(outfield.outfield).not.toBeNull();
 });

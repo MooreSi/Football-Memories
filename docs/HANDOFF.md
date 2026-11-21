@@ -13,6 +13,22 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Position-specific performance (spec 450), branch `codex/position-player-performance`.**
+  Explicit profile position now selects the only hub/season/report role (supersedes
+  mixed-role display). Removed On the pitch during and Attacks he was in. Milestones
+  are career football totals/next targets. Keeper extras include games, penalty saves,
+  clean sheets with consistent score/confirmed sole keeper, best saves and per-game
+  averages. Outfield adds explicit penalties scored. Match/season My Player report
+  rows use shared named stats and wrap source notes into exports. Crest overlaps and
+  paints above photo. No real names/images committed or source account accessed.
+  Frontend 699/typecheck/build pass; backend 773 each SQLite/PostgreSQL,
+  lint/format/types/schema pass. Offline desktop/375px and both PNG report exports
+  reviewed, including crest hit test. Frontend deployed locally; health/Nginx and
+  served `index-c3A1azku.js` verified. Helper gracefully restarted while Hudl/Veo
+  idle, both local status endpoints healthy. Backend container unchanged. Hosted
+  installs follow existing update preferences.
+
+
 - **Season performance story (spec 440), branch `codex/season-performance`.**
   Replaces monthly moment picks and prose with season totals, separate Goalkeeping
   and Outfield panels, shared-scale count bars and a save-percentage ring. Mixed-role

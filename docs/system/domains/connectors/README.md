@@ -827,3 +827,11 @@ direction. The offline parser/cache regression proves all three survive while
 ambiguous 1v1, Defending and Dribbling labels establish none of those outcomes.
 Existing caches gain discarded labels only on their next normal match read; no
 automatic source reread or request policy change is introduced.
+
+## Explicit penalty outcomes (spec 450, 2026-11-21)
+
+The action allowlist preserves `penaltiesSaved` (Penalty saved/stopped) and
+`penaltiesScored` (Penalty scored). Generic Penalty and Penalty missed establish
+neither. Parser/cache regression covers both positive actions and those negative
+controls. No source requests or storage format changes; existing cached matches
+receive previously discarded labels on their next normal read.

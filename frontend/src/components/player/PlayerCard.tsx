@@ -23,7 +23,7 @@ function Crest({ club }: { club: string }) {
       src={`/api/team-logo?name=${encodeURIComponent(club)}`}
       alt={`${club} crest`}
       onError={() => setFailed(true)}
-      className="card-crest absolute top-5 left-5 size-12 object-contain"
+      className="card-crest absolute -top-2 -left-6 z-20 size-12 object-contain"
     />
   );
 }
@@ -49,8 +49,8 @@ export function PlayerCard({ player, moments, games }: { player: PlayerProfile; 
       className="player-shield relative mx-auto w-full max-w-[300px] self-start p-[2px] [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]"
     >
       <div className="player-shield-inner relative px-6 pt-8 pb-16 text-center [clip-path:polygon(0_6%,12%_0,88%_0,100%_6%,100%_80%,50%_100%,0_80%)]">
-        {player.club_name && <Crest key={player.club_name} club={player.club_name} />}
         <div className="relative mx-auto mb-4 w-fit">
+          {player.club_name && <Crest key={player.club_name} club={player.club_name} />}
           <PlayerAvatar name={player.display_name} photoUrl={player.photo_url} size={player.photo_url ? "xl" : "lg"} square={Boolean(player.photo_url)} />
           {player.shirt_number && (
             <span className="card-number absolute -right-2 -bottom-2 grid size-9 place-items-center rounded-full border-2 text-sm font-bold">

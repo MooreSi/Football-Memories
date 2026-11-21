@@ -4,6 +4,18 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-043 (2026-11-21) Explicit My Player position selects one performance role
+Owner supersedes D-042's mixed-role presentation: a saved goalkeeper position shows
+only keeper performance in every season and report; an explicit outfield position
+shows only outfield stats. With position unset, keeper attribution is the fallback.
+Retire pitch-involvement and chance-attack sections. Milestones become career football
+totals and next positive targets; goals conceded is context, never a target to celebrate.
+Share hub/report aggregation, keeping source/coverage/likely labels in exported reports.
+Penalty saves/goals need an explicit named outcome; a generic penalty, miss or team
+penalty-scored overlap does not credit a player. Clean sheets require a consistent known
+score and a confirmed sole keeper; split/unknown/inferred-only keeper coverage is excluded.
+Appearances mean recorded tags or saved assignments, not confirmed full-match minutes.
+
 ## D-042 (2026-11-21) Season story summarizes football performance by role
 Owner replaces monthly moment picks with whole-season goalkeeper and outfield totals.
 Keep both panels for mixed-role seasons; profile position is only an empty-data fallback,

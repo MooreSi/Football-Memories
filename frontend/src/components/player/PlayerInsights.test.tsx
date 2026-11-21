@@ -17,17 +17,9 @@ const library = [
   match("c", "260908 U11 v Town", "2026-27", [t("c1", "PRESSING", 1)]),
 ];
 
-it("says what he was on the pitch during, for the latest season by default", () => {
-  renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
-  const panel = screen.getByRole("region", { name: "Involvement" });
-  expect(panel).toHaveTextContent("Tagged during 0 of our chances and 1 goal, and during 0 opposition chances, across 1 match.");
-  expect(panel).toHaveTextContent(/not necessarily the one who made them/);
-});
-
 it("switches the season, and charts every season of the journey", async () => {
   renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
-  await userEvent.setup().selectOptions(screen.getByLabelText("Season"), "all");
-  expect(screen.getByRole("region", { name: "Involvement" })).toHaveTextContent("Tagged during 1 of our chances and 1 goal");
+  await userEvent.setup().selectOptions(screen.getByLabelText("Journey season"), "all");
   const journey = screen.getByRole("region", { name: "Football journey" });
   expect(within(journey).getAllByRole("listitem").map((li) => li.getAttribute("aria-label"))).toEqual([
     "2025-26: 1 moments per match over 1 matches, 100% attacking, 0% defending",
@@ -35,14 +27,20 @@ it("switches the season, and charts every season of the journey", async () => {
   ]);
 });
 
-it("ranks partners and links his attacks that ended in a chance", () => {
+it("ranks partners while leaving the removed attacks section out", () => {
   renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
   expect(screen.getByRole("region", { name: "Best partnerships" })).toHaveTextContent("Alex Sample1 shared moments · 1 match");
-  const attacks = screen.getByRole("region", { name: "Attacks he was in" });
-  expect(within(attacks).getByRole("link")).toHaveAttribute("href", "/hudl/b?player=Pat%20Example&phases=1");
+  expect(screen.queryByRole("region", { name: "Attacks he was in" })).toBeNull();
 });
 
 it("shows nothing for a player with no tagged moments", () => {
   const { container } = renderWithProviders(<PlayerInsights library={library} name="Nobody Here" club="Aston Villa" />);
   expect(container).toBeEmptyDOMElement();
+});
+
+it("removes pitch involvement and chance-attack sections while retaining the journey", () => {
+  renderWithProviders(<PlayerInsights library={library} name="Pat Example" club="Aston Villa" />);
+  expect(screen.queryByRole("region", { name: "Involvement" })).toBeNull();
+  expect(screen.queryByRole("region", { name: "Attacks he was in" })).toBeNull();
+  expect(screen.getByRole("region", { name: "Football journey" })).toBeInTheDocument();
 });

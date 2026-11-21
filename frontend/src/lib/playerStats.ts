@@ -6,6 +6,7 @@ import { codeSides } from "./matchProfile";
 
 export const PLAYER_METRICS = [
   { key: "goals", label: "Goals", stems: [] },
+  { key: "penaltiesScored", label: "Penalties scored", stems: [] },
   { key: "assists", label: "Assists", stems: ["ASSIST", "ASSISTS"] },
   { key: "keyPasses", label: "Key passes", stems: ["KEY PASS", "KEY PASSES", "CHANCE CREATED"] },
   { key: "passes", label: "Passes", stems: ["PASS", "PASSES", "PASSING", "PASS COMPLETED", "SUCCESSFUL PASS"] },

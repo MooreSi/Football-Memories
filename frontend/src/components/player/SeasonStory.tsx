@@ -2,6 +2,7 @@ import { BookOpen } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import type { HudlMatch } from "../../api/hudl";
 import { useGoalEntries, type GoalsEntries } from "../../lib/goals";
+import { useScoreCorrections } from "../../lib/matchScore";
 import type { MatchCount } from "../../lib/records";
 import { seasonStories } from "../../lib/seasonStory";
 import { GoalkeepingSeason, OutfieldSeason } from "./SeasonPerformance";
@@ -10,8 +11,9 @@ const EMPTY_ENTRIES: GoalsEntries = {};
 /** Reference 03 hierarchy in the shared dark palette, with whole-season action totals. */
 export function SeasonStory({ library, series, name, position, club, today }: { library: HudlMatch[] | undefined; series: MatchCount[]; name: string; position: string | null; club: string | null; today?: Date }) {
   const entries = useGoalEntries();
-  const stories = useMemo(() => seasonStories({ library, series, name, position, club, entries: entries.data ?? EMPTY_ENTRIES, today }),
-    [library, series, name, position, club, entries.data, today]);
+  const corrections = useScoreCorrections();
+  const stories = useMemo(() => seasonStories({ library, series, name, position, club, entries: entries.data ?? EMPTY_ENTRIES, corrections: corrections.data, today }),
+    [library, series, name, position, club, entries.data, corrections.data, today]);
   const [chosen, setChosen] = useState<string | null>(null);
   const id = useId();
   if (!stories.length) return null;

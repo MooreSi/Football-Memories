@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Position-specific performance (spec 450, 2026-11-21)
+
+`done`, branch `codex/position-player-performance`: explicit My Player position
+selects one role across hub/season/report; removes two requested involvement/attack
+sections. Milestones now show career football totals and positive count targets,
+with conceded as context. Additional keeper appearances/clean sheets/penalty saves/
+best saves/per-game stats; named outfield penalty goals. Source/coverage notes are
+included in report exports. Crest is positioned over the photo in a shared wrapper.
+
 ## Season performance story (spec 440, 2026-11-21)
 
 `done`, branch `codex/season-performance`: Season story uses goalkeeper/outfield
@@ -628,6 +637,45 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-21 Position-specific performance (spec 450)
+- Test-first regressions observed red for profile-role precedence, explicit penalty
+  parser/cache outcomes, shared performance totals/strict clean sheets, valuable
+  milestones, removed sections, new report rows, and a profile-failure loading hang.
+  Negative controls: generic penalty/miss and team penalty-goal overlap do not credit
+  a named player; unrelated matches and split/unknown-score keepers are excluded.
+- Updated old moment/mixed-role expectations only for the owner's explicit behavior
+  replacement. ViewerFeatures report fixture adds the now-required `/api/goals`
+  response; every existing assertion in that integration test stays unchanged.
+  First full frontend run surfaced that missing response; final run recorded below.
+- Crest change verified structurally after implementation and by a synthetic browser
+  intersection/hit test (the crest overlaps and paints above the photo). No real
+  player photos or source data used in browser fixtures or committed.
+- `cd backend && uv run pytest`: **773 passed**, SQLite, 62.53s. Then
+  `TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest`:
+  **773 passed**, PostgreSQL, 81.07s. Network/fixture guards included. Existing Starlette warning.
+- `uv run ruff check app tests`, `uv run ruff format --check app tests`, `uv run mypy app`:
+  pass. `FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories uv run alembic check`:
+  no new upgrade operations.
+- Offline Playwright/Chrome synthetic 1440px and 375px: goalkeeper-only hub,
+  role-specific milestones, both requested sections absent, crest overlap/stacking,
+  outfield switching, match 75%/season 83% weighted ratios. No page errors or
+  horizontal overflow. Match and season Save image exports generated and visually
+  inspected; player source notes fit inside their SVG/PNG bounds.
+- Final `cd frontend && npm test`: **699 passed** (24.23s), followed by
+  `npm run typecheck` and `npm run build`: pass. Existing jsdom media/canvas and
+  bundle-size notices remain. The final rerun includes the new profile-error guard.
+- `docker compose build frontend && docker compose up -d --no-deps frontend`:
+  deployed locally. Nginx config and `/api/health` pass. Served HTML points to
+  `index-c3A1azku.js`; role stats/report/milestone markers present and both retired
+  section labels absent. Backend container unchanged (no schema/config update).
+- Host helper: locally checked Hudl ready/not busy/not syncing, Veo idle/not busy;
+  launchd SIGTERM, waited for graceful exit, kickstarted login item. Both local
+  status endpoints healthy; new penalty-action aliases loaded. No source requests.
+- Staged diff whitespace/secret scan clean; no footage or real roster/image files staged.
+- No real source account accessed or existing archive files changed. Hosted
+  libraries retain their existing update preferences. No GitHub Actions workflows.
+
 
 ### 2026-11-21 Season performance story (spec 440)
 - Test-first: backend duel/foul parse/cache regression observed red (empty actions),

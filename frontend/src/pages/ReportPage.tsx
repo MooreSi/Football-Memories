@@ -146,6 +146,12 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
     const prow = layoutRows(report.player.lines, top + 70);
     player = <g><text x={REPORT_MARGIN} y={top} fill="#facc15" fontSize={30} fontWeight={700} letterSpacing={4}>{report.player.name.toUpperCase()}</text><Rows rows={prow} /></g>;
     y = prow.length ? prow[prow.length - 1].bottom : top + 70;
+    if (report.player.note) {
+      const noteLines = wrapText(report.player.note, 22, W - REPORT_MARGIN * 2);
+      const noteTop = y;
+      player = <>{player}<g data-section="player-sources">{noteLines.map((line, i) => <text key={i} x={REPORT_MARGIN} y={noteTop + 10 + i * 30} fill="#94a3b8" fontSize={22}>{line}</text>)}</g></>;
+      y += noteLines.length * 30 + 30;
+    }
   }
   const H = Math.max(1350, y + 100);
   return (
@@ -195,7 +201,7 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const goalEntries = useGoalEntries();
   const hudlClub = useHomeClub();
   const veoTeam = useVeoTeam();
-  const { name } = usePrimaryPlayerName();
+  const { name, position, ready, failed } = usePrimaryPlayerName();
   // Owner report 2026-11-13: a season report is one team in one season, never every
   // age group mixed; the team is the one chosen on Opponents (it moves up each season).
   const [team, setTeam] = useTeamChoice(library.data);
@@ -222,7 +228,7 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   const shownMatch = kind === "match" ? library.data?.find((m) => m.id === id) : undefined;
   const ours = useCrest(club);
   const theirs = useCrest(shownMatch ? fixtureParts(shownMatch.title, club)?.opponent ?? null : null);
-  if (library.isPending) return <Spinner label="Loading matches" />;
+  if (library.isPending || !ready && !failed || name && goalEntries.isPending) return <Spinner label="Loading matches" />;
   const match = kind === "match" ? library.data?.find((m) => m.id === id) : undefined;
   if (kind === "match" && !match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">This match is not cached.</p></div>;
   const scope = veoOnly ? (library.data ?? []).filter((m) => (m.season_label || "Unclassified") === shownSeason && (clubOfId.get(m.id) ?? "Other") === shownClub)
@@ -231,9 +237,9 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
   // Spec 270: each match's goals and keepers (a Veo match counts Veo's own goal events).
   const veoById = new Map((veoLibrary.data ?? []).map((m) => [m.id, m]));
   const goalsOf = (m: (typeof scope)[number]): MatchGoals => matchGoals(m.source === "veo" ? veoById.get(m.id) ?? m : m, club, goalEntries.data?.[m.id]);
-  const report = match ? matchReport(match, club, corrections.data, name, veoRows, goalsOf(match))
-    : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, name,
-      Object.fromEntries(scope.map((m) => [m.id, goalsOf(m)])));
+  const report = match ? matchReport(match, club, corrections.data, goalEntries.isError || failed ? null : name, veoRows, goalsOf(match), position)
+    : seasonReport(scope, veoOnly ? `Veo · ${shownSeason}` : team === null ? "All matches" : `${ageIn(team, shownSeason)} · ${shownSeason}`, club, corrections.data, goalEntries.isError || failed ? null : name,
+      Object.fromEntries(scope.map((m) => [m.id, goalsOf(m)])), position);
   const ageOptions = team === null ? [] : [...new Set([...agesIn(library.data, shownSeason), ageIn(team, shownSeason)])].sort((x, y) => x.localeCompare(y, undefined, { numeric: true }));
   const file = `${report.title} ${report.subtitle}`.replace(/[^\w -]+/g, "").trim() || "report";
   return (
@@ -258,6 +264,8 @@ export function ReportPage({ kind }: { kind: "match" | "season" }) {
         <Button variant="primary" onClick={() => { setError(""); const svg = card.current?.querySelector("svg"); if (svg) savePng(svg, file).catch((e: Error) => setError(e.message)); }}><Download size={16} /> Save image</Button>
         <Button onClick={() => window.print()}><Printer size={16} /> Print / Save as PDF</Button>
       </header>
+      {failed && <p role="alert" className="text-warn">Could not load My Player. Refresh to include their stats.</p>}
+      {name && goalEntries.isError && <p role="alert" className="text-warn">Could not load saved goals and keepers. Refresh to include My Player stats.</p>}
       {error && <p role="alert" className="text-danger">{error}</p>}
       <div ref={card} className="report-card flex justify-center"><ReportCard report={report} crests={{ ours: ours.data?.url, theirs: theirs.data?.url, square: { ours: ours.data?.square, theirs: theirs.data?.square } }} /></div>
     </div>

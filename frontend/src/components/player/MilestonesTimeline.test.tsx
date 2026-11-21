@@ -1,21 +1,30 @@
-import { render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { expect, it } from "vitest";
+import { screen, within } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import type { HudlMatch } from "../../api/hudl";
+import { EMPTY_ENTRY } from "../../lib/goals";
+import { renderWithProviders, stubFetch } from "../../test/render";
 import { MilestonesTimeline } from "./MilestonesTimeline";
-
-it("shows each milestone as a badge with its date and a link, oldest first", () => {
-  render(<MemoryRouter><MilestonesTimeline name="Sam Example" series={[
-    { match_id: 1, match_date: "2026-08-30", opponent: "Rovers", moments: 60 },
-    { match_id: 2, match_date: "2026-09-06", opponent: "Town", moments: 50, href: "/hudl/t?player=Sam", age: "U11", goals: 1 },
-  ]} /></MemoryRouter>);
-  const list = within(screen.getByRole("region", { name: "Milestones" })).getByRole("list", { name: "Milestones, oldest first" });
-  const items = within(list).getAllByRole("listitem");
-  expect(items.map((i) => within(i).getByRole("heading").textContent)).toEqual(["First match", "100 moments", "First team goal with Sam on"]);
-  expect(within(items[0]).getByText("30 Aug 2026")).toBeInTheDocument();
-  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/hudl/t?player=Sam");
+const library: HudlMatch[] = [{ id: "a", title: "260901 U11 v Rovers", age_group: "U11", capture_key: "a", moments: [{ id: "p", category: "Sam Example", time_s: 10, duration_s: 10, actions: ["passes", "penaltiesScored"] }] }];
+afterEach(() => vi.unstubAllGlobals());
+it("shows goalkeeper career stats and save targets instead of moment badges", async () => {
+  stubFetch({ "/api/goals": { a: { ...EMPTY_ENTRY, keepers: [{ name: "Sam Example", saves: 3 }] } }, "/api/scores": {} });
+  renderWithProviders(<MilestonesTimeline library={library} name="Sam Example" position="GK" club={null} />);
+  const panel = await screen.findByRole("region", { name: "Milestones" });
+  const saves = await within(panel).findByRole("group", { name: "Goals saved" });
+  expect(saves).toHaveTextContent("3");
+  expect(saves).toHaveTextContent("Next: 5 · 2 to go");
+  expect(within(panel).getByRole("group", { name: "Goals conceded" }).querySelector('[role="progressbar"]')).toBeNull();
+  expect(within(panel).queryByText(/moments|First team goal/i)).toBeNull();
+  expect(within(panel).queryByRole("group", { name: "Goals scored" })).toBeNull();
 });
-
+it("selects outfield goals and penalty milestones", async () => {
+  stubFetch({ "/api/goals": {}, "/api/scores": {} });
+  renderWithProviders(<MilestonesTimeline library={library} name="Sam Example" position="Forward" club={null} />);
+  expect(await screen.findByRole("group", { name: "Penalties scored" })).toHaveTextContent("1");
+  expect(screen.queryByRole("group", { name: "Goals saved" })).toBeNull();
+});
 it("is left out with no matches", () => {
-  render(<MemoryRouter><MilestonesTimeline name="Sam" series={[]} /></MemoryRouter>);
+  stubFetch({ "/api/goals": {}, "/api/scores": {} });
+  renderWithProviders(<MilestonesTimeline library={[]} name="Sam" position="GK" club={null} />);
   expect(screen.queryByRole("region", { name: "Milestones" })).toBeNull();
 });

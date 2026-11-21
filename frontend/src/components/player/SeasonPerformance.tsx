@@ -17,7 +17,8 @@ function StatBar({ card, maximum }: { card: FootballRecord; maximum: number }) {
 
 export function GoalkeepingSeason({ cards, games }: { cards: FootballRecord[]; games: number }) {
   const percentage = cards.find(c => c.percent)!;
-  const counts = cards.filter(c => !c.percent);
+  const counts = cards.filter(c => ["Goals saved", "Goals conceded", "Shots faced"].includes(c.label));
+  const extras = cards.filter(c => !c.percent && !counts.includes(c));
   const maximum = Math.max(1, ...counts.map(c => c.value ?? 0));
   return <section aria-label="Goalkeeping season stats" className="space-y-4 rounded-2xl border border-line bg-white/2 p-4 sm:p-5">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="flex items-center gap-2 font-semibold"><Shield size={18} className="text-accent" aria-hidden />Goalkeeping</h3>
@@ -37,12 +38,15 @@ export function GoalkeepingSeason({ cards, games }: { cards: FootballRecord[]; g
         <p className="text-sm font-semibold">Save percentage</p><p className="max-w-64 text-[11px] text-fg-subtle">{percentage.note}</p>
       </div>
     </div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{extras.map(card => <div key={card.label} role="group" aria-label={card.label} className="tile min-w-0 space-y-1 p-3">
+      <p className="text-xs text-fg-muted">{card.label}</p><p className="text-2xl font-bold text-accent tabular-nums">{number(card.value)}</p><p className="text-[11px] text-fg-subtle">{card.note}</p>
+    </div>)}</div>
     <p className="text-xs leading-relaxed text-fg-muted">Shots faced = saves + goals conceded in matches with recorded saves. Save percentage uses that same sample. Conceded totals may cover more matches.</p>
   </section>;
 }
 
 const GROUPS = [
-  { title: "Attacking", icon: Swords, labels: ["Goals scored", "Shots on target", "Chances", "Crosses", "Attacking 1v1s", "Assists", "Key passes", "Successful dribbles"] },
+  { title: "Attacking", icon: Swords, labels: ["Goals scored", "Penalties scored", "Shots on target", "Chances", "Crosses", "Attacking 1v1s", "Assists", "Key passes", "Successful dribbles"] },
   { title: "Possession & defending", icon: Waypoints, labels: ["Passes", "Regains", "Defensive 1v1s", "Tackles", "Interceptions", "Blocks", "Clearances", "Possession lost"] },
   { title: "Discipline", icon: Crosshair, labels: ["Fouls", "Fouls won", "Fouls conceded", "Offsides"] },
 ];
@@ -50,7 +54,7 @@ export function OutfieldSeason({ cards, games }: { cards: FootballRecord[]; game
   const maximum = Math.max(1, ...cards.map(c => c.value ?? 0));
   return <section aria-label="Outfield season stats" className="space-y-4 rounded-2xl border border-line bg-white/2 p-4 sm:p-5">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="flex items-center gap-2 font-semibold"><Swords size={18} className="text-accent" aria-hidden />Outfield</h3>
-      <span className="text-xs text-fg-subtle">{matches(games)} with outfield involvement</span></div>
+      <span className="text-xs text-fg-subtle">{cards.find(c => c.label === "Games played")?.value ?? games} recorded appearances</span></div>
     <div className="grid gap-3 lg:grid-cols-3">
       {GROUPS.map(({ title, icon: Icon, labels }) => <div key={title} className="tile min-w-0 p-4">
         <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-accent uppercase"><Icon size={15} aria-hidden />{title}</h4>

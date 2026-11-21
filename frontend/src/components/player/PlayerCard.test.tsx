@@ -46,3 +46,12 @@ describe("PlayerCard", () => {
     expect(ids.length).toBeGreaterThanOrEqual(6);
   });
 });
+
+it("layers the crest over the photo inside the same positioned wrapper", () => {
+  render(<PlayerCard player={{ ...player, photo_url: "/synthetic-photo.png", club_name: "Example FC" }} />);
+  const crest = screen.getByRole("img", { name: "Example FC crest" });
+  const photo = screen.getByRole("img", { name: "Photo of Sam Example" });
+  expect(crest.parentElement).toBe(photo.parentElement);
+  expect(crest).toHaveClass("z-20");
+  expect(crest).toHaveClass("-left-6");
+});

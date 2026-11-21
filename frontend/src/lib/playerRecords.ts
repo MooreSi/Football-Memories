@@ -8,10 +8,12 @@ const sample = (n: number) => `${n} ${n === 1 ? "match" : "matches"}`;
 export type FootballRecordData = { id: string; goals: MatchGoals; keeper: Keeper | undefined; player: PlayerStat | undefined };
 export const goalkeeperPosition = (position: string | null) => /^(GK|G\.?K\.?|goal\s*keeper|keeper)$/i.test(position?.trim() ?? "");
 
+export const selectedKeeper = (position: string | null, data: FootballRecordData[]) => position?.trim() ? goalkeeperPosition(position) : data.some(d => d.keeper);
+
 /** Prepare attribution once so season panels can share it across roles. */
-export function footballRecordData(matches: (GoalsSource & { id: string })[], name: string, club: string | null, entries: GoalsEntries): FootballRecordData[] {
+export function footballRecordData(matches: (GoalsSource & { id: string })[], name: string, club: string | null, entries: GoalsEntries, prepared?: Record<string, MatchGoals>): FootballRecordData[] {
   return [...new Map(matches.map(m => [m.id, m])).values()].map(match => {
-    const goals = matchGoals(match, club, entries[match.id]);
+    const goals = prepared?.[match.id] ?? matchGoals(match, club, entries[match.id]);
     return { id: match.id, goals, keeper: goals.keepers.find(k => k.name && sameCode(k.name, name)),
       player: playerStats(match, club, goals).find(p => sameCode(p.name, name)) };
   });
@@ -55,6 +57,6 @@ export function summarizeFootballRecords(data: FootballRecordData[], name: strin
 /** All cached matches, using the same assignments and action sources as match stats. */
 export function footballRecords(matches: (GoalsSource & { id: string })[], name: string, position: string | null, club: string | null, entries: GoalsEntries): { keeper: boolean; cards: FootballRecord[] } {
   const data = footballRecordData(matches, name, club, entries);
-  const keeper = position?.trim() ? goalkeeperPosition(position) : data.some(d => d.keeper);
+  const keeper = selectedKeeper(position, data);
   return summarizeFootballRecords(data, name, keeper);
 }

@@ -13,21 +13,20 @@ const library: HudlMatch[] = [
 const props = { library, series: [], name: "Sam Example", position: "Goalkeeper", club: "Aston Villa", today: new Date("2026-11-21T12:00:00Z") };
 afterEach(() => vi.unstubAllGlobals());
 
-it("replaces monthly moments with separate season role charts and switches season", async () => {
+it("shows only the selected goalkeeper role across seasons", async () => {
   stubFetch({ "/api/goals": { keeper: { ...EMPTY_ENTRY, keepers: [{ name: "Sam Example", saves: 3 }], added: [{ id: "g", side: "theirs" }] } } });
   renderWithProviders(<SeasonStory {...props} />);
   const panel = await screen.findByRole("region", { name: "Season story" });
   const keeper = await within(panel).findByRole("region", { name: "Goalkeeping season stats" });
   expect(within(keeper).getByRole("meter", { name: "Save percentage" })).toHaveAttribute("aria-valuenow", "75");
-  expect(within(keeper).getByText("3")).toBeInTheDocument();
-  const outfield = within(panel).getByRole("region", { name: "Outfield season stats" });
-  expect(within(outfield).getByRole("meter", { name: "Passes" })).toHaveAttribute("aria-valuenow", "1");
-  expect(within(outfield).getByRole("meter", { name: "Defensive 1v1s" })).toHaveAttribute("aria-valuenow", "1");
+  expect(within(keeper).getByRole("group", { name: "Goals saved" })).toHaveTextContent("3");
+  expect(within(panel).queryByRole("region", { name: "Outfield season stats" })).toBeNull();
   expect(within(panel).queryByRole("list", { name: "Match of the month" })).toBeNull();
   expect(within(panel).getByRole("tabpanel")).toHaveTextContent("3 saves");
   await userEvent.setup().click(within(panel).getByRole("tab", { name: "2025/26" }));
-  expect(within(panel).queryByRole("region", { name: "Goalkeeping season stats" })).toBeNull();
-  expect(within(panel).getByRole("tabpanel")).toHaveTextContent("1 pass");
+  expect(within(panel).getByRole("region", { name: "Goalkeeping season stats" })).toBeInTheDocument();
+  expect(within(panel).queryByRole("region", { name: "Outfield season stats" })).toBeNull();
+  expect(within(panel).getByRole("tabpanel")).toHaveTextContent("No goalkeeping stats recorded");
   expect(within(panel).getByRole("tab", { name: "2025/26" })).toHaveAttribute("aria-selected", "true");
 });
 

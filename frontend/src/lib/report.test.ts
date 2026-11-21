@@ -10,12 +10,12 @@ const a: HudlMatch = { id: "a", title: "261101 U11 v Derby County", age_group: "
 ] };
 const b: HudlMatch = { id: "b", title: "261108 U11 v Stoke City", age_group: "U11", capture_key: "b", moments: [t("8", "PRESSING", 1)] };
 
-it("puts score, possession, situations and the player's involvement on a match report", () => {
+it("puts score, possession, situations and useful outfield stats on a match report", () => {
   const r = matchReport(a, "Aston Villa", {}, "Pat Example");
   expect(r).toMatchObject({ title: "Aston Villa v Derby County", subtitle: "1 November 2026", headline: "2 - 1", possession: { ours: 75, theirs: 25 } });
   expect(r.lines).toContainEqual({ label: "Goal", value: "2 - 1" });
   expect(r.lines.some((l) => l.label === "Possession")).toBe(false);
-  expect(r.player?.lines).toContainEqual({ label: "During our chances", value: "1" });
+  expect(r.player?.lines).toContainEqual({ label: "Chances", value: "1" });
 });
 
 it("leaves the player out of a match he is not tagged in, and the score out when unknown", () => {
@@ -30,7 +30,7 @@ it("adds up a season, counting only scored matches as results", () => {
   expect(r.lines).toEqual([
     { label: "Matches", value: "2" }, { label: "Goals", value: "2 - 1" }, { label: "Opponents", value: "2" }, { label: "Most played", value: "Derby County (1)" },
   ]);
-  expect(r.player?.lines[0]).toEqual({ label: "Matches tagged", value: "1" });
+  expect(r.player?.lines[0]).toEqual({ label: "Games played", value: "1" });
 });
 
 // Owner request 2026-11-15: the season report shows games played, won, drawn and lost.
@@ -100,7 +100,7 @@ it("counts a likely scorer in the season's top scorers and says it is not yet co
 it("leaves plays alongside off the season report's player lines", () => {
   const withMate = { ...a, moments: [...a.moments!, t("9", "JO TESTER", 8, 5)] };
   const r = seasonReport([withMate], "U11", "Aston Villa", {}, "Pat Example");
-  expect(r.player?.lines.map((l) => l.label)).toEqual(["Matches tagged", "Tagged moments", "During our chances / goals"]);
+  expect(r.player?.lines.map((l) => l.label)).toEqual(["Games played", "Goals scored", "Penalties scored", "Passes", "Shots on target", "Chances", "Crosses", "Defensive 1v1s", "Attacking 1v1s", "Fouls", "Regains"]);
 });
 
 // Spec 290: how games went, from matches whose every goal has a time and adds up to the score.
@@ -110,4 +110,23 @@ it("adds scored first, clean sheets and how many matches they come from to a sea
     { label: "Scored first", value: "1 (won 1, drew 0, lost 0)" }, { label: "Clean sheets", value: "0" }, { label: "Goal times known", value: "1 of 2 matches" },
   ]);
   expect(r.lines.slice(0, -3)).toEqual(seasonReport([a, b], "U11", "Aston Villa", {}, null).lines);
+});
+
+it("replaces player involvement rows with corrected goalkeeper performance in match and season reports", () => {
+  const goals = matchGoals(a, "Aston Villa", { scorers: {}, added: [], removed: [], keepers: [{ name: "Pat Example", saves: 3 }], beaten: {} });
+  const report = matchReport(a, "Aston Villa", {}, "Pat Example", undefined, goals, "Goalkeeper");
+  expect(report.player?.lines).toContainEqual({ label: "Shots saved", value: "3" });
+  expect(report.player?.lines).toContainEqual({ label: "Save percentage", value: "75%" });
+  expect(report.player?.lines.some(l => /Tagged|During|Passes/.test(l.label))).toBe(false);
+  const season = seasonReport([a, { ...a, id: "second" }], "2026/27", "Aston Villa", {}, "Pat Example", { a: goals, second: goals }, "GK");
+  expect(season.player?.lines).toContainEqual({ label: "Shots saved", value: "6" });
+  expect(season.player?.lines).toContainEqual({ label: "Goals conceded", value: "2" });
+  expect(season.player?.lines).toContainEqual({ label: "Games played", value: "2" });
+});
+
+it("shows the selected outfield role even when keeper inference names the player", () => {
+  const report = matchReport(a, "Aston Villa", {}, "Pat Example", undefined, matchGoals(a, "Aston Villa"), "Forward");
+  expect(report.player?.lines.some(l => l.label === "Goals scored")).toBe(true);
+  expect(report.player?.lines.some(l => l.label === "Shots saved")).toBe(false);
+  expect(report.player?.note).toContain("Sources");
 });

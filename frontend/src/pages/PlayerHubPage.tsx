@@ -19,7 +19,6 @@ import { SeasonStory } from "../components/player/SeasonStory";
 import { MilestonesTimeline } from "../components/player/MilestonesTimeline";
 import { OpponentMap } from "../components/player/OpponentMap";
 import { TopMoments } from "../components/player/TopMoments";
-import { involvement } from "../lib/insights";
 import { useHomeClub } from "../lib/useHomeClub";
 
 /** Layout follows reference 03: card left, teams/numbers/teammates beside it (dates column and moments feed removed as duplicates, 2026-11-11),
@@ -51,13 +50,7 @@ export function PlayerHubPage() {
   const perMatch = [...p.per_match, ...hudlPerMatch(hudl, p.display_name)]
     .filter((m) => m.match_date)
     .sort((a, b) => a.match_date.localeCompare(b.match_date));
-  // Milestones also need each Hudl match's age group and the team goals that
-  // overlapped the player's moments (owner request 2026-11-13).
   const club = p.club_name || home;
-  const milestoneSeries = [...p.per_match, ...hudlPerMatch(hudl, p.display_name).map((e, i) => ({
-    ...e, age: hudl[i].age,
-    goals: involvement(remote.data?.find((m) => m.id === hudl[i].id)?.moments ?? [], p.display_name, club).headline.ourGoals,
-  }))];
   const href = (m: (typeof perMatch)[number]) => m.href ?? `/matches/${m.match_id}`;
   const first = perMatch[0];
   const latest = perMatch[perMatch.length - 1];
@@ -108,7 +101,7 @@ export function PlayerHubPage() {
           <RecordsPanel library={remote.data} name={p.display_name} position={p.position} club={club} />
           <TopMoments playerId={p.id} name={p.display_name} library={remote.data} club={club} />
           <SeasonStory series={p.per_match} library={remote.data} name={p.display_name} position={p.position} club={club} />
-          <MilestonesTimeline series={milestoneSeries} name={p.display_name} />
+          <MilestonesTimeline library={remote.data} name={p.display_name} position={p.position} club={club} importedGames={p.totals.matches} />
           <OpponentMap series={perMatch} />
 
           <section aria-label="Moments per match" className="panel min-w-0 p-5">

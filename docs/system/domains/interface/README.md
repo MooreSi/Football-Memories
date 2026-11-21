@@ -382,7 +382,8 @@ U10 v Stoke City reads 12-9.
 ### Season performance story (spec 440, 2026-11-21)
 
 - Season story replaces monthly moment picks with separate Goalkeeping and Outfield
-  totals. Both appear for mixed-role seasons. Whole-season count bars share a scale
+  totals. Spec 450 supersedes mixed-role display: explicit profile position shows
+  only that role. Whole-season count bars share a scale
   within each role; the keeper percentage ring has its own 0–100% scale. No ratings.
 - `seasonStories` groups dated matches July–June, newest first. Undated data uses a
   valid served season label, otherwise Unclassified (last). Only the player's tags
@@ -391,9 +392,35 @@ U10 v Stoke City reads 12-9.
   combined moments series would count cached matches twice. Imported moment volumes
   do not establish actions and their missing breakdown is explained.
 - Shared preparation/aggregation in `playerRecords` keeps season and all-time source
-  attribution consistent. Role counts come from actual per-match keeper/outfield rows,
-  with profile position choosing the placeholder only when no role data exists.
+  attribution consistent. Explicit position chooses one role even if source tags
+  resemble the other; unset position falls back to named keeper evidence.
 - Outfield groups display twenty categories. Def/Att 1v1 means recorded encounters,
   never wins; generic fouls do not imply won/conceded or sum those overlapping categories.
   Missing metrics have no bar; recorded zeros do. Summary text uses available football
   totals, labels likely/involvement estimates and omits moment-volume performance claims.
+
+### Position-specific player performance (spec 450, 2026-11-21)
+
+- `playerPerformance` shares named assignments/action totals between season stories,
+  career milestones and the My Player portion of match/season reports. ReportPage
+  reads the primary profile position through `usePrimaryPlayerName`; correction data
+  is reused rather than guessed again. Reports wait for the primary profile/goals,
+  and leave My Player stats out with an error if saved goals cannot be loaded.
+  A failed primary-profile read also leaves the team report usable instead of
+  waiting forever for a successful profile.
+- Keeper extras: games played, penalties stopped, clean sheets, best saves, saves/game
+  and conceded/game. Save averages use only recorded-save samples. Clean sheets
+  require a known score matching goal entries and a confirmed sole keeper; unknown,
+  split or inferred-only keeper coverage cannot establish a full-match clean sheet.
+- Penalty outcomes need explicit named actions. The outfield penalty metric has no
+  team-overlap fallback. Generic penalty/miss codes never imply a save or named scorer.
+- Milestones are role-specific career totals and next positive count thresholds;
+  conceded and best-in-match totals have no progress target. Unknown stays a dash.
+  Imported appearances contribute games but no action counts. No team-goal overlap
+  is called a player's first goal. Old moment/age/season badge machinery is removed.
+- On the pitch during and Attacks he was in sections are removed; journey/partnership
+  content remains. The crest sits inside the positioned photo wrapper, overlapping
+  its top left with z-20; browser hit testing confirms it paints above the photo.
+- Report source/coverage notes are wrapped under player rows and included in SVG/PNG
+  height, so saved/printed reports retain uncertainty without clipping. Team report
+  content is unchanged. Games played means recorded appearances, not verified minutes.

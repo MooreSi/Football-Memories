@@ -2,10 +2,12 @@ import type { HudlMatch } from "../api/hudl";
 import { sameCode } from "./codes";
 import type { GoalsEntries } from "./goals";
 import { fixtureDate } from "./hudlFixture";
+import { performanceFromData } from "./playerPerformance";
+import type { Corrections } from "./matchScore";
 import type { MatchCount } from "./records";
-import { footballRecordData, goalkeeperPosition, summarizeFootballRecords, type FootballRecord, type FootballRecordData } from "./playerRecords";
+import { footballRecordData, selectedKeeper, type FootballRecord, type FootballRecordData } from "./playerRecords";
 
-type Options = { library: HudlMatch[] | undefined; series: MatchCount[]; name: string; position: string | null; club: string | null; entries: GoalsEntries; today?: Date };
+type Options = { library: HudlMatch[] | undefined; series: MatchCount[]; name: string; position: string | null; club: string | null; entries: GoalsEntries; corrections?: Corrections; today?: Date };
 export type SeasonStoryData = { season: string; matches: number; importedMatches: number; keeperMatches: number; outfieldMatches: number; goalkeeping: FootballRecord[] | null; outfield: FootballRecord[] | null; text: string };
 const count = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en-GB")} ${n === 1 ? one : many}`;
 function seasonOf(date: Date): string {
@@ -24,8 +26,10 @@ function summary(story: Omit<SeasonStoryData, "text">, name: string, current: st
     const saves = stat(story.goalkeeping, "Goals saved"), conceded = stat(story.goalkeeping, "Goals conceded");
     const faced = stat(story.goalkeeping, "Shots faced"), percentage = stat(story.goalkeeping, "Save percentage");
     const facts = [saves === null ? null : count(saves, "save"), conceded === null ? null : count(conceded, "goal conceded", "goals conceded"),
-      percentage === null ? null : `${percentage}% save percentage from ${count(faced!, "recorded shot")}`].filter(Boolean);
-    text.push(facts.length ? `Goalkeeping in ${count(story.keeperMatches, "match", "matches")}: ${facts.join(", ")}.` : "No goalkeeping stats recorded for this season.");
+      percentage === null ? null : `${percentage}% save percentage from ${count(faced!, "recorded shot")}`,
+      stat(story.goalkeeping, "Penalties stopped") === null ? null : count(stat(story.goalkeeping, "Penalties stopped")!, "penalty stopped", "penalties stopped"),
+      stat(story.goalkeeping, "Clean sheets") === null ? null : count(stat(story.goalkeeping, "Clean sheets")!, "clean sheet")].filter(Boolean);
+    text.push(facts.length ? `Goalkeeping across ${count(stat(story.goalkeeping, "Games played") ?? story.keeperMatches, "recorded appearance")}: ${facts.join(", ")}.` : "No goalkeeping stats recorded for this season.");
   }
   if (story.outfield) {
     const facts = [["Goals scored", "goal", "goals"], ["Shots on target", "shot on target", "shots on target"],
@@ -33,13 +37,13 @@ function summary(story: Omit<SeasonStoryData, "text">, name: string, current: st
       .flatMap(([label, one, many]) => { const value = stat(story.outfield!, label); return value === null ? [] : [count(value, one, many)]; });
     text.push(facts.length ? `Outfield in ${count(story.outfieldMatches, "match", "matches")}: ${facts.join(", ")}.` : "No outfield stats recorded for this season.");
   }
-  if ([...(story.goalkeeping ?? []), ...(story.outfield ?? [])].some(c => /likely|estimates|overlap/.test(c.note))) text.push("Includes likely assignments or tagged involvement; sources are shown below.");
+  if ([...(story.goalkeeping ?? []), ...(story.outfield ?? [])].some(c => /likely|includes estimates|includes estimated|overlap/.test(c.note))) text.push("Includes likely assignments or tagged involvement; sources are shown below.");
   if (story.importedMatches) text.push(`${count(story.importedMatches, "imported match", "imported matches")} without an action breakdown.`);
   return text.join(" ");
 }
 
 /** Football seasons by match date (July–June), with role-separated whole-season totals. */
-export function seasonStories({ library, series, name, position, club, entries, today = new Date() }: Options): SeasonStoryData[] {
+export function seasonStories({ library, series, name, position, club, entries, corrections, today = new Date() }: Options): SeasonStoryData[] {
   const matches = [...new Map((library ?? []).map(m => [m.id, m])).values()];
   const lookup = new Map(matches.map(m => [m.id, m]));
   const groups = new Map<string, { data: FootballRecordData[]; imports: Set<number> }>();
@@ -60,11 +64,14 @@ export function seasonStories({ library, series, name, position, club, entries, 
   return [...groups].sort(([a], [b]) => a === "Unclassified" ? 1 : b === "Unclassified" ? -1 : b.localeCompare(a)).map(([season, { data, imports }]) => {
     const keeperMatches = data.filter(d => d.keeper).length;
     const outfieldMatches = data.filter(d => d.player || d.goals.goals.some(g => g.side === "ours" && g.scorer && sameCode(g.scorer, name))).length;
-    const showKeeper = keeperMatches > 0 || goalkeeperPosition(position) && !outfieldMatches;
-    const showOutfield = outfieldMatches > 0 || !showKeeper;
+    const showKeeper = selectedKeeper(position, data);
+    const scoped = data.flatMap(d => { const match = lookup.get(d.id); return match ? [match] : []; });
+    const cards = performanceFromData(scoped, data, name, showKeeper, club, corrections);
+    const games = cards.find(c => c.label === "Games played")!;
+    games.value! += imports.size;
     const story = { season, matches: data.length + imports.size, importedMatches: imports.size, keeperMatches, outfieldMatches,
-      goalkeeping: showKeeper ? summarizeFootballRecords(data, name, true).cards : null,
-      outfield: showOutfield ? summarizeFootballRecords(data, name, false, true).cards : null };
+      goalkeeping: showKeeper ? cards : null,
+      outfield: showKeeper ? null : cards };
     return { ...story, text: summary(story, name, seasonOf(today)) };
   });
 }

@@ -101,7 +101,7 @@ it('keeps the chosen team and switches to a younger one by age group', async () 
 });
 
 it('draws a match report with the score, possession and the player', async () => {
-  stubFetch({ [`${H}/library`]: lib, '/api/scores': {}, '/api/preferences': player, '/api/players/5': profile, '/api/team-logo': {} });
+  stubFetch({ [`${H}/library`]: lib, '/api/scores': {}, '/api/goals': {}, '/api/preferences': player, '/api/players/5': profile, '/api/team-logo': {} });
   renderWithProviders(<Routes><Route path="/report/match/:id" element={<ReportPage kind="match" />} /></Routes>, '/report/match/a');
   const card = await screen.findByRole('img', { name: /v Derby County, 1 November 2026/ });
   await vi.waitFor(() => expect(card).toHaveTextContent('PAT EXAMPLE'));

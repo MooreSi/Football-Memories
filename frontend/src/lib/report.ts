@@ -2,16 +2,16 @@ import { gameState, seasonGameLines } from "./gameState";
 import type { HudlMatch } from "../api/hudl";
 import { opponentRecords } from "./headToHead";
 import { fixtureDate, fixtureParts, latestFirst, ukDate } from "./hudlFixture";
-import { involvementTotals, possession, possessionTotals } from "./insights";
+import { possession, possessionTotals } from "./insights";
 import { type Corrections, matchScore } from "./matchScore";
 import { teamProfile } from "./matchProfile";
-import { sameCode } from "./codes";
+import { playerPerformance } from "./playerPerformance";
 import { type MatchGoals, matchGoalLines, topScorers } from "./goals";
 
 /** Spec 230: the numbers on a shareable report, kept apart from drawing them. */
 export type ReportLine = { label: string; value: string };
 export type Report = { kind: "match" | "season"; eyebrow: string; title: string; subtitle: string; headline: string | null; possession: { ours: number; theirs: number } | null;
-  ours: string; theirs: string; lines: ReportLine[]; player: { name: string; lines: ReportLine[] } | null;
+  ours: string; theirs: string; lines: ReportLine[]; player: { name: string; lines: ReportLine[]; note?: string } | null;
   /** Season only (owner request 2026-11-15): games played, won, drawn, lost; `unscored` have no result. */
   record?: { played: number; won: number; drawn: number; lost: number; unscored: number } | null;
   /** Season only (owner request 2026-11-15): each game won, drawn and lost, newest first. */
@@ -19,6 +19,18 @@ export type Report = { kind: "match" | "season"; eyebrow: string; title: string;
   /** Season only (spec 270; likely scorers counted from 2026-11-17): the top three scorers,
    *  and a note of how many are only likely and how many goals have no scorer. */
   scorers?: { lines: ReportLine[]; note: string | null } | null };
+
+/** The same named player/position/corrections as My Player; report values retain source notes. */
+function playerSection(matches: HudlMatch[], club: string | null, name: string | null, position: string | null, goals: Record<string, MatchGoals> | undefined, corrections: Corrections | undefined): Report["player"] {
+  if (!name) return null;
+  const result = playerPerformance({ matches, name, position, club, goals, corrections });
+  if (!result.cards.find(c => c.label === "Games played")?.value) return null;
+  const required = result.keeper ? [] : ["Games played", "Goals scored", "Shots on target", "Passes", "Chances", "Crosses", "Regains", "Fouls", "Defensive 1v1s", "Attacking 1v1s", "Penalties scored"];
+  const shown = result.cards.filter(c => result.keeper || c.value !== null || required.includes(c.label));
+  return { name, lines: shown.map(c => ({ label: c.label === "Goals saved" ? "Shots saved" : c.label,
+    value: c.value === null ? "—" : `${c.value.toLocaleString("en-GB")}${c.percent ? "%" : ""}` })),
+    note: `${result.keeper ? "Goalkeeper" : "Outfield"}. Sources: ${shown.filter(c => c.value !== null).map(c => `${c.label}: ${c.note}`).join("; ")}. — means not recorded.` };
+}
 
 /** Veo's team stats as report lines (owner request 2026-11-15): Veo's attempts are its
  *  "shots on goal"; penalties always shown, 0 - 0 when Veo saw none. */
@@ -28,15 +40,13 @@ function veoLines(rows: { label: string; own: number; opponent: number }[]): Rep
 }
 
 export function matchReport(match: HudlMatch, club: string | null, corrections: Corrections | undefined, player: string | null,
-  veoRows?: { label: string; own: number; opponent: number }[], goals?: MatchGoals): Report {
+  veoRows?: { label: string; own: number; opponent: number }[], goals?: MatchGoals, position: string | null = null): Report {
   const moments = match.moments ?? [];
   const opponent = fixtureParts(match.title, club)?.opponent ?? "Opposition";
   const date = fixtureDate(match.title);
   const score = matchScore(match, club, corrections);
   const poss = possession(moments, club);
   const axes = teamProfile(moments, club).axes.filter((a) => a.name !== "Possession").slice(0, 6);
-  const tagged = player ? moments.filter((m) => sameCode(m.category, player)).length : 0;
-  const v = player && tagged ? involvementTotals([match], player, club) : null;
   return {
     record: null, results: null,
     kind: "match", eyebrow: `MATCH REPORT · ${match.age_group}`, title: `${club || "Us"} v ${opponent}`, subtitle: date ? ukDate(date) : match.title,
@@ -44,12 +54,7 @@ export function matchReport(match: HudlMatch, club: string | null, corrections: 
     ours: club || "Us", theirs: opponent,
     lines: [...(veoRows?.length ? veoLines(veoRows) : axes.map((a) => ({ label: a.name, value: `${a.ours} - ${a.theirs}` }))),
       ...(goals ? matchGoalLines(goals) : [])],
-    player: v && player ? { name: player, lines: [
-      { label: "Tagged moments", value: String(tagged) },
-      { label: "During our chances", value: String(v.headline.ourChances) },
-      { label: "During our goals", value: String(v.headline.ourGoals) },
-      { label: "During opposition chances", value: String(v.headline.theirChances) },
-    ] } : null,
+    player: playerSection([match], club, player, position, goals ? { [match.id]: goals } : undefined, corrections),
   };
 }
 
@@ -70,11 +75,10 @@ function gameLines(matches: HudlMatch[], club: string | null, corrections: Corre
 }
 
 export function seasonReport(matches: HudlMatch[], scope: string, club: string | null, corrections: Corrections | undefined, player: string | null,
-  goals?: Record<string, MatchGoals>): Report {
+  goals?: Record<string, MatchGoals>, position: string | null = null): Report {
   const records = opponentRecords(matches, club, corrections);
   const sum = (k: "won" | "drawn" | "lost" | "goalsFor" | "goalsAgainst" | "scored") => records.reduce((n, r) => n + r[k], 0);
   const poss = possessionTotals(matches.map((m) => m.moments ?? []), club);
-  const v = player ? involvementTotals(matches, player, club) : null;
   const scored = sum("scored");
   const results = { won: [] as string[], drawn: [] as string[], lost: [] as string[] };
   for (const m of latestFirst(matches)) {
@@ -97,10 +101,6 @@ export function seasonReport(matches: HudlMatch[], scope: string, club: string |
       ...(records[0] ? [{ label: "Most played", value: `${records[0].opponent} (${records[0].played})` }] : []),
       ...(goals ? gameLines(matches, club, corrections, goals) : []),
     ],
-    player: v && player && v.moments ? { name: player, lines: [
-      { label: "Matches tagged", value: String(v.matches) },
-      { label: "Tagged moments", value: `${v.moments} (${Math.round((v.moments / v.matches) * 10) / 10} a match)` },
-      { label: "During our chances / goals", value: `${v.headline.ourChances} / ${v.headline.ourGoals}` },
-    ] } : null,
+    player: playerSection(matches, club, player, position, goals, corrections),
   };
 }
