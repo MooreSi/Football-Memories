@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
-- **Individual player actions and full stats (spec 370), branch `codex/player-individual-actions`.**
+- **Individual player actions and full stats (spec 370), merged to `main` at `49b5820`.**
   Confirmed in the owner-selected Cardiff 9v9 Hudl UI: Passing is a label on player
   moments (181 source clips, 19 for one selected player), which the old HUDL_CODE-only
   parser discarded. Supported actions now survive parser/cache/library and take priority
@@ -21,7 +21,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   values stay unrecorded. Minutes played is explicitly confirmed, saved per match/player
   in preferences, clearable, sortable and backed up. Frontend 638; backend 771 each on
   SQLite/PostgreSQL; lint/format/types/build/schema all pass. Synthetic desktop/375px
-  browser review complete. Deployment and helper Cardiff read pending.
+  browser review complete. Deployed locally: backend/frontend rebuilt, helper restarted
+  gracefully while Hudl/Veo idle. Live Cardiff read preserves 181 Passing-labelled source
+  clips; all 13 outfield passing counts match their own labels. The 19-clip example is an
+  inferred keeper and excluded from outfield rows. Health/Nginx/minutes API/served bundle
+  checks pass (`index-BYrNKJL3.js`). Other matches gain labels on next normal open;
+  hosted libraries retain their update preferences.
 
 - **Player stats Goals and Offsides (spec 360), merged to `main` at `e27c6b7`.**
   Goals reuse saved/likely scorers from Goals and keepers, with a visible likely

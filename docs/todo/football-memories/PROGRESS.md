@@ -27,8 +27,19 @@ mypy, schema check and frontend typecheck/build passed. Existing Starlette/jsdom
 bundle warnings remain. Offline desktop/375px reference 02 review: group filtering,
 minutes editing/save, action counts and source-bearing clips. Owner signed into Chrome
 for requested read-only Cardiff 9v9 inspection: 181 Passing-filter results, 19 with one
-player selected. No source roster/payload/session data committed. Deployment and live
-helper metadata verification pending. No CI workflow exists.
+player selected. No source roster/payload/session data committed. No CI workflow exists.
+
+Deployment: merged/pushed to `main` at `49b5820`; backend/frontend rebuilt/recreated
+locally. Health, Nginx, minutes API GET and served bundle `index-BYrNKJL3.js` verified.
+Helper gracefully stopped/started under launchd after both services were checked idle;
+one normal Cardiff stream/metadata read completed. Live cache and `/library` now preserve
+181 Passing-labelled source clips (also Crossing/Regain). Pure app comparison over the
+served match confirms all 13 outfield players' pass counts equal their attached labels.
+The initial expectation of an outfield row with 19 was wrong: that source-selected player
+is an inferred keeper and correctly excluded. No saved goal/keeper overrides on Cardiff.
+No full match downloaded or footage overwritten; ordinary source playback requests only.
+Other caches update on next match open. Hosted libraries follow existing preferences.
+This deployment record is a docs-only checkpoint; source suites were already green.
 
 ## Player goals and offsides (spec 360, owner request 2026-11-21)
 

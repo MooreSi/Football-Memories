@@ -1,6 +1,6 @@
 # 370: Individual actions and complete player stats
 
-**Status:** Shipped (verified feature branch; deployment pending)
+**Status:** Shipped (main; locally deployed 2026-11-21)
 **Sensitive:** parser/cache metadata only; safe-change reviewed. Existing account
 and footage safeguards, pacing and login behavior remain unchanged.
 
@@ -42,4 +42,13 @@ read after deployment; no source roster, raw responses or session data exported.
 - Synthetic desktop and 375px browser review against reference 02 styling:
   group filter, action source/clip review and confirmed minutes editing/save.
 - Existing Starlette/jsdom and bundle warnings remain. No CI workflow exists.
-- Deployment and live helper metadata read pending.
+- Merged/pushed to main at `49b5820`; backend/frontend deployed locally and helper
+  gracefully restarted while both services idle. Health/Nginx/minutes API and live
+  `index-BYrNKJL3.js` bundle checks passed.
+- One normal Cardiff metadata read preserves 181 Passing-labelled source moments.
+  App comparison over served metadata verifies all 13 outfield player pass counts
+  against their own labels. The source-selected 19-clip player is an inferred keeper,
+  intentionally excluded from outfield rows. Other matches update on next open.
+- Hosted libraries follow existing update preferences. No full match downloaded;
+  no credentials/session data exported or footage changed. Deployment record only:
+  no further source changes or additional test suite run.

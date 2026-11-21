@@ -812,3 +812,8 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
   does not trigger a new sweep or change request pacing. Generic Defensive action,
   ATT/DEF 1v1 and Dribbling & RWTB do not prove specific defensive actions or a
   successful dribble; do not substitute them for those stats.
+
+- Live helper verification after deployment: normal Cardiff read retained 181 Passing
+  source moments, 14 Crossing and 10 Regain; served comparison matches the direct
+  labels for all 13 outfield players. The selected 19-Passing source example is an
+  inferred keeper, so it is intentionally absent from the outfield comparison.
