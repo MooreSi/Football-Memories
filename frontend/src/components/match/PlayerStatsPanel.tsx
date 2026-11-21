@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import type { HudlMoment } from "../../api/hudl";
 import { formatClock } from "../../lib/format";
 import type { GoalsSource, MatchGoals } from "../../lib/goals";
-import { PLAYER_METRICS, playerStats, type PlayerMetric } from "../../lib/playerStats";
+import { PLAYER_METRICS, playerStats, type PlayerMetric, type PlayerStatClip } from "../../lib/playerStats";
 
 type Selection = { name: string; metric: "moments" | PlayerMetric };
 export function PlayerStatsPanel({ match, club, goals, onSeek }: {
@@ -24,8 +23,9 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
       <h2 className="text-xl font-semibold">Outfield players</h2>
       {players.length > 0 && <span className="text-sm text-fg-muted">{players.length} tagged players</span>}
     </div>
-    <p className="max-w-3xl text-sm text-fg-muted">Counts show team events during a player’s tags, not verified actions by that player.
-      A shot on target may overlap several players. Passes cannot be calculated from player tags alone.</p>
+    <p className="max-w-3xl text-sm text-fg-muted">Except goals, counts show team events during a player’s tags, not verified actions by that player.
+      Goals use the scorer in Goals and keepers; unconfirmed guesses are marked likely and unassigned goals are excluded.
+      A shot on target or offside may overlap several players. Passes cannot be calculated from player tags alone.</p>
     {!players.length ? <p className="rounded-xl border border-line p-4 text-sm text-fg-muted">{match.source === "veo"
       ? "Veo’s match data does not provide named player stats. Team stats are available in the Team stats tab when supplied."
       : "No tagged outfield players are available for this match. Player names and timed tags are needed for this comparison."}</p>
@@ -39,7 +39,7 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
               {PLAYER_METRICS.map(m => <option key={m.key} value={m.key}>Most {m.label.toLowerCase()}</option>)}
             </select></label>
         </div>
-        <p className="text-xs text-fg-subtle">Select a count to review its clips. — means not recorded for our team; 0 means no overlapping tags.
+        <p className="text-xs text-fg-subtle">Select a count to review its clips. — means not recorded for our team; 0 means none counted.
           Tags during likely keeper spells are excluded; keepers without timed spells are excluded for the match.</p>
         <div className="space-y-2">
           {!shown.length && <p className="py-4 text-sm text-fg-muted">No players match your search.</p>}
@@ -49,7 +49,7 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
               <button type="button" className="text-xs text-accent hover:underline" onClick={() => setSelection({ name: p.name, metric: "moments" })}>
                 {p.moments.length} tagged {p.moments.length === 1 ? "moment" : "moments"}</button>
             </div>
-            <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {PLAYER_METRICS.map(m => <Stat key={m.key} label={m.label} clips={p.events[m.key]}
                 active={selection?.name === p.name && selection.metric === m.key}
                 onClick={() => setSelection({ name: p.name, metric: m.key })} />)}
@@ -59,11 +59,12 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
                 <h3 className="text-sm font-semibold">{selected.name} · {label} · {clips.length}</h3>
                 <button type="button" className="text-xs text-fg-muted hover:text-fg" onClick={() => setSelection(null)}>Close clips</button>
               </div>
-              {!clips.length ? <p className="mt-3 text-sm text-fg-muted">No overlapping tags for this stat.</p>
+              {!clips.length ? <p className="mt-3 text-sm text-fg-muted">{selection?.metric === "goals" ? "No goals assigned to this player." : "No overlapping tags for this stat."}</p>
                 : <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto">{clips.map(c => <li key={c.id}>
-                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-accent/10" onClick={() => onSeek(c.time_s)}>
-                    <span className="mr-3 font-mono text-pin">{formatClock(c.time_s)}</span>{c.category}
-                  </button></li>)}</ul>}
+                  {c.time_s === null ? <p className="px-3 py-2 text-sm text-fg-muted">{c.category} · <span>Time not recorded</span></p>
+                    : <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-accent/10" onClick={() => onSeek(c.time_s!)}>
+                      <span className="mr-3 font-mono text-pin">{formatClock(c.time_s)}</span>{c.category}
+                    </button>}</li>)}</ul>}
             </section>}
           </article>)}
         </div>
@@ -71,11 +72,13 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
   </section>;
 }
 
-function Stat({ label, clips, active, onClick }: { label: string; clips: HudlMoment[] | null; active: boolean; onClick: () => void }) {
+function Stat({ label, clips, active, onClick }: { label: string; clips: PlayerStatClip[] | null; active: boolean; onClick: () => void }) {
+  const likely = clips?.filter(c => c.confirmed === false).length ?? 0;
   const content = <><span className="block text-lg font-semibold tabular-nums">{clips?.length ?? "—"}</span>
-    <span className="block text-[11px] text-fg-muted">{label}</span></>;
+    <span className="block text-[11px] text-fg-muted">{label}</span>
+    {likely > 0 && <span className="block text-[11px] text-warn">{likely} likely</span>}</>;
   const css = "min-w-0 rounded-lg px-2 py-2 text-center";
   return clips === null ? <div aria-label={`${label}: not recorded`} className={`${css} text-fg-subtle`}>{content}</div>
-    : <button type="button" aria-label={`${label}: ${clips.length}`} aria-pressed={active} onClick={onClick}
+    : <button type="button" aria-label={`${label}: ${clips.length}`} aria-description={likely ? `${likely} likely, awaiting scorer confirmation` : undefined} aria-pressed={active} onClick={onClick}
       className={`${css} ${active ? "bg-accent/15 text-accent" : "bg-ink-800/40 hover:bg-accent/10"}`}>{content}</button>;
 }

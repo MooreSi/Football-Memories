@@ -289,3 +289,13 @@ U10 v Stoke City reads 12-9.
 - Stats use responsive cards (six columns on wide screens, three on phones),
   search/sort and inline clip review. Match goals are memoized so video time updates
   do not recalculate the player comparison.
+
+### Goals and offsides (spec 360, 2026-11-21)
+
+- Goals are the exception to overlap counts: reuse the scorer in `matchGoals`,
+  counting confirmed assignments and visibly marking likely guesses. Unassigned
+  goals are excluded, rather than credited to all involved players. A goal added
+  without a time counts but its clip entry says Time not recorded and cannot seek.
+- Offsides match our OFFSIDE/OFFSIDES tags using the existing outfield overlap
+  windows; an opposition offside is excluded. Eight metrics use four columns on
+  desktop and two on phones.

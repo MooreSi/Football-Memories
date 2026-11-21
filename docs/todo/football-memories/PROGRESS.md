@@ -11,6 +11,22 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Player goals and offsides (spec 360, owner request 2026-11-21)
+
+`done`, branch `codex/player-goals-offsides`: add Goals/Offsides and sort options,
+with eight metrics arranged four across on desktop, two on phones. Goals reuse
+confirmed/likely scorers (visible likely marker); overlapping teammates do not
+also receive the goal. Untimed owner-added goals count without a seek button.
+Offsides count our tagged events overlapping the player's outfield windows.
+
+Verification: six new tests observed red, then green; existing tests unchanged.
+Full frontend **631 passed**; backend **758 passed** each on SQLite and development
+PostgreSQL. Ruff check/format, mypy, schema check, frontend typecheck/build passed.
+Existing Starlette/jsdom and bundle warnings remain. Browser checked offline with
+synthetic data at desktop and 375px against reference 02 styling, including clip
+review. No manual real-account verification or footage changes. No CI workflow.
+Merge and frontend deployment pending.
+
 ## Match player comparison (spec 350, owner request 2026-11-21)
 
 `done`, branch `codex/match-player-stats`: Player stats tab between Goals and

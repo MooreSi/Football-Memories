@@ -13,6 +13,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Player stats Goals and Offsides (spec 360), branch `codex/player-goals-offsides`.**
+  Goals reuse saved/likely scorers from Goals and keepers, with a visible likely
+  marker and reviewable clips. Untimed owner-added goals count without a seek
+  button. Offsides use own-team tag overlap. Eight metrics laid out four across
+  on desktop, two on phones. Verification/deployment status in PROGRESS.
+
 - **Match Player stats (spec 350), merged to `main` at `3aa8ee8`.** New tab after
   Goals and keepers, before Insights, on both connected match pages. Search/sort
   outfield players, compare six event counts, open clips inline and seek the video.

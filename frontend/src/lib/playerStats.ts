@@ -5,15 +5,18 @@ import { displayCode } from "./hudlPlayer";
 import { codeSides } from "./matchProfile";
 
 export const PLAYER_METRICS = [
+  { key: "goals", label: "Goals", stems: [] },
   { key: "passes", label: "Passes", stems: ["PASS", "PASSES", "PASS COMPLETED", "SUCCESSFUL PASS"] },
   { key: "shots", label: "Shots on target", stems: ["ON TARGET", "SHOT ON TARGET"] },
   { key: "chances", label: "Chances", stems: ["CHANCE"] },
   { key: "crosses", label: "Crosses", stems: ["CROSS"] },
   { key: "tackles", label: "Tackles", stems: ["TACKLE", "TACKLE WON"] },
+  { key: "offsides", label: "Offsides", stems: ["OFFSIDE", "OFFSIDES"] },
   { key: "regains", label: "Regains", stems: ["REGAIN", "RECOVERY", "BALL RECOVERY"] },
 ] as const;
 export type PlayerMetric = typeof PLAYER_METRICS[number]["key"];
-export type PlayerStat = { name: string; moments: HudlMoment[]; events: Record<PlayerMetric, HudlMoment[] | null> };
+export type PlayerStatClip = Omit<HudlMoment, "time_s"> & { time_s: number | null; confirmed?: boolean };
+export type PlayerStat = { name: string; moments: HudlMoment[]; events: Record<PlayerMetric, PlayerStatClip[] | null> };
 const end = (m: HudlMoment) => m.time_s + Math.max(0, m.duration_s);
 // Positive-length windows are half-open: merely touching their edges is not involvement.
 const overlaps = (a: HudlMoment, b: HudlMoment) => a.time_s === end(a)
@@ -21,7 +24,7 @@ const overlaps = (a: HudlMoment, b: HudlMoment) => a.time_s === end(a)
   : b.time_s === end(b) ? a.time_s <= b.time_s && b.time_s < end(a)
   : a.time_s < end(b) && b.time_s < end(a);
 
-/** Counts of team events during named tags, never attribution of an action to a player. */
+/** Goals reuse scorer corrections/guesses; other metrics count team events during named tags. */
 export function playerStats(match: GoalsSource, club: string | null, goals: MatchGoals): PlayerStat[] {
   if (match.source === "veo") return [];
   const moments = match.moments ?? [];
@@ -48,7 +51,12 @@ export function playerStats(match: GoalsSource, club: string | null, goals: Matc
       .sort((a, b) => a.time_s - b.time_s);
     const outfield = mine.flatMap(windows);
     return { name, moments: mine, events: Object.fromEntries(PLAYER_METRICS.map(metric => [metric.key,
-      events[metric.key].length ? events[metric.key].filter(e => outfield.some(p => overlaps(e, p))) : null,
+      metric.key === "goals" ? goals.goals.filter(g => g.side === "ours" && g.scorer && codeKey(g.scorer) === key
+        && (g.time_s === null || !inGoal(g.time_s))).map(g => ({
+          id: g.id, category: `Goal · ${g.confirmed ? "confirmed" : "likely"}`, time_s: g.time_s,
+          duration_s: 0, confirmed: g.confirmed,
+        })).sort((a, b) => (a.time_s ?? Infinity) - (b.time_s ?? Infinity))
+        : events[metric.key].length ? events[metric.key].filter(e => outfield.some(p => overlaps(e, p))) : null,
     ])) as PlayerStat["events"] };
   }).filter(p => p.moments.length).sort((a, b) => a.name.localeCompare(b.name));
 }
