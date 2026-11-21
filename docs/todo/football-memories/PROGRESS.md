@@ -34,6 +34,11 @@ SQLite and dedicated PostgreSQL (`memories_labels_test`, then removed). Ruff
 check/format, mypy and Alembic no drift pass. Existing warnings remain; no CI workflow. Audit over actual cached labels checked the
 production predicate, without persisting raw metadata or real roster names.
 
+Deployment: merged/pushed main `2f81736`; frontend rebuilt/recreated locally.
+Health ok, Nginx config pass, served `index-CL2U0gIr.js` includes period-label
+exclusion. Backend/helper left running. No UI restyle or live account check needed.
+Hosted libraries follow existing update preferences. Deployment record docs-only.
+
 ## Player action profile (spec 410, 2026-11-21)
 
 `done`, branch `codex/player-action-profile-ui`, managed worktree
