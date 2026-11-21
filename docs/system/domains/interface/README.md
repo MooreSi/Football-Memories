@@ -274,3 +274,18 @@ U10 v Stoke City reads 12-9.
   asks the gateway's `/_portal/api/me` (same origin) and shows an **Admin** button
   (`HostedAdminLink`, shield icon, label hidden on phones) to the admin only; it opens
   `/_portal/admin`. The admin API checks the role itself, so the button is not the guard.
+
+## Match player stats (spec 350, 2026-11-21)
+
+- Player stats sits between Goals and keepers and Insights in `MatchSections`.
+  `lib/playerStats.ts` counts each own-team event once per player when its time
+  overlaps an outfield player tag. It does not identify the passer/shooter.
+- A missing own-team event code produces null (dash), not zero. No possession or
+  player tag is interpreted as a pass. Veo has no named player stats in our cache.
+- Keeper spells partition player-tag windows so events while in goal are excluded;
+  a keeper who later plays outfield keeps their outfield involvement. Owner-named
+  keepers without timed spells are excluded for the match. Existing inference is
+  unchanged, including its uncertainty.
+- Stats use responsive cards (six columns on wide screens, three on phones),
+  search/sort and inline clip review. Match goals are memoized so video time updates
+  do not recalculate the player comparison.

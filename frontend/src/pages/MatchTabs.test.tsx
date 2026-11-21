@@ -32,7 +32,7 @@ it("opens a Hudl match on the Moments tab, with the other sections one tab away"
   openHudl();
   const tabs = await screen.findByRole("tablist", { name: "Match sections" });
   expect(within(tabs).getAllByRole("tab").map((x) => x.textContent)).toEqual([
-    expect.stringMatching(/^Moments/), "Team stats", expect.stringMatching(/^Goals and keepers/), "Insights"]);
+    expect.stringMatching(/^Moments/), "Team stats", expect.stringMatching(/^Goals and keepers/), "Player stats", "Insights"]);
   expect(within(tabs).getByRole("tab", { name: /^Moments/ })).toHaveAttribute("aria-selected", "true");
   expect(panel("Moments")).toContainElement(screen.getByRole("region", { name: "Hudl tagged moments" }));
   expect(panel("Moments")).not.toHaveClass("hidden");
@@ -96,7 +96,7 @@ it("lays out a Veo match the same way", async () => {
   openVeo();
   const tabs = await screen.findByRole("tablist", { name: "Match sections" });
   expect(within(tabs).getAllByRole("tab").map((x) => x.textContent)).toEqual([
-    expect.stringMatching(/^Moments/), "Team stats", expect.stringMatching(/^Goals and keepers/), "Insights"]);
+    expect.stringMatching(/^Moments/), "Team stats", expect.stringMatching(/^Goals and keepers/), "Player stats", "Insights"]);
   expect(panel("Moments")).toContainElement(screen.getByRole("region", { name: "Veo highlight moments" }));
   expect(panel("Team stats")).toHaveClass("hidden");
   const strip = screen.getByRole("region", { name: "Match summary" });

@@ -1,10 +1,11 @@
-import { type KeyboardEvent, type ReactNode, useId, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from "react";
 import { formatClock } from "../../lib/format";
 import { type GoalsSource, matchGoals, useGoalEntries } from "../../lib/goals";
 import type { Minute } from "../../lib/insights";
 import { keeperLine, summaryCells } from "../../lib/matchSummary";
 import type { TeamRow } from "../../lib/veoTeamSplit";
 import { MomentumBars } from "./MatchInsights";
+import { PlayerStatsPanel } from "./PlayerStatsPanel";
 
 type Section = { id: string; label: string; content: ReactNode | null };
 
@@ -18,13 +19,14 @@ export function MatchSections({ match, club, rows, flow, ours, theirs, now, onSe
   moments: ReactNode | null; momentsCount: number; stats: ReactNode | null; goals: ReactNode; insights: ReactNode | null;
 }) {
   const entries = useGoalEntries();
-  const data = matchGoals(match, club, entries.data?.[match.id]);
+  const data = useMemo(() => matchGoals(match, club, entries.data?.[match.id]), [match, club, entries.data]);
   const scored = data.goals.filter((g) => g.side === "ours").length;
   const conceded = data.goals.length - scored;
   const sections: Section[] = [
     { id: "moments", label: `Moments · ${momentsCount}`, content: moments },
     { id: "stats", label: "Team stats", content: stats },
     { id: "goals", label: `Goals and keepers · ${scored}–${conceded}`, content: goals },
+    { id: "players", label: "Player stats", content: <PlayerStatsPanel match={match} club={club} goals={data} onSeek={onSeek} /> },
     { id: "insights", label: "Insights", content: insights },
   ];
   const shown = sections.filter((s) => s.content);

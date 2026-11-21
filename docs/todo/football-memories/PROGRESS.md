@@ -11,6 +11,25 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Match player comparison (spec 350, owner request 2026-11-21)
+
+`done`, branch `codex/match-player-stats`: Player stats tab between Goals and
+keepers and Insights on Hudl/Veo match pages; searchable/sortable outfield players,
+six tagged-involvement metrics, inline clip drill-down and video seek. Missing
+codes show a dash; no pass or shooter attribution invented. Keeper spell windows
+excluded while retaining outfield tags. Veo absence explained. Owner approved two
+exact tab-order expectation edits; other existing assertions unchanged.
+
+Verification 2026-11-21: new panel/integration tests red first; keeper-boundary
+regression red then fixed. `uv run pytest -q`: **758 passed** on SQLite and
+**758 passed** on development PostgreSQL (collected count independently confirmed).
+Ruff check/format, mypy and Alembic check all passed. `npm test`: **625 passed**;
+`npm run typecheck` and `npm run build` passed. Existing Starlette deprecation,
+jsdom media/canvas and bundle-size warnings remain. Offline browser checked at
+desktop and in a 375px phone frame against reference 02, including inline shot
+clips and exact timestamp seek. No real account used, no footage changed, no
+Docker/deployment changes. No CI workflow exists. Not merged to main or deployed.
+
 ## Public runtime hardening (spec 330, owner request 2026-11-20)
 
 `partial`, branch `codex/public-runtime-hardening`: Dockerfile changes and new tests committed

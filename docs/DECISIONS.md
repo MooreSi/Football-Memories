@@ -4,6 +4,13 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-037 (2026-11-21) Player comparison shows tagged involvement, never invented actions
+Owner requested outfield pass/shot totals on the match page. The cached data has
+player windows and team events, not action attribution. Show overlapping own-team
+events with a clear explanation and reviewable clips; unavailable codes stay a dash.
+Do not infer passes from touches or possession. Veo's empty state explains the lack
+of named data. Exclude timed keeper activity and retain later outfield involvement.
+
 ## D-036 (2026-11-17) Season top scorers count the likely scorer until confirmed
 Owner request: the season report's TOP SCORERS showed only a note ("125 goals have
 no confirmed scorer yet") because spec 270 shared confirmed scorers only. Now each

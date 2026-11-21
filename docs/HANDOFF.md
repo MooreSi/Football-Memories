@@ -11,6 +11,18 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Current change (2026-11-21)
+
+- **Match Player stats (spec 350), branch `codex/match-player-stats`.** New tab after
+  Goals and keepers, before Insights, on both connected match pages. Search/sort
+  outfield players, compare six event counts, open clips inline and seek the video.
+  Counts are explicitly team events overlapping a player's tags, never verified passes
+  or shots made by that player. Missing own-team codes show a dash; Veo explains it
+  supplies no named player stats. Goalkeeping spells excluded, with outfield activity
+  retained after a keeper change. Owner approved the two tab-order test expectation
+  updates in chat. Browser checked offline at desktop and in a 375px phone frame;
+  no real account used. Verification recorded in PROGRESS. Not deployed or merged to main.
+
 ## Current state (2026-11-20)
 
 - **A stopped Veo read carries on where it left off (owner report 2026-11-20, lambro's new

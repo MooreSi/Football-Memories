@@ -1,0 +1,81 @@
+import { useMemo, useState } from "react";
+import type { HudlMoment } from "../../api/hudl";
+import { formatClock } from "../../lib/format";
+import type { GoalsSource, MatchGoals } from "../../lib/goals";
+import { PLAYER_METRICS, playerStats, type PlayerMetric } from "../../lib/playerStats";
+
+type Selection = { name: string; metric: "moments" | PlayerMetric };
+export function PlayerStatsPanel({ match, club, goals, onSeek }: {
+  match: GoalsSource & { id: string }; club: string | null; goals: MatchGoals; onSeek: (t: number) => void;
+}) {
+  const players = useMemo(() => playerStats(match, club, goals), [match, club, goals]);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("name");
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const shown = players.filter(p => p.name.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => {
+    const count = (p: typeof a) => sort === "moments" ? p.moments.length : p.events[sort as PlayerMetric]?.length ?? -1;
+    return (sort === "name" ? 0 : count(b) - count(a)) || a.name.localeCompare(b.name);
+  });
+  const selected = players.find(p => p.name === selection?.name);
+  const clips = selection?.metric === "moments" ? selected?.moments : selected?.events[selection?.metric as PlayerMetric];
+  const label = selection?.metric === "moments" ? "Tagged moments" : PLAYER_METRICS.find(m => m.key === selection?.metric)?.label;
+  return <section aria-label="Player stats" className="panel min-w-0 space-y-4 p-4 sm:p-5">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h2 className="text-xl font-semibold">Outfield players</h2>
+      {players.length > 0 && <span className="text-sm text-fg-muted">{players.length} tagged players</span>}
+    </div>
+    <p className="max-w-3xl text-sm text-fg-muted">Counts show team events during a player’s tags, not verified actions by that player.
+      A shot on target may overlap several players. Passes cannot be calculated from player tags alone.</p>
+    {!players.length ? <p className="rounded-xl border border-line p-4 text-sm text-fg-muted">{match.source === "veo"
+      ? "Veo’s match data does not provide named player stats. Team stats are available in the Team stats tab when supplied."
+      : "No tagged outfield players are available for this match. Player names and timed tags are needed for this comparison."}</p>
+      : <>
+        <div className="flex flex-wrap gap-3">
+          <label className="w-full min-w-0 text-xs text-fg-muted sm:min-w-48 sm:flex-1">Find player
+            <input className="field mt-1 w-full" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Player name" /></label>
+          <label className="w-full text-xs text-fg-muted sm:w-auto">Sort players
+            <select className="field mt-1 block w-full max-w-full" value={sort} onChange={e => setSort(e.target.value)}>
+              <option value="name">Name · A–Z</option><option value="moments">Most tagged moments</option>
+              {PLAYER_METRICS.map(m => <option key={m.key} value={m.key}>Most {m.label.toLowerCase()}</option>)}
+            </select></label>
+        </div>
+        <p className="text-xs text-fg-subtle">Select a count to review its clips. — means not recorded for our team; 0 means no overlapping tags.
+          Tags during likely keeper spells are excluded; keepers without timed spells are excluded for the match.</p>
+        <div className="space-y-2">
+          {!shown.length && <p className="py-4 text-sm text-fg-muted">No players match your search.</p>}
+          {shown.map(p => <article key={p.name} aria-label={p.name} className="rounded-xl border border-line bg-ink-950/30 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold">{p.name}</h3>
+              <button type="button" className="text-xs text-accent hover:underline" onClick={() => setSelection({ name: p.name, metric: "moments" })}>
+                {p.moments.length} tagged {p.moments.length === 1 ? "moment" : "moments"}</button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
+              {PLAYER_METRICS.map(m => <Stat key={m.key} label={m.label} clips={p.events[m.key]}
+                active={selection?.name === p.name && selection.metric === m.key}
+                onClick={() => setSelection({ name: p.name, metric: m.key })} />)}
+            </div>
+            {selected?.name === p.name && clips && <section aria-label="Player stat clips" className="mt-3 rounded-xl border border-accent/40 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold">{selected.name} · {label} · {clips.length}</h3>
+                <button type="button" className="text-xs text-fg-muted hover:text-fg" onClick={() => setSelection(null)}>Close clips</button>
+              </div>
+              {!clips.length ? <p className="mt-3 text-sm text-fg-muted">No overlapping tags for this stat.</p>
+                : <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto">{clips.map(c => <li key={c.id}>
+                  <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-accent/10" onClick={() => onSeek(c.time_s)}>
+                    <span className="mr-3 font-mono text-pin">{formatClock(c.time_s)}</span>{c.category}
+                  </button></li>)}</ul>}
+            </section>}
+          </article>)}
+        </div>
+      </>}
+  </section>;
+}
+
+function Stat({ label, clips, active, onClick }: { label: string; clips: HudlMoment[] | null; active: boolean; onClick: () => void }) {
+  const content = <><span className="block text-lg font-semibold tabular-nums">{clips?.length ?? "—"}</span>
+    <span className="block text-[11px] text-fg-muted">{label}</span></>;
+  const css = "min-w-0 rounded-lg px-2 py-2 text-center";
+  return clips === null ? <div aria-label={`${label}: not recorded`} className={`${css} text-fg-subtle`}>{content}</div>
+    : <button type="button" aria-label={`${label}: ${clips.length}`} aria-pressed={active} onClick={onClick}
+      className={`${css} ${active ? "bg-accent/15 text-accent" : "bg-ink-800/40 hover:bg-accent/10"}`}>{content}</button>;
+}
