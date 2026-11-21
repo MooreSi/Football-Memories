@@ -189,3 +189,107 @@ describe("report lines and top scorers (likely scorers counted, keepers confirme
     });
   });
 });
+
+// Spec 400: invented names and timings, exercising rotating keepers and false overlaps.
+describe("keeper attribution across periods", () => {
+  const kick = (id: string, at: number, name: string, lead = 4, duration = 15) => [
+    t(`kick-${id}`, "ASTON VILLA GOAL KICK", at, 20), t(`player-${id}`, name, at - lead, duration),
+  ];
+  it("finds returning keepers in four periods instead of suppressing short spells", () => {
+    const moments = [
+      ...kick("a", 100, "Sam Gloves"), t("receiver-a", "Ali Demo", 99.7, 20),
+      ...kick("b", 200, "Sam Gloves"), t("receiver-b", "Ali Demo", 199.7, 20),
+      ...kick("c", 300, "Sam Gloves", 13, 25),
+      t("h1", "END HALF", 400),
+      ...kick("d", 500, "Jo Palms"), ...kick("e", 600, "Jo Palms"),
+      t("h2", "END HALF", 800),
+      ...kick("f", 900, "Sam Gloves"), ...kick("g", 1000, "Sam Gloves"),
+      t("h3", "END HALF", 1200),
+      ...kick("h", 1300, "Jo Palms"), ...kick("i", 1400, "Jo Palms", 19, 31),
+      ...[350, 750, 1150, 1550].map((at, i) => t(`goal-${i}`, "OPPOSITION GOAL", at, 25)),
+    ];
+    const result = matchGoals({ moments }, CLUB);
+    expect(result.spells).toEqual([
+      { name: "Sam Gloves", from_s: 0, to_s: 400 }, { name: "Jo Palms", from_s: 400, to_s: 800 },
+      { name: "Sam Gloves", from_s: 800, to_s: 1200 }, { name: "Jo Palms", from_s: 1200, to_s: null },
+    ]);
+    expect(result.goals.map(g => g.keeper)).toEqual(["Sam Gloves", "Jo Palms", "Sam Gloves", "Jo Palms"]);
+    expect(result.keepers.map(k => [k.name, k.conceded])).toEqual([["Sam Gloves", 2], ["Jo Palms", 2]]);
+  });
+  it("does not choose alphabetically when kick evidence ties", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), ...kick("b", 200, "Sam Gloves"),
+      ...kick("c", 300, "Jo Palms"), ...kick("d", 400, "Jo Palms"),
+      t("goal", "OPPOSITION GOAL", 150, 25),
+    ] }, CLUB);
+    expect(result.spells).toEqual([]);
+    expect(result.goals[0].keeper).toBeNull();
+  });
+  it("does not extend a known keeper into a period with no evidence", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), ...kick("b", 200, "Sam Gloves"),
+      t("half", "END HALF", 400), t("goal", "OPPOSITION GOAL", 500, 25),
+    ] }, CLUB);
+    expect(result.spells).toEqual([{ name: "Sam Gloves", from_s: 0, to_s: 400 }]);
+    expect(result.goals[0].keeper).toBeNull();
+    expect(result.keepers.find(k => k.name === "Sam Gloves")?.conceded).toBe(0);
+  });
+  it("requires repeated goal-kick evidence", () => {
+    expect(matchGoals({ moments: kick("a", 100, "Sam Gloves") }, CLUB).spells).toEqual([]);
+  });
+  it("uses the ball-in time when the goal clip starts before a keeper change", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), ...kick("b", 200, "Sam Gloves"),
+      t("half", "END HALF", 400),
+      ...kick("c", 500, "Jo Palms"), ...kick("d", 600, "Jo Palms"),
+      t("goal", "OPPOSITION GOAL", 390, 25),
+    ] }, CLUB);
+    expect(result.goals[0].keeper).toBe("Jo Palms");
+  });
+  it("keeps multiple confirmed keepers unassigned without timing, while honoring a named goal", () => {
+    const source = { moments: [t("a", "OPPOSITION GOAL", 100, 25), t("b", "OPPOSITION GOAL", 200, 25)] };
+    const entry: GoalsEntry = { scorers: {}, added: [], removed: [],
+      keepers: [{ name: "Sam Gloves", saves: null }, { name: "Jo Palms", saves: null }], beaten: { b: "Jo Palms" } };
+    const result = matchGoals(source, CLUB, entry);
+    expect(result.goals.map(g => g.keeper)).toEqual([null, "Jo Palms"]);
+    expect(result.keepers.map(k => k.conceded)).toEqual([0, 1, 1]);
+  });
+});
+
+it("combines timing evidence across kicks when a different teammate is nearer on one kick", () => {
+  const result = matchGoals({ moments: [
+    t("k1", "ASTON VILLA GOAL KICK", 100, 20),
+    t("p1", "Sam Gloves", 95.4, 15), t("q1", "Ali Demo", 96.1, 16), t("r1", "Ben Stone", 99.6, 20),
+    t("k2", "ASTON VILLA GOAL KICK", 200, 20),
+    t("p2", "Sam Gloves", 187, 25), t("r2", "Ben Stone", 199.7, 20),
+    t("k3", "ASTON VILLA GOAL KICK", 300, 20),
+    t("p3", "Sam Gloves", 296, 15), t("r3", "Ben Stone", 292, 31),
+  ] }, CLUB);
+  expect(result.keepers.map(k => k.name)).toEqual(["Sam Gloves"]);
+});
+
+it("keeps a clipped final shot with its keeper when END HALF closes the recording", () => {
+  const result = matchGoals({ moments: [
+    t("k1", "ASTON VILLA GOAL KICK", 100, 20), t("p1", "Sam Gloves", 96, 15),
+    t("k2", "ASTON VILLA GOAL KICK", 200, 20), t("p2", "Sam Gloves", 196, 15),
+    t("shot", "OPPOSITION ON TARGET", 390, 16), t("end", "END HALF", 400, 6),
+  ] }, CLUB);
+  expect(result.keepers).toEqual([{ name: "Sam Gloves", saves: 1, conceded: 0, confirmed: false }]);
+});
+
+it("retains saves in an unknown period without assigning them to the known keeper", () => {
+  const result = matchGoals({ moments: [
+    t("k1", "ASTON VILLA GOAL KICK", 100, 20), t("p1", "Sam Gloves", 96, 15),
+    t("k2", "ASTON VILLA GOAL KICK", 200, 20), t("p2", "Sam Gloves", 196, 15),
+    t("end", "END HALF", 400), t("shot", "OPPOSITION ON TARGET", 500, 25),
+  ] }, CLUB);
+  expect(result.keepers).toEqual([
+    { name: "Sam Gloves", saves: 0, conceded: 0, confirmed: false },
+    { name: null, saves: 1, conceded: 0, confirmed: false },
+  ]);
+});
+
+it("does not treat a duplicated kick record as repeated evidence", () => {
+  const kick = t("kick", "ASTON VILLA GOAL KICK", 100, 20);
+  expect(matchGoals({ moments: [kick, { ...kick }, t("p", "Sam Gloves", 96, 15)] }, CLUB).spells).toEqual([]);
+});

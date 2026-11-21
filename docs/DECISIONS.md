@@ -4,6 +4,14 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-040 (2026-11-21) Infer keepers within periods and retain unknown assignments
+Owner reported an outfield player selected as keeper and incorrect conceded totals.
+Goal-kick overlap is uncertain evidence: weight timing across multiple kicks, allow
+free changes between tagged periods, and require repeated support. Preserve unknown
+periods and score ties. A confirmed list of multiple keepers alone cannot identify
+who conceded; use the owner's goal assignment or matching timed evidence. Inference
+still estimates saves and timing; do not persist calculated assignments as confirmed.
+
 ## D-039 (2026-11-21) Estimate playing minutes, explicitly
 Owner supersedes D-038’s confirmed-only display. Existing cached player metadata has
 named timed tags, not dependable lineup/substitution records. Use first-to-last

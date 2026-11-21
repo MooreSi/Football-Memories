@@ -11,6 +11,35 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Goalkeeper attribution (spec 400, 2026-11-21)
+
+`done` (code; local deployment pending), branch `codex/keeper-attribution`: weight pre-kick tags without discarding
+plausible candidates, include long tags, infer each period independently, retain
+returning keepers, reject ties/single-kick guesses and deduplicate kick ids. Use
+ball-in time for conceded goals. Explicit goal assignments win; multiple confirmed
+keeper names without timing no longer default to the first. Unknown goals/saves
+remain visible. Closing END HALF padding retains the final shot with its keeper.
+Shared spell consumers (player stats and estimated minutes) use the corrected spells.
+
+Manual metadata-only audit over local cache: 229 nonempty matches across available
+ages/seasons; 180 with named spells, 281/965 conceded goals unassigned. Coverage
+only, not a ground-truth accuracy claim. Reference game resolves to owner-named
+keepers alternating over four periods, three conceded each, saves estimated 0/5.
+Owner clarified that the first name in the cached tags is correct. No roster or
+source payload committed; no account requests or footage/cache edits.
+
+Verification: frontend `npm test`: **656 passed**; typecheck/build pass.
+Backend `uv run pytest -q`: **771 passed** on SQLite; PostgreSQL equivalent with
+`memories_test_keepers`: **771 passed**. Ruff check/format, mypy and Alembic schema
+check pass. Existing jsdom/Starlette/chunk-size warnings remain. No CI workflow.
+Local deployment pending. New regressions observed red before fixes (rotation,
+ambiguous evidence, unsupported periods, manual assignment, UI unknown option,
+timing-overlap aggregation, final padded shot, unknown saves, duplicate kicks).
+Original tests unchanged. Synthetic desktop and 375px iframe review complete.
+First PostgreSQL run collided with another chat's tests (shared tables dropped);
+serial rerun on a dedicated disposable database passed; that database was removed.
+Work moved into a managed worktree after another chat switched the shared branch.
+
 ## Estimated minutes and presentation exploration (spec 380, 2026-11-21)
 
 `done`, branch `codex/estimated-player-minutes`: automatic approximate outfield

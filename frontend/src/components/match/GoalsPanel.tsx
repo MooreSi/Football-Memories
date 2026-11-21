@@ -93,7 +93,7 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
         {draft.goals.filter((g) => g.side === "theirs").map((g, i) => <div key={g.id} className="flex flex-wrap items-center gap-2">
           {when(g)}
           <select className="field w-auto flex-1" aria-label={`Keeper beaten, goal conceded ${i + 1}`} value={g.keeper} onChange={(e) => setGoal(g.id, { keeper: e.target.value })}>
-            <option value="">First keeper</option>
+            <option value="">Keeper not assigned</option>
             {draft.keepers.filter((k) => k.name.trim()).map((k) => <option key={k.name} value={k.name.trim()}>{k.name.trim()}</option>)}
           </select>
           <Button type="button" variant="ghost" aria-label={`Remove goal conceded ${i + 1}`} onClick={() => removeGoal(g)}><Trash2 size={14} /></Button>
@@ -118,7 +118,7 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
             {spellText(k.name, data.spells) && <span className="text-fg-muted">{spellText(k.name, data.spells)}</span>}{!k.confirmed && (k.name || k.saves !== null) && <Tag>Likely</Tag>}
           </li>)}</ul> : <p className="text-sm text-fg-subtle">No keeper listed.</p>}
           {theirs.length > 0 && <ul aria-label="Goals conceded" className="mt-3 space-y-1.5">{theirs.map((g) => <li key={g.id} className="flex items-center gap-2 text-sm text-fg-muted">
-            {when(g)}<span>Conceded{g.keeper && data.keepers.length > 1 ? `, ${g.keeper} in goal` : ""}</span>
+            {when(g)}<span>Conceded{g.keeper ? (data.keepers.length > 1 ? `, ${g.keeper} in goal` : "") : ", keeper not assigned"}</span>
           </li>)}</ul>}</div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -127,7 +127,7 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
       </div>
       <p className="text-xs text-fg-subtle">{match.source === "veo" || match.team_data
         ? "Veo records goals and their times but no names. Add the scorers and keeper; reports show only what you save."
-        : "Likely names are a guess: scorers from the player tagged as the ball goes in, keepers from who is tagged at our goal kicks (a change is found when that player changes), and saves from the opposition's shots on target. Check and save to confirm; reports show only what you save."}</p>
+        : "Likely names are a guess: scorers from the player tagged as the ball goes in, keepers from repeated player tags at our goal kicks in each period (including returning keepers; uncertain periods stay unassigned), and saves from the opposition's shots on target. Keeper times and save counts are estimates. Check and save to confirm; reports show only what you save."}</p>
     </>}
     {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
   </section>;

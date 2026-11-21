@@ -225,14 +225,27 @@ U10 v Stoke City reads 12-9.
 - Hudl has no save code. Likely saves = opposition ON TARGET tags not overlapping an
   opposition goal; null (not counted) when the match has no ON TARGET codes at all.
   Each save and conceded goal goes to the keeper in goal at that time.
-- Keepers (measured 2026-11-16): only 2 cached matches have a GOAL KEEPER code, but 147
-  have our goal kicks ("AVFC GOAL KICK", 20 s). The kick is at the goal-kick tag's
-  start: the keeper's tag is running then (usually started about 0.5 s before, up to
-  12 s before when it is a longer tag) and the receiving player is tagged 0.3 to 1 s
-  after, so a window ending after the kick picks up the receiver. Keeper spells come
-  from the vote at each kick, a change costing 2.5 missed votes; a change snaps to an
-  END HALF tag between the two spells. On the cache: a keeper on 143 of 152 matches, a
-  change on 47, and 57 of 62 changes fall on an END HALF tag.
+- Keeper inference (spec 400, 2026-11-21) supersedes the original global votes.
+  Score active player tags starting 0–30 s before our goal kicks with inverse
+  distance from a four-second lead, normalized per kick. Keep all candidates:
+  selecting just the closest player loses the keeper when a teammate overlaps.
+  Each code name has at most one weight per kick; duplicate kick ids count once.
+  Infer independently between END HALF markers, retaining the within-period
+  2.5-vote change penalty. This permits repeated rotations across four periods.
+  Exact score ties and spells with fewer than two supporting kicks stay unknown
+  (explicit goalkeeper-code evidence can support a single observation).
+  A closing END HALF whose window ends with the recording opens no new period.
+  Otherwise empty periods remain gaps; do not extend the previous keeper.
+- Conceded goals use estimated ball-in time, not the padded clip start. An owner
+  assignment wins, then a matching inferred spell; only a single confirmed keeper
+  can be used without timing. Multiple names never imply that the first conceded
+  every unresolved goal. Unknown goals and inferred saves retain an unnamed row.
+  The edit form says Keeper not assigned. Shared spells also feed outfield stats
+  and estimated minutes; no age, season or roster is hard-coded.
+- Local cached-metadata audit: 229 nonempty matches, 180 with named spells; 281 of
+  965 conceded goals unassigned. These are coverage counts, not measured accuracy.
+  The owner reference now yields the two owner-named keepers alternating across
+  four periods. Real rosters, cached payloads and names remain outside Git.
 - Veo goal ids are `t-<own|opponent>-goal-<ms>`, the same as its team moments, so an
   owner's scorer stays attached across refreshes.
 

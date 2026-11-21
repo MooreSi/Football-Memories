@@ -119,3 +119,13 @@ it("shows when each likely keeper was in goal, and who was beaten", async () => 
   expect(within(keepers).getByText("In goal from 40:00")).toBeInTheDocument();
   expect(within(panel).getByRole("list", { name: "Goals conceded" })).toHaveTextContent("Conceded, Jo Palms in goal");
 });
+
+it("shows unresolved conceded goals and lets the owner leave them unassigned", async () => {
+  serve({ unknown: { scorers: {}, added: [], removed: [], beaten: {},
+    keepers: [{ name: "Sam Gloves", saves: null }, { name: "Jo Palms", saves: null }] } });
+  renderWithProviders(<GoalsPanel match={{ id: "unknown", moments: [t("g", "OPPOSITION GOAL", 100, 25)] }} club="Aston Villa" />);
+  const panel = await screen.findByRole("region", { name: "Goals and keepers" });
+  expect(await within(panel).findByText("Conceded, keeper not assigned")).toBeInTheDocument();
+  await userEvent.setup().click(within(panel).getByRole("button", { name: "Edit goals and keepers" }));
+  expect(within(panel).getByRole("option", { name: "Keeper not assigned" })).toHaveValue("");
+});

@@ -13,6 +13,19 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Goalkeeper attribution (spec 400), branch `codex/keeper-attribution`.** Fixes
+  outfield overlap, suppressed returning keepers across short periods, and first-name
+  fallback for unresolved goals. Weighted pre-kick evidence, independent periods,
+  repeated support, tie/empty-period abstention; ball-in timing and unnamed totals.
+  Coventry reference now finds the owner's two keepers alternating over four periods,
+  three conceded each (estimated), and retains the final likely save. Owner confirms
+  the first name in the cached tags is correct. No real names/data committed.
+  Manual local-cache audit: 229 matches across ages/seasons, 180 with spells;
+  281/965 conceded goals remain unassigned rather than attributed without evidence.
+  No real source account accessed; source cache/footage untouched. Verification: frontend 656, backend 771 each on SQLite/PostgreSQL;
+  lint/format/types/build/schema pass. Local deployment pending. Separate managed worktree avoids concurrent stats edits.
+
+
 - **Estimated player minutes (spec 380), merged to `main` at `0ee9991`.**
   Owner now requests automatic estimates: first-to-last approximate player touch per
   END HALF-delimited period, subtracting known keeper spells. Visible estimate/method/
