@@ -70,6 +70,27 @@ def _cause(error: BaseException) -> str:
     return cause
 
 
+def _cached_recording(
+    recording: dict[str, Any], cached: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Reuse a completed read, while the fresh catalogue controls identity and expiry.
+    A processing video or an old/incomplete cache must still get a normal read."""
+    if not cached or not cached.get("available") or cached.get("slug") != recording["slug"]:
+        return None
+    if not isinstance(cached.get("moments"), list) or "team_data" not in cached:
+        return None
+    team = cached["team_data"]
+    if team is not None and (not isinstance(team, dict) or team.get("v") != TEAM_DATA_VERSION):
+        return None
+    fresh = library_item(recording)
+    fields = ("title", "season_label", "expiration_status", "url")
+    item = {**cached, **{key: fresh[key] for key in fields}}
+    if fresh["team"]:
+        item.update({key: fresh[key] for key in ("team", "age_group", "age_groups")})
+    item.pop("shared", None)
+    return item
+
+
 class _PublicReader:
     """A signed-out read may only ask for a shared match's own pages."""
 
@@ -378,21 +399,29 @@ class VeoConnection:
         self._club_read = False
         library: list[dict[str, Any]] = []
         read = self._progress()
+        cached = {
+            f"veo-{r['identifier']}": _cached_recording(
+                r, read.get(f"veo-{r['identifier']}") or known.get(f"veo-{r['identifier']}")
+            )
+            for r in active
+        }
+        total = sum(item is None for item in cached.values())
         done = 0
         for r in recordings:
             if r not in active:
                 library.append(library_item(r))
                 continue
-            done += 1
-            if f"veo-{r['identifier']}" in read:
-                library.append(read[f"veo-{r['identifier']}"])
+            kept_item = cached[f"veo-{r['identifier']}"]
+            if kept_item is not None:
+                library.append(kept_item)
                 continue
+            done += 1
             self._report(
-                message=f"Reading Veo match {done} of {len(active)}…",
+                message=f"Reading Veo match {done} of {total}…",
                 progress={
                     "done": done - 1,
-                    "total": len(active),
-                    "fraction": (done - 1) / len(active),
+                    "total": total,
+                    "fraction": (done - 1) / total,
                 },
             )
             slug = r["slug"]

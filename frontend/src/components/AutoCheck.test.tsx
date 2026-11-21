@@ -58,3 +58,28 @@ it("indexes Hudl tags with no age group saved", async () => {
   renderWithProviders(<Checks />, "/");
   await vi.waitFor(() => expect(posted("/account/action")).toEqual(["sync_tags"]));
 });
+
+
+it("checks Veo after six hours while the library stays open, only once", async () => {
+  vi.useFakeTimers({ now });
+  stubFetch(routes(now / 1000 - 60, now / 1000));
+  function VeoCheck() { useVeoAutoCheck(); return <p>library</p>; }
+  renderWithProviders(<VeoCheck />, "/");
+  await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+  expect(posted("/veo/action")).toEqual([]);
+  vi.setSystemTime(now + 7 * 3600 * 1000);
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  expect(posted("/veo/action")).toEqual(["refresh"]);
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  expect(posted("/veo/action")).toEqual(["refresh"]);
+});
+
+
+it.each(["/veo/veo-a", "/clips"])("never auto-refreshes during playback on %s, even on the timer", async path => {
+  vi.useFakeTimers({ now });
+  stubFetch(routes(null, now / 1000));
+  function VeoCheck() { useVeoAutoCheck(); return <p>video</p>; }
+  renderWithProviders(<VeoCheck />, path);
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  expect(posted("/veo/action")).toEqual([]);
+});

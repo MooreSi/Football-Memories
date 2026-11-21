@@ -11,6 +11,18 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Veo refresh fix (2026-11-21)
+
+- **Spec 380 complete on `codex/veo-incremental-refresh`**, in the attached managed
+  worktree. Refresh reads new/incomplete matches only, reusing completed cache and
+  interrupted progress. Reading progress counts uncached matches. Fresh listing
+  still applies expiry/access changes. Automatic discovery now also runs while
+  the app stays open, within the existing six-hour limit. Verification in PROGRESS.
+- **Deployment pending:** primary checkout is on `codex/player-individual-actions`
+  with unrelated active changes. Left it and the running helper untouched. Merge
+  this fix before that branch's next deployment; restart the helper and rebuild
+  frontend then. No real account requests or footage writes during this fix.
+
 ## Current change (2026-11-21)
 
 - **Player stats Goals and Offsides (spec 360), merged to `main` at `e27c6b7`.**

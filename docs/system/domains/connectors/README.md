@@ -795,3 +795,18 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
 - Hudl already worked this way: the tag sweep saves each match's tags and skips them next
   time (`test_progress_counts_matches_already_indexed`); its catalogue listing is short and
   keeps the last list if it stops.
+
+
+## Incremental Veo refresh (spec 380, owner request 2026-11-21)
+
+The finished `library.json` is a detail cache as well as a catalogue. Refresh
+still lists every recordings page to discover new matches and expiry/access
+changes, but reuses available complete entries with the same served ID and slug.
+`progress.json` takes precedence for interrupted work. Old team-data versions,
+missing detail fields and videos still processing get a normal read. Progress
+counts pending detail reads only. Catalogue titles/expiry update without losing
+cached score, periods, highlights or team stats. Playback fetches a missing
+in-memory video address lazily as before; signed addresses never go on disk.
+Shared links still perform their own access reads (no account catalogue exists).
+The frontend checks eligibility every minute while visible, as well as on open
+and return; the six-hour external refresh limit and playback exclusions remain.

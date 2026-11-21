@@ -11,6 +11,26 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Incremental Veo refresh (spec 380, 2026-11-21)
+
+`done`, branch `codex/veo-incremental-refresh`, isolated managed worktree
+`/Users/simon/.codex/worktrees/veo-incremental-refresh/Football Memories`.
+Refresh reuses completed detail cache and interrupted progress; only pending
+matches are read/counted. Fresh list still controls title, expiry and access.
+Processing/incomplete entries retry. Automatic discovery now also checks while
+the app stays open, retaining the six-hour external-request limit.
+
+Verification: new incremental/open-app regressions observed red then green.
+SQLite full suite 761 passed, then all 11 resume tests (including the added title
+case) passed; PostgreSQL full suite 762 passed. Ruff check/format, mypy, Alembic
+schema check and frontend typecheck/build passed. Frontend full suite: **634 passed** (130 files).
+Owner approved the two old refresh test expectation updates in chat. Tests use
+synthetic data; no real Hudl/Veo reads, downloads or file changes. No CI workflow.
+Not deployed: the primary checkout has active, unrelated Hudl/player-action work;
+restarting its helper would load those unfinished modules. Merge this branch and
+restart the helper/rebuild frontend when that work is ready. The running helper
+was idle when checked; no external refresh was triggered.
+
 ## Player goals and offsides (spec 360, owner request 2026-11-21)
 
 `done`, branch `codex/player-goals-offsides`: add Goals/Offsides and sort options,

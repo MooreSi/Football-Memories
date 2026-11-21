@@ -119,14 +119,12 @@ def test_a_refusal_stops_the_refresh_and_keeps_the_last_library(tmp_path: Path) 
     good = connection(tmp_path, FakeApi())
     good.start("refresh")
     before = (tmp_path / "library.json").read_text()
-    api = FakeApi(refuse="/api/app/matches/")
+    api = FakeApi(refuse=LIST)
     veo = connection(tmp_path, api)
     veo.start("refresh")
     assert veo.status()["state"] == "error" and "Veo" in veo.status()["message"]
     assert (tmp_path / "library.json").read_text() == before
-    assert (
-        sum(p.startswith("/api/app/matches/") for p in api.paths) == 1
-    )  # no retry, no more requests
+    assert sum(p == LIST for p in api.paths) == 1  # no retry, no more requests
 
 
 def test_one_operation_at_a_time(tmp_path: Path) -> None:
