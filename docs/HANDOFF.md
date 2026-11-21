@@ -13,6 +13,16 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Player label filter (spec 420), `codex/player-label-filter`.** Owner reported
+  Period Start as a player. Metadata-only audit: 230 nonempty cached matches,
+  406 distinct categories. Eight administrative/set-piece labels passed shared
+  detection: Period Start (64 matches), Analyst Clip (27), Analyst Clips (17),
+  Analysts Focus (4), Coach Clip (3), Physical Focus (1), Yellow Set Piece (2),
+  Bib Set Piece (1). Shared predicate now excludes these phrases and close variants,
+  keeping actual names with Start/Period words valid. Tests observed red/green;
+  all eight rejected by actual app predicate in local-cache audit. Frontend 680;
+  backend 771 each SQLite/dedicated PostgreSQL; lint/format/types/build/schema pass.
+
 - **Action profile layout (spec 410), merged/pushed `main` at `89144c3`.** Owner
   chose mockup 2. Player identity/minutes sit beside horizontal contribution bars;
   zero counts remain clickable, missing stats/sources are in expandable detail.

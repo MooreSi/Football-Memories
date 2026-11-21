@@ -89,3 +89,9 @@ it("keeps explicit team-event fallback separate from unavailable individual stat
   expect(row.events.foulsWon).toBeNull();
   expect(row.events.successfulDribbles).toBeNull();
 });
+
+it("excludes period and set-piece labels from match player rows", () => {
+  const m = { moments: [t("person", "Sam Start", 10), t("period", "PERIOD START", 10),
+    t("yellow", "YELLOW SET PIECE", 20), t("bib", "BIB SET PIECE", 30)] };
+  expect(playerStats(m, "Example FC", matchGoals(m, "Example FC")).map(p => p.name)).toEqual(["Sam Start"]);
+});

@@ -43,10 +43,14 @@ const SITUATION = new Set(
     "half end injury best practice warm substitution kickoff dribbling assists assist interception interceptions blocks clearances successful unsuccessful conceded fouled").split(" "),
 );
 
+// Known administrative phrases can also be two/three plain words. Match phrases,
+// not individual name words (a surname such as Start must remain possible).
+const NON_PLAYER_LABEL = /^(?:period (?:start|end)|(?:analysts?|coach(?:es)?) (?:clips?|focus)|(?:physical|technical|tactical) focus|(?:[a-z]+ )?set pieces?)$/;
+
 /** A code of two or three plain words with no football vocabulary is taken to be a player. */
 export function looksLikePlayer(code: string): boolean {
   const words = code.toLowerCase().split(/\s+/).filter(Boolean);
-  return words.length >= 2 && words.length <= 3 && words.every((w) => /^[a-z'-]+$/.test(w) && !SITUATION.has(w));
+  return !NON_PLAYER_LABEL.test(words.join(" ")) && words.length >= 2 && words.length <= 3 && words.every((w) => /^[a-z'-]+$/.test(w) && !SITUATION.has(w));
 }
 
 /** Owner decision 005 (2026-11-13): player names read "Chris Demo", not "CHRIS DEMO".

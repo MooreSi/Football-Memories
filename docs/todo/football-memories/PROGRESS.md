@@ -11,6 +11,29 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Player label filter (spec 420, 2026-11-21)
+
+`done`, branch `codex/player-label-filter`: shared `looksLikePlayer` excludes
+Period Start plus administrative clip/focus and set-piece phrases. Match whole
+phrases rather than banning potential name words. Applies to match player rows,
+goal inference, Library counts, Insights and display casing. Keep source tags intact.
+
+Read-only local metadata audit: 230 nonempty matches, 406 distinct categories;
+actual app predicate changed 168 candidate labels to 160, excluding exactly:
+Period Start (64 matches), Analyst Clip (27), Analyst Clips (17), Analysts Focus (4),
+Coach Clip (3), Yellow Set Piece (2), Physical Focus (1), Bib Set Piece (1).
+These are labels/match counts, not a verified roster. Goal inference already guarded
+analyst/coach/focus independently, while other consumers could still accept them.
+Defensive variants include Period End, Coach Clips, Technical/Tactical Focus and
+Set Pieces; not claimed as observed source labels. No source account requests.
+
+Verification: 14 predicate/display regressions observed red initially; integration
+also red with the exclusion disabled, then green. Existing assertions unchanged.
+Frontend **680 passed**, typecheck/build pass. Backend **771 passed each** on
+SQLite and dedicated PostgreSQL (`memories_labels_test`, then removed). Ruff
+check/format, mypy and Alembic no drift pass. Existing warnings remain; no CI workflow. Audit over actual cached labels checked the
+production predicate, without persisting raw metadata or real roster names.
+
 ## Player action profile (spec 410, 2026-11-21)
 
 `done`, branch `codex/player-action-profile-ui`, managed worktree

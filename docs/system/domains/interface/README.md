@@ -350,3 +350,17 @@ U10 v Stoke City reads 12-9.
 - Source descriptions distinguish attached player actions from team-tag overlap.
   Likely goals remain marked. Minutes have a compact correction control and an
   expandable estimate explanation; stored and estimated values are unchanged.
+
+### Administrative tags are not players (spec 420, 2026-11-21)
+
+- `looksLikePlayer` is shared by name display, Library counts, insights, clip sorting
+  and goal/player-stat inference. Two/three plain words alone accept administrative
+  labels. Local cache audit (230 nonempty matches, 406 categories) found Period Start,
+  Analyst Clip(s), Analysts Focus, Coach Clip, Physical Focus, Yellow Set Piece and
+  Bib Set Piece. All now fail the shared predicate via explicit phrase patterns.
+- Goal inference already had an extra analyst/coach/focus exclusion; other consumers
+  did not. Central filtering fixes those too. Keep exact phrase semantics rather
+  than globally banning words such as Start that may be real surnames.
+- Defensive variants include Period End, plural coach clips, technical/tactical focus
+  and other one-word set-piece prefixes. The label remains a tag; only its treatment
+  as a player changes. This remains a heuristic over free-text codes, not a roster.
