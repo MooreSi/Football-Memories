@@ -28,7 +28,14 @@ Ruff check/format, mypy and Alembic check all passed. `npm test`: **625 passed**
 jsdom media/canvas and bundle-size warnings remain. Offline browser checked at
 desktop and in a 375px phone frame against reference 02, including inline shot
 clips and exact timestamp seek. No real account used, no footage changed, no
-Docker/deployment changes. No CI workflow exists. Not merged to main or deployed.
+Docker/deployment changes. No CI workflow exists.
+
+Deployment checkpoint 2026-11-21: feature fast-forwarded to `main` at `3aa8ee8` and
+pushed. `docker compose up -d --build --no-deps frontend` completed. Local health
+endpoint returns ok; `nginx -t` passed; served `index-DZGNBRir.js` contains Player
+stats, Outfield players and the attribution wording. Backend/helper not restarted.
+Hosted libraries not manually moved; their existing update settings govern rollout.
+Docs-only checkpoint after deployment; no source changes or additional suite run.
 
 ## Public runtime hardening (spec 330, owner request 2026-11-20)
 

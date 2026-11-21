@@ -1,6 +1,6 @@
 # 350: Match player stats
 
-**Status:** Shipped (feature branch)
+**Status:** Shipped (main; local app deployed 2026-11-21)
 **Sensitive:** no
 
 ## What is missing
@@ -50,4 +50,6 @@ None needed. Use synthetic offline data for tests and browser verification.
   horizontal overflow. Temporary preview files removed.
 - Existing Starlette/jsdom warnings and bundle-size warning remain.
 - No real Hudl/Veo account check needed or performed. No library files touched.
-- Not deployed or merged to main. No CI workflow exists in this repository.
+- Merged to main at `3aa8ee8`, pushed, and deployed locally with a frontend-only
+  rebuild/recreate on 2026-11-21. Health, Nginx and served bundle checks passed.
+  Hosted libraries follow existing update settings. No CI workflow exists.
