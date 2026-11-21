@@ -11,6 +11,30 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Player action profile (spec 410, 2026-11-21)
+
+`done`, branch `codex/player-action-profile-ui`, managed worktree
+`/Users/simon/.codex/worktrees/player-action-profile/Football Memories`.
+Owner selected mockup 2: identity/minutes sidebar, horizontal count bars, compact
+zero counts, expandable missing stats and sources. Common maximum across players
+and selected metric group, independent of search/sort. Explicit count/source labels,
+likely goals and clip seeking retained; numerical counts open their clips too.
+Estimates/confirmed minutes unchanged, compact explanation disclosure added.
+
+Verification: new shared-scale and numeric-count interaction tests observed red,
+then green. Existing tests unchanged. Final `npm test`: **658 passed** after
+incorporating keeper fix `70bbc49` and deployment docs `6bc541e` from main;
+frontend typecheck/build pass. Backend **771 passed SQLite**, **771 passed dedicated
+PostgreSQL**; ruff check/format, mypy and Alembic no drift pass. Existing warnings remain.
+Initial shared checkout full frontend run caught the other task’s in-progress keeper
+test, so feature edits were moved out and the other task’s files preserved. Initial
+shared PostgreSQL run: 2 failed/2 errors as another suite dropped shared tables.
+Dedicated `memories_profile_test` retry passed, then database dropped. No gate weakened.
+Desktop/375px synthetic browser review against selected mockup: bars, estimate detail,
+source disclosure and Passes clip review. Screenshot `/tmp/football-action-profile.png`.
+No live account accessed; no source or library writes. Temporary preview files/servers
+removed. No CI workflow exists.
+
 ## Goalkeeper attribution (spec 400, 2026-11-21)
 
 `done`, branch `codex/keeper-attribution`, merged to `main` at `70bbc49`: weight pre-kick tags without discarding

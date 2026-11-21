@@ -338,3 +338,15 @@ U10 v Stoke City reads 12-9.
   END HALF markers breaks may be counted. This is stated in each estimated row.
   Confirmed preferences (including zero) win; clearing restores the fallback.
 - The comparison sort uses the same confirmed/estimated value shown in each row.
+
+### Action profile presentation (spec 410, 2026-11-21)
+
+- Owner selected Action profile mockup 2. Identity/minutes sidebar stacks above bars
+  on phones. Positive counts get horizontal bars, zeros get selectable text, missing
+  values remain dashes inside Sources and unrecorded stats.
+- Every bar uses one maximum across all players and the selected metric group,
+  independent of search/sort, so equal counts have equal lengths. These are counts,
+  not performance ratings. Each bar has an accessible meter and a labelled clip button.
+- Source descriptions distinguish attached player actions from team-tag overlap.
+  Likely goals remain marked. Minutes have a compact correction control and an
+  expandable estimate explanation; stored and estimated values are unchanged.

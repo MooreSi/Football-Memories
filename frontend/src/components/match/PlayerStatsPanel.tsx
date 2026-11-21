@@ -2,10 +2,11 @@ import { estimatePlayerMinutes } from "../../lib/estimatedMinutes";
 import { useMemo, useState } from "react";
 import { codeKey } from "../../lib/codes";
 import { usePlayerMinutes } from "../../lib/playerMinutes";
+import { PlayerActionProfile } from "./PlayerActionProfile";
 import { PlayerMinutes } from "./PlayerMinutes";
 import { formatClock } from "../../lib/format";
 import type { GoalsSource, MatchGoals } from "../../lib/goals";
-import { PLAYER_METRICS, playerStats, type PlayerMetric, type PlayerStatClip, type StatSource } from "../../lib/playerStats";
+import { PLAYER_METRICS, playerStats, type PlayerMetric } from "../../lib/playerStats";
 
 const STAT_GROUPS: { id: string; label: string; keys: PlayerMetric[] }[] = [
   { id: "attacking", label: "Attacking", keys: ["goals", "assists", "keyPasses", "passes", "shots", "chances", "crosses", "successfulDribbles"] },
@@ -28,6 +29,8 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
     const count = (p: typeof a) => sort === "minutes" ? minutes.data?.[codeKey(p.name)] ?? estimates[codeKey(p.name)] ?? -1 : sort === "moments" ? p.moments.length : p.events[sort as PlayerMetric]?.length ?? -1;
     return (sort === "name" ? 0 : count(b) - count(a)) || a.name.localeCompare(b.name);
   });
+  const metricKeys = STAT_GROUPS.filter(g => group === "all" || g.id === group).flatMap(g => g.keys);
+  const maximum = Math.max(1, ...players.flatMap(p => metricKeys.map(key => p.events[key]?.length ?? 0)));
   const selected = players.find(p => p.name === selection?.name);
   const clips = selection?.metric === "moments" ? selected?.moments : selected?.events[selection?.metric as PlayerMetric];
   const label = selection?.metric === "moments" ? "Tagged moments" : PLAYER_METRICS.find(m => m.key === selection?.metric)?.label;
@@ -60,23 +63,21 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
         <div className="space-y-2">
           {!shown.length && <p className="py-4 text-sm text-fg-muted">No players match your search.</p>}
           {shown.map(p => <article key={p.name} aria-label={p.name} className="rounded-xl border border-line bg-ink-950/30 p-3">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-semibold">{p.name}</h3>
-              <button type="button" className="text-xs text-accent hover:underline" onClick={() => setSelection({ name: p.name, metric: "moments" })}>
-                {p.moments.length} tagged {p.moments.length === 1 ? "moment" : "moments"}</button>
-            </div>
-            <PlayerMinutes matchId={match.id} name={p.name} estimate={estimates[codeKey(p.name)]} />
-            {STAT_GROUPS.filter(g => group === "all" || g.id === group).map(g => <div key={g.id} className="mt-3">
-              <h4 className="mb-2 text-[11px] tracking-wider text-fg-subtle uppercase">{g.label}</h4>
-              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                {g.keys.map(key => {
-                  const m = PLAYER_METRICS.find(m => m.key === key)!;
-                  return <Stat key={key} label={m.label} clips={p.events[key]} source={p.sources[key]}
-                    active={selection?.name === p.name && selection.metric === key}
-                    onClick={() => setSelection({ name: p.name, metric: key })} />;
-                })}
+            <div className="grid min-w-0 gap-5 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-7">
+              <div className="min-w-0 rounded-xl bg-ink-800/40 p-4">
+                <div className="flex items-center gap-3 lg:block">
+                <div className="mb-0 flex h-12 shrink-0 lg:mb-3 w-12 items-center justify-center rounded-full bg-accent/10 text-lg font-semibold text-accent" aria-hidden="true">
+                  {p.name.split(/\s+/).map(word => word[0]).slice(0, 2).join("")}
+                </div>
+                <div className="min-w-0"><h3 className="break-words text-lg font-semibold">{p.name}</h3>
+                <button type="button" className="mt-2 text-xs text-accent hover:underline" onClick={() => setSelection({ name: p.name, metric: "moments" })}>
+                  {p.moments.length} tagged {p.moments.length === 1 ? "moment" : "moments"}</button></div></div>
+                <div className="mt-4"><PlayerMinutes matchId={match.id} name={p.name} estimate={estimates[codeKey(p.name)]} compact /></div>
               </div>
-            </div>)}
+              <PlayerActionProfile player={p} keys={metricKeys} maximum={maximum}
+                selected={selection?.name === p.name ? selection.metric : undefined}
+                onSelect={metric => setSelection({ name: p.name, metric })} />
+            </div>
             {selected?.name === p.name && clips && <section aria-label="Player stat clips" className="mt-3 rounded-xl border border-accent/40 p-4">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">{selected.name} · {label} · {clips.length}</h3>
@@ -96,16 +97,4 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
         </div>
       </>}
   </section>;
-}
-
-function Stat({ label, clips, active, onClick, source }: { source?: StatSource; label: string; clips: PlayerStatClip[] | null; active: boolean; onClick: () => void }) {
-  const likely = clips?.filter(c => c.confirmed === false).length ?? 0;
-  const content = <><span className="block text-lg font-semibold tabular-nums">{clips?.length ?? "—"}</span>
-    <span className="block text-[11px] text-fg-muted">{label}</span>
-    {source === "actions" && <span className="block text-[10px] text-accent">Player action</span>}
-    {likely > 0 && <span className="block text-[11px] text-warn">{likely} likely</span>}</>;
-  const css = "min-w-0 rounded-lg px-2 py-2 text-center";
-  return clips === null ? <div aria-label={`${label}: not recorded`} className={`${css} text-fg-subtle`}>{content}</div>
-    : <button type="button" aria-label={`${label}: ${clips.length}`} aria-description={likely ? `${likely} likely, awaiting scorer confirmation` : undefined} aria-pressed={active} onClick={onClick}
-      className={`${css} ${active ? "bg-accent/15 text-accent" : "bg-ink-800/40 hover:bg-accent/10"}`}>{content}</button>;
 }

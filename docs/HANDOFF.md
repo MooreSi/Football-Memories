@@ -13,6 +13,19 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-21)
 
+- **Action profile layout (spec 410), `codex/player-action-profile-ui`.** Owner
+  chose mockup 2. Player identity/minutes sit beside horizontal contribution bars;
+  zero counts remain clickable, missing stats/sources are in expandable detail.
+  Match-wide scale makes counts comparable; no ratings. Desktop and 375px phone
+  synthetic browser review complete; frontend 658/typecheck/build green.
+  Worktree: `/Users/simon/.codex/worktrees/player-action-profile/Football Memories`.
+  Isolated because another chat is changing keeper attribution in the shared checkout;
+  that task’s new keeper test failed in the initial shared-tree full suite. It has
+  since landed on main and is included in the final 658-test run. Backend 771 each
+  SQLite/isolated PostgreSQL; lint/format/types/build/schema pass. Shared PostgreSQL
+  first collided with another suite; dedicated temporary DB retry passed and was removed.
+
+
 - **Goalkeeper attribution (spec 400), merged to `main` at `70bbc49`.** Fixes
   outfield overlap, suppressed returning keepers across short periods, and first-name
   fallback for unresolved goals. Weighted pre-kick evidence, independent periods,

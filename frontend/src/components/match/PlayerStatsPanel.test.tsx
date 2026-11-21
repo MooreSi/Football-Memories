@@ -88,3 +88,28 @@ it("shows requested stats in groups and identifies direct player-action clips", 
   await user.click(screen.getByRole("button", { name: /0:20.*individual action/i }));
   expect(seek).toHaveBeenCalledWith(20);
 });
+
+it("shows positive actions on a shared count scale and keeps unknown stats in a disclosure", () => {
+  const m = { id: "profile", moments: [
+    { ...t("s1", "Sam Example", 20), actions: ["passes", "regains"] },
+    { ...t("s2", "Sam Example", 40), actions: ["passes"] },
+    { ...t("a1", "Ali Demo", 60), actions: ["passes"] },
+  ] };
+  renderWithProviders(<PlayerStatsPanel match={m} club="Aston Villa" goals={matchGoals(m, "Aston Villa")} onSeek={vi.fn()} />);
+  const sam = screen.getByRole("article", { name: "Sam Example" });
+  expect(within(sam).getByRole("meter", { name: "Passes" })).toHaveAttribute("aria-valuenow", "2");
+  expect(within(sam).getByRole("meter", { name: "Regains" })).toHaveAttribute("aria-valuemax", "2");
+  const ali = screen.getByRole("article", { name: "Ali Demo" });
+  expect(within(ali).getByRole("meter", { name: "Passes" })).toHaveAttribute("aria-valuemax", "2");
+  expect(within(sam).getByRole("button", { name: "Goals: 0" })).toBeInTheDocument();
+  expect(within(sam).getByText("Sources and unrecorded stats").closest("details")).not.toHaveAttribute("open");
+  expect(within(sam).queryByRole("meter", { name: "Assists" })).toBeNull();
+});
+
+it("opens clips when selecting a bar's numeric count", async () => {
+  const user = userEvent.setup();
+  renderWithProviders(<PlayerStatsPanel match={match} club="Aston Villa" goals={goals} onSeek={vi.fn()} />);
+  const sam = screen.getByRole("article", { name: "Sam Example" });
+  await user.click(within(sam).getByRole("button", { name: "Review passes clips" }));
+  expect(within(sam).getByRole("region", { name: "Player stat clips" })).toBeInTheDocument();
+});

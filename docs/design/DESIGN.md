@@ -74,3 +74,8 @@ Spec 180 refines reference 02 Clips into one main analysis workspace with a
 secondary saved-tools disclosure. Reference 03 memories use compact chronological
 match cards with progressive expansion; charts and tag feeds stay bounded on
 phones. Desktop and 375px review completed; real footage/metadata only.
+
+Owner selection 2026-11-21 (spec 410): match Player stats follows the Action profile
+mockup selected in chat: player identity/minutes beside common-scale horizontal action
+bars, compact zero counts, expandable sources/unrecorded stats. Retains reference 02
+navy/cyan palette and stacks at phone width; no invented ratings or player imagery.
