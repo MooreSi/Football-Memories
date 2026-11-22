@@ -58,3 +58,12 @@ it("indexes Hudl tags with no age group saved", async () => {
   renderWithProviders(<Checks />, "/");
   await vi.waitFor(() => expect(posted("/account/action")).toEqual(["sync_tags"]));
 });
+
+it("asks for only missing Veo details on an automatic check", async () => {
+  vi.useFakeTimers({ now, toFake: ["Date"] });
+  stubFetch(routes(null, now / 1000));
+  renderWithProviders(<Checks />, "/");
+  await vi.waitFor(() => expect(posted("/veo/action")).toEqual(["refresh"]));
+  const request = vi.mocked(fetch).mock.calls.find(c => String(c[0]) === `${H}/veo/action` && c[1]?.body);
+  expect(JSON.parse(String(request![1]!.body))).toEqual({ action: "refresh", only_missing: true });
+});

@@ -363,3 +363,19 @@ def test_reel_action_passes_the_team_stats_card(tmp_path: Path) -> None:
     body = {"action": "reel", "match_id": "veo-a", "moment_ids": ["h1"], "stats_card": "s" * 24}
     assert client.post("/veo/action", json=body, headers=APP).status_code == 202
     assert app.state.veo.reels[0][2]["stats_card"] == "s" * 24
+
+
+def test_automatic_refresh_reaches_worker_without_rereading_saved_matches(client, tmp_path) -> None:
+    from tests.connectors.test_veo_connection import FakeApi, connection
+    from tests.connectors.test_veo_resume import FIRST_SLUG, SECOND, TwoMatches, reads_of
+
+    c, app = client
+    connection(tmp_path, FakeApi()).start("refresh")
+    api = TwoMatches()
+    app.state.veo = connection(tmp_path, api)
+    app.state.veo_configured = True
+    response = c.post("/veo/action", headers=APP, json={"action": "refresh", "only_missing": True})
+    assert response.status_code == 202
+    assert app.state.veo.status()["state"] == "ready"
+    assert reads_of(api, FIRST_SLUG) == 0
+    assert reads_of(api, SECOND["slug"]) == 4

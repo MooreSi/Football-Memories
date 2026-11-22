@@ -27,6 +27,7 @@ class VeoAction(BaseModel):
     action: Literal[
         "test", "refresh", "shared", "watch", "download", "reel", "moments", "disconnect"
     ]
+    only_missing: bool = False  # automatic checks reuse completed match metadata
     match_id: str | None = Field(default=None, max_length=200)
     name: str | None = Field(default=None, max_length=200)
     # Owner request 2026-11-13: a highlight reel from one Veo match.
@@ -115,6 +116,8 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
             state.veo.start(body.action, body.match_id, name=body.name)
         else:
             state.veo.start(body.action, body.match_id)
+    elif body.action == "refresh" and body.only_missing:
+        state.veo.start(body.action, only_missing=True)
     else:
         state.veo.start(body.action)
     return {"accepted": True}

@@ -21,7 +21,7 @@ export function useVeoAutoCheck() {
     const now = Date.now();
     if (!veoAutoCheck(status.data, lastTried(TRIED), now)) return;
     markTried(TRIED, now);
-    void veoRequest("/action", { action: "refresh" })
+    void veoRequest("/action", { action: "refresh", only_missing: true })
       .then(() => qc.invalidateQueries({ queryKey: ["veo-account"] }))
       .catch(() => undefined);
   }, [status.data, qc, pathname, returns]);

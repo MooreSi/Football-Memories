@@ -785,7 +785,8 @@ and the count reads "N offline · N Hudl · N Veo". Continue watching stays Hudl
   Connect or Refresh reuses those matches with no request, reads the rest, writes
   `library.json` and deletes the progress file. `library.json` is still replaced only by a
   finished run (spec 250, `test_a_refusal_stops_the_refresh_and_keeps_the_last_library`).
-  A finished run means the next Refresh reads every match again, as before.
+  Explicit Refresh still reads every match again. Spec 460 supersedes this for
+  Connect and automatic checks: they also reuse the completed library by stable ID.
 - Saving new credentials (`reset`) and Disconnect (`forget`) delete the progress file, so
   one account never carries on from another's matches.
 - An unexpected error now names its type and line, in the status and the helper log
@@ -835,3 +836,17 @@ The action allowlist preserves `penaltiesSaved` (Penalty saved/stopped) and
 neither. Parser/cache regression covers both positive actions and those negative
 controls. No source requests or storage format changes; existing cached matches
 receive previously discarded labels on their next normal read.
+
+## Incremental Veo checks (spec 460, 2026-11-22)
+
+The prior resume fix did not make ordinary checks incremental: it deleted progress.json
+on success, so subsequent six-hour automatic refreshes reread all active details.
+Automatic `/veo/action` refresh now sends `only_missing: true`; Connect also reuses
+completed available account entries by stable ID/slug, after listing current recordings.
+Expiry still follows the fresh listing; missing or previously unavailable matches
+are read normally. Playback fetches its video address on demand after restart.
+Explicit Refresh remains the full metadata update (including changed highlights);
+existing full-refresh tests remain intact. Saved shared matches are reused during
+automatic account checks; shared-link expiry/details require explicit Refresh because
+there is no account listing for those links. Account reset/forget clears both caches
+as before. No full video download occurs during either type of metadata refresh.

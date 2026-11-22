@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Incremental Veo checks (spec 460, 2026-11-22)
+
+`done`, branch `codex/veo-incremental-check`: Connect and automatic checks reuse
+finished available account/shared matches; fresh account listing still controls expiry.
+New/unavailable entries read normally, explicit Refresh updates existing details.
+Prior resume fix only kept unfinished runs. Offline regression observed red/green;
+verification passed; frontend/helper deployed locally. No real source account accessed.
+
 ## Position-specific performance (spec 450, 2026-11-21)
 
 `done`, branch `codex/position-player-performance`: explicit My Player position
@@ -637,6 +645,31 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-22 — Incremental Veo checks (spec 460)
+
+- New Connect regression observed red: four requests for an already saved match,
+  expected zero. Automatic hook red: request lacked `only_missing`. Both now green;
+  a new match still receives all four detail reads (negative control).
+- `cd backend && uv run pytest`: **779 passed**, SQLite (57.10s).
+- `cd backend && TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test uv run pytest`:
+  **779 passed** (81.76s). Added one shared-cache restart test after full collection;
+  `uv run pytest tests/connectors/test_veo_shared.py -q` then the same with
+  `TEST_DATABASE_URL` above: **35 passed each**, including that additional test.
+- `uv run ruff check app tests`, `uv run ruff format --check app tests`,
+  `uv run mypy app`: pass. `FM_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories uv run alembic check`:
+  no new upgrade operations.
+- `cd frontend && npm test && npm run typecheck && npm run build`: **700 passed**,
+  typecheck/build pass. Existing jsdom media/canvas and bundle-size notices remain.
+- `docker compose build frontend && docker compose up -d --no-deps frontend`:
+  local deployment complete. `/api/health` and `nginx -t` pass; served
+  `index-CsLn4CZP.js` contains incremental flag. Checked both helper sources idle,
+  sent launchd SIGTERM, waited for graceful exit, kickstarted helper; both status
+  endpoints healthy/not busy. Backend container unchanged. No source login/read
+  or real-account check performed; all behavior checks used synthetic fake Veo.
+- No visible layout change; no browser walkthrough needed. No GitHub Actions workflows.
+  Hosted copies follow existing update preferences. Existing archive files untouched.
+
 
 ### 2026-11-21 Position-specific performance (spec 450)
 - Test-first regressions observed red for profile-role precedence, explicit penalty

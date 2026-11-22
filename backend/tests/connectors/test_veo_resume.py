@@ -129,3 +129,62 @@ def test_a_refusal_also_says_what_was_kept(tmp_path: Path) -> None:
     veo.start("test")
     message = veo.status()["message"]
     assert "slow down" in message and "1 match read so far is kept" in message
+
+
+def test_connect_reuses_finished_matches_and_reads_only_new_ones(tmp_path: Path) -> None:
+    connection(tmp_path, FakeApi()).start("refresh")
+    saved = connection(tmp_path, FakeApi()).library()[0]
+    again = TwoMatches()
+    veo = connection(tmp_path, again)
+    veo.start("test")
+    assert veo.status()["state"] == "ready"
+    assert reads_of(again, FIRST_SLUG) == 0
+    assert reads_of(again, SECOND["slug"]) == 4
+    assert veo.library()[0] == saved
+    assert len(veo.library()) == 3
+
+
+def test_automatic_refresh_reuses_completed_cache(tmp_path: Path) -> None:
+    connection(tmp_path, FakeApi()).start("refresh")
+    again = TwoMatches()
+    veo = connection(tmp_path, again)
+    veo.start("refresh", only_missing=True)
+    assert veo.status()["state"] == "ready"
+    assert reads_of(again, FIRST_SLUG) == 0
+    assert reads_of(again, SECOND["slug"]) == 4
+
+
+def test_incremental_check_updates_expiry_without_rereading_details(tmp_path: Path) -> None:
+    connection(tmp_path, FakeApi()).start("refresh")
+    again = FakeApi()
+    headers, items = again.pages[LIST]
+    again.pages[LIST] = (headers, [{**items[0], "expiration_status": "expires-soon"}])
+    veo = connection(tmp_path, again)
+    veo.start("test")
+    assert reads_of(again, FIRST_SLUG) == 0
+    assert veo.library()[0]["expiration_status"] == "expires-soon"
+    assert len(veo.library()[0]["moments"]) == 3
+    assert veo.status()["summary"]["expiring"] == 1
+
+
+def test_incremental_check_marks_expired_matches_unavailable(tmp_path: Path) -> None:
+    connection(tmp_path, FakeApi()).start("refresh")
+    again = FakeApi()
+    headers, items = again.pages[LIST]
+    again.pages[LIST] = (headers, [{**items[0], "expiration_status": "expired"}])
+    veo = connection(tmp_path, again)
+    veo.start("test")
+    assert reads_of(again, FIRST_SLUG) == 0
+    assert veo.library()[0]["available"] is False
+    assert veo.library()[0]["moments"] == []
+
+
+def test_incremental_check_retries_a_match_that_now_has_video(tmp_path: Path) -> None:
+    first = FakeApi()
+    first.pages[f"/api/app/matches/{FIRST_SLUG}/videos/"] = ({}, [])
+    connection(tmp_path, first).start("refresh")
+    again = FakeApi()
+    veo = connection(tmp_path, again)
+    veo.start("test")
+    assert reads_of(again, FIRST_SLUG) == 4
+    assert veo.library()[0]["available"] is True

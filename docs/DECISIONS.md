@@ -4,6 +4,16 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-044 (2026-11-22) Automatic Veo checks reuse completed match metadata
+Owner reports that showing Veo rereads matches already cached. Connect and automatic
+checks reuse completed available matches by stable ID/slug while listing the account
+for new matches and current expiry. Missing/unavailable matches are still read. Keep
+explicit Refresh as the full metadata update so changes to existing highlights can
+be requested; this preserves its documented/tested behavior. Shared matches reused
+by an automatic account check need explicit Refresh for expiry/highlight changes,
+since no account listing supplies their current state. No full-video downloads,
+credential/session changes or request-rate increase are part of this fix.
+
 ## D-043 (2026-11-21) Explicit My Player position selects one performance role
 Owner supersedes D-042's mixed-role presentation: a saved goalkeeper position shows
 only keeper performance in every season and report; an explicit outfield position

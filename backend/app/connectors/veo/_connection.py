@@ -172,6 +172,7 @@ class VeoConnection:
         match_id: str | None = None,
         name: str | None = None,
         reel: dict[str, Any] | None = None,
+        only_missing: bool = False,
     ) -> None:
         if action == "disconnect":
             self.disconnect()
@@ -197,7 +198,7 @@ class VeoConnection:
             if action in {"reel", "moments"}:
                 message = "Preparing the highlights…"
             self._state.update(state="working", message=message, progress=None)
-        self._run(lambda: self._perform(action, match_id, name, reel))
+        self._run(lambda: self._perform(action, match_id, name, reel, only_missing))
 
     def disconnect(self) -> None:
         """Forget the in-memory video addresses and stream; the saved account and the
@@ -264,6 +265,7 @@ class VeoConnection:
         match_id: str | None = None,
         name: str | None = None,
         reel: dict[str, Any] | None = None,
+        only_missing: bool = False,
     ) -> None:
         try:
             if action in {"reel", "moments"} and match_id:
@@ -287,7 +289,7 @@ class VeoConnection:
                     # Owner request 2026-11-20: Connect reads the matches straight away,
                     # in the same sign-in, with no separate Refresh.
                     self._test(api)
-                self._refresh(api)
+                self._refresh(api, only_missing=only_missing or action == "test")
         except CaptureError as error:
             self._report(state="error", message=f"{error}{self._kept()}", progress=None)
         except Exception as error:
@@ -353,7 +355,7 @@ class VeoConnection:
             ),
         )
 
-    def _refresh(self, api: Any) -> None:
+    def _refresh(self, api: Any, *, only_missing: bool = False) -> None:
         recordings: list[dict[str, Any]] = []
         clubs = self._clubs(api)
         for club in clubs:
@@ -384,8 +386,12 @@ class VeoConnection:
                 library.append(library_item(r))
                 continue
             done += 1
-            if f"veo-{r['identifier']}" in read:
-                library.append(read[f"veo-{r['identifier']}"])
+            identity = f"veo-{r['identifier']}"
+            previous = read.get(identity) or (known.get(identity) if only_missing else None)
+            if previous and previous.get("available") and previous.get("slug") == r["slug"]:
+                # Finished cache survives helper restarts too. The current listing still
+                # controls expiry; signed video addresses are fetched on demand at Watch.
+                library.append({**previous, "expiration_status": r["expiration_status"]})
                 continue
             self._report(
                 message=f"Reading Veo match {done} of {len(active)}…",
@@ -415,7 +421,7 @@ class VeoConnection:
             read[item["id"]] = item
             self._save_progress(read)
         account = {i.get("slug") for i in library}
-        shared, unread = self._read_shared(api, account, known)
+        shared, unread = self._read_shared(api, account, known, only_missing=only_missing)
         library += shared
         self._write(library)
         self.progress_path.unlink(missing_ok=True)
@@ -493,7 +499,12 @@ class VeoConnection:
         return _PublicReader(api)
 
     def _read_shared(
-        self, api: Any, skip: set[Any], known: dict[Any, dict[str, Any]]
+        self,
+        api: Any,
+        skip: set[Any],
+        known: dict[Any, dict[str, Any]],
+        *,
+        only_missing: bool = False,
     ) -> tuple[list[dict[str, Any]], int]:
         """Each shared match not already in the account's list: its details, video list,
         highlights and halves (no team-split reads: those are the account's). A match Veo
@@ -504,6 +515,12 @@ class VeoConnection:
         links = [link for link in self.shared_links() if link["slug"] not in skip]
         for number, link in enumerate(links):
             slug = link["slug"]
+            cached = next(
+                (i for i in known.values() if i.get("shared") and i.get("slug") == slug), None
+            )
+            if only_missing and cached and cached.get("available"):
+                items.append(cached)
+                continue
             self._report(message=f"Reading shared Veo match {number + 1} of {len(links)}…")
             try:
                 _, match = api.get(f"/api/app/matches/{slug}/")

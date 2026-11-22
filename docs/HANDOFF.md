@@ -11,7 +11,21 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Current change (2026-11-21)
+## Current change (2026-11-22)
+
+- **Incremental Veo checks (spec 460), branch `codex/veo-incremental-check`.**
+  Owner reported showing Veo rereads all 57 active matches. The earlier fix only
+  resumed unfinished reads; automatic checks now reuse finished available matches,
+  and Connect does the same. New/unavailable matches are read; account expiry follows
+  the current listing. Explicit Refresh still updates existing metadata/highlights.
+  No full footage download is triggered. Offline regression reproduced the four
+  redundant requests for a saved match and now asserts zero while a new match reads
+  normally. Backend 779 full tests on each SQLite/PostgreSQL plus 35 shared-link
+  tests on each (including one added after full collection); frontend 700, lint,
+  format/types/build/schema checks pass. Local frontend deployed and helper gracefully
+  restarted while both sources idle; health/Nginx/served `index-CsLn4CZP.js` flag
+  verified. No source account accessed. Hosted copies follow existing update settings.
+
 
 - **Position-specific performance (spec 450), branch `codex/position-player-performance`.**
   Explicit profile position now selects the only hub/season/report role (supersedes

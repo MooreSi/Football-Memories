@@ -288,3 +288,20 @@ def test_a_refused_video_list_for_a_shared_match_says_veo(tmp_path: Path) -> Non
 def test_a_link_with_underscores_is_a_veo_match() -> None:
     link = "https://app.veo.co/matches/20261101-untitled-recording-2026-11-01_13-42-10-va2f73bb/"
     assert shared_slug(link) == "20261101-untitled-recording-2026-11-01_13-42-10-va2f73bb"
+
+
+def test_connect_reuses_saved_shared_matches_after_restart(tmp_path: Path) -> None:
+    first_api = SharedApi()
+    initial, _ = make(tmp_path, first_api, SharedApi())
+    initial.add_shared(LINK)
+    initial.start("refresh")
+    saved = next(i for i in initial.library() if i.get("shared"))
+    api = SharedApi()
+    veo, opened = make(tmp_path, api, SharedApi())
+    veo.start("test")
+    assert veo.status()["state"] == "ready"
+    assert opened == ["signed-in"]
+    prefix = f"/api/app/matches/{SLUG}/"
+    assert sum(p.startswith(prefix) for p in first_api.paths) == 4
+    assert sum(p.startswith(prefix) for p in api.paths) == 0
+    assert next(i for i in veo.library() if i.get("shared")) == saved
