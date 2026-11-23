@@ -1,4 +1,5 @@
 import { PlayerLabLink } from "./PlayerLabAccess";
+import { VideoLabLink } from "./VideoLabAccess";
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
 import { useVeoAutoCheck } from "./veo/useVeoAutoCheck";
 import { Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
@@ -47,7 +48,7 @@ function PillNav() {
               <span className={isActive ? "nav-label active-label" : "nav-label"}>{label}</span>
             </>
           )}
-        </NavLink>{to === "/player" && <PlayerLabLink />}</Fragment>
+        </NavLink>{to === "/player" && <><PlayerLabLink /><VideoLabLink /></>}</Fragment>
       ))}
     </nav>
   );

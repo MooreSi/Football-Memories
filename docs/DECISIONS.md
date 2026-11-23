@@ -4,6 +4,21 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-053 (2026-11-23) Build and trial local analytics for the admin only
+
+Owner explicitly requests a new private GitHub repository, a local video pipeline
+before any AWS move, selection of any Veo game for a two-minute real trial, full
+end-to-end checks and access only by the app admin. Worker lives independently
+in `MooreSi/Football-Video-Analytics`; existing full-admin + CSRF guards protect
+its local filesystem job queue and every artifact download through the gateway.
+No worker network listener or source credentials. Use already downloaded owner
+footage and preserve originals. Deliver experimental person/ball observations,
+tracklets and annotated video honestly; no confirmed Hudl-like football action
+claims or named player attribution from this first pretrained baseline. Preview
+deployment is scoped to gateway integration and the admin library only. Keep the
+admin preview on its tested build by recording/pausing that account's automatic
+updates; no other account preference or image is changed by the preview rollout.
+
 ## D-051 (2026-11-23) Release grouped tournaments, keep ambiguous recordings for review
 Owner authorizes general release to all hosted libraries, local containers and GitHub,
 superseding D-050's admin-only preview. Default grouped presentation on, explicit0 rollback.

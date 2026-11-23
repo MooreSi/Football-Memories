@@ -11,6 +11,27 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Local admin video analysis (spec 550, 2026-11-23)
+
+Branch `codex/local-video-analytics`, worker private repo
+`MooreSi/Football-Video-Analytics` (`codex/local-pipeline`).
+
+| Task | Status | Evidence |
+|---|---|---|
+| Private repo, local worker and bounded sample | done | New isolated environment/LaunchAgent; original preserved, no source download |
+| Real model inference / media pipeline | partial | SSDLite trial173s complete; stronger MPS trial running; JSON/CSV/MP4/manifest/ZIP |
+| Gateway admin security/API | done | 13 new red-first tests; full405 +4 Docker, lint/format/types |
+| App interface | partial | New private route/nav and functional submit/status/downloads;785 frontend tests/typecheck/build pass; browser pending |
+| Final gates / admin deployment / artifact verification | todo | Latest main incorporated;850 SQLite +850 PG pass; preview deployment/browser pending |
+
+Nine pipeline and five queue tests observed red before implementation;14 worker
+tests pass. Two UI behaviours observed red against a placeholder; additional
+access controls use existing full-admin guards. Final backend850 passed on SQLite and PostgreSQL
+after latest main; lint/format/types/schema drift clean. No existing test
+assertions changed. No source-account/session change, schema migration, AWS or
+original-file overwrite. Current public/library release still unchanged by this
+preview checkpoint. [Spec](550-local-video-analytics.md).
+
 ## Junior Grassroots Hub crests (2026-11-23)
 
 Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from

@@ -11,6 +11,31 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Local admin video analysis (spec 550, 2026-11-23)
+
+Branch `codex/local-video-analytics`, based on latest main `6138b56` (including
+the current crest release). Owner asks for a private worker repository, local
+two-minute Veo trial and admin-only access. New private
+`MooreSi/Football-Video-Analytics`, native local worker at
+`/Users/simon/Football Video Analytics`, `codex/local-pipeline`. New `/video-lab`
+screen follows reference02 workspace and reference01 panels. Gateway branch of
+the same app name adds full-admin/CSRF/owner guarded local job/artifact API;
+default disabled without `compose.analytics.yaml` runtime mount. No worker port.
+
+Already downloaded Veo match supplies a separate 05:00–07:00 sample; no source
+login/download or original-file change. Small SSDLite trial completed in173s,
+but missed many visible people in the inspected frame. Stronger Faster R-CNN
+baseline runs on Apple MPS; full real trial still in progress. Produces
+experimental person/ball boxes, tracklets, proximity suggestions, annotated MP4,
+JSON/CSV and verified manifest/ZIP. No confirmed goals/passes/tackles, named
+players, team attribution or physical metrics. AWS remains future work.
+
+Verification so far: worker14 tests; frontend785; gateway405 plus4 real-Caddy;
+lint/types/build pass. Final backend850 passes on SQLite and PostgreSQL
+after incorporating latest main; lint/format/mypy/schema drift clean. New behaviours observed red first;
+existing assertions unchanged. Deployment/browser/real download checks pending;
+do not report preview live yet. No app schema/dependency/source changes.
+
 ## Junior Grassroots Hub crests (2026-11-23)
 
 Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from
