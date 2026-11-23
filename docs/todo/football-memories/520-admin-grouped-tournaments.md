@@ -1,6 +1,6 @@
 # 520: Grouped Library admin preview
 
-**Status:** Deployed to admin only; awaiting owner review
+**Status:** Preview completed; superseded by spec530 general release
 **Sensitive:** no; cached metadata and existing APIs only
 
 ## Approved design

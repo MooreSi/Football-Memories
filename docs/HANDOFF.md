@@ -44,10 +44,19 @@ bundle warnings remain. Chromium desktop1440/phone375, native dropdown saves aga
 temporary API; no horizontal overflow, All matches has zero tournament actions. No real
 source login/refresh/index/stream or footage operation; no dependencies/schema changes.
 
-Deployment pending. Preflight confirms all four provisioned hosted libraries running,
-both sources idle and no active renders. Use normal main/updater/default tags and gateway
-moves; preserve every database/volume and other users' update preferences. Restore admin
-automatic updates to pre-preview true after public latest is installed. No CI workflow.
+Released/pushed main as `6ad1a00`. Normal host updater built all images/default :hosted
+and shared crests, published latest with no error, then gateway/provisioner moved all four
+hosted libraries after per-library idle-source/zero-render checks. Every hosted backend/
+web/capture runs `hosted-6ad1a000af83a051893d95bc28b77a170e2a0f81`. Local backend/frontend
+rebuilt/recreated with zero renders; local desktop helper unchanged. All health/nginx
+checks pass. Hosted `index-BZGsQGcN.js` and local `index-HORAitMe.js` contain the released
+UI; every hosted detector file hash matches tested source. Runtime snapshots: exactly
+12 hosted app containers, 2 local app containers and shared crests changed; all32 container
+names retained and every database/other container preserved. Admin auto-update restored
+to pre-preview true and audited; all other users' preferences retained. Live Liverpool
+GET confirms two assigned squads and two unassigned games, unchanged as owner requested.
+Synthetic server/tabs closed and viewport reset. No CI workflow. This final deployment
+record is docs-only; no repeat suites or app recreation needed for this checkpoint.
 
 ## Preview refinement: original match cards (2026-11-23)
 

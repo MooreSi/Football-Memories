@@ -1,6 +1,6 @@
 # 530: Tournament squad review and general release
 
-**Status:** Verified; general deployment pending
+**Status:** Done: released on main and deployed to all app instances
 **Branch:** `codex/tournament-release`
 
 Owner requests squad dropdown (existing squad or create new), removal of + Add tournament
@@ -33,4 +33,9 @@ correction keeps two squads after assignment; creating a new squad remains delib
 
 Final gates: 825 SQLite, 825 PostgreSQL, 767 frontend; lint/format/mypy/types/build/schema
 pass. Synthetic desktop/phone real-API dropdown correction/create and browse-only checks
-pass. Runtime rollout pending.
+pass. Runtime rollout complete: four hosted libraries plus local app; see HANDOFF.
+
+Installed code `6ad1a00`; all hosted backend/web/capture versioned images and local backend/
+frontend healthy. Default tags/latest/shared crests updated normally. All database and
+other containers preserved; admin auto-update restored true, other preferences unchanged.
+Live Liverpool remains two assigned squads and two review games. No source/footage changes.
