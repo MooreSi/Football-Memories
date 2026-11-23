@@ -21,7 +21,7 @@ import { HOSTED } from "../api/helperBase";
 import { useHostedPermissions } from "../api/hostedPermissions";
 import { HudlHero } from "../components/library/HudlHero";
 import { HudlLatestPanel } from "../components/library/HudlLatestPanel";
-import { fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
+import { fixtureDate, fixtureLabel, fixtureParts, latestFirst } from "../lib/hudlFixture";
 import { useHomeClub } from "../lib/useHomeClub";
 import { looksLikePlayer } from "../lib/hudlPlayer";
 import { possession, possessionTotals, withPossessionTime } from "../lib/insights";
@@ -32,6 +32,7 @@ import { veoAsHudl } from "../lib/veoAsHudl";
 import { teamSplit } from "../lib/veoTeamSplit";
 import { useVeoCardClubOf } from "../lib/useVeoClub";
 
+import {GroupedTournaments,groupedTournamentsEnabled,type GroupedLibraryGame} from "../components/library/GroupedTournaments";
 import { AutomaticTournaments } from "../components/library/AutomaticTournaments";
 import { TournamentProvider, TournamentTools, useTournamentSelection } from "../components/library/Tournaments";
 import { matchScore, useScoreCorrections } from "../lib/matchScore";
@@ -57,10 +58,16 @@ function hours(seconds: number): string {
 
 /** Layout follows reference 1: overview tiles left, featured hero + library centre, latest match right. */
 export function LibraryPage() {
-  return <TournamentProvider><LibraryContent /></TournamentProvider>;
+  return <TournamentProvider compact={groupedTournamentsEnabled()}><LibraryContent /></TournamentProvider>;
+}
+
+function fixtureDay(title:string):string|null {
+  const day=fixtureDate(title);
+  return day?`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`:null;
 }
 
 function LibraryContent() {
+  const groupedPreview=groupedTournamentsEnabled();
   const tournament = useTournamentSelection()!;
   const corrections = useScoreCorrections();
   const [params, setParams] = useSearchParams();
@@ -99,7 +106,7 @@ function LibraryContent() {
   // Tournament groups may contain imported matches beyond the first library page.
   const tournamentMatches = useQuery({
     queryKey: ["tournament-imports", seasonId, ageGroup],
-    enabled: Boolean(tournament.tournamentId || seasonLabel || ageGroup),
+    enabled: Boolean(groupedPreview || tournament.tournamentId || seasonLabel || ageGroup),
     queryFn: async () => {
       const all: MatchSummary[] = [];
       let page = 1;
@@ -153,6 +160,21 @@ function LibraryContent() {
         teams: new Set(items.map((m) => m.team_name)).size + (heroMatches.length ? 1 : 0) }
     : s && { matches: s.matches, moments: s.moments, seconds: s.footage_seconds, players: s.players, teams: s.teams };
   const scopeLabel = scoped ? `${ageGroup || "All ages"} · ${seasonLabel || "All seasons"}` : "All time";
+
+  const tournamentScores=[
+    ...(hudlLibrary.data??[]).filter(m=>tournament.memberships.has(`hudl:${m.id}`)).map(m=>({key:`hudl:${m.id}`,score:matchScore(m,hudlClub,corrections.data)})),
+    ...(veoLibrary.data??[]).filter(m=>tournament.memberships.has(`veo:${m.id}`)).map(m=>({key:`veo:${m.id}`,score:matchScore(veoAsHudl(m),veoClubOf(m),corrections.data)})),
+  ];
+  const eligibleKeys=[
+    ...(tournamentMatches.data??[]).filter(m=>!seasonLabel||m.season_label===seasonLabel).map(m=>`local:${m.id}`),
+    ...(hudlLibrary.data??[]).filter(m=>(!ageGroup||hudlAgeGroups(m).includes(ageGroup))&&(!seasonLabel||m.season_label===seasonLabel)).map(m=>`hudl:${m.id}`),
+    ...(veoLibrary.data??[]).map(veoAsHudl).filter(m=>(!ageGroup||hudlAgeGroups(m).includes(ageGroup))&&(!seasonLabel||m.season_label===seasonLabel)).map(m=>`veo:${m.id}`),
+  ];
+  const groupedGames:GroupedLibraryGame[]=groupedPreview?[
+    ...(tournamentMatches.data??[]).map(m=>({key:`local:${m.id}`,title:`${m.team_name} vs ${m.opponent}`,href:`/matches/${m.id}`,date:m.match_date,source:"Offline",thumbnail:m.thumbnail_url,score:()=>null})),
+    ...(showHudl?hudlLibrary.data??[]:[]).map(m=>({key:`hudl:${m.id}`,title:m.title,href:`/hudl/${encodeURIComponent(m.id)}`,date:fixtureDay(m.title),source:"Hudl",thumbnail:m.thumbnail_url,score:()=>matchScore(m,hudlClub,corrections.data)})),
+    ...(showVeo?veoLibrary.data??[]:[]).map(m=>({key:`veo:${m.id}`,title:m.title,href:`/veo/${encodeURIComponent(m.id)}`,date:fixtureDay(m.title),source:"Veo",thumbnail:m.poster_url,score:()=>matchScore(veoAsHudl(m),veoClubOf(m),corrections.data)})),
+  ].sort((a,b)=>(b.date??"").localeCompare(a.date??"")||a.title.localeCompare(b.title)):[];
 
 
   return (
@@ -231,15 +253,13 @@ function LibraryContent() {
 
           <AutomaticTournaments hudl={hudlLibrary.data} veo={veoLibrary.data} club={hudlClub} veoClubOf={veoClubOf}
             importedVersion={latest.data?.total ? latest.dataUpdatedAt : 0} />
-          <TournamentTools eligibleKeys={ageGroup || seasonLabel ? [
-            ...(tournamentMatches.data ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel).map(m => `local:${m.id}`),
-            ...(hudlLibrary.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)).map(m => `hudl:${m.id}`),
-            ...(veoLibrary.data ?? []).map(veoAsHudl).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)).map(m => `veo:${m.id}`),
-          ] : undefined} scopeLoading={tournamentMatches.isFetching || hudlLibrary.isFetching || veoLibrary.isFetching} games={[
-            ...(hudlLibrary.data ?? []).filter(m => tournament.memberships.has(`hudl:${m.id}`)).map(m => ({key: `hudl:${m.id}`, score: matchScore(m, hudlClub, corrections.data)})),
-            ...(veoLibrary.data ?? []).filter(m => tournament.memberships.has(`veo:${m.id}`)).map(m => ({key: `veo:${m.id}`, score: matchScore(veoAsHudl(m), veoClubOf(m), corrections.data)})),
-          ]} loading={hudlLibrary.isFetching || veoLibrary.isFetching || corrections.isFetching}
-            scoreError={(showHudl && hudlLibrary.isError) || (showVeo && veoLibrary.isError) || corrections.isError} />
+          {groupedPreview?<GroupedTournaments games={groupedGames} eligibleKeys={eligibleKeys.filter(key=>groupedGames.some(g=>g.key===key))} scores={tournamentScores} search={q}
+            scoresLoading={corrections.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching} scoreError={corrections.isError||(showHudl&&hudlLibrary.isError)||(showVeo&&veoLibrary.isError)}
+            loading={matches.isPending||hudlLibrary.isFetching||veoLibrary.isFetching} scopeLoading={tournamentMatches.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching}
+            error={matches.isError||tournamentMatches.isError||(showHudl&&hudlLibrary.isError)||(showVeo&&veoLibrary.isError)} sources={[...(showHudl?["Hudl"]:[]),...(showVeo?["Veo"]:[])]}/>:<>
+          <TournamentTools eligibleKeys={ageGroup||seasonLabel?eligibleKeys:undefined} scopeLoading={tournamentMatches.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching} games={tournamentScores}
+            loading={hudlLibrary.isFetching||veoLibrary.isFetching||corrections.isFetching} scoreError={(showHudl&&hudlLibrary.isError)||(showVeo&&veoLibrary.isError)||corrections.isError}/>
+
 
           {matches.isPending ? (
             <Spinner label="Loading matches" />
@@ -263,6 +283,7 @@ function LibraryContent() {
           )}
           <div className="mt-5"><HudlLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} club={club} /></div>
           <div className="mt-5"><VeoLibrary filters={{age:ageGroup,season:seasonLabel,search:q}} /></div>
+          </>}
           {HOSTED && !hostedPerms.data?.hudl && !hostedPerms.data?.veo && <div className="mt-5"><HostedConnectionsNote /></div>}
         </section>
       </div>

@@ -16,12 +16,14 @@ type State = {
   memberships: Set<string>;
   editing: string | null; edit: (key: string | null) => void;
   select: (keys: string[]) => void;
+  compact: boolean; assigning: boolean; assign: (open: boolean) => void;
   renaming: string | null; rename: (id: string | null) => void;
 };
 const Context = createContext<State | null>(null);
 export function useTournamentSelection() { return useContext(Context); }
 
-export function TournamentProvider({children}: {children: ReactNode}) {
+export function TournamentProvider({children, compact = false}: {children: ReactNode; compact?: boolean}) {
+  const [assigning, assign] = useState(false);
   const [selected, setSelected] = useState(new Set<string>());
   const [tournamentId, setId] = useState("");
   const [team, setTeam] = useState("");
@@ -34,6 +36,7 @@ export function TournamentProvider({children}: {children: ReactNode}) {
   }), clear: () => setSelected(new Set()), tournamentId, setTournamentId: id => {setId(id); setTeam("");}, team, setTeam,
   editing, edit: key => {setEditing(key); if (key) setSelected(new Set([key]));},
   select: keys => setSelected(new Set(keys)), renaming, rename,
+  compact, assigning, assign,
   memberships: new Set(Object.keys(active?.entries ?? {})),
   includes: key => !tournamentId || Boolean(active?.entries[key] && (!team || active.entries[key] === team)),
   }}>{children}</Context.Provider>;
@@ -45,6 +48,10 @@ export function TournamentSelect({matchKey, title}: {matchKey: string; title: st
   const tournaments = useTournaments();
   if (!state) return null;
   const memberships = tournaments.data?.filter(t => t.entries[matchKey]) ?? [];
+  if (state.compact) return <div className="grouped-match-actions">
+    {memberships.length > 0 && <Button variant="ghost" className="text-xs" aria-label={`Correct tournament for ${title}`} onClick={() => state.edit(matchKey)}>Edit</Button>}
+    <label className="grouped-game-select"><input type="checkbox" aria-label={`Select ${title} for tournament`} checked={state.selected.has(matchKey)} onChange={() => state.toggle(matchKey)} /><span>Select</span></label>
+  </div>;
   return <div className="tournament-card-footer border-t border-line px-4 py-3 text-xs">
     {memberships.map(t => <div key={t.id} className="tournament-membership min-w-0 space-y-1 text-fg-muted">
       <p className="tournament-name font-medium">{t.name}</p><p>{t.entries[matchKey]}</p>
@@ -64,7 +71,7 @@ export function TournamentSelect({matchKey, title}: {matchKey: string; title: st
   </div>;
 }
 
-export function TournamentTools({games, eligibleKeys, scopeLoading = false, loading = false, scoreError = false}: {games: TournamentGame[]; eligibleKeys?: string[]; scopeLoading?: boolean; loading?: boolean; scoreError?: boolean}) {
+export function TournamentTools({games, eligibleKeys, scopeLoading = false, loading = false, scoreError = false, compact = false}: {compact?: boolean; games: TournamentGame[]; eligibleKeys?: string[]; scopeLoading?: boolean; loading?: boolean; scoreError?: boolean}) {
   const state = useTournamentSelection()!;
   const tournaments = useTournaments();
   const remove = useRemoveTournamentGame();
@@ -79,11 +86,11 @@ export function TournamentTools({games, eligibleKeys, scopeLoading = false, load
   const [notice, setNotice] = useState("");
   const active = tournaments.data?.find(t => t.id === state.tournamentId);
   const correctionGroup = state.editing ? tournaments.data?.find(t => t.entries[state.editing!]) : undefined;
-  const dialogOpen = open || Boolean(state.editing);
+  const dialogOpen = open || Boolean(state.editing) || state.assigning;
   const localKeys = Object.keys(active?.entries ?? {}).filter(key => key.startsWith("local:")).sort();
   const localScores = useQuery({
     queryKey: ["tournament-local-scores", localKeys],
-    enabled: localKeys.length > 0,
+    enabled: !compact && localKeys.length > 0,
     retry: false,
     queryFn: async () => {
       const out: TournamentGame[] = [];
@@ -102,8 +109,8 @@ export function TournamentTools({games, eligibleKeys, scopeLoading = false, load
   const total = rows.reduce((n,r) => n+r.games, 0);
   const scored = rows.reduce((n,r) => n+r.scored, 0);
   const unscored = total-scored;
-  return <div className="mb-5 space-y-4 rounded-xl border border-line bg-ink-950/20 p-4">
-    <div className="tournament-toolbar">
+  return <div className={compact ? "grouped-tournament-dialogs" : "mb-5 space-y-4 rounded-xl border border-line bg-ink-950/20 p-4"}>
+    {!compact && <div className="tournament-toolbar">
       <h3 className="mr-auto flex items-center gap-2 text-sm font-semibold"><Trophy size={16} className="text-accent" />Tournaments</h3>
       <label className="min-w-0 max-w-full text-xs text-fg-muted">Tournament<select aria-label="Tournament" className="field mt-1 max-w-full" value={state.tournamentId} onChange={e => state.setTournamentId(e.target.value)}>
         <option value="">All tournaments</option>{choices.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -113,12 +120,12 @@ export function TournamentTools({games, eligibleKeys, scopeLoading = false, load
       </select></label>}
       <Button disabled={!state.selected.size || !tournaments.isSuccess} onClick={() => setOpen(true)}>Add to tournament ({state.selected.size})</Button>
       {state.selected.size > 0 && <Button variant="ghost" onClick={state.clear}>Clear selection</Button>}
-    </div>
-    {tournaments.isPending && <p role="status" className="text-xs text-fg-muted">Loading tournaments…</p>}
+    </div>}
+    {!compact && tournaments.isPending && <p role="status" className="text-xs text-fg-muted">Loading tournaments…</p>}
     {tournaments.isError && <div role="alert" className="text-sm text-danger">Could not load tournaments. <Button onClick={() => void tournaments.refetch()}>Retry tournaments</Button></div>}
-    {!active && <p className="text-xs text-fg-subtle">Named tournaments and days with at least three games against multiple opponents are grouped automatically. Ordinary weekend pairs stay separate. Review automatic labels or tick games to set a tournament and entered home team yourself.</p>}
+    {!compact && !active && <p className="text-xs text-fg-subtle">Named tournaments and days with at least three games against multiple opponents are grouped automatically. Ordinary weekend pairs stay separate. Review automatic labels or tick games to set a tournament and entered home team yourself.</p>}
     {notice && <p role="status" className="text-sm text-accent">{notice}</p>}
-    {active && <section aria-label="Tournament stats" className="space-y-3">
+    {!compact && active && <section aria-label="Tournament stats" className="space-y-3">
       <div className="flex flex-wrap items-center gap-2"><Button variant="ghost" onClick={() => state.rename(active.id)}>Rename tournament</Button></div>
       <div><h4 className="break-words font-semibold">{active.name}{state.team ? ` · ${state.team}` : ""}</h4>
         <p className="mt-1 text-xs text-fg-muted">{scored} of {total} games have scores</p></div>
@@ -144,12 +151,21 @@ export function TournamentTools({games, eligibleKeys, scopeLoading = false, load
       }}>Remove selected from this tournament</Button>}
       {remove.isError && <p role="alert" className="text-sm text-danger">{remove.error.message}</p>}
     </section>}
+    {compact && active && state.selected.size > 0 && <div className="my-3">
+      <Button disabled={remove.isPending || ![...state.selected].some(key => active.entries[key])} onClick={async () => {
+        try {
+          for (const key of state.selected) if (active.entries[key]) await remove.mutateAsync({id: active.id, key});
+          state.clear(); setNotice("Selected games removed from this tournament");
+        } catch { /* Retain selection so a failed request can be retried. */ }
+      }}>Remove selected from this tournament</Button>
+      {remove.isError && <p role="alert" className="text-sm text-danger">{remove.error.message}</p>}
+    </div>}
     {state.selected.size > 0 && !dialogOpen && <div className="fixed right-4 bottom-20 z-40 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-xl border border-line bg-ink-950 p-2 shadow-xl sm:bottom-4" aria-label="Selected tournament games">
       <Button variant="primary" disabled={!tournaments.isSuccess} onClick={() => setOpen(true)}>Add selected games ({state.selected.size})</Button>
       <Button variant="ghost" aria-label="Clear selected tournament games" onClick={state.clear}><X size={16} /></Button>
     </div>}
-    {dialogOpen && <TournamentDialog initialName={correctionGroup?.name ?? active?.name ?? ""} initialTeam={correctionGroup?.entries[state.editing!] ?? state.team} onClose={() => {setOpen(false); state.edit(null);}} onSaved={(name, team, count) => {
-      state.clear(); setOpen(false); state.edit(null); setNotice(`${count} games added to ${name} · ${team}`);
+    {dialogOpen && <TournamentDialog initialName={correctionGroup?.name ?? active?.name ?? ""} initialTeam={correctionGroup?.entries[state.editing!] ?? state.team} onClose={() => {setOpen(false); state.edit(null); state.assign(false);}} onSaved={(name, team, count) => {
+      state.clear(); setOpen(false); state.edit(null); state.assign(false); setNotice(`${count} games added to ${name} · ${team}`);
     }} />}
     {renaming && <Overlay label="Rename tournament" onClose={() => {if (!rename.isPending) state.rename(null);}}>
       <form className="space-y-4" onKeyDown={event => {

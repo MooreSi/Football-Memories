@@ -1,0 +1,128 @@
+import {useEffect,useRef,useState} from "react";
+import {Link} from "react-router-dom";
+import {useMutation,useQuery,useQueryClient} from "@tanstack/react-query";
+import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,Plus,RefreshCw,Shirt} from "lucide-react";
+import {api} from "../../api/client";
+import {useTournaments} from "../../api/tournaments";
+import type {Tournament} from "../../api/types";
+import {hudlBlocked,hudlRequest,useHudlStatus} from "../../api/hudl";
+import {useVeoStatus,veoRequest} from "../../api/veo";
+import {taggedScore,type Score} from "../../lib/matchScore";
+import {tournamentStats,type TournamentGame} from "../../lib/tournaments";
+import {Button} from "../ui/Button";
+import {TournamentSelect,TournamentTools,useTournamentSelection} from "./Tournaments";
+
+export type GroupedLibraryGame={key:string;title:string;href:string;date:string|null;source:string;thumbnail?:string|null;score:()=>Score|null};
+export function groupedTournamentsEnabled(){return import.meta.env.VITE_FM_GROUPED_TOURNAMENTS==="1";}
+function dateLabel(day:string|null){return day?new Date(`${day.slice(0,10)}T12:00:00`).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"Date unknown";}
+
+/** Mockup 1. The build opt-in is enabled only for the owner's isolated admin preview. */
+export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=false,error=false,scopeLoading=false,scoreError=false,scoresLoading=false,sources=[]}:{
+  games:GroupedLibraryGame[];eligibleKeys:string[];scores:TournamentGame[];search?:string;loading?:boolean;error?:boolean;scopeLoading?:boolean;scoreError?:boolean;scoresLoading?:boolean;sources?:string[];
+}){
+  const state=useTournamentSelection()!;
+  const tournaments=useTournaments();
+  const [view,setView]=useState<"all"|"tournaments">("tournaments");
+  const [adding,setAdding]=useState(false);
+  const autoOpened=useRef(false);
+  const allowed=new Set(eligibleKeys),byKey=new Map(games.map(g=>[g.key,g]));
+  const scoped=games.filter(g=>allowed.has(g.key));
+  const query=search.toLocaleLowerCase();
+  const matchesSearch=(g:GroupedLibraryGame)=>!query||g.title.toLocaleLowerCase().includes(query);
+  const dateOf=(t:Tournament)=>Object.keys(t.entries).map(key=>byKey.get(key)?.date??"").sort().reverse()[0]||null;
+  const groups=(tournaments.data??[]).filter(t=>Object.keys(t.entries).some(key=>allowed.has(key)))
+    .filter(t=>!query||`${t.name} ${Object.values(t.entries).join(" ")}`.toLocaleLowerCase().includes(query)||Object.keys(t.entries).some(key=>byKey.has(key)&&matchesSearch(byKey.get(key)!)))
+    .sort((a,b)=>(dateOf(b)??"").localeCompare(dateOf(a)??"")||a.name.localeCompare(b.name));
+  const groupedKeys=new Set((tournaments.data??[]).flatMap(t=>Object.keys(t.entries)));
+  useEffect(()=>{
+    if(!autoOpened.current&&tournaments.isSuccess&&!scopeLoading&&groups.length){autoOpened.current=true;state.setTournamentId(groups[0].id);}
+  },[tournaments.data,scopeLoading,eligibleKeys]);
+  useEffect(()=>{if(state.tournamentId)setView("tournaments");},[state.tournamentId]);
+  function allMatches(){autoOpened.current=true;setView("all");state.setTournamentId("");}
+  return <div className="grouped-library">
+    <div className="grouped-view-toolbar">
+      <div className="grouped-view-switch" role="group" aria-label="Library presentation">
+        <Button variant="ghost" aria-pressed={view==="all"} onClick={allMatches}>All matches</Button>
+        <Button variant="ghost" aria-pressed={view==="tournaments"} onClick={()=>{setView("tournaments");setAdding(false);}}>Tournaments</Button>
+      </div>
+      <Button variant="ghost" className="grouped-add" onClick={()=>{allMatches();setAdding(true);}}><Plus size={15}/>Add tournament</Button>
+      {view==="all"&&sources.length>0&&<SourceRefresh sources={sources}/>}
+    </div>
+    {adding&&<p role="status" className="mb-3 text-xs text-fg-muted">Select games below, then choose Add selected games.</p>}
+    {loading&&<p role="status" className="mb-3 text-xs text-fg-muted">Loading cached matches…</p>}
+    {error&&<p role="alert" className="mb-3 text-xs text-danger">Some matches could not be loaded. Showing available cached matches.</p>}
+    {tournaments.isError&&<p role="alert" className="mb-3 text-xs text-danger">Could not load tournaments. <Button onClick={()=>void tournaments.refetch()}>Retry tournaments</Button></p>}
+    {view==="tournaments"?<>
+      {tournaments.isPending?<p role="status" className="text-sm text-fg-muted">Loading tournaments…</p>:!scopeLoading&&groups.length===0&&<p className="py-4 text-sm text-fg-muted">No tournaments match these filters.</p>}
+      {groups.map(t=>{
+        const open=state.tournamentId===t.id,day=dateOf(t),teams=[...new Set(Object.values(t.entries))].sort();
+        const label=!t.name_corrected&&t.name.startsWith("Match day · ")?`Tournament · ${dateLabel(day)}`:t.name;
+        const memberKeys=Object.keys(t.entries).filter(key=>!state.team||t.entries[key]===state.team);
+        const members=scoped.filter(g=>memberKeys.includes(g.key)&&matchesSearch(g));
+        return <section key={t.id} className="grouped-event" aria-label={t.name}>
+          <div className="grouped-event-heading">
+            <button className="grouped-event-toggle" aria-expanded={open} onClick={()=>state.setTournamentId(open?"":t.id)}>
+              <span className="grouped-date">{day?<><strong>{Number(day.slice(8,10))}</strong><span>{new Date(`${day.slice(0,10)}T12:00:00`).toLocaleDateString("en-GB",{month:"short"})}</span></>:<Film size={18}/>}</span>
+              <span className="grouped-event-identity"><strong>{label}</strong><span>{Object.keys(t.entries).length} matches · {teams.length} {teams.length===1?"squad":"squads"}</span></span>
+              {open?<ChevronDown size={17}/>:<ChevronRight size={17}/>} 
+            </button>
+            <Button variant="ghost" aria-label={`Rename tournament ${t.name}`} title="Rename tournament" onClick={()=>state.rename(t.id)}><Pencil size={15}/></Button>
+          </div>
+          {open&&<div className="grouped-event-detail">
+            {state.team?<>
+              <div className="grouped-squad-heading"><Button variant="ghost" onClick={()=>state.setTeam("")}><ArrowLeft size={14}/>All squads</Button><h3>{state.team}</h3><Button variant="ghost" className="ml-auto" onClick={()=>{state.select(memberKeys);state.assign(true);}}>Correct squad</Button></div>
+              <SquadStats tournament={t} team={state.team} scores={scores} scoreError={scoreError} loading={scoresLoading}/>
+              {memberKeys.some(key=>t.automatic?.[key])&&<details className="mb-3 text-xs text-fg-subtle"><summary className="cursor-pointer">Review automatic grouping</summary><div className="mt-2 space-y-1">{[...new Set(memberKeys.map(key=>t.automatic?.[key]?.reason).filter(Boolean))].map(reason=><p key={reason}>{reason}</p>)}<p>Use Edit on a game or Correct squad to change the assignment.</p></div></details>}
+              <section aria-label={`${state.team} tournament matches`}><GameRows games={members} resetKey={`${t.id}:${state.team}:${search}`}/></section>
+              {members.length<memberKeys.length&&<p className="mt-3 text-xs text-fg-subtle">Showing {members.length} of {memberKeys.length} linked games. Age, season, search and connection visibility apply to this list.</p>}
+            </>:<div className="grouped-squad-grid">{teams.map(team=>{
+              const count=Object.values(t.entries).filter(v=>v===team).length;
+              return <button className="grouped-squad-card" key={team} aria-label={`Open squad ${team}`} onClick={()=>state.setTeam(team)}><span className="grouped-shirt"><Shirt size={20}/></span><span><strong>{team}</strong><span>{count} {count===1?"match":"matches"} · View matches & stats</span></span><ChevronRight size={16}/></button>;
+            })}</div>}
+          </div>}
+        </section>;
+      })}
+      <section aria-label="Other matches" className="grouped-ordinary"><div className="grouped-section-heading"><h3>Other matches</h3><span>Not in a tournament</span></div><GameRows games={scoped.filter(g=>!groupedKeys.has(g.key)&&matchesSearch(g))} resetKey={`ordinary:${eligibleKeys.join("|")}:${search}`}/></section>
+    </>:<section aria-label="All cached matches"><GameRows games={scoped.filter(matchesSearch)} resetKey={`all:${eligibleKeys.join("|")}:${search}`}/></section>}
+    <TournamentTools compact games={scores} eligibleKeys={eligibleKeys} scopeLoading={scopeLoading}/>
+  </div>;
+}
+
+function GameRows({games,resetKey}:{games:GroupedLibraryGame[];resetKey:string}){
+  const [limit,setLimit]=useState(12);
+  useEffect(()=>setLimit(12),[resetKey]);
+  if(!games.length)return <p className="py-3 text-xs text-fg-subtle">No matches in this view.</p>;
+  return <><div className="grouped-game-list">{games.slice(0,limit).map(game=>{
+    const score=game.score();
+    return <article className="grouped-game" key={game.key}>
+      <Link to={game.href} aria-label={game.title} className="grouped-game-link"><span className="grouped-thumbnail">{game.thumbnail?<img src={game.thumbnail} alt="" loading="lazy" crossOrigin="anonymous"/>:<Film size={20}/>}</span><span className="grouped-game-text"><strong>{game.title}</strong><span>{dateLabel(game.date)} · {game.source}</span></span><span className="grouped-score" aria-label={score?`Score ${score.ours} to ${score.theirs}`:"Score unavailable"}>{score?`${score.ours}–${score.theirs}`:"—"}</span></Link>
+      <TournamentSelect matchKey={game.key} title={game.title}/>
+    </article>;
+  })}</div>{games.length>limit&&<div className="mt-3 text-center"><Button onClick={()=>setLimit(n=>n+12)}>Show more matches ({games.length-limit})</Button></div>}</>;
+}
+
+function SquadStats({tournament,team,scores,scoreError,loading}:{tournament:Tournament;team:string;scores:TournamentGame[];scoreError:boolean;loading:boolean}){
+  const keys=Object.keys(tournament.entries).filter(k=>k.startsWith("local:")&&tournament.entries[k]===team).sort();
+  const local=useQuery({queryKey:["grouped-squad-scores",keys],enabled:keys.length>0,retry:false,queryFn:async()=>{
+    const result:TournamentGame[]=[];
+    for(let i=0;i<keys.length;i+=4)result.push(...await Promise.all(keys.slice(i,i+4).map(async key=>{
+      const match=await api.match(Number(key.slice(6)));return {key,score:taggedScore(match.events.map(event=>({...event,id:String(event.id)})),match.team_name)};
+    })));
+    return result;
+  }});
+  const row=tournamentStats(tournament,[...scores,...(local.data??[])]).find(r=>r.team===team)!;
+  return <div className="grouped-stats" aria-label={`${team} tournament stats`}>
+    <dl>{[["Games",row.games],["Wins",row.scored?row.won:"—"],["Draws",row.scored?row.drawn:"—"],["Losses",row.scored?row.lost:"—"],["Goals for",row.scored?row.gf:"—"],["Goals against",row.scored?row.ga:"—"]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+    <p>{row.scored} of {row.games} games have scores</p>
+    {(loading||local.isFetching)&&<p role="status">Loading scores…</p>}{(scoreError||local.isError)&&<p role="alert" className="text-danger">Some scores could not be loaded.</p>}
+    <p className="text-fg-subtle">Whole-squad tournament totals. Unknown scores are excluded.</p>
+  </div>;
+}
+
+function SourceRefresh({sources}:{sources:string[]}){
+  const hudl=useHudlStatus(),veo=useVeoStatus(),client=useQueryClient();
+  useEffect(()=>{if(hudl.data&&!hudl.data.busy)void client.invalidateQueries({queryKey:["hudl-library"]});},[hudl.data?.busy,client]);
+  useEffect(()=>{if(veo.data&&!veo.data.busy)void client.invalidateQueries({queryKey:["veo-library"]});},[veo.data?.busy,client]);
+  const refresh=useMutation({mutationFn:(source:string)=>source==="Hudl"?hudlRequest("/account/action",{action:"refresh"}):veoRequest("/action",{action:"refresh"}),onSuccess:()=>{void client.invalidateQueries({queryKey:["hudl-account"]});void client.invalidateQueries({queryKey:["veo-account"]});}});
+  return <div className="grouped-source-refresh">{sources.map(source=><Button variant="ghost" key={source} disabled={refresh.isPending||(source==="Hudl"?hudlBlocked(hudl.data)||!hudl.data?.configured:veo.data?.busy||!(veo.data?.configured||veo.data?.shared))} onClick={()=>refresh.mutate(source)}><RefreshCw size={13}/>Refresh {source}</Button>)}{refresh.isError&&<p role="alert" className="text-xs text-danger">{refresh.error.message}</p>}</div>;
+}

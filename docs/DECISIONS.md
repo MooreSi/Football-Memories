@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-050 (2026-11-23) Grouped Library is an isolated admin preview
+Owner selects mockup 1: expandable tournaments → squads → matches and compact team stats,
+with ordinary games separate and existing corrections/rename preserved. Review on the
+admin hosted account before any general rollout. Implement an off-by-default build flag,
+push only the feature branch, build only versioned preview images and keep updater latest,
+default image tags and main unchanged. Pause admin auto-update (previously enabled) so a
+normal release cannot replace the preview; restore after review. Other users/local app
+remain on the released interface. Existing backend, membership and detection rules remain.
+
 ## D-049 (2026-11-23) Ordinary weekend pairs are not tournaments
 Owner clarifies that two games against the same opponent, including different 5v5,
 7v7, 9v9 and 11v11 formats, are ordinary fixtures. Unnamed detection now needs at

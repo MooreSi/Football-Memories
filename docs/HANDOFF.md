@@ -11,6 +11,34 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Admin-only Grouped Library preview (spec 520, 2026-11-23)
+
+Branch `codex/admin-grouped-tournaments-preview`. Owner selected mockup 1 and explicitly
+requested admin-only review before releasing it to other accounts. New opt-in build flag
+`VITE_FM_GROUPED_TOURNAMENTS=1` (`FM_GROUPED_TOURNAMENTS=1` Docker build argument) enables
+compact All matches/Tournaments tabs, dated event rows, squad cards and match/stats
+drill-down. Existing dashboard retained; ordinary games stay outside tournament groups.
+Age/season/search scope, real scores and coverage, whole-event rename, per-game/squad
+corrections, multiple selection and mistaken-membership removal use existing APIs.
+Automatic-group reasons remain behind one disclosure; no detector or schema change.
+
+Verification: four initial navigation/selection/scope tests observed behavioral red/green;
+missing compact removal action observed red/green; rename and release-flag/Library wiring
+characterization added. Existing tests untouched. SQLite **822 passed** (65.20s), dedicated
+PostgreSQL **822 passed** (83.66s), sequential. Frontend **758 passed**; typecheck, default
+and opt-in builds pass. Ruff lint/format/mypy and dev PostgreSQL Alembic no drift pass.
+Synthetic real-API browser checks: event → squad → matches, score coverage, shared rename
+and batch dialog; 1440px desktop and 375px phone have no horizontal overflow and 16px
+checkboxes. Intermediate squad cards now stack based on available width. Existing canvas/
+media and bundle warnings remain. No live source login/refresh/index/stream or footage
+operation. No CI workflow exists.
+
+Deployment pending at this checkpoint: only versioned preview images, no main push,
+shared :hosted tag or updater latest change. Move only admin through gateway/provisioner.
+Admin auto-update was true; pause for preview and restore that preference after owner
+review. Preserve all other users, database containers and local running stack. Do not
+merge main or roll out broadly without the owner's further instruction.
+
 ## Tournament fixes and design alternatives (spec 510, 2026-11-23)
 
 Branch `codex/tournament-library`. Owner requests mockups before deciding on a new

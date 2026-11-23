@@ -66,3 +66,11 @@ Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-t
   updater's launchd job watches that file (WatchPaths) and runs its fixed check. At most one
   note per five minutes. The page waits until the status file's `checked_at` is at or after
   the request time. Checked live 2026-11-20: note to updater run to new `checked_at` in seconds.
+
+## Admin-only Library preview (spec 520)
+`FM_GROUPED_TOURNAMENTS=1` is an opt-in frontend Docker build argument; the default is 0.
+Preview deployment uses only full-commit version tags on a feature branch, registers the
+version in updater `built` under its normal lock, and moves the admin library explicitly.
+Never move updater `latest` or shared :hosted tags for a preview. Pause admin automatic
+updates during review (record the previous setting), otherwise the normal update round
+would replace this version with latest. Other libraries retain their preferences/images.
