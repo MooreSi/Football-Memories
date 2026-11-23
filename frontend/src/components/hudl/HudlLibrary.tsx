@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { connectionShown } from "../../lib/connections";
 import { Link } from "react-router-dom";
 import { CircleDashed, Film, FolderArchive, RefreshCw } from "lucide-react";
-import { downloadState, hudlAgeGroups, hudlBlocked, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../../api/hudl";
+import { type HudlMatch, downloadState, hudlAgeGroups, hudlBlocked, hudlRequest, useDownloadIndex, useHudlLibrary, useHudlStatus } from "../../api/hudl";
 import { Button } from "../ui/Button";
 import { TeamBadge } from "../TeamBadge";
 import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
@@ -73,23 +73,29 @@ export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; c
     {status.data?.busy && <p role="status" className="text-xs text-accent">{status.data.message}</p>}
     {library.isPending ? <p className="text-sm text-fg-muted">Loading cached Hudl matches…</p> : !library.isError && matches.length === 0 &&
       <p className="text-sm text-fg-muted">{videos.length ? "No Hudl videos match these filters. Choose All age groups or All seasons to see more." : "No Hudl videos cached yet. Refresh Hudl to load your library."}</p>}
-    <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, shown).map(m => { const date = fixtureDate(m.title); return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
+    <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, shown).map(m => <HudlMatchCard key={m.id} match={m} club={club} score={matchScore(m, club, corrections.data)} saved={saved.get(m.id)} />)}</div>
+    {shown < matches.length && <div className="flex justify-center"><Button onClick={() => setShown(n => n + 12)}>Show more Hudl matches ({matches.length - shown})</Button></div>}
+  </section>;
+}
+
+/** Shared original footage card for both the released Library and tournament views. */
+export function HudlMatchCard({match:m,club,score,saved}:{match:HudlMatch;club:string|null;score:{ours:number;theirs:number}|null;saved?:{match:boolean;moments:boolean}}) {
+  const date=fixtureDate(m.title);
+  return <article className="tile overflow-hidden transition hover:-translate-y-0.5">
       <Link to={`/hudl/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
         <div className="relative aspect-video overflow-hidden bg-ink-800">
           {m.thumbnail_url ? <img crossOrigin="anonymous" src={m.thumbnail_url} alt={m.title} loading="lazy" className="size-full object-cover" />
             : <div className="grid h-full place-items-center text-fg-subtle"><Film size={28} /><span className="text-xs">Thumbnail pending refresh</span></div>}
           <span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{hudlAgeGroups(m).join(" / ")} · Hudl</span>
-          <DownloadBadges state={saved.get(m.id)} />
-          <ScoreBadge title={m.title} club={club} score={matchScore(m, club, corrections.data)} />
+          <DownloadBadges state={saved} />
+          <ScoreBadge title={m.title} club={club} score={score} />
         </div>
         <div className="space-y-2 p-4"><h3 className="text-sm font-semibold leading-snug">{m.title}</h3>
           <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
           <p className="text-xs text-fg-muted">{date ? ordinalDate(date) : "Undated"}</p></div>
       </Link>
       <TournamentSelect matchKey={`hudl:${m.id}`} title={m.title} />
-    </article>; })}</div>
-    {shown < matches.length && <div className="flex justify-center"><Button onClick={() => setShown(n => n + 12)}>Show more Hudl matches ({matches.length - shown})</Button></div>}
-  </section>;
+    </article>;
 }
 
 /** Owner request 2026-11-15: both crests and the score, bottom right of the thumbnail.

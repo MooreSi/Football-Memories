@@ -1,7 +1,7 @@
-import {useEffect,useRef,useState} from "react";
+import {useEffect,useRef,useState,type ReactNode} from "react";
 import {Link} from "react-router-dom";
 import {useMutation,useQuery,useQueryClient} from "@tanstack/react-query";
-import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,Plus,RefreshCw,Shirt} from "lucide-react";
+import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,Plus,RefreshCw} from "lucide-react";
 import {api} from "../../api/client";
 import {useTournaments} from "../../api/tournaments";
 import type {Tournament} from "../../api/types";
@@ -9,10 +9,12 @@ import {hudlBlocked,hudlRequest,useHudlStatus} from "../../api/hudl";
 import {useVeoStatus,veoRequest} from "../../api/veo";
 import {taggedScore,type Score} from "../../lib/matchScore";
 import {tournamentStats,type TournamentGame} from "../../lib/tournaments";
+import {TeamBadge} from "../TeamBadge";
+import {ScoreBadge} from "../hudl/HudlLibrary";
 import {Button} from "../ui/Button";
 import {TournamentSelect,TournamentTools,useTournamentSelection} from "./Tournaments";
 
-export type GroupedLibraryGame={key:string;title:string;href:string;date:string|null;source:string;thumbnail?:string|null;score:()=>Score|null};
+export type GroupedLibraryGame={key:string;title:string;href:string;date:string|null;source:string;thumbnail?:string|null;score:()=>Score|null;homeClub?:string|null;renderCard?:()=>ReactNode};
 export function groupedTournamentsEnabled(){return import.meta.env.VITE_FM_GROUPED_TOURNAMENTS==="1";}
 function dateLabel(day:string|null){return day?new Date(`${day.slice(0,10)}T12:00:00`).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"Date unknown";}
 
@@ -49,7 +51,7 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
       {view==="all"&&sources.length>0&&<SourceRefresh sources={sources}/>}
     </div>
     {adding&&<p role="status" className="mb-3 text-xs text-fg-muted">Select games below, then choose Add selected games.</p>}
-    {loading&&<p role="status" className="mb-3 text-xs text-fg-muted">Loading cached matches…</p>}
+    {loading&&games.length===0&&<p role="status" className="mb-3 text-xs text-fg-muted">Loading cached matches…</p>}
     {error&&<p role="alert" className="mb-3 text-xs text-danger">Some matches could not be loaded. Showing available cached matches.</p>}
     {tournaments.isError&&<p role="alert" className="mb-3 text-xs text-danger">Could not load tournaments. <Button onClick={()=>void tournaments.refetch()}>Retry tournaments</Button></p>}
     {view==="tournaments"?<>
@@ -77,7 +79,8 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
               {members.length<memberKeys.length&&<p className="mt-3 text-xs text-fg-subtle">Showing {members.length} of {memberKeys.length} linked games. Age, season, search and connection visibility apply to this list.</p>}
             </>:<div className="grouped-squad-grid">{teams.map(team=>{
               const count=Object.values(t.entries).filter(v=>v===team).length;
-              return <button className="grouped-squad-card" key={team} aria-label={`Open squad ${team}`} onClick={()=>state.setTeam(team)}><span className="grouped-shirt"><Shirt size={20}/></span><span><strong>{team}</strong><span>{count} {count===1?"match":"matches"} · View matches & stats</span></span><ChevronRight size={16}/></button>;
+              const home=games.find(g=>t.entries[g.key]===team&&g.homeClub)?.homeClub||team.split(" · ")[0];
+              return <button className="grouped-squad-card" key={team} aria-label={`Open squad ${team}`} onClick={()=>state.setTeam(team)}><TeamBadge name={home} size="md"/><span><strong>{team}</strong><span>{count} {count===1?"match":"matches"} · View matches & stats</span></span><ChevronRight size={16}/></button>;
             })}</div>}
           </div>}
         </section>;
@@ -92,13 +95,14 @@ function GameRows({games,resetKey}:{games:GroupedLibraryGame[];resetKey:string})
   const [limit,setLimit]=useState(12);
   useEffect(()=>setLimit(12),[resetKey]);
   if(!games.length)return <p className="py-3 text-xs text-fg-subtle">No matches in this view.</p>;
-  return <><div className="grouped-game-list">{games.slice(0,limit).map(game=>{
-    const score=game.score();
-    return <article className="grouped-game" key={game.key}>
-      <Link to={game.href} aria-label={game.title} className="grouped-game-link"><span className="grouped-thumbnail">{game.thumbnail?<img src={game.thumbnail} alt="" loading="lazy" crossOrigin="anonymous"/>:<Film size={20}/>}</span><span className="grouped-game-text"><strong>{game.title}</strong><span>{dateLabel(game.date)} · {game.source}</span></span><span className="grouped-score" aria-label={score?`Score ${score.ours} to ${score.theirs}`:"Score unavailable"}>{score?`${score.ours}–${score.theirs}`:"—"}</span></Link>
+  return <><div className="grouped-game-grid">{games.slice(0,limit).map(game=>{
+    if(game.renderCard)return <div key={game.key} className="min-w-0">{game.renderCard()}</div>;
+    return <article className="tile overflow-hidden" key={game.key}>
+      <Link to={game.href} aria-label={game.title} className="block"><div className="relative aspect-video overflow-hidden bg-ink-800">{game.thumbnail?<img src={game.thumbnail} alt={game.title} loading="lazy" crossOrigin="anonymous" className="size-full object-cover"/>:<div className="grid h-full place-items-center text-fg-subtle"><Film size={28}/></div>}<span className="absolute left-2.5 top-2.5 rounded-full bg-ink-950/80 px-2 py-1 text-[11px] text-accent">{game.source}</span><ScoreBadge title={game.title} club={game.homeClub??null} score={game.score()}/></div><div className="space-y-2 p-4"><h3 className="text-sm font-semibold leading-snug">{game.title}</h3><p className="text-xs text-fg-muted">{dateLabel(game.date)}</p></div></Link>
       <TournamentSelect matchKey={game.key} title={game.title}/>
     </article>;
   })}</div>{games.length>limit&&<div className="mt-3 text-center"><Button onClick={()=>setLimit(n=>n+12)}>Show more matches ({games.length-limit})</Button></div>}</>;
+
 }
 
 function SquadStats({tournament,team,scores,scoreError,loading}:{tournament:Tournament;team:string;scores:TournamentGame[];scoreError:boolean;loading:boolean}){
@@ -114,7 +118,7 @@ function SquadStats({tournament,team,scores,scoreError,loading}:{tournament:Tour
   return <div className="grouped-stats" aria-label={`${team} tournament stats`}>
     <dl>{[["Games",row.games],["Wins",row.scored?row.won:"—"],["Draws",row.scored?row.drawn:"—"],["Losses",row.scored?row.lost:"—"],["Goals for",row.scored?row.gf:"—"],["Goals against",row.scored?row.ga:"—"]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     <p>{row.scored} of {row.games} games have scores</p>
-    {(loading||local.isFetching)&&<p role="status">Loading scores…</p>}{(scoreError||local.isError)&&<p role="alert" className="text-danger">Some scores could not be loaded.</p>}
+    <p role="status" className="grouped-score-status">{(loading||local.isFetching)&&row.scored===0?"Loading scores…":"\u00a0"}</p>{(scoreError||local.isError)&&<p role="alert" className="text-danger">Some scores could not be loaded.</p>}
     <p className="text-fg-subtle">Whole-squad tournament totals. Unknown scores are excluded.</p>
   </div>;
 }

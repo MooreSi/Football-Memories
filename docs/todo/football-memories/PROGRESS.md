@@ -11,6 +11,31 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Preview refinement: original match cards (2026-11-23)
+
+Owner requests original thumbnail/score-pill cards in All matches, Other matches and
+squad drill-down, home-team crests on squad cards, and no background-refresh page bounce.
+Same `codex/admin-grouped-tournaments-preview` branch; admin-only rollout still applies.
+Hudl/Veo card markup is extracted unchanged into shared renderers and used by every
+preview view; imported cards reuse MatchCard. Two columns from 640px, one on phones.
+Squad crests use the source home club through TeamBadge, preserving its cached crest/
+initials fallback. Initial loading is separate from background fetching; cached cards
+stay visible, and score-loading space is reserved so refreshes do not move the layout.
+
+New card-rendering, squad-crest and background-loading tests observed behavioral red
+before implementation. Real Library integration confirms original Hudl/Veo thumbnails,
+score pills and correct home-club crest in the grouping views. Existing tests untouched.
+SQLite **822 passed** (68.48s), dedicated PostgreSQL **822 passed** (103.79s), sequential;
+frontend **762 passed in152 files** (39.05s). Ruff lint/format/mypy, dev-PG Alembic no drift,
+typecheck and default/preview builds pass. Existing canvas/media/bundle warnings remain.
+Synthetic real-API browser checks pass in Chromium and native Safari; desktop shows two
+cards, phone375 one, no horizontal overflow, 16px checkboxes. Cached refresh comparison:
+card top 959.234375px and library height1117.140625px identical before/after; no transient
+loading status. Illustrative fixtures only; no source login/refresh/index/stream or footage
+operation. Deployment pending for this refinement; retain admin auto-update off (original
+pre-preview preference was true). Main/public updater/default tags/other users/local app
+must remain unchanged. No CI workflow.
+
 ## Admin-only Grouped Library preview (spec 520, 2026-11-23)
 
 Branch `codex/admin-grouped-tournaments-preview`. Owner selected mockup 1 and explicitly

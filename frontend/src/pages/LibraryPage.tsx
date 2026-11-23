@@ -13,9 +13,9 @@ import { MatchCard } from "../components/MatchCard";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
 
-import { hudlAgeGroups, useHudlLibrary } from "../api/hudl";
-import { HudlLibrary } from "../components/hudl/HudlLibrary";
-import { VeoLibrary } from "../components/veo/VeoLibrary";
+import { downloadState, hudlAgeGroups, useDownloadIndex, useHudlLibrary } from "../api/hudl";
+import { HudlLibrary, HudlMatchCard } from "../components/hudl/HudlLibrary";
+import { VeoLibrary, VeoMatchCard } from "../components/veo/VeoLibrary";
 import { HostedConnectionsNote } from "../components/HostedConnectionsNote";
 import { HOSTED } from "../api/helperBase";
 import { useHostedPermissions } from "../api/hostedPermissions";
@@ -76,6 +76,7 @@ function LibraryContent() {
   const hostedPerms = useHostedPermissions();
   const hudlLibrary = useHudlLibrary();
   const veoLibrary = useVeoLibrary();
+  const downloaded=downloadState(useDownloadIndex().data);
   // Owner request 2026-11-14: Show Hudl off with Show Veo on puts Veo matches in the
   // hero, latest match, overview and match profile.
   const showHudl = connectionShown("hudl");
@@ -171,9 +172,9 @@ function LibraryContent() {
     ...(veoLibrary.data??[]).map(veoAsHudl).filter(m=>(!ageGroup||hudlAgeGroups(m).includes(ageGroup))&&(!seasonLabel||m.season_label===seasonLabel)).map(m=>`veo:${m.id}`),
   ];
   const groupedGames:GroupedLibraryGame[]=groupedPreview?[
-    ...(tournamentMatches.data??[]).map(m=>({key:`local:${m.id}`,title:`${m.team_name} vs ${m.opponent}`,href:`/matches/${m.id}`,date:m.match_date,source:"Offline",thumbnail:m.thumbnail_url,score:()=>null})),
-    ...(showHudl?hudlLibrary.data??[]:[]).map(m=>({key:`hudl:${m.id}`,title:m.title,href:`/hudl/${encodeURIComponent(m.id)}`,date:fixtureDay(m.title),source:"Hudl",thumbnail:m.thumbnail_url,score:()=>matchScore(m,hudlClub,corrections.data)})),
-    ...(showVeo?veoLibrary.data??[]:[]).map(m=>({key:`veo:${m.id}`,title:m.title,href:`/veo/${encodeURIComponent(m.id)}`,date:fixtureDay(m.title),source:"Veo",thumbnail:m.poster_url,score:()=>matchScore(veoAsHudl(m),veoClubOf(m),corrections.data)})),
+    ...(tournamentMatches.data??[]).map(m=>({key:`local:${m.id}`,title:`${m.team_name} vs ${m.opponent}`,href:`/matches/${m.id}`,date:m.match_date,source:"Offline",thumbnail:m.thumbnail_url,score:()=>null,homeClub:m.team_name,renderCard:()=> <MatchCard match={m}/>})),
+    ...(showHudl?hudlLibrary.data??[]:[]).map(m=>({key:`hudl:${m.id}`,title:m.title,href:`/hudl/${encodeURIComponent(m.id)}`,date:fixtureDay(m.title),source:"Hudl",thumbnail:m.thumbnail_url,score:()=>matchScore(m,hudlClub,corrections.data),homeClub:hudlClub,renderCard:()=> <HudlMatchCard match={m} club={hudlClub} score={matchScore(m,hudlClub,corrections.data)} saved={downloaded.get(m.id)}/>})),
+    ...(showVeo?veoLibrary.data??[]:[]).map(m=>({key:`veo:${m.id}`,title:m.title,href:`/veo/${encodeURIComponent(m.id)}`,date:fixtureDay(m.title),source:"Veo",thumbnail:m.poster_url,score:()=>matchScore(veoAsHudl(m),veoClubOf(m),corrections.data),homeClub:veoClubOf(m),renderCard:()=> <VeoMatchCard match={m} club={veoClubOf(m)}/>})),
   ].sort((a,b)=>(b.date??"").localeCompare(a.date??"")||a.title.localeCompare(b.title)):[];
 
 
@@ -255,7 +256,7 @@ function LibraryContent() {
             importedVersion={latest.data?.total ? latest.dataUpdatedAt : 0} />
           {groupedPreview?<GroupedTournaments games={groupedGames} eligibleKeys={eligibleKeys.filter(key=>groupedGames.some(g=>g.key===key))} scores={tournamentScores} search={q}
             scoresLoading={corrections.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching} scoreError={corrections.isError||(showHudl&&hudlLibrary.isError)||(showVeo&&veoLibrary.isError)}
-            loading={matches.isPending||hudlLibrary.isFetching||veoLibrary.isFetching} scopeLoading={tournamentMatches.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching}
+            loading={(tournamentMatches.isPending&&tournamentMatches.isFetching)||(showHudl&&hudlLibrary.isPending&&hudlLibrary.isFetching)||(showVeo&&veoLibrary.isPending&&veoLibrary.isFetching)} scopeLoading={tournamentMatches.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching}
             error={matches.isError||tournamentMatches.isError||(showHudl&&hudlLibrary.isError)||(showVeo&&veoLibrary.isError)} sources={[...(showHudl?["Hudl"]:[]),...(showVeo?["Veo"]:[])]}/>:<>
           <TournamentTools eligibleKeys={ageGroup||seasonLabel?eligibleKeys:undefined} scopeLoading={tournamentMatches.isFetching||hudlLibrary.isFetching||veoLibrary.isFetching} games={tournamentScores}
             loading={hudlLibrary.isFetching||veoLibrary.isFetching||corrections.isFetching} scoreError={(showHudl&&hudlLibrary.isError)||(showVeo&&veoLibrary.isError)||corrections.isError}/>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Clock3, Film, RefreshCw } from "lucide-react";
-import { useVeoLibrary, useVeoStatus, veoAgeGroups, veoExpiry, veoRequest } from "../../api/veo";
+import { type VeoMatch, useVeoLibrary, useVeoStatus, veoAgeGroups, veoExpiry, veoRequest } from "../../api/veo";
 import { connectionShown } from "../../lib/connections";
 import { Button } from "../ui/Button";
 import { ScoreBadge } from "../hudl/HudlLibrary";
@@ -53,13 +53,15 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
     </div>}
     {library.isPending ? <p className="text-sm text-fg-muted">Loading cached Veo matches…</p> : !library.isError && matches.length === 0 &&
       <p className="text-sm text-fg-muted">{all.length ? "No Veo matches match these filters." : "No Veo matches cached yet. Select Refresh Veo, or Refresh matches in Settings → Connections → Veo."}</p>}
-    <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0, count).map(m => {
-      const expiry = veoExpiry(m);
-      const highlights = m.moments?.length ?? 0;
-      const date = fixtureDate(m.title);
-      // Owner request 2026-11-15: the account films more than one club; name the one the title names.
-      const club = veoClubOf(m);
-      return <article key={m.id} className="tile overflow-hidden transition hover:-translate-y-0.5">
+    <div className="grid gap-4 sm:grid-cols-2">{matches.slice(0,count).map(m=><VeoMatchCard key={m.id} match={m} club={veoClubOf(m)}/>)}</div>
+    {count < matches.length && <div className="flex justify-center"><Button onClick={() => setCount(n => n + 12)}>Show more Veo matches ({matches.length - count})</Button></div>}
+  </section>;
+}
+
+/** Shared original footage card; no separate compact rendition in tournaments. */
+export function VeoMatchCard({match:m,club}:{match:VeoMatch;club:string|null}) {
+  const expiry=veoExpiry(m),highlights=m.moments?.length??0,date=fixtureDate(m.title);
+  return <article className="tile overflow-hidden transition hover:-translate-y-0.5">
         <Link to={`/veo/${encodeURIComponent(m.id)}`} aria-label={m.title} className="block">
           <div className="relative grid aspect-video place-items-center overflow-hidden bg-ink-800 text-fg-subtle">
             {m.poster_url ? <img crossOrigin="anonymous" src={m.poster_url} alt={m.title} loading="lazy" className="absolute inset-0 size-full object-cover" />
@@ -76,7 +78,4 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
         </Link>
         <TournamentSelect matchKey={`veo:${m.id}`} title={m.title} />
       </article>;
-    })}</div>
-    {count < matches.length && <div className="flex justify-center"><Button onClick={() => setCount(n => n + 12)}>Show more Veo matches ({matches.length - count})</Button></div>}
-  </section>;
 }

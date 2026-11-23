@@ -32,3 +32,10 @@ Code `e426347`; hosted admin only. Admin auto-update paused (previously true).
 Main/default tags/latest/other accounts/local app unchanged by verified runtime snapshots.
 Health/nginx/served preview bundle verified. See HANDOFF/PROGRESS for test results.
 Restore automatic updates after review; do not apply the stable update during preview.
+
+## Owner refinement (2026-11-23)
+Restore the original large footage cards and score pills in every match view, two columns
+on desktop and one on phone. Shared Hudl/Veo renderers and existing imported MatchCard
+keep one presentation. Use source home-club crests on squads. Show initial loading only,
+keep cached cards during refresh, and reserve score-loading space. Built and verified;
+admin-only revision deployment pending. See HANDOFF for exact validation results.
