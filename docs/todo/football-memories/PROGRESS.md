@@ -11,6 +11,56 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Automatic tournament and squad tagging (spec 500, 2026-11-23)
+
+**Done**, branch `codex/tournament-library`, deployed locally. Owner replaces manual-first
+grouping with automatic classification on Library load/cached metadata changes. Backend
+uses date/club/age scopes, title event/game/fixture cues and conservative complete-link
+player cohorts. Named home-side squads (also in away fixtures) take priority. Provisional
+Squad numbers stay stable; sparse/ambiguous rosters stay unassigned, with explanation and
+review labels. Veo action labels never become player names. Imported DB metadata includes
+explicit event-player relations, independent of UI pagination.
+
+Single-game Correct, whole-squad correction, tournament rename, membership moves/removal
+and remembered exclusions are real persisted operations. Old manual groups remain manual;
+corrections seed comparable rosters within their event. Renamed tournaments retain identity
+and corrected names through metadata refinements. API reconciliation is idempotent and
+partial snapshots do not erase memberships. PostgreSQL advisory transactions serialize
+initial creation; UI waits for home-team queries, cancels old detection around manual edits
+and suppresses cancelled responses. Backend rejects late unknown-club downgrades. A browser
+review exposed duplicate placeholder groups during loading; red/green regressions now cover
+both obsolete-empty cleanup and late-snapshot protection. No raw roster persistence in
+inference records, source account requests, external AI, new dependencies or schema change.
+
+Verification:
+- Detector tests observed red on absent behavior, later on unstable squad numbering and
+  away-side parsing; **10 pass**. New automatic API tests observed 404 then red on loading
+  refinement/race cases; **12 pass**. Existing 4 tournament API tests pass unchanged.
+- Frontend automatic invocation, live player-evidence update, provenance/direct correction
+  and rename tests observed red/green; **4 new tests**. Focused automatic/manual/integrated
+  Library set: **10 pass**. No existing tests modified.
+- Final `cd backend && uv run pytest`: **806 passed**, 61.62s (SQLite).
+- Same suite with dedicated `TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test`:
+  **806 passed**, 83.01s. Full suites were sequential, with network/fixture safeguards.
+- Final `cd frontend && npm test`: **745 passed in 145 files**, 23.67s.
+- Ruff lint/format, mypy, frontend typecheck/build all pass; dev PostgreSQL `alembic check`
+  reports no upgrade operations. Existing media/canvas test and bundle-size warnings remain.
+- Isolated production build served real tournament APIs against a temporary SQLite DB,
+  fake helper catalogue, fictional rosters and scores. Browser verified automatic grouping,
+  two squads, direct correction seeding a matching game, rename, reload, manual/auto badges,
+  explanation and phone dialog. Widths exactly 1440/375px. Reference 01 and supplied card
+  image remain the layout authority; screenshots are synthetic, no source account reached.
+- Read-only local date/title cache audit: **289** cached records, latest date prefix
+  **261115**, none **261122** (the screenshot date). 68 candidate date/title groups without
+  roster input are exploratory heuristic output, not a measured accuracy result. No cache
+  writes or real roster output.
+- `docker compose build backend frontend`, then `docker compose up -d --no-deps backend frontend`:
+  local backend/frontend recreated only, zero active renders before rollout. Health OK,
+  new detect route present in OpenAPI, actual tournament GET empty before Library reload;
+  no synthetic data written to production. nginx valid; `index-C4zqzSZt.js` served with
+  automatic-grouping feature. No helper restart or hosted rollout; no footage operations.
+- No repository CI workflow exists. Owner can reload Library to classify its current cache.
+
 ## Tournament groups (spec 490, 2026-11-23)
 
 **Done**, branch `codex/tournament-library`, deployed locally. Bottom-right checkbox

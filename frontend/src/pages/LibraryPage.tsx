@@ -32,6 +32,7 @@ import { veoAsHudl } from "../lib/veoAsHudl";
 import { teamSplit } from "../lib/veoTeamSplit";
 import { useVeoCardClubOf } from "../lib/useVeoClub";
 
+import { AutomaticTournaments } from "../components/library/AutomaticTournaments";
 import { TournamentProvider, TournamentTools, useTournamentSelection } from "../components/library/Tournaments";
 import { matchScore, useScoreCorrections } from "../lib/matchScore";
 import type { MatchSummary } from "../api/types";
@@ -228,6 +229,8 @@ function LibraryContent() {
             )}
           </div>
 
+          <AutomaticTournaments hudl={hudlLibrary.data} veo={veoLibrary.data} club={hudlClub} veoClubOf={veoClubOf}
+            importedVersion={latest.data?.total ? latest.dataUpdatedAt : 0} />
           <TournamentTools games={[
             ...(hudlLibrary.data ?? []).filter(m => tournament.memberships.has(`hudl:${m.id}`)).map(m => ({key: `hudl:${m.id}`, score: matchScore(m, hudlClub, corrections.data)})),
             ...(veoLibrary.data ?? []).filter(m => tournament.memberships.has(`veo:${m.id}`)).map(m => ({key: `veo:${m.id}`, score: matchScore(veoAsHudl(m), veoClubOf(m), corrections.data)})),

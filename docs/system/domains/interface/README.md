@@ -470,3 +470,43 @@ matches run score aggregation, avoiding a full tag-library scan on every checkbo
 change. Tournament filtering reads every matching imported page before filtering,
 so memberships beyond page one remain reachable. Synthetic desktop and 375px layouts
 reviewed against reference 01 and the supplied match-card screenshot.
+
+
+## Automatic tournament classification (spec 500, 2026-11-23)
+
+Spec 500 supersedes manual-first discovery. `AutomaticTournaments` posts a minimal
+snapshot of already-cached Hudl/Veo metadata to `/api/tournaments/detect` when its
+semantic signature changes. Imported metadata/explicit player relations are read by
+the backend directly, independent of UI pagination. Wait for home-team/club queries
+to settle; never request a source refresh, stream or additional tags for detection.
+Memoize Hudl roster extraction by catalogue identity to avoid rescanning every tag
+on checkbox changes. New player evidence changes the query key. Manual mutations
+cancel outstanding detection and invalidate it after saving; cancelled responses
+cannot overwrite manual UI state or leave an older tournament GET in flight.
+
+`services/tournament_detection.py` scopes by date, normalized club and age, separates
+named event segments, and treats numbered/multiple fixtures as reviewable match days.
+Duplicate views/half labels do not turn one fixture into a tournament. Explicit home
+squad labels (including away fixtures) win. Otherwise rosters need >=4 unique player
+tags, >=3 shared names and Jaccard overlap >=0.6 against every roster in a cluster.
+Broad bridge/ambiguous tags stay unassigned. Provisional Squad numbers reuse previous
+labels/reserve existing numbers when new games arrive. These are heuristics, not
+confirmed squads or a measured probability. Veo action labels supply no player names.
+
+`TournamentOut.automatic` records per-entry explanation/confidence/known club; raw
+rosters stay out of preferences. Manual entries have no automatic metadata. Namespaced
+`tournament-override:` preferences remember manual assignments/removals, preventing
+resurrection or reclassification. Corrections may seed comparable rosters within the
+same automatic event. PATCH rename persists `name_corrected`; moving automatic entries
+to a refined scope carries corrected names and deletes only obsolete emptied automatic
+groups. Never erase memberships missing from a partial snapshot. Discard unknown-club
+snapshots for already known-club entries: browser cancellation alone cannot prevent a
+request already executing on the server. PostgreSQL advisory transaction locking also
+serializes first-group creation, which ordinary row locks cannot protect in an empty
+library. All records remain in existing preference backups with no schema migration.
+
+Cards expose Auto / Auto · Review, Why grouped? and Correct. The stats panel supports
+whole-tournament rename and whole-squad correction. Single-game correction, seeded
+roster label, rename and reload were reviewed against reference 01/the supplied card
+image in an isolated production-build browser with real temporary tournament APIs and
+synthetic helper metadata, at 1440 and 375px without horizontal overflow.

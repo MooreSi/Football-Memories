@@ -13,6 +13,26 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-23)
 
+- **Automatic tournament/squad tagging (spec 500), branch `codex/tournament-library`,
+  pushed and deployed locally.** Supersedes manual-first discovery: Library reconciles
+  cached date/title/player evidence automatically, including imported DB metadata.
+  Date/club/age scopes, named events, numbered games and multiple fixtures; duplicate
+  views/halves do not fabricate a tournament. Explicit home-side team labels win;
+  conservative roster clusters get stable provisional Squad numbers, sparse/ambiguous
+  tags stay Team unassigned. Cards show Auto/Review + explanation + Correct; stats allow
+  tournament rename/whole-squad correction. Manual assignments/removals persist and
+  cannot be undone by detection; corrected labels seed comparable event rosters.
+  Known-club placements reject late unknown-club snapshots, and emptied obsolete
+  automatic groups are removed without losing corrected names. No raw rosters stored
+  with inference evidence; preference backups/schema unchanged. Backend **806** on each
+  SQLite/PostgreSQL, frontend **745**; lint/format/types/build/schema pass. Real temporary
+  API + synthetic helper browser review: automatic grouping, two rosters, correction,
+  rename/reload and 1440/375px no overflow. Local rollout health/API/nginx and served
+  `index-C4zqzSZt.js` verified. Actual local tournament list still empty before the owner
+  reloads Library; no demo records written. Read-only local cache audit: 289 matches,
+  latest dated 15 Nov; screenshot's 22 Nov games absent locally. No source requests,
+  helper restart, hosted rollout or footage changes. No CI workflow exists.
+
 - **Tournament groups (spec 490), branch `codex/tournament-library`, pushed and deployed locally.**
   Match Library cards now have bottom-right selection boxes for imported/Hudl/Veo games.
   The batch dialog creates/reuses a tournament and entered home team; a floating action

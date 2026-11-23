@@ -297,4 +297,6 @@ export interface Tournament {
   id: string;
   name: string;
   entries: Record<string, string>;
+  automatic?: Record<string, {confidence: "high" | "review"; reason: string; club?: string}>;
+  name_corrected?: boolean;
 }

@@ -4,6 +4,24 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-048 (2026-11-23) Tournament membership is automatic with durable corrections
+Owner supersedes spec 490's manual-first workflow. Group cached matches automatically
+when the Library loads or date/title/player evidence changes. Use date, home club and
+age as scopes, named tournament title segments or numbered/multiple fixtures as evidence,
+and sufficiently overlapping player tags to distinguish entered squads. Explicit home-side
+team labels win; unknown squads remain unassigned. Generated Squad numbers are provisional,
+with explanations/review labels. No inferred real team names or statistical probability.
+
+Manual assignments and exclusions survive all future detection; existing manual groups
+remain intact. Correcting an automatic assignment moves it, while separate manual groups
+survive. A corrected team label can guide comparable rosters in that same event. Renaming
+an entire tournament preserves its detection identity/name; identity refinements retain
+corrected names and remove only emptied obsolete automatic groups. Unknown/late home-club
+responses cannot downgrade known-club assignments. Reuse cached/local metadata only; do
+not trigger new source indexing, sign-in, stream, or external AI calls. Raw roster inputs
+are not persisted with automatic grouping evidence. Date-only event classification remains
+reviewable; multi-day events can be combined manually. Local rollout only in this change.
+
 ## D-047 (2026-11-23) Tournament grouping belongs in Match Library
 Owner requests multi-game tournament assignment with distinct entered home teams.
 Keep the workflow beside the games: card checkboxes, reachable batch action and dialog,

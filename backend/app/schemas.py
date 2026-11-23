@@ -558,7 +558,41 @@ class TournamentBatchIn(BaseModel):
         return list(dict.fromkeys(values))
 
 
+class TournamentAutomaticInfo(BaseModel):
+    club: str = ""
+    confidence: Literal["high", "review"]
+    reason: str
+
+
 class TournamentOut(BaseModel):
     id: str
     name: str
     entries: dict[str, str]
+    automatic: dict[str, TournamentAutomaticInfo] = Field(default_factory=dict)
+    name_corrected: bool = False
+
+
+class TournamentDetectionMatch(BaseModel):
+    key: str = Field(pattern=r"^(hudl|veo):.+$", max_length=240)
+    title: str = Field(min_length=1, max_length=500)
+    club: str = Field(default="", max_length=160)
+    age_group: str = Field(default="", max_length=80)
+    players: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        default_factory=list, max_length=100
+    )
+
+
+class TournamentDetectionIn(BaseModel):
+    matches: list[TournamentDetectionMatch] = Field(default_factory=list, max_length=5000)
+
+
+class TournamentRenameIn(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Enter a tournament name")
+        return value
