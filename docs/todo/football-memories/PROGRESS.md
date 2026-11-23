@@ -37,8 +37,21 @@ Bolehall Swifts, Racing Club Warwick, Redditch United, Solihull Moors CB resolve
 Academy Blue is not listed; "Riverside Juniors" matches two clubs and stays initials. In the
 dev app the real `trimCrest` fills the disc for round crests (Norton Lindsey's stray corner
 icon ignored); Kenilworth's white shield sits at the shield size, as intended. No frontend
-change. **Not deployed**: local Docker app and hosted crest service/filter still run the
-previous build.
+change.
+
+**Deployed 2026-11-23** (owner: "Deploy both", then "update them all now"). Released on
+`main` as `17f7f8b` (rebased on the tournament-report work; suites re-run green after the
+rebase: SQLite/PostgreSQL 850 each, frontend 778 in 156 files). Gateway `main` `70d3785`:
+only `crest-filter` rebuilt and recreated; updater built `17f7f8b`, moved `:hosted` and the
+`crests` service. The four hosted libraries (all auto-update on) were moved at once by
+running the gateway's own `updates.auto_round` once in its container, after checking no
+ffmpeg/browser process in any library; all answer /api/health 200. Live: the crest service
+returns Norton Lindsey and Kenilworth as JPEG and Olton Ravens as PNG through the filter,
+and a hosted backend keeps the JPEG (checked in a temporary folder). Local: the primary
+checkout was on another agent's `codex/local-video-analytics` branch with uncommitted work, so the
+images were built from a separate worktree at `17f7f8b` and the containers recreated from
+the primary checkout with `--no-build` after a no-ffmpeg check; 8765 /api/health 200 and
+its crest endpoint returns the new crests. No Hudl/Veo request and no library file changed.
 
 ## Tournament reports (spec 540, 2026-11-23)
 
