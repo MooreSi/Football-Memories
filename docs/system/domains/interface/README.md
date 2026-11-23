@@ -551,3 +551,17 @@ Three shared player labels alone cannot make otherwise separate rosters ambiguou
 require coverage of at least half the smaller roster. Complete-link similarity remains
 strict; broad recordings containing both cohorts stay unassigned. The Liverpool pitch
 recordings contain 17 tagged players covering both squads; owner leaves both for review.
+
+
+### Tournament reports (spec 540)
+The expanded event has Tournament report; inside a squad it becomes Squad report.
+`/report/tournament/:id?team=...` reads full shared membership, independent of Library
+filters, and uses the existing source-side scores/corrections. Imported member metadata
+loads in batches of four with partial failures retained as unavailable games. Hidden or
+unavailable source games remain in coverage, never become 0-0. Team unassigned is listed
+separately and excluded from aggregate/squad results, clean sheets and score coverage.
+The report includes W/D/L, GF/GA/GD, clean sheets, win rate over scored games, per-squad
+breakdowns and every linked result with score source. It makes no standings/winner claim.
+The existing embedded-crest SVG/PNG pipeline is reused; tournament titles/subtitles wrap.
+Print/PDF uses separate text rows with break-inside:avoid, so a page cannot cut through
+SVG lettering. Scoped print styles clear the app's 100vh minimum to avoid a blank page.

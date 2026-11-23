@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState,type ReactNode} from "react";
 import {Link} from "react-router-dom";
 import {useMutation,useQuery,useQueryClient} from "@tanstack/react-query";
-import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,CircleHelp,RefreshCw} from "lucide-react";
+import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,CircleHelp,RefreshCw,FileText} from "lucide-react";
 import {api} from "../../api/client";
 import {useTournaments} from "../../api/tournaments";
 import type {Tournament} from "../../api/types";
@@ -69,6 +69,7 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
             <Button variant="ghost" aria-label={`Rename tournament ${t.name}`} title="Rename tournament" onClick={()=>state.rename(t.id)}><Pencil size={15}/></Button>
           </div>
           {open&&<div className="grouped-event-detail">
+            <div className="mb-3 flex justify-end"><Link className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-accent hover:bg-ink-700/60" to={`/report/tournament/${encodeURIComponent(t.id)}${state.team&&state.team!=="Team unassigned"?`?team=${encodeURIComponent(state.team)}`:""}`}><FileText size={15}/>{state.team&&state.team!=="Team unassigned"?"Squad report":"Tournament report"}</Link></div>
             {state.team?<>
               <div className="grouped-squad-heading"><Button variant="ghost" onClick={()=>state.setTeam("")}><ArrowLeft size={14}/>All squads</Button><h3>{state.team==="Team unassigned"?"Games needing review":state.team}</h3><Button variant="ghost" className="ml-auto" onClick={()=>{state.select(memberKeys);state.assign(true);}}>{state.team==="Team unassigned"?"Assign squad":"Correct squad"}</Button></div>
               {state.team!=="Team unassigned"&&<SquadStats tournament={t} team={state.team} scores={scores} scoreError={scoreError} loading={scoresLoading}/>}

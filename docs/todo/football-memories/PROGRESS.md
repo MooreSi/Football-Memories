@@ -11,6 +11,34 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Tournament reports (spec 540, 2026-11-23)
+
+Branch `codex/tournament-report-release`, isolated managed worktree because the original
+checkout has separate unfinished crest work. Expanded tournaments offer Tournament report;
+squad detail offers Squad report. Both use `/report/tournament/:id?team=...`, with a squad
+selector, shared current event name and full membership independent of Library filters.
+Includes played/W/D/L, goals for/against, GD, clean sheets, win rate over scored games,
+score coverage, per-squad summaries and every match/result with score source. Unassigned
+recordings remain in review and never contribute to assigned-squad totals. Missing/hidden
+source games stay in coverage with unknown scores; individual imported fetch failures
+retain successful games. No detector, data assignment, schema or dependency changes.
+
+Reuses existing embedded-crest SVG/PNG reporting. Long event/squad names wrap. Navigating
+from a scrolled Library now opens the report at the top. Print/PDF uses paginated text
+rows, avoiding the reproduced SVG split through text; scoped min-height reset avoids a
+reproduced blank page. Native Safari saved final synthetic PDF is one clean page;
+Chromium1440/375 no horizontal overflow, actual PNG1080x2248 verified. Existing reports and
+Library cards unchanged. No real source login/refresh/index/stream or footage operation.
+
+Tests: report aggregation, source keys/corrections, outside/duplicate controls, squad scope,
+unknown/zero and unavailable/deleted members, direct squad links, error state, long text,
+print content and scroll position. New cases observed red before implementation; existing
+tests untouched. SQLite825 passed69.11s; PostgreSQL825 passed127.74s; ruff lint/format,
+mypy, Alembic no drift, frontend typecheck/build pass. Frontend778 passed in156 files
+(36.73s). Existing canvas/media/bundle warnings remain. Live rollout pending at this
+green checkpoint; no CI workflow exists. One initial frontend full run was stopped on detecting
+another checkout's full suite; final frontend run starts only after those suites finish.
+
 ## General tournament release (spec 530, 2026-11-23)
 
 Branch `codex/tournament-release`; owner now authorizes main/GitHub release and deployment

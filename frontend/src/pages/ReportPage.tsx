@@ -28,7 +28,7 @@ const W = REPORT_WIDTH;
 const FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
 
 /** A crest as a data URL, so the card stays self-contained and can become a PNG. */
-function useCrest(name: string | null) {
+export function useCrest(name: string | null) {
   return useQuery({
     queryKey: ["crest-data", name], enabled: Boolean(name), retry: false, staleTime: Infinity,
     queryFn: async () => {
@@ -87,11 +87,21 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
   } else {
     head.push(<text key="e" x={REPORT_MARGIN} y={120} fill="#22d3ee" fontSize={28} fontWeight={700} letterSpacing={6}>{report.eyebrow}</text>);
     head.push(<Crest key="c1" cx={REPORT_MARGIN + 75} cy={235} r={75} name={report.ours} src={crests.ours} square={crests.square?.ours} tone="home" />);
-    const size = fitTitle(report.title, 60, 28, W - REPORT_MARGIN * 2 - 190);
-    head.push(<text key="t" x={REPORT_MARGIN + 180} y={225} fill="#fff" fontSize={size} fontWeight={800}>{report.title}</text>);
-    head.push(<text key="s" x={REPORT_MARGIN + 180} y={275} fill="#94a3b8" fontSize={30}>{report.subtitle}</text>);
-    if (report.headline) head.push(<text key="h" x={REPORT_MARGIN} y={390} fill="#fff" fontSize={56} fontWeight={800}>{report.headline}</text>);
-    y = report.headline ? 440 : 360;
+    if (report.kind === "tournament") {
+      const title = wrapText(report.title, 48, W - REPORT_MARGIN * 2 - 190);
+      const subtitle = wrapText(report.subtitle, 28, W - REPORT_MARGIN * 2 - 190);
+      head.push(<g key="t" data-tournament-title>{title.map((line, i) => <text key={i} x={REPORT_MARGIN + 180} y={210 + i * 58} fill="#fff" fontSize={48} fontWeight={800}>{line}</text>)}</g>);
+      const subTop = 210 + title.length * 58;
+      head.push(<g key="s" data-tournament-subtitle>{subtitle.map((line, i) => <text key={i} x={REPORT_MARGIN + 180} y={subTop + i * 36} fill="#94a3b8" fontSize={28}>{line}</text>)}</g>);
+      y = Math.max(360, subTop + subtitle.length * 36 + 50);
+      if (report.headline) { head.push(<text key="h" x={REPORT_MARGIN} y={y} fill="#fff" fontSize={36} fontWeight={700}>{report.headline}</text>); y += 50; }
+    } else {
+      const size = fitTitle(report.title, 60, 28, W - REPORT_MARGIN * 2 - 190);
+      head.push(<text key="t" x={REPORT_MARGIN + 180} y={225} fill="#fff" fontSize={size} fontWeight={800}>{report.title}</text>);
+      head.push(<text key="s" x={REPORT_MARGIN + 180} y={275} fill="#94a3b8" fontSize={30}>{report.subtitle}</text>);
+      if (report.headline) head.push(<text key="h" x={REPORT_MARGIN} y={390} fill="#fff" fontSize={56} fontWeight={800}>{report.headline}</text>);
+      y = report.headline ? 440 : 360;
+    }
     // Owner request 2026-11-15: games played, won, drawn and lost.
     if (report.record) {
       const r = report.record;
@@ -164,12 +174,12 @@ export function ReportCard({ report, crests = {} }: { report: Report; crests?: {
       {resultRows.map((row, i) => <g key={listed[i]} data-results={listed[i]}><Rows rows={[row]} /></g>)}
       {scorers}
       {player}
-      <text x={REPORT_MARGIN} y={H - 60} fill="#64748b" fontSize={26}>Football Memories · from the coaches' tags</text>
+      <text x={REPORT_MARGIN} y={H - 60} fill="#64748b" fontSize={26}>{report.kind === "tournament" ? "Football Memories · recorded results and score corrections" : "Football Memories · from the coaches' tags"}</text>
     </svg>
   );
 }
 
-async function savePng(svg: SVGSVGElement, name: string) {
+export async function savePng(svg: SVGSVGElement, name: string) {
   const data = new XMLSerializer().serializeToString(svg);
   const url = URL.createObjectURL(new Blob([data], { type: "image/svg+xml" }));
   try {

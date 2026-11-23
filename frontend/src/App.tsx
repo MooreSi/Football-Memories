@@ -23,6 +23,7 @@ import { HudlMatchPage } from "./pages/HudlMatchPage";
 import { HudlPlayerPage } from "./pages/HudlPlayerPage";
 import { VeoMatchFullPage } from "./pages/VeoMatchFullPage";
 import { OpponentsPage } from "./pages/OpponentsPage";
+import { TournamentReportPage } from "./pages/TournamentReportPage";
 import { ReportPage } from "./pages/ReportPage";
 import { Compass } from "lucide-react";
 import { HOSTED } from "./api/helperBase";
@@ -45,6 +46,7 @@ export function App() {
         <Route path="player/hudl/:name" element={<HudlPlayerPage />} />
         <Route path="opponents" element={<OpponentsPage />} />
         <Route path="report/match/:id" element={<ReportPage kind="match" />} />
+        <Route path="report/tournament/:id" element={<TournamentReportPage />} />
         <Route path="report/season" element={<ReportPage kind="season" />} />
         <Route path="matches/:id" element={<MatchDetailPage />} />
         <Route path="clips" element={<ClipExplorerPage />} />

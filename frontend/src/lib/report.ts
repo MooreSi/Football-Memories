@@ -10,9 +10,9 @@ import { type MatchGoals, matchGoalLines, topScorers } from "./goals";
 
 /** Spec 230: the numbers on a shareable report, kept apart from drawing them. */
 export type ReportLine = { label: string; value: string };
-export type Report = { kind: "match" | "season"; eyebrow: string; title: string; subtitle: string; headline: string | null; possession: { ours: number; theirs: number } | null;
+export type Report = { kind: "match" | "season" | "tournament"; eyebrow: string; title: string; subtitle: string; headline: string | null; possession: { ours: number; theirs: number } | null;
   ours: string; theirs: string; lines: ReportLine[]; player: { name: string; lines: ReportLine[]; note?: string } | null;
-  /** Season only (owner request 2026-11-15): games played, won, drawn, lost; `unscored` have no result. */
+  /** Season/tournament: games played, won, drawn, lost; `unscored` have no result. */
   record?: { played: number; won: number; drawn: number; lost: number; unscored: number } | null;
   /** Season only (owner request 2026-11-15): each game won, drawn and lost, newest first. */
   results?: { won: string[]; drawn: string[]; lost: string[] } | null;

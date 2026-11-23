@@ -131,3 +131,20 @@
   .app-surface, body { background: #fff !important; }
   .report-card svg { max-width: 100% !important; box-shadow: none !important; }
 }
+
+/* Tournament PDFs paginate text rows instead of splitting an exported SVG mid-line. */
+.tournament-print-report { display: none; }
+@media print {
+  body:has(.tournament-report-page), .app-surface:has(.tournament-report-page) { min-height: 0 !important; }
+  .app-main:has(.tournament-report-page) { padding: 0; }
+  .tournament-report-page .report-card { display: none !important; }
+  .tournament-print-report { display: block; color: #111; font: 10pt/1.5 sans-serif; }
+  .tournament-print-report header { break-inside: avoid; margin-bottom: 16pt; }
+  .tournament-print-report h1 { font-size: 22pt; font-weight: 700; }
+  .tournament-print-record { display: flex; gap: 28pt; margin-bottom: 16pt; break-inside: avoid; }
+  .tournament-print-record dd { font-size: 20pt; font-weight: 700; }
+  .tournament-print-row { display: flex; gap: 16pt; padding: 7pt 0; border-bottom: 1px solid #ccc; break-inside: avoid; }
+  .tournament-print-row dt { flex: 0 0 100pt; font-weight: 600; }
+  .tournament-print-row dd { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .tournament-print-report footer { margin-top: 16pt; font-size: 9pt; }
+}
