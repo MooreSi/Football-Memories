@@ -13,7 +13,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-23)
 
-- **Admin player lab (spec 470), branch `codex/admin-player-lab`, verified; hosted rollout pending.**
+- **Admin player lab (spec 470), merged/pushed `main`, deployed to the admin library.**
   `/player/lab` and an admin-only main-area shortcut require the gateway's full admin
   identity; local installs, ordinary accounts, partial login and failed checks fail closed.
   Lazy feature loads use only that account's own existing library APIs. Reference 03/shared
@@ -26,7 +26,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   keeper save totals do not fabricate timed evidence. Frontend **728**, backend **780** each
   SQLite/PostgreSQL, lint/format/types/build/schema pass. Synthetic desktop 1440 and phone
   375 widths equal viewport; PNG downloaded and inspected. No real source account accessed.
-  No deployment yet at this checkpoint; no CI workflow exists in this repository.
+  Hosted code build `a71458a` deployed through the gateway updater/provisioner to only
+  the admin library; capture was idle before/after. Backend health/Nginx and served
+  `index-DXngnT3I.js` verified. Only its web/backend/capture image IDs changed in the
+  deployment snapshot; database, other hosted containers and owner local stack untouched.
+  Later hosted rollouts retain existing update preferences; the lab stays admin-only.
+  No CI workflow exists in this repository.
 
 ## Current change (2026-11-22)
 

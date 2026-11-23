@@ -13,7 +13,7 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Admin player lab (spec 470, 2026-11-23)
 
-**Built and verified on `codex/admin-player-lab`; rollout pending at this checkpoint.**
+**Built on `codex/admin-player-lab`, merged/pushed to `main`; admin hosted library deployed.**
 Admin-only route/lazy loading and shortcut, recent performance, selectable charts,
 coverage/averages, same-source ten-game comparisons and matched-position teammate rates.
 Manual attempts/outcomes are validated, with weighted percentages and unknown/zero preserved.
@@ -31,6 +31,14 @@ browser review: document width equals viewport; no console errors. Season PNG do
 visually inspected. Real footage playback/reel rendering not exercised; handoff uses existing
 studio contract. New drafts persist in the browser only and are not in normal server backups.
 No GitHub Actions workflow exists in this repository.
+
+Deployment: host updater built `a71458a71a576f56b846aa363d5f811b05a6ab45` successfully;
+gateway `updates._move` moved only the admin library after both capture sources reported
+idle. Backend `/api/health` ok, `nginx -t` passed, served `index-DXngnT3I.js` matches hosted
+build. Before/after image-ID snapshot confirms only admin web/backend/capture changed;
+admin database, other hosted containers and owner local stack were untouched. No real
+source login/stream/refresh was triggered. Existing automatic update preferences remain
+in effect for later hosted rollouts; ordinary users remain denied the lab.
 
 ## Incremental Veo checks (spec 460, 2026-11-22)
 
