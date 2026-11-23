@@ -39,8 +39,17 @@ Alembic no drift pass. Existing canvas/media and bundle warnings remain. Synthet
 production-build API browser verifies drag/edit/save and all four cards renamed. Mockup
 carousel tested for all three drill-down flows, 375px reflow (343px inner width/scrollwidth),
 syntax/readback and local state. Temporary preview servers/tabs close after verification.
-Fix release/runtime rollout pending this checkpoint. No production layout selected or
-implemented; no real footage/credential operation, schema change, new dependency or CI.
+Fix commit `973ba61` pushed to main and deployed through the host updater/gateway to
+admin backend/web/capture after both sources idle and zero active renders. Other hosted
+libraries retain their update preferences; no manual move for them. Databases retained.
+Local backend/frontend rebuilt/recreated; local helper unchanged. Both health/nginx checks
+pass; local bundle `index-Cd15LcjC.js`, hosted `index-DxWw0L5J.js` and rename scope text
+verified. Running hosted detector passes a synthetic mixed-age-alias/pitch check. Snapshot
+shows only intended app containers/shared crests moved, with every database unchanged.
+Owner reload runs corrected grouping on current cache. Preview processes/tabs closed and
+viewport reset; inline mockups remain available from the chat fragment. No production layout
+selected or implemented; no real footage/credential operation, schema change, dependency
+or CI. This final deployment checkpoint is docs only.
 
 ## Conservative tournaments and Library layout (2026-11-23)
 

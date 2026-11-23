@@ -1,6 +1,6 @@
 # 510: Tournament discovery repair and layout alternatives
 
-**Status:** Fixes verified; layout decision pending
+**Status:** Fixes shipped; layout decision pending
 **Sensitive:** no; cached metadata only
 
 ## What is wrong
@@ -46,3 +46,7 @@ whole-event rename characterized across two squads. Cached title/age audit inclu
 Oct26 Liverpool pitch recordings in U11's six games. Browser drag/edit/save updates all four
 synthetic match cards. Concepts inspected at desktop and 375px, no horizontal overflow.
 No existing test changed or real source request made. Release/deployment details in HANDOFF.
+
+Fix release `973ba61` is on main and deployed locally and to hosted admin through the
+existing updater. Databases unchanged, both sources idle/no active render before rollout,
+health/nginx/served assets and running detector verified. New layouts remain mockups.
