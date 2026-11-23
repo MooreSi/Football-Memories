@@ -14,7 +14,7 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 ## Current change (2026-11-23)
 
 - **Restore separate Player Hub / private Lab tabs (spec 480), branch
-  `codex/separate-player-lab-tab`; verified, rollout pending.** My Player retains its
+  `codex/separate-player-lab-tab`, merged/pushed main and deployed to admin.** My Player retains its
   original chooser/profile/card/memories flow. Admin Player Lab is now its own main
   tab at `/player-lab`; the old `/player/lab` bookmark redirects there. Only the
   selected tab highlights. Removed the main-area preview shortcut; admin headers
@@ -26,7 +26,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   editable fields and photo SHA-256 unchanged. No match/footage/history copied or totals
   fabricated. No source account accessed. Frontend 733/typecheck/local+hosted builds pass;
   backend 780 each SQLite/PostgreSQL, lint/format/types/schema pass. Synthetic 1440/375px hub
-  and lab navigation reviewed, document widths match the viewport. Rollout pending.
+  and lab navigation reviewed, document widths match the viewport. Hosted code build
+  `6ce6cff` deployed via gateway updater/provisioner; capture idle beforehand. Health,
+  Nginx and served `index-UflPUTLq.js` verified. Copied fields/primary/photo rechecked
+  after deployment. Snapshot: only admin web/backend/capture image IDs changed;
+  its database, other hosted libraries and owner local stack unchanged. Later hosted
+  rollouts retain existing update settings; Lab remains admin-only.
 
 - **Admin player lab (spec 470), merged/pushed `main`, deployed to the admin library.**
   `/player/lab` and an admin-only main-area shortcut require the gateway's full admin

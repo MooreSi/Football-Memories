@@ -13,7 +13,7 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Separate original Hub / private preview tabs (spec 480, 2026-11-23)
 
-Branch `codex/separate-player-lab-tab`, verified; rollout pending. My Player opens
+Branch `codex/separate-player-lab-tab`, merged/pushed main and deployed to admin. My Player opens
 its original saved-player hub (or existing chooser); admin Player Lab has its own
 main-nav entry and `/player-lab` route, with independent active state. Legacy lab
 bookmarks redirect. Removed the global preview shortcut. Existing Hub/PlayerPage
@@ -31,7 +31,12 @@ in chat. Copied display name, shirt/position/club/card style and photo via exist
 profile APIs into the empty admin library, setting primary there. Verified all target
 fields/photo/selection; source local selection, profile fields and photo SHA-256 are
 unchanged. No derived match totals, match history or footage were copied. Hosted
-navigation rollout pending.
+navigation rollout complete: host updater built `6ce6cffe625e104082a3b01f78f4978ac434c9e7`;
+gateway moved only the admin library. Backend health/Nginx pass; served
+`index-UflPUTLq.js` matches hosted build. Target fields/primary/photo checked after
+restart. Before/after image snapshot: only admin web/backend/capture changed;
+admin DB, other hosted libraries and owner local app unchanged. Existing hosted
+update preferences govern later rollouts. No source account accessed.
 
 ## Admin player lab (spec 470, 2026-11-23)
 
