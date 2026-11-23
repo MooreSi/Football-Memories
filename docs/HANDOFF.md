@@ -36,8 +36,20 @@ Synthetic real-API browser review: Safari direct-card rename/save, Chromium desk
 phone375; no horizontal overflow, checkboxes16px, clean footer. Firefox UI launch timed
 out; not claimed tested. Cached hosted Nov22 title/age audit: U11 twelve games still form
 one group; U12 two-format pair remains ungrouped. No source login/refresh/stream, new
-dependency, schema migration or footage operation. Release/runtime rollout pending this
-checkpoint; earlier tested deployment remains running until applied. No CI workflow.
+dependency, schema migration or footage operation.
+
+Released/pushed main as `1e357a2`. Host updater built the exact commit and gateway moved
+only the admin library manually after Hudl/Veo idle and zero active renders. Backend/web/
+capture run `hosted-1e357a2`; database and other libraries unchanged by this manual rollout.
+Shared crests follow the normal updater; other libraries retain their update settings.
+Local backend/frontend also rebuilt/recreated, with no local helper restart. Both health
+checks and nginx configurations pass; local `index-BCK9jNN5.js`, hosted `index-N5FAsTyQ.js`
+and shared `index-5DAL8Tip.css` verified, including new UI text/footer CSS and API routes.
+Initial local health request raced startup; subsequent readiness check succeeded. Container
+snapshot confirms only intended app containers and shared crests moved. Owner reloads the
+webpage to run the new complete-snapshot cleanup; no synthetic records or forced metadata
+reconciliation written to the live database. Temporary browser tabs/server closed and
+viewport restored. No CI workflow exists. This follow-up is deployment/docs only.
 
 ## Hosted tournament release repair (2026-11-23)
 

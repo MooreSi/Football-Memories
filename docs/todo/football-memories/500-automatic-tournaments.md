@@ -63,3 +63,8 @@ preserves owner confirmations and partial snapshots, scopes dropdowns to selecte
 season and makes Rename available on cards. Full-width input CSS excludes checkboxes;
 footer controls wrap on small screens. Owner explicitly approved updating superseded
 two-game test fixtures/expectations. See latest PROGRESS/HANDOFF for verification/rollout.
+
+D-049 verification/release: backend 818 on each SQLite/PostgreSQL, frontend 748 in147
+files; lint/format/types/build/schema checks pass. Safari/Chromium reviewed; Firefox
+launch unavailable. Main `1e357a2` deployed locally and to hosted admin through normal
+updater/provisioner. Details and served asset fingerprints are in HANDOFF/PROGRESS.
