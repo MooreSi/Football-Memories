@@ -25,6 +25,10 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   prompt; Settings always renders credential fields and incorrectly describes hosted storage
   as Mac Keychain. See [hosting notes](system/domains/hosting/README.md). Focused offline
   checks: 26 backend tests and 6 frontend tests pass; full suites not rerun for docs only.
+  Follow-up phone screenshot confirms the generic Library connection panel on the public
+  domain. That panel tests absent/falsy permission-query data, not saved credentials;
+  browser-local filters alone cannot trigger it. Source/runtime session loading does not
+  bind access to IP. Exact browser permission response and displayed identity still needed.
 
 - **Restore separate Player Hub / private Lab tabs (spec 480), branch
   `codex/separate-player-lab-tab`, merged/pushed main and deployed to admin.** My Player retains its

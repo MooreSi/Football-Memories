@@ -23,6 +23,12 @@ recorded server-side. GET status through the account's web proxy agrees with dir
 GET status. No secret contents read, source requests, credential changes or deployment.
 
 Second-device root cause remains unconfirmed pending URL/account identity/prompt location.
+Follow-up phone screenshot shows the public domain and Library's generic connection panel.
+Its condition is absent/falsy permission-query data for both services; filters/hidden sources
+alone cannot display that panel. Inspected running gateway permission-route source and session
+loading: response uses server-side user permissions and session access is not IP-bound.
+Aggregated gateway logs since 08:00 UTC contain five permission GETs, all HTTP 200; these
+cannot be attributed to the pictured browser, so do not establish its response or identity.
 Found misleading hosted Keychain wording and always-present credential form; Library treats
 pending/failed permission lookup as an unconnected account. Browser visibility and age/season
 filters remain local. These are diagnostic leads, not a reproduced second-device failure.
