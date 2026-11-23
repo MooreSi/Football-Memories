@@ -11,6 +11,29 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Veo video analytics research (2026-11-23)
+
+Branch `codex/veo-analytics-research`, based on the clean crest branch below.
+Owner requested deep research into independent Veo analysis on ad hoc AWS GPUs,
+downloadable/trainable models and 60-minute match costs. Completed
+[research report](research/veo-video-analytics-2026-11-23.md) and
+[draft spec 540](todo/football-memories/540-veo-video-analytics.md). Recommendation:
+authorised follow-cam MP4 → private S3 → EC2 GPU-backed AWS Batch → reviewable
+independent metadata + verified download. Official Veo download excludes panoramic
+views/analytics; cropped input cannot support complete physical tracking. Hudl and
+Spiideo detailed event products include human analysis. Public model pipelines
+need Veo adaptation; FOOTPASS has conflicting README/LICENSE terms.
+
+AWS London price feeds verified directly: T4 $0.615/h, A10G $1.277/h, L4
+$1.0216/h. Worked standard case $3.81/match; budget $2–6 initially, $6–15 for
+heavy passes, excluding training/labelling/review. Runtime assumptions are not
+benchmarks. Next step is the spec's representative-footage feasibility spike;
+do not treat the draft as implemented or its accuracy targets as achieved.
+No app/schema/dependency changes, source account access, footage transfer,
+model execution, provisioning or deployment. Docs-only verification: local links,
+arithmetic and whitespace; app suites not rerun. Existing crest deployment state
+below is unchanged. Research checkpoint committed and pushed on this branch.
+
 ## Junior Grassroots Hub crests (2026-11-23)
 
 Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from

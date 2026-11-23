@@ -5,6 +5,19 @@ owner-obtained files; `HudlConnector` currently reports no capabilities. Follow
 [the account safety rules](../../rules/20-account-and-library-safety.md) and
 the repository's `/safe-change` procedure before enabling account access.
 
+## Independent Veo video analytics research (2026-11-23)
+
+[Research report](../../../research/veo-video-analytics-2026-11-23.md) and
+[draft spec 540](../../../todo/football-memories/540-veo-video-analytics.md).
+Veo's current official download guide allows follow-cam MP4 only, excluding
+panoramic/interactive views and Analytics data. The connector's `standard`
+render preference is not evidence of panoramic export. Independent inference
+on a cropped view must preserve unknown/off-screen coverage; it cannot supply
+complete full-match physical tracking. Existing source caches and provenance
+must remain distinct from generated/reviewed events. No connector behaviour or
+source request changed. Also note Hudl's existing `shots` action label maps to
+on-target shots; new analysis needs explicit event/outcome semantics.
+
 ## Hudl login and data research (2026-11-09)
 
 Use `https://www.hudl.com/login` to begin a fresh browser login. A transaction

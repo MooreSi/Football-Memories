@@ -11,6 +11,23 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Veo video analytics research (spec 540, 2026-11-23)
+
+| Task | Status | Evidence |
+|---|---|---|
+| Commercial workflow and Veo input research | done | Primary Hudl/Veo/Spiideo/Pixellot/Trace documentation; follow-cam-only export constraint |
+| Downloadable model and training plan | done | Actual upstream configs/checkpoint paths, pinned source heads, licence/data gates and adaptation steps |
+| Ad hoc AWS architecture and 60-minute cost model | done | Direct London AWS price feeds; $3.81 worked case, runtime sensitivity and separate training/review costs |
+| Footage benchmark / implementation | todo | Draft spec 540; no accuracy/throughput measured and no resources provisioned |
+
+Branch `codex/veo-analytics-research`. See
+[full report](../../research/veo-video-analytics-2026-11-23.md) and
+[spec](540-veo-video-analytics.md). Docs-only verification: local Markdown links,
+cost arithmetic and `git diff --check`; no app suites rerun because no code,
+dependencies, tests or schema changed. No account access, footage transfers,
+model execution, infrastructure provisioning or deployment. Research checkpoint
+committed/pushed; current application and crest release state unchanged.
+
 ## Junior Grassroots Hub crests (2026-11-23)
 
 Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from

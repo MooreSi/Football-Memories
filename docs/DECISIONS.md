@@ -4,6 +4,19 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-052 (2026-11-23) Research independent Veo analytics before committing to parity
+
+Owner requests deep research into an AWS ad hoc GPU pipeline, models/training and
+per-match cost. Spec 540 remains Draft: recommend a standalone Batch worker and
+reviewable generated metadata with separate provenance, preserving existing Hudl
+and Veo source evidence. Do not promise full physical coverage from follow-cam
+downloads or Hudl-level player action accuracy without held-out benchmarks.
+Training data/weights rights are artifact-specific; FOOTPASS's current licence
+statements conflict. No cloud spend, footage upload, source-account change or
+production behaviour is implemented by this research decision. Provisional
+architecture, event scope and retention are recommendations for later validation,
+not owner-approved implementation defaults.
+
 ## D-051 (2026-11-23) Release grouped tournaments, keep ambiguous recordings for review
 Owner authorizes general release to all hosted libraries, local containers and GitHub,
 superseding D-050's admin-only preview. Default grouped presentation on, explicit0 rollback.
