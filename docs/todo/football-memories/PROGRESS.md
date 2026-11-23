@@ -13,6 +13,26 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Shared hosted login investigation (2026-11-23)
 
+Follow-up session/audit investigation: excluded the IP hash used by both owner working tests
+at 10:55 and 10:59 (recent library access logs show Firefox/macOS and Edge/Windows, with
+successful cached Veo requests). Lambro has three other historical IP groups: two successful
+logins on Nov 20 at 18:08/19:18; two on Nov 20 19:44 and Nov 21 19:51 (last seen Nov 23
+08:22); one on Nov 22 21:25 (last seen 21:27). IP hashes identify login-time groups, not
+people or guaranteed current network addresses. Database stores no raw IP or browser string.
+Gateway access logs show internal proxy IP; edge has no HTTP access logger configured.
+Library web container recreated at 10:55, so its prior browser access logs are unavailable.
+
+Important new evidence: today's 08:57 successful login is a different account, registered
+at 08:15 and with neither service permission. Its session last-seen is 09:16:30; gateway
+permission GET succeeds at 09:16:49, immediately before screenshot clock 09:17. Lambro's
+other sessions show no activity then. This strongly points to the separate account session
+being used on the phone, rather than device-local credentials or IP-specific routing.
+Screenshot does not display identity, so correlation is strong but cannot prove which
+browser produced it. Need verify account icon on phone, then sign out/sign in as intended.
+No sessions revoked, credentials read, cross-account library data inspected, source requests,
+code changes or deployment. Checks: read-only SQL/session/audit queries and filtered Docker
+request logs; documentation diff checks. No additional test suite for this docs-only update.
+
 Branch `codex/shared-login-investigation`, docs only. Investigated reported empty library
 on another device using the same Football Memories login. Existing hosted design already
 stores each service in `/data/.secrets/<service>.sealed` on the library's persistent capture

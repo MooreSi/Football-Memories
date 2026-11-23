@@ -29,6 +29,12 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
   domain. That panel tests absent/falsy permission-query data, not saved credentials;
   browser-local filters alone cannot trigger it. Source/runtime session loading does not
   bind access to IP. Exact browser permission response and displayed identity still needed.
+  **Further audit:** excluded the IP hash shared by the owner's two working test logins at
+  10:55/10:59. Three other historical IP groups remain. The 08:57 login and session active
+  at 09:16 belong to a separate newly registered account with neither permission, matching
+  the screenshot at 09:17; Lambro has no recorded activity then. Strong evidence of a wrong
+  account session, pending identity confirmation on the pictured phone. Raw IPs and historic
+  browser identities cannot be recovered from retained logs; do not claim a proven browser bug.
 
 - **Restore separate Player Hub / private Lab tabs (spec 480), branch
   `codex/separate-player-lab-tab`, merged/pushed main and deployed to admin.** My Player retains its

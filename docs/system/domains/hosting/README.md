@@ -29,6 +29,12 @@ Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-t
   then `/_portal/api/connections`, `/helper/veo/account` and `/helper/veo/library` in that
   browser. Read cached status only; do not trigger source login/refresh just to diagnose.
   Never print credentials, session headers, signed links or complete library responses.
+- Audit sessions/sign-ins against screenshot time before attributing a failure to a browser.
+  A separate account's valid session with no service permissions produces the same panel.
+  Session/audit IPs are keyed hashes of login-time addresses, not recoverable public IPs or
+  browser identities. Existing gateway access logs show proxy peers; edge has no HTTP
+  access logger configured. Per-library Nginx logs contain user agents but are lost on
+  container replacement. Do not infer an absent source request is a failed source login.
 - `fm.connections.hidden` and age/season filters live in browser localStorage. Source
   visibility can differ between devices without the saved account differing.
 - Current UI has misleading states: `LibraryPage` shows `HostedConnectionsNote` for
