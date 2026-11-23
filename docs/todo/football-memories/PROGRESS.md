@@ -39,6 +39,7 @@ dev app the real `trimCrest` fills the disc for round crests (Norton Lindsey's s
 icon ignored); Kenilworth's white shield sits at the shield size, as intended. No frontend
 change. **Not deployed**: local Docker app and hosted crest service/filter still run the
 previous build.
+
 ## Tournament reports (spec 540, 2026-11-23)
 
 Branch `codex/tournament-report-release`, isolated managed worktree because the original
