@@ -22,19 +22,34 @@ screen follows reference02 workspace and reference01 panels. Gateway branch of
 the same app name adds full-admin/CSRF/owner guarded local job/artifact API;
 default disabled without `compose.analytics.yaml` runtime mount. No worker port.
 
-Already downloaded Veo match supplies a separate 05:00–07:00 sample; no source
-login/download or original-file change. Small SSDLite trial completed in173s,
-but missed many visible people in the inspected frame. Stronger Faster R-CNN
-baseline runs on Apple MPS; full real trial still in progress. Produces
-experimental person/ball boxes, tracklets, proximity suggestions, annotated MP4,
-JSON/CSV and verified manifest/ZIP. No confirmed goals/passes/tackles, named
-players, team attribution or physical metrics. AWS remains future work.
+Already downloaded Veo match supplies a separate 05:00–07:00 sample. Native
+MPS Faster R-CNN completed in268.659s:360 sampled frames,3596 decoded, annotated
+H.264/AAC, JSON/CSV,5248 fragmented tracklets and manifest/ZIP. Full derivative
+decodes cleanly; artifact hashes/ZIP and unchanged original full-match hash checked.
+Counts are predictions, not accuracy or unique players; no confirmed goals/passes/
+tackles, named players, teams or physical metrics. AWS remains future work.
 
-Verification so far: worker14 tests; frontend785; gateway405 plus4 real-Caddy;
-lint/types/build pass. Final backend850 passes on SQLite and PostgreSQL
-after incorporating latest main; lint/format/mypy/schema drift clean. New behaviours observed red first;
-existing assertions unchanged. Deployment/browser/real download checks pending;
-do not report preview live yet. No app schema/dependency/source changes.
+Admin preview deployed: only the admin library uses app f70eef51; gateway uses
+its optional analytics mount. Only gateway and that admin's web/backend/capture
+container IDs changed; the32-container inventory and every other ID were preserved. Global
+updater latest/default app tags unchanged. Admin automatic updates paused
+(previously true); restore when preview retired or released generally.
+
+Verification: worker14; frontend785; gateway405 plus4 real-Caddy; portal72 and
+provisioner86. Backend850 SQLite +850 PostgreSQL; lint/format/types/build/schema
+drift clean. New component behaviours observed red first; assertions unchanged.
+Provisioner Docker test skipped by existing populated-live-stack guard.
+
+Opt-in real integration passed in256.62s using an isolated synthetic full-admin:
+API submission→native model→completed status→all artifact downloads; hashes,
+ZIP/source bytes and206 video Range checked. Live anonymous sample/job/video/ZIP
+routes all401. This does not establish signed-in browser playback.
+
+Blocked acceptance: Mac locked; embedded browser redirects to sign-in and has
+no admin session. Need owner unlock/sign-in for live desktop/phone playback and
+download review; do not claim browser acceptance complete or bypass MFA. Private
+worker [trial report](https://github.com/MooreSi/Football-Video-Analytics/blob/codex/local-pipeline/docs/TRIAL.md).
+No source login/download, source/schema/dependency change, AWS or footage overwrite.
 
 ## Junior Grassroots Hub crests (2026-11-23)
 

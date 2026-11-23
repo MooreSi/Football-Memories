@@ -19,18 +19,27 @@ Branch `codex/local-video-analytics`, worker private repo
 | Task | Status | Evidence |
 |---|---|---|
 | Private repo, local worker and bounded sample | done | New isolated environment/LaunchAgent; original preserved, no source download |
-| Real model inference / media pipeline | partial | SSDLite trial173s complete; stronger MPS trial running; JSON/CSV/MP4/manifest/ZIP |
-| Gateway admin security/API | done | 13 new red-first tests; full405 +4 Docker, lint/format/types |
-| App interface | partial | New private route/nav and functional submit/status/downloads;785 frontend tests/typecheck/build pass; browser pending |
-| Final gates / admin deployment / artifact verification | todo | Latest main incorporated;850 SQLite +850 PG pass; preview deployment/browser pending |
+| Real model inference / media pipeline | done (baseline) | Faster R-CNN MPS268.659s,360 sampled frames; full MP4 decode/hash/ZIP checks pass; no football-action accuracy claim |
+| Gateway admin security/API | done | 13 new red-first tests;405 +4 Docker, lint/format/types |
+| App interface | partial | Private route/nav;785 frontend tests/typecheck/build; signed-in desktop/phone checks blocked by Mac lock |
+| Admin preview deployment | done | Only gateway +admin web/backend/capture changed; all other container IDs unchanged; health/nginx clean; anonymous API401 |
+| Live browser acceptance | blocked | Embedded browser redirects to login, no admin session; Mac unlock needed; no MFA bypass |
+
+Opt-in real integration passed in256.62s using an isolated synthetic full-admin:
+API submission→native model→completed status→all artifact downloads; hashes,
+ZIP/source bytes and206 video Range checked. Live anonymous sample/job/video/ZIP
+routes all401. This does not establish signed-in browser playback.
 
 Nine pipeline and five queue tests observed red before implementation;14 worker
-tests pass. Two UI behaviours observed red against a placeholder; additional
-access controls use existing full-admin guards. Final backend850 passed on SQLite and PostgreSQL
-after latest main; lint/format/types/schema drift clean. No existing test
-assertions changed. No source-account/session change, schema migration, AWS or
-original-file overwrite. Current public/library release still unchanged by this
-preview checkpoint. [Spec](550-local-video-analytics.md).
+tests pass. Two UI behaviours observed red against a placeholder; full-admin
+access guards reused. Backend850 SQLite +850 PG, frontend785, gateway405 +4
+real-Caddy, portal72 and provisioner86; lint/format/types/build/schema drift clean.
+Existing populated-live-stack guard skipped provisioner Docker test; no provisioner
+code changed. Full output FFmpeg decode clean; original full-match SHA-256/size
+unchanged. No existing test assertions changed, source login, schema migration,
+AWS or footage overwrite. Admin auto updates paused (previously true) to retain
+preview; global latest/default app tags unchanged. Restore preference on preview
+retirement/general release. [Spec](550-local-video-analytics.md).
 
 ## Junior Grassroots Hub crests (2026-11-23)
 
