@@ -11,6 +11,34 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Junior Grassroots Hub crests (2026-11-23)
+
+Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from
+juniorgrassrootshub.com. Its terms forbid systematic extraction without written consent; the
+owner then said they obtained consent (recorded in owner decision 008). New source
+`_jgh_crest` in `team_logos.py`, asked after Wikipedia's exact club page: clubs sitemap
+(once a day, in memory), slug matched to the team name (`club_name` strips age group, FC,
+side code/colour; "juniors"/"jfc"/"and" are quiet; one letter out only when exactly one
+page is that close), the page's JSON-LD SportsClub `logo`, accepted only on the site's own
+`partner-images/clubs/` storage and only when the page names that club. Two pages with
+different crests are not guessed between. Never `/api/`; one request per 2 s; a 429 pauses
+only this site. JPEG crests are now kept and served as JPEG (library cache, shared crest
+service, hosted libraries). Gateway `egress/crests.filter` gained the two exact hosts
+(gateway branch of the same name).
+
+Tests: 25 new cases observed red first (setup-only state added, then 18 behavioural reds;
+the 7 negative guards passed trivially before the source existed). `tests/services/conftest.py`
+says JGH lists none of the clubs in the older crest tests; no existing assertion changed.
+Gateway sync test observed red against the new app hosts before the filter change. SQLite
+**850 passed**, PostgreSQL **850 passed** (sequential), frontend **767 passed**, typecheck,
+build, ruff, mypy; gateway **392 passed**, ruff, mypy. Manual read-only check against the
+real site: Norton Lindsey (also "Lindsay"), Olton Ravens, Kenilworth Sporting (Juniors),
+Bolehall Swifts, Racing Club Warwick, Redditch United, Solihull Moors CB resolve; Solihull
+Academy Blue is not listed; "Riverside Juniors" matches two clubs and stays initials. In the
+dev app the real `trimCrest` fills the disc for round crests (Norton Lindsey's stray corner
+icon ignored); Kenilworth's white shield sits at the shield size, as intended. No frontend
+change. **Not deployed**: local Docker app and hosted crest service/filter still run the
+previous build.
 ## Tournament reports (spec 540, 2026-11-23)
 
 Branch `codex/tournament-report-release`, isolated managed worktree because the original

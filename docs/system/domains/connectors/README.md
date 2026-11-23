@@ -290,6 +290,20 @@ matched helper output. Prior archive files unchanged; no new full match capture.
   has many non-league clubs (Racing Club Warwick, Tamworth) but not every
   grassroots one (Bolehall Swifts is not there).
 
+## Junior Grassroots Hub crests (2026-11-23)
+- Consent: the site's terms forbid systematic extraction without written consent; the owner
+  obtained it (decision 008). robots.txt allows pages for `*` and blocks `/api/`.
+- `https://www.juniorgrassrootshub.com/sitemaps/sitemap/clubs.xml` (index at
+  `/sitemap.xml`) lists `/clubs/<slug>` pages: 8,902 `<loc>`s, 7,756 distinct clubs, about
+  1.6 MB on 2026-11-23 (the fetch limit for this one URL is 10 MB). Duplicates exist
+  (`bolton-lads-and-girls-club-2`, `colton-juniors` and `colton-juniors-fc`).
+- A club page carries JSON-LD `{"@type": "SportsClub", "name", "logo"}`; `logo` is on
+  `cfkzqicresplbojnqrej.supabase.co/storage/v1/object/public/partner-images/clubs/<id>.(jpg|png)`.
+  A club with no crest has no `logo` (Solihull Moors Foundation CB). Sponsors' logos on the
+  same page are under `partner-images/logos/` or other folders and are never taken.
+- Crests are often JPEG on an off-white background, sometimes with a screenshot artefact
+  (Norton Lindsey's has a Google Lens icon in a corner); `crestBox` ignores it.
+
 ## hudl_browser package layout (2026-11-11)
 `_account.py` passed the 800-line ceiling and was split (rule 70): batch and
 single-match moment exports and reels live in `_batch.py`, the paced tag and

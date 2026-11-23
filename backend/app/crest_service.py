@@ -36,7 +36,10 @@ def create_app() -> FastAPI:
             raise HTTPException(503, "Crest sources are busy; ask again later")
         if path is None:
             raise HTTPException(404, "No verified club crest found")
-        return FileResponse(path, media_type="image/png")
+        # Junior Grassroots Hub crests are often JPEG (owner request 2026-11-23).
+        with path.open("rb") as stream:
+            kind = team_logos.crest_type(stream.read(16)) or "image/png"
+        return FileResponse(path, media_type=kind)
 
     return app
 

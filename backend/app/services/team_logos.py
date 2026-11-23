@@ -28,6 +28,8 @@ _HOSTS = {
     "thumb.wikimedia.org",
     "www.thesportsdb.com",
     "r2.thesportsdb.com",
+    "www.juniorgrassrootshub.com",
+    "cfkzqicresplbojnqrej.supabase.co",
 }
 _LOCK = threading.Lock()
 _MISSES: dict[str, float] = {}
@@ -35,7 +37,7 @@ _MISSES: dict[str, float] = {}
 # Wikipedia answered 429, and those clubs were remembered as "no crest" for a day.
 # A refusal now pauses every lookup for Retry-After (or a minute) and is not a miss.
 _PAUSED_UNTIL: list[float] = [0.0]  # kept for the shared-service path; per site below
-_SITE_PAUSED: dict[str, float] = {"wikimedia": 0.0, "sportsdb": 0.0}
+_SITE_PAUSED: dict[str, float] = {"wikimedia": 0.0, "sportsdb": 0.0, "jgh": 0.0}
 # Owner report 2026-11-20: clubs whose last lookup could not ask every source (a site was
 # waiting). The shared crest service answers 503 for these, not 404, so libraries ask again.
 _UNSETTLED: set[str] = set()
@@ -51,6 +53,10 @@ _GAP_S = 1.0
 # TheSportsDB's free tier allows 30 requests a minute; ask it at most every 2.5 s.
 _SPORTSDB_GAP_S = 2.5
 _LAST_SPORTSDB: list[float] = [0.0]
+# Junior Grassroots Hub (owner request 2026-11-23, consent obtained by the owner): one
+# request every 2 s to the site and its crest storage.
+_JGH_GAP_S = 2.0
+_LAST_JGH: list[float] = [0.0]
 _NO_CREST_S = 86400.0
 
 
@@ -107,14 +113,20 @@ def logo_candidate(name: str) -> str | None:
 
 def _paced_fetch(url: str) -> bytes:
     """One request at a time (callers hold _LOCK), spaced out as Wikipedia asks."""
+    host = urlsplit(url).hostname
+    jgh = host in _JGH_HOSTS
     wait = _LAST_REQUEST[0] + _GAP_S - time.monotonic()
-    if urlsplit(url).hostname == "www.thesportsdb.com":
+    if host == "www.thesportsdb.com":
         wait = max(wait, _LAST_SPORTSDB[0] + _SPORTSDB_GAP_S - time.monotonic())
+    if jgh:
+        wait = max(wait, _LAST_JGH[0] + _JGH_GAP_S - time.monotonic())
     if wait > 0:
         time.sleep(wait)
     _LAST_REQUEST[0] = time.monotonic()
-    if urlsplit(url).hostname == "www.thesportsdb.com":
+    if host == "www.thesportsdb.com":
         _LAST_SPORTSDB[0] = _LAST_REQUEST[0]
+    if jgh:
+        _LAST_JGH[0] = _LAST_REQUEST[0]
     try:
         return _fetch(url)
     except HTTPError as error:
@@ -139,8 +151,10 @@ def _fetch(url: str) -> bytes:
     with urlopen(request, timeout=8) as response:  # noqa: S310 (validated HTTPS hosts)
         if urlsplit(response.url).hostname not in _HOSTS:
             raise ValueError("Unapproved crest redirect")
-        data = response.read(2_000_001)
-    if len(data) > 2_000_000:
+        # The clubs sitemap (about 1.6 MB, 2026-11-23) is the one larger answer allowed.
+        limit = _SITEMAP_LIMIT if url == _JGH_SITEMAP else 2_000_000
+        data = response.read(limit + 1)
+    if len(data) > limit:
         raise ValueError("Crest exceeds size limit")
     return bytes(data)
 
@@ -347,6 +361,100 @@ def _sportsdb_crest(name: str) -> str | None:
     return None
 
 
+# Owner request 2026-11-23 (decision 008; the owner obtained the site's consent): Junior
+# Grassroots Hub lists UK grassroots clubs, most with their crest. Its clubs sitemap names
+# every club page (/clubs/<slug>); a page names its club in JSON-LD (SportsClub) with the
+# crest as "logo" on the site's own storage. Read: the sitemap once a day, the matching
+# club page(s), the crest. Never /api/ (robots.txt).
+_JGH = "https://www.juniorgrassrootshub.com"
+_JGH_SITEMAP = f"{_JGH}/sitemaps/sitemap/clubs.xml"
+_JGH_HOSTS = {"www.juniorgrassrootshub.com", "cfkzqicresplbojnqrej.supabase.co"}
+_SITEMAP_LIMIT = 10_000_000
+_JGH_INDEX: dict[str, object] = {"slugs": None, "until": 0.0}
+_JGH_DAY_S = 86400.0
+_JGH_CLUB = re.compile(
+    r"<loc>\s*https://www\.juniorgrassrootshub\.com/clubs/([a-z0-9]+(?:-[a-z0-9]+)*)\s*</loc>"
+)
+_JGH_CREST = re.compile(
+    r"https://cfkzqicresplbojnqrej\.supabase\.co/storage/v1/object/public/partner-images/clubs/"
+    r"[A-Za-z0-9_-]+\.(?:png|jpe?g|webp)"
+)
+_JSON_LD = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.S)
+# Words a club's own page or slug may add or drop: "fc", "jfc", "and", a page's "-2".
+_JGH_QUIET = _GENERIC | _FORM_WORDS | {"and", "the", "jnr", "jnrs", "fc", "cfc", "yfc", "jfc"}
+
+
+def _club_words(text: str) -> list[str]:
+    """Words that name the club: "St John's Juniors F.C." -> ["st", "johns"]."""
+    text = re.sub(r"['\u2019]", "", text.casefold()).replace("&", " and ")
+    return [w for w in re.findall(r"[a-z0-9]+", text) if w not in _JGH_QUIET and not w.isdigit()]
+
+
+def _one_letter_out(a: str, b: str) -> bool:
+    """One letter changed, added or dropped ("lindsay"/"lindsey"); long words only."""
+    if a == b or min(len(a), len(b)) < 5 or abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b, strict=True)) == 1
+    short, long_ = sorted((a, b), key=len)
+    return any(long_[:i] + long_[i + 1 :] == short for i in range(len(long_)))
+
+
+def _jgh_slugs() -> list[str]:
+    slugs = _JGH_INDEX["slugs"]
+    if isinstance(slugs, list) and float(str(_JGH_INDEX["until"])) > time.monotonic():
+        return slugs
+    text = _paced_fetch(_JGH_SITEMAP).decode("utf-8", "replace")
+    found = list(dict.fromkeys(_JGH_CLUB.findall(text)))
+    _JGH_INDEX.update(slugs=found, until=time.monotonic() + _JGH_DAY_S)
+    return found
+
+
+def _jgh_matches(name: str) -> list[str]:
+    """Club pages naming exactly this club; a word one letter out only when no page names
+    it exactly and just one page is that close."""
+    words = _club_words(club_name(name))
+    if not words:
+        return []
+    want = sorted(words)
+    exact: list[str] = []
+    near: list[str] = []
+    for slug in _jgh_slugs():
+        have = sorted(_club_words(slug.replace("-", " ")))
+        if have == want:
+            exact.append(slug)
+        else:
+            missing = [w for w in want if w not in have]
+            extra = [h for h in have if h not in want]
+            if len(missing) == len(extra) == 1 and _one_letter_out(missing[0], extra[0]):
+                near.append(slug)
+    return exact or (near if len(near) == 1 else [])
+
+
+def _jgh_page_crest(name: str, slug: str) -> str | None:
+    html = _paced_fetch(f"{_JGH}/clubs/{slug}").decode("utf-8", "replace")
+    for block in _JSON_LD.findall(html):
+        try:
+            data = json.loads(block)
+        except ValueError:
+            continue
+        if not isinstance(data, dict) or data.get("@type") != "SportsClub":
+            continue
+        logo = str(data.get("logo") or "")
+        page_name = sorted(_club_words(str(data.get("name") or "")))
+        named = page_name == sorted(_club_words(slug.replace("-", " ")))
+        if named and _JGH_CREST.fullmatch(logo):
+            return logo
+    return None
+
+
+def _jgh_crest(name: str) -> str | None:
+    """Two pages for the same club (a duplicate, "colton-juniors-fc") are both read; one
+    crest between them is used, two different ones are not guessed between."""
+    crests = {c for slug in _jgh_matches(name)[:3] if (c := _jgh_page_crest(name, slug))}
+    return crests.pop() if len(crests) == 1 else None
+
+
 # Owner decision 2026-11-19: a hosted library has no internet. It asks the shared crest
 # service (FM_CREST_SERVICE, on its own private network) and keeps the answer locally.
 _SHARED_MISS_S = 3600.0
@@ -370,7 +478,7 @@ def _shared_crest(base: str, name: str, key: str, target: Path, directory: Path)
     if status == 404:
         _MISSES[key] = time.monotonic() + _SHARED_MISS_S
         return None
-    if status != 200 or len(data) > CREST_LIMIT or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+    if status != 200 or len(data) > CREST_LIMIT or crest_type(data) is None:
         return None
     directory.mkdir(parents=True, exist_ok=True)
     with target.open("xb") as stream:
@@ -403,13 +511,14 @@ def cached_crest(name: str, directory: Path) -> Path | None:
             url = logo_candidate(name)
             for source, site in (
                 (_wikipedia_crest, "wikimedia"),
+                (_jgh_crest, "jgh"),
                 (_wikipedia_search, "wikimedia"),
                 (_sportsdb_crest, "sportsdb"),
                 (_commons_crest, "wikimedia"),
             ):
                 if url:
                     break
-                if _SITE_PAUSED[site] > time.monotonic():
+                if _SITE_PAUSED.get(site, 0.0) > time.monotonic():
                     skipped = True
                     continue
                 try:
@@ -420,15 +529,24 @@ def cached_crest(name: str, directory: Path) -> Path | None:
             if not url:
                 raise ValueError("No club crest found")
             image = _paced_fetch(url)
-            if not image.startswith(b"\x89PNG\r\n\x1a\n"):
-                raise ValueError("Expected PNG crest")
+            # Junior Grassroots Hub crests are often JPEG; any crest image is kept as it is
+            # (the file keeps its .png name, as an uploaded JPEG does; it is served by type).
+            if crest_type(image) is None:
+                raise ValueError("Expected a crest image")
             directory.mkdir(parents=True, exist_ok=True)
             with target.open("xb") as stream:
                 stream.write(image)
             _UNSETTLED.discard(key)
             return target
         except _Refused as refused:
-            site = "sportsdb" if "thesportsdb" in str(url) else "wikimedia"
+            host = urlsplit(str(url)).hostname
+            site = (
+                "sportsdb"
+                if host == "r2.thesportsdb.com"
+                else "jgh"
+                if host in _JGH_HOSTS
+                else "wikimedia"
+            )
             _SITE_PAUSED[site] = time.monotonic() + refused.wait_s
             _UNSETTLED.add(key)
             return None
