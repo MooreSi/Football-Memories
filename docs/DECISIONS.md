@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-045 (2026-11-23) Player performance experiment is hosted-admin only
+Owner requests all feasible Kickstats-inspired review tools for admin testing.
+Use a separate `/player/lab` workspace guarded by the gateway's full admin identity;
+ordinary accounts and unauthenticated local installs are excluded. Existing public
+player pages stay intact. Experimental manual outcomes, feedback and goals are
+browser drafts with portable import/export, clearly separate from saved app stats.
+No third-party AI, invented rating or spatial inference. Missing attempts/outcomes
+withhold percentages; comparisons require comparable direct evidence and position.
+
 ## D-044 (2026-11-22) Automatic Veo checks reuse completed match metadata
 Owner reports that showing Veo rereads matches already cached. Connect and automatic
 checks reuse completed available matches by stable ID/slug while listing the account

@@ -11,6 +11,23 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Current change (2026-11-23)
+
+- **Admin player lab (spec 470), branch `codex/admin-player-lab`, verified; hosted rollout pending.**
+  `/player/lab` and an admin-only main-area shortcut require the gateway's full admin
+  identity; local installs, ordinary accounts, partial login and failed checks fail closed.
+  Lazy feature loads use only that account's own existing library APIs. Reference 03/shared
+  charcoal-periwinkle theme; recent five games, metric chart, disjoint five-v-five comparisons,
+  coverage ring/averages, evidence links, personal bests/career targets, same-position teammate
+  comparisons, optional manual outcomes, coach notes and clip-linked development goals.
+  Browser notebook is explicitly experimental, per admin, with validated merge import/export;
+  existing saved stats are not rewritten. Season PNG and selected-moment reel handoff work.
+  No tracking, success rate or rating invented. Keeper minutes do not reuse outfield estimates;
+  keeper save totals do not fabricate timed evidence. Frontend **728**, backend **780** each
+  SQLite/PostgreSQL, lint/format/types/build/schema pass. Synthetic desktop 1440 and phone
+  375 widths equal viewport; PNG downloaded and inspected. No real source account accessed.
+  No deployment yet at this checkpoint; no CI workflow exists in this repository.
+
 ## Current change (2026-11-22)
 
 - **Incremental Veo checks (spec 460), branch `codex/veo-incremental-check`.**

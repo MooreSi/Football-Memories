@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { PlayerLabRoute } from "./components/PlayerLabAccess";
 import { AppShell } from "./components/AppShell";
 import { EmptyState } from "./components/ui/EmptyState";
 import { ClipExplorerPage } from "./pages/ClipExplorerPage";
@@ -52,6 +53,7 @@ export function App() {
         <Route path="clips/reels" element={<ReelsPage />} />
         <Route path="clips/reels/:id" element={<ReelBuilderPage />} />
         <Route path="player" element={<PlayerPage />} />
+        <Route path="player/lab" element={<PlayerLabRoute />} />
         <Route path="player/choose" element={<PlayerPage choose />} />
         <Route path="player/:id" element={<PlayerHubPage />} />
         <Route path="import" element={<ImportPage />} />

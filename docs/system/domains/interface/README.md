@@ -424,3 +424,26 @@ U10 v Stoke City reads 12-9.
 - Report source/coverage notes are wrapped under player rows and included in SVG/PNG
   height, so saved/printed reports retain uncertainty without clipping. Team report
   content is unchanged. Games played means recorded appearances, not verified minutes.
+
+## Admin player lab (spec 470, 2026-11-23)
+
+`/player/lab` is a hosted-admin presentation experiment. `PlayerLabAccess` checks
+`/_portal/api/me` for role admin AND stage full; local builds and failed/partial
+checks deny access. Only then is the feature chunk mounted. The main-area shortcut
+uses the same guard. It grants no new API/data privilege and never reads another
+user's library. Compact/wrapped navigation styles are scoped to this route.
+
+`playerLab.ts` reuses goals/player attribution without changing existing stats.
+Trend windows require ten consecutive dated appearances with one direct source;
+recorded position changes and overlap/estimated/likely evidence suppress comparison.
+Rates aggregate numerator/denominator, never average percentages. Teammate comparisons
+need three shared fixtures, identical explicit positions, confirmed lab minutes and
+consistent direct sources; counts normalize to 30 minutes, without ability judgments.
+Outfield touch-span minutes are never displayed as keeper playing time. Aggregate
+keeper save totals have no invented per-save timestamps.
+
+`playerLabBook.ts` validates browser notebooks and preserves missing versus zero.
+Storage is scoped to the verified admin email, never includes gateway response or
+CSRF data, and is explicitly separate from authoritative app edits/server backups.
+Import merges stable records; notebook/PNG export is user-triggered. Percentages
+need paired outcomes. No external AI service, tracker or fabricated rating is used.

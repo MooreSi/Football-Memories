@@ -11,6 +11,27 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Admin player lab (spec 470, 2026-11-23)
+
+**Built and verified on `codex/admin-player-lab`; rollout pending at this checkpoint.**
+Admin-only route/lazy loading and shortcut, recent performance, selectable charts,
+coverage/averages, same-source ten-game comparisons and matched-position teammate rates.
+Manual attempts/outcomes are validated, with weighted percentages and unknown/zero preserved.
+Browser-scoped notebook includes coach feedback, clip-linked development goals, import/export,
+season PNG and an actual selected-moment handoff to the existing reel studio.
+No source refresh/action, credential edit, archive write or source account access.
+
+Verification: new model/access tests observed red then green (including confirmed-zero and
+keeper-minutes negative controls). Final `cd frontend && npm test`: **728 passed / 140 files**;
+`npm run typecheck`, default build and hosted build pass (existing main-bundle size advisory).
+`cd backend && uv run pytest`: **780 passed**, SQLite; same command with documented
+`TEST_DATABASE_URL`: **780 passed**, PostgreSQL. Ruff check/format, mypy and `alembic check`
+pass with no schema drift. No existing test edited. Desktop 1440px and phone 375px synthetic
+browser review: document width equals viewport; no console errors. Season PNG downloaded and
+visually inspected. Real footage playback/reel rendering not exercised; handoff uses existing
+studio contract. New drafts persist in the browser only and are not in normal server backups.
+No GitHub Actions workflow exists in this repository.
+
 ## Incremental Veo checks (spec 460, 2026-11-22)
 
 `done`, branch `codex/veo-incremental-check`: Connect and automatic checks reuse

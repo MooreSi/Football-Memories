@@ -1,3 +1,4 @@
+import { PlayerLabLink } from "./PlayerLabAccess";
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
 import { useVeoAutoCheck } from "./veo/useVeoAutoCheck";
 import { Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
@@ -85,7 +86,7 @@ export function AppShell() {
     : (pathname.startsWith("/matches/") || pathname.startsWith("/hudl/")) || pathname.startsWith("/clips") ? "analysis"
     : pathname === "/" ? "dashboard" : "settings";
   return (
-    <div className="app-surface min-h-screen" data-screen={screen}>
+    <div className={`app-surface min-h-screen ${pathname === "/player/lab" ? "player-lab-surface" : ""}`} data-screen={screen}>
       <header className="app-header sticky top-0 z-30">
         <div className="header-inner">
           <Brand />
@@ -100,6 +101,7 @@ export function AppShell() {
         </div>
       </header>
       <main className="app-main">
+        <PlayerLabLink />
         <Outlet />
       </main>
     </div>
