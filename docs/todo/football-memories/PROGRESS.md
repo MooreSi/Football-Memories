@@ -28,6 +28,12 @@ dependencies, tests or schema changed. No account access, footage transfers,
 model execution, infrastructure provisioning or deployment. Research checkpoint
 committed/pushed; current application and crest release state unchanged.
 
+Follow-up research: on-camera dual originals differ from cloud export. Added
+official local-storage/Instant Playback/tactical-mode sources and historical
+first-hand Veo 1 extraction evidence, explicitly without a verified copy method
+or Cam 2/3 applicability. Camera generation/firmware remains unknown. No device
+access or code change; docs-only whitespace check, no repeated app suites.
+
 ## Junior Grassroots Hub crests (2026-11-23)
 
 Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from

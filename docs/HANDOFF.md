@@ -34,6 +34,14 @@ model execution, provisioning or deployment. Docs-only verification: local links
 arithmetic and whitespace; app suites not rerun. Existing crest deployment state
 below is unchanged. Research checkpoint committed and pushed on this branch.
 
+Follow-up: owner asks about both originals stored on the device. Report now
+separates lack of a documented local export from technical impossibility:
+historical first-hand Veo 1 dual-stream reports exist, but no reproducible
+camera-copy procedure or Cam 2/3 equivalent was established. Instant Playback
+is follow-cam; support-controlled tactical framing is wider but still tracks
+the ball. Exact camera model/firmware is the next prerequisite. No device access
+performed. Docs-only follow-up checked for whitespace; no app suites rerun.
+
 ## Junior Grassroots Hub crests (2026-11-23)
 
 Branch `crests/junior-grassroots-hub`. Owner asked for grassroots crests from

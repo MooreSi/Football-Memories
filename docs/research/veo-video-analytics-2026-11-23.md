@@ -98,6 +98,45 @@ number readability, line visibility, ball pixel size and whether the crop loses
 shots near either goal. Check youth 5v5/7v7/9v9 as well as 11v11. Do not assume
 a 105 × 68 m adult pitch or two 45-minute halves.
 
+### Follow-up: obtaining both originals directly from the camera
+
+Owner specifically asks about the locally stored two-camera originals, rather
+than the platform's follow-cam export. This is a separate question from the
+cloud download restriction above. Veo confirms recordings stay on the camera
+before upload, and describes Cam 3's panorama as two synchronised streams.
+[Local recording storage](https://support.veo.com/hc/en-us/articles/21867433200017-How-to-record-with-your-Veo-Cam),
+[Cam 3 capture](https://www.veo.com/en-us/product/veo-cam-3).
+
+- **Supported direct export:** no documented USB/local dual-original download
+  workflow found in the checked official recording/library documentation. This
+  is not proof that extraction is technically impossible.
+- **Historical Veo 1 lead:** first-hand posts on the ActionStitch support forum
+  describe stitching footage from a Veo v1 and supplying two separate HEVC MP4
+  streams. Another owner describes a two-video-track file with one audio track,
+  separated with MKVToolNix. The thread does not establish how the source file
+  was copied off the camera; the developer asks about opening the enclosure
+  without a visible answer. This is evidence of historical access, not a
+  verified extraction procedure or evidence that Cam 2/3 permit it.
+  [Original discussion](https://forum.actionstitch.com/t/veocam-configuration/234).
+- **Instant Playback is not a raw-export solution:** Veo describes it for Cam
+  2/3 as AI follow-cam playback through the camera hotspot before upload, not
+  access to both full-resolution originals.
+  [Official Instant Playback](https://support.veo.com/hc/en-us/articles/17993307074065-How-to-use-Instant-Playback-in-the-Veo-Cam-App).
+- **Wider supported view:** Veo support can change broadcast to tactical framing,
+  which keeps a wider shot but still follows the ball. It is not a fixed
+  full-pitch original. Users cannot switch this setting themselves according
+  to the guide; confirm the resulting downloadable rendition with support.
+  [Recording modes](https://support.veo.com/hc/en-us/articles/13887603409297-Veo-Cam-recording-modes-Broadcast-vs-tactical-view).
+
+Next prerequisite is the exact camera generation/firmware and owner access.
+Ask Veo about a supported export of the two synchronised original lens streams,
+their timing/calibration metadata, or a full-resolution stitched panorama.
+Do not assume USB mass-storage, a local file API, retention after upload or an
+existing cloud export. No device/account was connected or modified in this
+follow-up. If originals become available, the pipeline can either calibrate
+each view and fuse pitch-coordinate tracks or stitch first; stitching is not
+mandatory, but synchronisation and cross-view deduplication are.
+
 ## 4. Which open-source pieces to use
 
 These are complementary components, not interchangeable complete solutions.
