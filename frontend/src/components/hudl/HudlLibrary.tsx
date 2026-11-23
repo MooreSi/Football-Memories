@@ -9,11 +9,14 @@ import { TeamBadge } from "../TeamBadge";
 import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
 import { matchScore, useScoreCorrections } from "../../lib/matchScore";
 
+import { TournamentSelect, useTournamentSelection } from "../library/Tournaments";
+
 export type HudlFilters = { age: string; season: string; search: string; offlineOnly?: boolean };
 
 /** Cached footage collection: accepts the parent All matches filters, or its own controls. */
 export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; club?: string | null }) {
   const library = useHudlLibrary();
+  const tournament = useTournamentSelection();
   const corrections = useScoreCorrections();
   const status = useHudlStatus();
   const saved = downloadState(useDownloadIndex().data);
@@ -26,7 +29,7 @@ export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; c
   const seasons = [...new Set(videos.map(m => m.season_label || "Unclassified"))].sort().reverse();
   const age = filters?.age ?? savedAge;
   const season = filters?.season ?? savedSeason;
-  useEffect(() => setShown(12), [age, season, filters?.search]);
+  useEffect(() => setShown(12), [age, season, filters?.search, tournament?.tournamentId, tournament?.team]);
   const refresh = useMutation({
     mutationFn: () => hudlRequest("/account/action", { action: "refresh" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["hudl-account"] }),
@@ -39,7 +42,7 @@ export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; c
       setSavedAge(""); localStorage.removeItem("fm.hudl.age");
     }
   }, [library.data, filters, savedAge]);
-  const matches = videos.filter(m => !filters?.offlineOnly && (!age || hudlAgeGroups(m).includes(age))
+  const matches = videos.filter(m => (tournament?.includes(`hudl:${m.id}`) ?? true) && !filters?.offlineOnly && (!age || hudlAgeGroups(m).includes(age))
     && (!season || (m.season_label || "Unclassified") === season)
     && (!filters?.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
 
@@ -83,6 +86,7 @@ export function HudlLibrary({ filters, club = null }: { filters?: HudlFilters; c
           <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
           <p className="text-xs text-fg-muted">{date ? ordinalDate(date) : "Undated"}</p></div>
       </Link>
+      <TournamentSelect matchKey={`hudl:${m.id}`} title={m.title} />
     </article>; })}</div>
     {shown < matches.length && <div className="flex justify-center"><Button onClick={() => setShown(n => n + 12)}>Show more Hudl matches ({matches.length - shown})</Button></div>}
   </section>;

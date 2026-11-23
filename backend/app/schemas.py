@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ImportIn(BaseModel):
@@ -529,3 +529,36 @@ class AlertsSeenIn(BaseModel):
     matches: list[Annotated[str, Field(max_length=300)]] = Field(max_length=5000)
     player: str | None = Field(default=None, max_length=200)
     counts: dict[str, Annotated[int, Field(ge=0)]] = Field(default_factory=dict, max_length=5000)
+
+
+class TournamentBatchIn(BaseModel):
+    """Source-qualified IDs keep cached and imported games distinct."""
+
+    name: str = Field(min_length=1, max_length=160)
+    team: str = Field(min_length=1, max_length=160)
+    match_keys: list[str] = Field(min_length=1, max_length=1000)
+
+    @field_validator("name", "team")
+    @classmethod
+    def clean_tournament_label(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Enter a name")
+        return value
+
+    @field_validator("match_keys")
+    @classmethod
+    def valid_tournament_keys(cls, values: list[str]) -> list[str]:
+        for value in values:
+            source, sep, identity = value.partition(":")
+            if source not in {"hudl", "veo", "local"} or not sep or not identity.strip():
+                raise ValueError("Use a source-qualified match ID")
+            if len(value) > 240 or (source == "local" and not identity.isdigit()):
+                raise ValueError("Invalid match ID")
+        return list(dict.fromkeys(values))
+
+
+class TournamentOut(BaseModel):
+    id: str
+    name: str
+    entries: dict[str, str]

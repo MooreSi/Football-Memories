@@ -4,6 +4,19 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-047 (2026-11-23) Tournament grouping belongs in Match Library
+Owner requests multi-game tournament assignment with distinct entered home teams.
+Keep the workflow beside the games: card checkboxes, reachable batch action and dialog,
+then tournament/team filters and per-team score summaries above the cards. Store local
+membership in namespaced database preferences so existing backups include it without
+changing schema compatibility. Source-qualified game IDs avoid collisions. A game has
+one entered team in each tournament but can belong to several tournaments. Reusing a
+name (case-insensitive) changes membership; use edition/year to distinguish events.
+Tournament totals cover the whole group independent of card filters; unknown scores
+remain unscored, with coverage shown. Reuse existing source-side score semantics;
+entered-team labels do not reinterpret which side is ours. No invented standings,
+points rules or winners. Hosted rollout remains separate from this local feature build.
+
 ## D-046 (2026-11-23) Player Hub and private preview are separate main tabs
 Owner reports losing the previous Hub and explicitly requests reinstating it with
 the Lab as a separate tab. Keep original My Player chooser/profile/card/memories,

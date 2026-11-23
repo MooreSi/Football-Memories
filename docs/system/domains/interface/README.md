@@ -449,3 +449,24 @@ Storage is scoped to the verified admin email, never includes gateway response o
 CSRF data, and is explicitly separate from authoritative app edits/server backups.
 Import merges stable records; notebook/PNG export is user-triggered. Percentages
 need paired outcomes. No external AI service, tracker or fabricated rating is used.
+
+
+## Tournament groups (spec 490, 2026-11-23)
+
+Library-only TournamentProvider scopes multi-selection and card filters. Checkbox
+footers sit outside match links, so selection never starts playback. The floating
+batch action stays reachable while scrolling; saving opens the chosen group/team.
+Tournament data uses `/api/tournaments`, stored per library as `tournament:<hash>`
+preferences and included in existing database backups. Keys are `local:<id>`,
+`hudl:<id>` and `veo:<id>`; never join source IDs without a namespace.
+
+Each game has one entered team per tournament, with independent membership in other
+tournaments. Team names are labels for the entered squad, not source-side score
+orientation. Stats panels cover the whole tournament/team, explicitly independent
+of card search/age/season. Results reuse existing corrections/tags/Veo scores;
+unavailable/untagged games stay in coverage but cannot fabricate a draw. Imported
+member tags are read from local metadata in batches of four. Only tournament member
+matches run score aggregation, avoiding a full tag-library scan on every checkbox
+change. Tournament filtering reads every matching imported page before filtering,
+so memberships beyond page one remain reachable. Synthetic desktop and 375px layouts
+reviewed against reference 01 and the supplied match-card screenshot.

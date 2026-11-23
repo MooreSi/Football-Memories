@@ -13,6 +13,22 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-23)
 
+- **Tournament groups (spec 490), branch `codex/tournament-library`, pushed and deployed locally.**
+  Match Library cards now have bottom-right selection boxes for imported/Hudl/Veo games.
+  The batch dialog creates/reuses a tournament and entered home team; a floating action
+  follows selections while scrolling. Saving opens that tournament/team. Library filters
+  and per-team Games/W/D/L/GF/GA/GD/score-coverage panels support several entered teams.
+  Reassign by saving again; remove selected memberships without deleting matches.
+  Namespaced preference records survive restarts/backups; no schema migration. Whole
+  tournament stats ignore card search/age/season, exclude missing scores and read only
+  member games (imported tags via bounded local metadata reads). Backend **784** on each
+  SQLite/PostgreSQL; frontend **741**, lint/format/types/build/schema checks pass.
+  Synthetic 1440/375px selection/dialog/save/stats reviewed against reference 01 and
+  supplied card image; document width equals viewport. Local backend/frontend rebuilt,
+  health, empty tournament GET, nginx and served `index-CK7ERQhM.js` feature verified.
+  No real source account accessed or existing footage changed. No hosted rollout or
+  helper restart; no CI workflow exists. Owner can start grouping their real games.
+
 - **Shared-login investigation, branch `codex/shared-login-investigation` (docs only).**
   Hosted credentials already use per-library AES-GCM sealed files on persistent capture
   volumes; all sessions for the same gateway user route to the same library. Read-only

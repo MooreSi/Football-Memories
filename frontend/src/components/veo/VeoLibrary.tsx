@@ -9,10 +9,13 @@ import { ScoreBadge } from "../hudl/HudlLibrary";
 import { fixtureDate, fixtureParts, ordinalDate } from "../../lib/hudlFixture";
 import { useVeoCardClubOf } from "../../lib/useVeoClub";
 
+import { TournamentSelect, useTournamentSelection } from "../library/Tournaments";
+
 export type VeoFilters = { age: string; season: string; search: string };
 
 /** Spec 260: the helper's cached Veo matches in All matches, with the shared filters. */
 export function VeoLibrary({ filters }: { filters: VeoFilters }) {
+  const tournament = useTournamentSelection();
   const shown = connectionShown("veo");
   const library = useVeoLibrary();
   const veoClubOf = useVeoCardClubOf();
@@ -28,10 +31,10 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
     if (status.data && !status.data.busy) void qc.invalidateQueries({ queryKey: ["veo-library"] });
   }, [status.data?.busy, qc]);
   const [count, setCount] = useState(12);
-  useEffect(() => setCount(12), [filters.age, filters.season, filters.search]);
+  useEffect(() => setCount(12), [filters.age, filters.season, filters.search, tournament?.tournamentId, tournament?.team]);
   if (!shown) return null;
   const all = library.data ?? [];
-  const matches = all.filter(m => (!filters.age || veoAgeGroups(m).includes(filters.age))
+  const matches = all.filter(m => (tournament?.includes(`veo:${m.id}`) ?? true) && (!filters.age || veoAgeGroups(m).includes(filters.age))
     && (!filters.season || (m.season_label || "Unclassified") === filters.season)
     && (!filters.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
   return <section aria-label="Veo match library" className="space-y-4 border-t border-line pt-5">
@@ -71,6 +74,7 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
             <p className="text-xs text-fg-subtle">{m.season_label || "Unclassified season"}</p>
             <p className="text-xs text-fg-muted">{date ? ordinalDate(date) : "Undated"} · {highlights} {highlights === 1 ? "highlight" : "highlights"}</p></div>
         </Link>
+        <TournamentSelect matchKey={`veo:${m.id}`} title={m.title} />
       </article>;
     })}</div>
     {count < matches.length && <div className="flex justify-center"><Button onClick={() => setCount(n => n + 12)}>Show more Veo matches ({matches.length - count})</Button></div>}

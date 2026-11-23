@@ -11,6 +11,42 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Tournament groups (spec 490, 2026-11-23)
+
+**Done**, branch `codex/tournament-library`, deployed locally. Bottom-right checkbox
+selection covers imported, Hudl and Veo cards; floating batch action, named tournament
+and entered-team dialog, reusable suggestions, automatic post-save filtering,
+tournament/team filters and per-team results/goals/score coverage. Reassignment and
+membership removal preserve all games. Database preferences include groups in normal
+backups without schema changes. Source-qualified IDs avoid collisions; tournament and
+team names reuse existing spelling case-insensitively. One entered team per game per
+tournament; a game can belong to several tournaments. Tournament totals are independent
+of card search/age/season; missing/unavailable scores are excluded from W/D/L and goals.
+Only member games are scored; imported member metadata reads use batches of four.
+
+Verification:
+- API tests first returned 404; implemented persistence, batch validation, reassignment,
+  independent groups and removal: **4 passed**. No existing tests modified.
+- Pure stats tests first failed on empty aggregation; component and integrated Library
+  tests first failed on missing selection/filter/action behavior. **8 focused frontend
+  tests passed**, including save failure retention and removal.
+- `cd backend && uv run pytest`: **784 passed** (61.53s).
+- Same command with dedicated `TEST_DATABASE_URL=postgresql+psycopg://memories:memories@127.0.0.1:55432/memories_test`:
+  **784 passed** (84.03s). Full suites ran sequentially; network/fixture safeguards included.
+- `uv run ruff check app tests`, `uv run ruff format --check app tests`, `uv run mypy app`:
+  all clean. Dev PostgreSQL `alembic check`: no upgrade operations.
+- `cd frontend && npm test`: **741 passed across 144 files**; `npm run typecheck`
+  and `npm run build` pass. Existing canvas/media test warnings and bundle-size warning remain.
+- Isolated synthetic HTTP server served the production build with fake API/helper data.
+  Browser reviewed reference 01 and supplied card image, checkbox placement, dialog,
+  batch save, automatic filter and separate team stats. 1440px and 375px document widths
+  exactly match their viewports. No real helper or account contacted by browser review.
+- `docker compose up -d --build backend frontend`: only local backend/frontend recreated;
+  database retained, zero queued/rendering reels before rollout. Health OK, real local
+  `/api/tournaments` returned empty list (no synthetic groups written), nginx config valid;
+  served `index-CK7ERQhM.js` contains the new batch action.
+- No hosted rollout, real-source check, footage operation or helper restart. No CI workflow.
+
 ## Shared hosted login investigation (2026-11-23)
 
 Follow-up session/audit investigation: excluded the IP hash used by both owner working tests

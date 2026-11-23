@@ -32,6 +32,10 @@ import { veoAsHudl } from "../lib/veoAsHudl";
 import { teamSplit } from "../lib/veoTeamSplit";
 import { useVeoCardClubOf } from "../lib/useVeoClub";
 
+import { TournamentProvider, TournamentTools, useTournamentSelection } from "../components/library/Tournaments";
+import { matchScore, useScoreCorrections } from "../lib/matchScore";
+import type { MatchSummary } from "../api/types";
+
 import { useArchiveFilters } from "../lib/archiveFilters";
 
 const PAGE_SIZE = 24;
@@ -52,6 +56,12 @@ function hours(seconds: number): string {
 
 /** Layout follows reference 1: overview tiles left, featured hero + library centre, latest match right. */
 export function LibraryPage() {
+  return <TournamentProvider><LibraryContent /></TournamentProvider>;
+}
+
+function LibraryContent() {
+  const tournament = useTournamentSelection()!;
+  const corrections = useScoreCorrections();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
   const {age:ageGroup,setAge:setAgeGroup,season:seasonLabel,setSeason:setSeasonLabel} = useArchiveFilters();
@@ -85,15 +95,33 @@ export function LibraryPage() {
     getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
   });
 
+  // Tournament groups may contain imported matches beyond the first library page.
+  const tournamentMatches = useQuery({
+    queryKey: ["tournament-imports", q, seasonId, ageGroup],
+    enabled: Boolean(tournament.tournamentId),
+    queryFn: async () => {
+      const all: MatchSummary[] = [];
+      let page = 1;
+      while (true) {
+        const result = await api.matches({q, seasonId, ageGroup, page, pageSize: 100});
+        all.push(...result.items);
+        if (!result.items.length || page * result.page_size >= result.total) break;
+        page++;
+      }
+      return all;
+    },
+  });
   const items = (matches.data?.pages.flatMap((p) => p.items) ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel);
+  const tournamentItems = (tournamentMatches.data ?? items).filter(m => (!seasonLabel || m.season_label === seasonLabel) && tournament.includes(`local:${m.id}`));
+  const displayedItems = tournament.tournamentId ? tournamentItems : items;
   const ageGroups = [...new Set([...(remote.data ?? []).flatMap(hudlAgeGroups), ...items.map(m => m.age_group), ...(latest.data?.items ?? []).map(m => m.age_group)].filter((a): a is string => Boolean(a)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   const seasonLabels = [...new Set([...(seasons.data ?? []).map(s => s.name), ...(remote.data ?? []).map(m => m.season_label || "Unclassified")])].sort().reverse();
   useEffect(() => { if (remote.isSuccess && !remote.isFetching && ageGroup && ageGroups.length && !ageGroups.includes(ageGroup)) {setAgeGroup("");localStorage.removeItem("fm.hudl.age");} }, [remote.data, latest.data, ageGroup]);
   const total = seasonLabel && seasonId === undefined ? 0 : matches.data?.pages[0]?.total ?? 0;
-  const remoteShown = (remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && (!q || m.title.toLowerCase().includes(q.toLowerCase())));
+  const remoteShown = (remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || (m.season_label || "Unclassified") === seasonLabel) && tournament.includes(`${m.source === "veo" ? "veo" : "hudl"}:${m.id}`) && (!q || m.title.toLowerCase().includes(q.toLowerCase())));
   const remoteCount = remoteShown.length;
   const veoCount = remoteShown.filter(m => m.source === "veo").length;
-  const filtering = Boolean(q || ageGroup || seasonLabel);
+  const filtering = Boolean(q || ageGroup || seasonLabel || tournament.tournamentId);
   const s = stats.data;
   const featured = latest.data?.items ?? [];
   const heroMatches = latestFirst((remote.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)));
@@ -195,23 +223,29 @@ export function LibraryPage() {
             <label><span className="sr-only">Age group</span><select className="field w-auto rounded-full" aria-label="Age group" value={ageGroup} onChange={e=>setAgeGroup(e.target.value)}><option value="">All age groups</option>{ageGroups.map(age=><option key={age}>{age}</option>)}</select></label>
             {!matches.isPending && (
               <span className="text-xs text-fg-muted">
-                {total} offline{showHudl && ` · ${remoteCount - veoCount} Hudl`}{showVeo && ` · ${veoCount} Veo`}
+                {tournament.tournamentId ? displayedItems.length : total} offline{showHudl && ` · ${remoteCount - veoCount} Hudl`}{showVeo && ` · ${veoCount} Veo`}
               </span>
             )}
           </div>
 
+          <TournamentTools games={[
+            ...(hudlLibrary.data ?? []).filter(m => tournament.memberships.has(`hudl:${m.id}`)).map(m => ({key: `hudl:${m.id}`, score: matchScore(m, hudlClub, corrections.data)})),
+            ...(veoLibrary.data ?? []).filter(m => tournament.memberships.has(`veo:${m.id}`)).map(m => ({key: `veo:${m.id}`, score: matchScore(veoAsHudl(m), veoClubOf(m), corrections.data)})),
+          ]} loading={hudlLibrary.isFetching || veoLibrary.isFetching || corrections.isFetching}
+            scoreError={(showHudl && hudlLibrary.isError) || (showVeo && veoLibrary.isError) || corrections.isError} />
+
           {matches.isPending ? (
             <Spinner label="Loading matches" />
-          ) : matches.isError ? (
-            <p className="text-sm text-danger">Could not load the library: {(matches.error as Error).message}</p>
-          ) : items.length === 0 ? remoteCount > 0 ? null : (
+          ) : matches.isError || (tournament.tournamentId && tournamentMatches.isError) ? (
+            <p className="text-sm text-danger">Could not load the library: {(matches.error ?? tournamentMatches.error)?.message}</p>
+          ) : displayedItems.length === 0 ? remoteCount > 0 ? null : (
             <p className="py-10 text-center text-sm text-fg-muted">{remote.data?.length ? "No offline matches match these filters." : filtering ? "No matches found for these filters." : "No matches yet."}</p>
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
-                {items.map((m) => <MatchCard key={m.id} match={m} />)}
+                {displayedItems.map((m) => <MatchCard key={m.id} match={m} />)}
               </div>
-              {matches.hasNextPage && (
+              {!tournament.tournamentId && matches.hasNextPage && (
                 <div className="mt-6 flex justify-center">
                   <Button onClick={() => void matches.fetchNextPage()} disabled={matches.isFetchingNextPage}>
                     {matches.isFetchingNextPage ? "Loading" : "Load more"}

@@ -291,3 +291,10 @@ export interface ReelItemInput {
 }
 
 export type CardStyleId = "classic" | "gold" | "silver" | "bronze" | "emerald" | "midnight" | "sunset";
+
+/** Local library metadata; source IDs are qualified with hudl:, veo: or local:. */
+export interface Tournament {
+  id: string;
+  name: string;
+  entries: Record<string, string>;
+}
