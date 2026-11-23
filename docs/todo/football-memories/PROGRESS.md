@@ -32,9 +32,16 @@ Synthetic real-API browser checks pass in Chromium and native Safari; desktop sh
 cards, phone375 one, no horizontal overflow, 16px checkboxes. Cached refresh comparison:
 card top 959.234375px and library height1117.140625px identical before/after; no transient
 loading status. Illustrative fixtures only; no source login/refresh/index/stream or footage
-operation. Deployment pending for this refinement; retain admin auto-update off (original
-pre-preview preference was true). Main/public updater/default tags/other users/local app
-must remain unchanged. No CI workflow.
+operation. Code commit `eb5df8a` pushed on the preview branch and installed only on
+admin as `hosted-eb5df8a97bea3034b6acdc371508fc4028fe259d`. Sources idle and zero active
+renders before the gateway/provisioner move. Admin auto-update remains off (original
+pre-preview preference was true). Health/nginx and served `index-Cs2VJgOn.js` /
+`index-NRlKFpdV.css` confirm restored cards and removed row/shirt CSS. Runtime snapshots
+prove only admin web/backend/capture changed; every database, other user's containers,
+local running app, shared crests, default :hosted tags and updater release metadata/latest
+are unchanged. Only the new built version was registered under the updater lock. Main
+remains `2669f8a`. No general rollout. Synthetic tabs/server closed; viewport reset. No CI
+workflow. Final checkpoint is deployment/docs only; no suite rerun after verified code.
 
 ## Admin-only Grouped Library preview (spec 520, 2026-11-23)
 

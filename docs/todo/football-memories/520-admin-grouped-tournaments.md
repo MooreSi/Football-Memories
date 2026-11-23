@@ -28,7 +28,7 @@ Snapshot runtime and updater/default tags before/after; confirm no other account
 preview images. No source account refresh/login/stream needed for verification.
 
 ## Installed preview
-Code `e426347`; hosted admin only. Admin auto-update paused (previously true).
+Code `eb5df8a` (refines initial `e426347`); hosted admin only. Admin auto-update paused (previously true).
 Main/default tags/latest/other accounts/local app unchanged by verified runtime snapshots.
 Health/nginx/served preview bundle verified. See HANDOFF/PROGRESS for test results.
 Restore automatic updates after review; do not apply the stable update during preview.
@@ -37,5 +37,4 @@ Restore automatic updates after review; do not apply the stable update during pr
 Restore the original large footage cards and score pills in every match view, two columns
 on desktop and one on phone. Shared Hudl/Veo renderers and existing imported MatchCard
 keep one presentation. Use source home-club crests on squads. Show initial loading only,
-keep cached cards during refresh, and reserve score-loading space. Built and verified;
-admin-only revision deployment pending. See HANDOFF for exact validation results.
+keep cached cards during refresh, and reserve score-loading space. Built, verified and deployed only to admin as `eb5df8a`. See HANDOFF for exact validation results.
