@@ -35,9 +35,22 @@ unknown/zero and unavailable/deleted members, direct squad links, error state, l
 print content and scroll position. New cases observed red before implementation; existing
 tests untouched. SQLite825 passed69.11s; PostgreSQL825 passed127.74s; ruff lint/format,
 mypy, Alembic no drift, frontend typecheck/build pass. Frontend778 passed in156 files
-(36.73s). Existing canvas/media/bundle warnings remain. Live rollout pending at this
-green checkpoint; no CI workflow exists. One initial frontend full run was stopped on detecting
+(36.73s). Existing canvas/media/bundle warnings remain. No CI workflow exists. One initial frontend full run was stopped on detecting
 another checkout's full suite; final frontend run starts only after those suites finish.
+
+Released to main as `dfd84ec18720c5b445ffe5171a10ebab67b025f9`. Normal host updater
+built/published all versioned images, default tags and shared crests without error. All
+four hosted libraries moved through gateway/provisioner after per-library cached source
+idle and zero-render checks; every web/backend/capture tag matches this release. Local
+frontend built from this isolated tested checkout and recreated after the same checks;
+local backend/helper unchanged because this feature changes only frontend code.
+All health/nginx checks and direct SPA report routes pass. Every hosted library serves
+`index-Wdtd7YVI.js` with report route/content and print CSS; local serves
+`index-x-2xqVg1.js`. Runtime snapshots prove exactly12 hosted app containers, local frontend
+and shared crests changed; all32 container names, every database and all other containers
+preserved. All four automatic-update preferences retained (true). Synthetic tabs/server
+closed and viewport reset. Managed checkout is `~/.codex/worktrees/tournament-report/Football Memories`.
+This deployment record is docs-only; no repeat suites/app recreation for this checkpoint.
 
 ## General tournament release (spec 530, 2026-11-23)
 

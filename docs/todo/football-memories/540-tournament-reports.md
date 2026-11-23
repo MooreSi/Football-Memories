@@ -1,6 +1,6 @@
 # 540: Tournament reports
 
-**Status:** Building
+**Status:** Shipped
 **Sensitive:** no
 
 ## What is missing
@@ -45,3 +45,8 @@ No existing tests changed. Chromium desktop1440/phone375 no horizontal overflow;
 actual PNG saved at1080x2248, embedded crest verified. Native Safari saved PDF checked
 by rasterizing all pages; initial SVG page split and blank-page layout fixed. Final
 sample is one clean text page. Fixtures are synthetic; no real source operation.
+
+Released main `dfd84ec`: normal updater, all four hosted libraries and local frontend.
+Health/nginx/routes/served report assets verified, exactly14 intended containers changed;
+all database/local backend/helper/other container IDs and update preferences preserved.
+Deployment details in HANDOFF/PROGRESS; final record is docs-only.
