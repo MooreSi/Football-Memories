@@ -11,6 +11,24 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Hosted tournament release repair (2026-11-23)
+
+Owner reported that refreshing Hudl/Library did not classify 22 November matches.
+Confirmed hosted website was still on `552b65e`; tournament commits were only deployed
+locally/on the feature branch. Fast-forwarded/pushed main to tested `709e07d`; host updater
+built it, and gateway `_move` deployed the admin library through the existing provisioner.
+Both capture sources idle and zero active renders before rollout. Its backend/web/capture
+now run `hosted-709e07d`; database/local stack unchanged. Other libraries retain their own
+update preferences; no manual move performed for them. Shared crest update follows the
+normal host updater. Cached hosted catalogue has 296 matches, including twelve U11 games
+on 22 November (four games per opponent). Pure detector over cached titles/ages identifies
+all twelve in one 2026-11-22 U11 group. No source login/refresh or footage operations.
+Health, nginx, detect route, tournament GET and served `index-DjkSpuNE.js` feature checked.
+Tournament GET still empty before browser reload; owner must reload the webpage to load
+the new bundle and run reconciliation. No code change/tests rerun: previously recorded
+806 SQLite/806 PostgreSQL/745 frontend plus all gates cover the exact deployed commit.
+Deployment/docs-only follow-up, branch `codex/tournament-library`; no CI workflow exists.
+
 ## Current change (2026-11-23)
 
 - **Automatic tournament/squad tagging (spec 500), branch `codex/tournament-library`,
