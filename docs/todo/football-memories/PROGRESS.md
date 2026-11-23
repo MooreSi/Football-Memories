@@ -11,6 +11,28 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Shared hosted login investigation (2026-11-23)
+
+Branch `codex/shared-login-investigation`, docs only. Investigated reported empty library
+on another device using the same Football Memories login. Existing hosted design already
+stores each service in `/data/.secrets/<service>.sealed` on the library's persistent capture
+volume, encrypted with its own key. Gateway routing and service permissions use user ID,
+not browser identity. The reported account has a saved Veo file (0600), 288 cached matches,
+56 available videos; no saved Hudl file and zero cached Hudl matches. Both permissions are
+recorded server-side. GET status through the account's web proxy agrees with direct helper
+GET status. No secret contents read, source requests, credential changes or deployment.
+
+Second-device root cause remains unconfirmed pending URL/account identity/prompt location.
+Found misleading hosted Keychain wording and always-present credential form; Library treats
+pending/failed permission lookup as an unconnected account. Browser visibility and age/season
+filters remain local. These are diagnostic leads, not a reproduced second-device failure.
+
+Verification: backend `uv run pytest tests/connectors/test_sealed_file_store.py
+tests/connectors/test_hosted_capture.py -q`: **26 passed**. Frontend `npm test -- --run
+src/api/hosted.test.ts src/api/hostedFlag.test.ts src/pages/SettingsPage.hosted.test.tsx`:
+**6 passed across 2 files** (`hostedFlag.test.ts` does not exist; no test collected there).
+Full SQLite/PostgreSQL/frontend suites and builds not rerun: documentation-only checkpoint.
+
 ## Separate original Hub / private preview tabs (spec 480, 2026-11-23)
 
 Branch `codex/separate-player-lab-tab`, merged/pushed main and deployed to admin. My Player opens

@@ -13,6 +13,19 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Current change (2026-11-23)
 
+- **Shared-login investigation, branch `codex/shared-login-investigation` (docs only).**
+  Hosted credentials already use per-library AES-GCM sealed files on persistent capture
+  volumes; all sessions for the same gateway user route to the same library. Read-only
+  inspection of the reported account found Veo configured, 288 cached matches (56 with
+  available video), and no saved Hudl credentials or Hudl matches. Both gateway permissions
+  exist. Container and web-to-helper status agree. No credential values read, source login,
+  refresh, deployment or data change. Exact second-device cause remains unconfirmed: awaiting
+  its URL, displayed account identity and location of the prompt. Browser-local visibility/
+  filters can hide matches; permission loading/errors currently show the generic connection
+  prompt; Settings always renders credential fields and incorrectly describes hosted storage
+  as Mac Keychain. See [hosting notes](system/domains/hosting/README.md). Focused offline
+  checks: 26 backend tests and 6 frontend tests pass; full suites not rerun for docs only.
+
 - **Restore separate Player Hub / private Lab tabs (spec 480), branch
   `codex/separate-player-lab-tab`, merged/pushed main and deployed to admin.** My Player retains its
   original chooser/profile/card/memories flow. Admin Player Lab is now its own main
