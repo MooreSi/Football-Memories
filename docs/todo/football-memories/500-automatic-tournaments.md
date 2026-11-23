@@ -10,7 +10,9 @@ classification with persistent corrections.
 ## Changes
 On Library load and cached metadata changes, send minimal cached match metadata to a
 local detector; include all imported match metadata directly from the database. Group
-same-date/club/age games using named tournaments, numbered games or multiple fixtures.
+same-date/club/age games using named tournaments, or at least three distinct games
+against multiple opponents (D-049). Ordinary same-opponent weekend pairs and format
+variants stay separate.
 Do not count duplicate source views or first/second halves as separate tournament games.
 Use explicit entered-team title labels first; otherwise cluster sufficiently populated
 rosters with conservative shared-player thresholds and complete-link compatibility.
@@ -54,3 +56,10 @@ No existing test changed, real source account accessed or footage operation perf
 A read-only date/title audit found 289 local cached matches, latest date 15 November
 2026; the screenshot's 22 November matches are absent from that local cache. No cache
 or source data changed by that audit; heuristic counts do not establish accuracy.
+
+## Owner clarification (2026-11-23)
+D-049 tightens unnamed detection, withdraws fully observed obsolete automatic guesses,
+preserves owner confirmations and partial snapshots, scopes dropdowns to selected age/
+season and makes Rename available on cards. Full-width input CSS excludes checkboxes;
+footer controls wrap on small screens. Owner explicitly approved updating superseded
+two-game test fixtures/expectations. See latest PROGRESS/HANDOFF for verification/rollout.

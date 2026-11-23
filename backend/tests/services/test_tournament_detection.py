@@ -14,7 +14,7 @@ def game(
     date: str = "261122",
     club: str = "Riverside",
     age: str = "U11",
-    event: str = "",
+    event: str = "Winter Cup",
 ) -> DetectionGame:
     return DetectionGame(
         key=key,
@@ -25,7 +25,7 @@ def game(
     )
 
 
-def test_numbered_games_group_by_date_and_split_repeated_rosters() -> None:
+def test_named_numbered_games_group_by_date_and_split_repeated_rosters() -> None:
     groups = detect(
         [
             game("hudl:a", 1, BLUE),
@@ -141,6 +141,9 @@ def test_multiple_fixtures_on_same_day_are_reviewable_and_unknown_date_is_not_gu
                 key="hudl:b", title="261122 U11 v Town", club="Riverside", age_group="U11"
             ),
             DetectionGame(
+                key="hudl:e", title="261122 U11 v City", club="Riverside", age_group="U11"
+            ),
+            DetectionGame(
                 key="hudl:c", title="Winter Cup v Town", club="Riverside", age_group="U11"
             ),
             DetectionGame(
@@ -152,7 +155,7 @@ def test_multiple_fixtures_on_same_day_are_reviewable_and_unknown_date_is_not_gu
         ]
     )
     assert len(groups) == 1
-    assert set(groups[0].entries) == {"hudl:a", "hudl:b"}
+    assert set(groups[0].entries) == {"hudl:a", "hudl:b", "hudl:e"}
     assert groups[0].automatic["hudl:a"].confidence == "review"
 
 

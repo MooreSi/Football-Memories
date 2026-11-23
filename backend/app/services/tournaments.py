@@ -150,6 +150,21 @@ def automatic(db: Session, snapshot: list[TournamentDetectionMatch]) -> list[Tou
     games += _imported(db)
     inferred = detect(games, list(groups.values()))
     obsolete: set[str] = set()
+    predicted_ids = {group.id for group in inferred}
+    available = {game.key for game in games}
+    for group in groups.values():
+        # Only reconsider a complete known group. Partial snapshots cannot disprove it.
+        # A name correction is an explicit owner decision that confirms the tournament.
+        if (
+            group.id not in predicted_ids
+            and not group.name_corrected
+            and group.automatic
+            and set(group.entries) <= available
+        ):
+            for key in list(group.automatic):
+                group.entries.pop(key, None)
+                group.automatic.pop(key)
+            obsolete.add(group.id)
     for prediction in inferred:
         eligible = {key for key in prediction.entries if key not in protected}
         if not eligible:

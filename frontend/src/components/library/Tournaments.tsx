@@ -16,6 +16,7 @@ type State = {
   memberships: Set<string>;
   editing: string | null; edit: (key: string | null) => void;
   select: (keys: string[]) => void;
+  renaming: string | null; rename: (id: string | null) => void;
 };
 const Context = createContext<State | null>(null);
 export function useTournamentSelection() { return useContext(Context); }
@@ -24,6 +25,7 @@ export function TournamentProvider({children}: {children: ReactNode}) {
   const [selected, setSelected] = useState(new Set<string>());
   const [tournamentId, setId] = useState("");
   const [team, setTeam] = useState("");
+  const [renaming, rename] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const tournaments = useTournaments();
   const active = tournaments.data?.find(t => t.id === tournamentId);
@@ -31,7 +33,7 @@ export function TournamentProvider({children}: {children: ReactNode}) {
     const next = new Set(previous); if (next.has(key)) next.delete(key); else next.add(key); return next;
   }), clear: () => setSelected(new Set()), tournamentId, setTournamentId: id => {setId(id); setTeam("");}, team, setTeam,
   editing, edit: key => {setEditing(key); if (key) setSelected(new Set([key]));},
-  select: keys => setSelected(new Set(keys)),
+  select: keys => setSelected(new Set(keys)), renaming, rename,
   memberships: new Set(Object.keys(active?.entries ?? {})),
   includes: key => !tournamentId || Boolean(active?.entries[key] && (!team || active.entries[key] === team)),
   }}>{children}</Context.Provider>;
@@ -43,28 +45,36 @@ export function TournamentSelect({matchKey, title}: {matchKey: string; title: st
   const tournaments = useTournaments();
   if (!state) return null;
   const memberships = tournaments.data?.filter(t => t.entries[matchKey]) ?? [];
-  return <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3 text-xs">
-    {memberships.map(t => <div key={t.id} className="mr-auto w-full min-w-0 space-y-1 break-words text-fg-muted">
-      <span>{t.name} · {t.entries[matchKey]}</span>
+  return <div className="tournament-card-footer border-t border-line px-4 py-3 text-xs">
+    {memberships.map(t => <div key={t.id} className="tournament-membership min-w-0 space-y-1 text-fg-muted">
+      <p className="tournament-name font-medium">{t.name}</p><p>{t.entries[matchKey]}</p>
       {t.automatic?.[matchKey] ? <details className="text-fg-subtle">
         <summary aria-label={`${t.automatic[matchKey].confidence === "review" ? "Auto, needs review" : "Auto"}. Why grouped?`} className="cursor-pointer"><span className="mr-2 text-accent">{t.automatic[matchKey].confidence === "review" ? "Auto · Review" : "Auto"}</span>Why grouped?</summary>
         <p className="mt-1">{t.automatic[matchKey].reason}</p>
       </details> : <span className="ml-2 text-fg-subtle">Manual</span>}
+      <Button className="text-xs" variant="ghost" aria-label={`Rename tournament ${t.name}`} onClick={() => state.rename(t.id)}>Rename</Button>
     </div>)}
+    <div className="tournament-card-actions">
     {memberships.length > 0 && <Button className="text-xs" variant="ghost" aria-label={`Correct tournament for ${title}`} onClick={() => state.edit(matchKey)}>Correct</Button>}
-    <label className="ml-auto flex shrink-0 cursor-pointer whitespace-nowrap items-center gap-2 rounded-lg border border-line px-3 py-2 text-fg-muted hover:text-fg">
+    <label className="tournament-select cursor-pointer rounded-lg border border-line px-3 py-2 text-fg-muted hover:text-fg">
       <input type="checkbox" className="size-4 accent-accent" aria-label={`Select ${title} for tournament`}
         checked={state.selected.has(matchKey)} onChange={() => state.toggle(matchKey)} /> Add to tournament
     </label>
+    </div>
   </div>;
 }
 
-export function TournamentTools({games, loading = false, scoreError = false}: {games: TournamentGame[]; loading?: boolean; scoreError?: boolean}) {
+export function TournamentTools({games, eligibleKeys, scopeLoading = false, loading = false, scoreError = false}: {games: TournamentGame[]; eligibleKeys?: string[]; scopeLoading?: boolean; loading?: boolean; scoreError?: boolean}) {
   const state = useTournamentSelection()!;
   const tournaments = useTournaments();
   const remove = useRemoveTournamentGame();
   const [open, setOpen] = useState(false);
-  const [renaming, setRenaming] = useState(false);
+  const renaming = tournaments.data?.find(t => t.id === state.renaming);
+  const allowed = eligibleKeys ? new Set(eligibleKeys) : null;
+  const choices = tournaments.data?.filter(t => !allowed || Object.keys(t.entries).some(key => allowed.has(key))) ?? [];
+  useEffect(() => {
+    if (!scopeLoading && tournaments.isSuccess && state.tournamentId && !choices.some(t => t.id === state.tournamentId)) state.setTournamentId("");
+  }, [eligibleKeys, scopeLoading, tournaments.data, state.tournamentId]);
   const rename = useRenameTournament();
   const [notice, setNotice] = useState("");
   const active = tournaments.data?.find(t => t.id === state.tournamentId);
@@ -93,10 +103,10 @@ export function TournamentTools({games, loading = false, scoreError = false}: {g
   const scored = rows.reduce((n,r) => n+r.scored, 0);
   const unscored = total-scored;
   return <div className="mb-5 space-y-4 rounded-xl border border-line bg-ink-950/20 p-4">
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="tournament-toolbar">
       <h3 className="mr-auto flex items-center gap-2 text-sm font-semibold"><Trophy size={16} className="text-accent" />Tournaments</h3>
       <label className="min-w-0 max-w-full text-xs text-fg-muted">Tournament<select aria-label="Tournament" className="field mt-1 max-w-full" value={state.tournamentId} onChange={e => state.setTournamentId(e.target.value)}>
-        <option value="">All tournaments</option>{tournaments.data?.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+        <option value="">All tournaments</option>{choices.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
       </select></label>
       {active && <label className="min-w-0 max-w-full text-xs text-fg-muted">Entered team<select aria-label="Tournament team" className="field mt-1 max-w-full" value={state.team} onChange={e => state.setTeam(e.target.value)}>
         <option value="">All entered teams</option>{teams.map(team => <option key={team}>{team}</option>)}
@@ -106,10 +116,10 @@ export function TournamentTools({games, loading = false, scoreError = false}: {g
     </div>
     {tournaments.isPending && <p role="status" className="text-xs text-fg-muted">Loading tournaments…</p>}
     {tournaments.isError && <div role="alert" className="text-sm text-danger">Could not load tournaments. <Button onClick={() => void tournaments.refetch()}>Retry tournaments</Button></div>}
-    {!active && <p className="text-xs text-fg-subtle">Games are grouped automatically using dates, titles and player tags. Review automatic labels or tick games to set a tournament and entered home team yourself.</p>}
+    {!active && <p className="text-xs text-fg-subtle">Named tournaments and days with at least three games against multiple opponents are grouped automatically. Ordinary weekend pairs stay separate. Review automatic labels or tick games to set a tournament and entered home team yourself.</p>}
     {notice && <p role="status" className="text-sm text-accent">{notice}</p>}
     {active && <section aria-label="Tournament stats" className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2"><Button variant="ghost" onClick={() => setRenaming(true)}>Rename tournament</Button></div>
+      <div className="flex flex-wrap items-center gap-2"><Button variant="ghost" onClick={() => state.rename(active.id)}>Rename tournament</Button></div>
       <div><h4 className="break-words font-semibold">{active.name}{state.team ? ` · ${state.team}` : ""}</h4>
         <p className="mt-1 text-xs text-fg-muted">{scored} of {total} games have scores</p></div>
       {(loading || localScores.isFetching) && <p role="status" className="text-xs text-fg-muted">Loading tournament scores…</p>}
@@ -141,9 +151,9 @@ export function TournamentTools({games, loading = false, scoreError = false}: {g
     {dialogOpen && <TournamentDialog initialName={correctionGroup?.name ?? active?.name ?? ""} initialTeam={correctionGroup?.entries[state.editing!] ?? state.team} onClose={() => {setOpen(false); state.edit(null);}} onSaved={(name, team, count) => {
       state.clear(); setOpen(false); state.edit(null); setNotice(`${count} games added to ${name} · ${team}`);
     }} />}
-    {renaming && active && <Overlay label="Rename tournament" onClose={() => {if (!rename.isPending) setRenaming(false);}}>
+    {renaming && <Overlay label="Rename tournament" onClose={() => {if (!rename.isPending) state.rename(null);}}>
       <form className="space-y-4" onKeyDown={event => {
-        if (event.key === "Escape" && !rename.isPending) setRenaming(false);
+        if (event.key === "Escape" && !rename.isPending) state.rename(null);
         if (event.key === "Tab") {
           const fields = [...event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)')];
           const first = fields[0], last = fields[fields.length-1];
@@ -153,13 +163,13 @@ export function TournamentTools({games, loading = false, scoreError = false}: {g
       }} onSubmit={event => {
         event.preventDefault();
         const name = String(new FormData(event.currentTarget).get("name") ?? "").trim();
-        if (name) rename.mutate({id: active.id, name}, {onSuccess: () => setRenaming(false)});
+        if (name) rename.mutate({id: renaming.id, name}, {onSuccess: () => state.rename(null)});
       }}>
         <h2 className="font-semibold">Rename tournament</h2>
-        <label className="block text-sm">New tournament name<input autoFocus name="name" className="field mt-1" defaultValue={active.name} maxLength={160} required /></label>
+        <label className="block text-sm">New tournament name<input autoFocus name="name" className="field mt-1" defaultValue={renaming.name} maxLength={160} required /></label>
         <p className="text-xs text-fg-muted">The corrected name is kept when new games are grouped automatically.</p>
         {rename.isError && <p role="alert" className="text-sm text-danger">{rename.error.message}</p>}
-        <div className="flex flex-wrap justify-end gap-2"><Button type="button" disabled={rename.isPending} onClick={() => setRenaming(false)}>Cancel</Button><Button type="submit" disabled={rename.isPending}>Save tournament name</Button></div>
+        <div className="flex flex-wrap justify-end gap-2"><Button type="button" disabled={rename.isPending} onClick={() => state.rename(null)}>Cancel</Button><Button type="submit" disabled={rename.isPending}>Save tournament name</Button></div>
       </form>
     </Overlay>}
   </div>;

@@ -98,13 +98,13 @@ function LibraryContent() {
 
   // Tournament groups may contain imported matches beyond the first library page.
   const tournamentMatches = useQuery({
-    queryKey: ["tournament-imports", q, seasonId, ageGroup],
-    enabled: Boolean(tournament.tournamentId),
+    queryKey: ["tournament-imports", seasonId, ageGroup],
+    enabled: Boolean(tournament.tournamentId || seasonLabel || ageGroup),
     queryFn: async () => {
       const all: MatchSummary[] = [];
       let page = 1;
       while (true) {
-        const result = await api.matches({q, seasonId, ageGroup, page, pageSize: 100});
+        const result = await api.matches({seasonId, ageGroup, page, pageSize: 100});
         all.push(...result.items);
         if (!result.items.length || page * result.page_size >= result.total) break;
         page++;
@@ -113,7 +113,7 @@ function LibraryContent() {
     },
   });
   const items = (matches.data?.pages.flatMap((p) => p.items) ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel);
-  const tournamentItems = (tournamentMatches.data ?? items).filter(m => (!seasonLabel || m.season_label === seasonLabel) && tournament.includes(`local:${m.id}`));
+  const tournamentItems = (tournamentMatches.data ?? items).filter(m => (!q || `${m.team_name} ${m.opponent} ${m.competition ?? ""}`.toLowerCase().includes(q.toLowerCase())) && (!seasonLabel || m.season_label === seasonLabel) && tournament.includes(`local:${m.id}`));
   const displayedItems = tournament.tournamentId ? tournamentItems : items;
   const ageGroups = [...new Set([...(remote.data ?? []).flatMap(hudlAgeGroups), ...items.map(m => m.age_group), ...(latest.data?.items ?? []).map(m => m.age_group)].filter((a): a is string => Boolean(a)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   const seasonLabels = [...new Set([...(seasons.data ?? []).map(s => s.name), ...(remote.data ?? []).map(m => m.season_label || "Unclassified")])].sort().reverse();
@@ -231,7 +231,11 @@ function LibraryContent() {
 
           <AutomaticTournaments hudl={hudlLibrary.data} veo={veoLibrary.data} club={hudlClub} veoClubOf={veoClubOf}
             importedVersion={latest.data?.total ? latest.dataUpdatedAt : 0} />
-          <TournamentTools games={[
+          <TournamentTools eligibleKeys={ageGroup || seasonLabel ? [
+            ...(tournamentMatches.data ?? []).filter(m => !seasonLabel || m.season_label === seasonLabel).map(m => `local:${m.id}`),
+            ...(hudlLibrary.data ?? []).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)).map(m => `hudl:${m.id}`),
+            ...(veoLibrary.data ?? []).map(veoAsHudl).filter(m => (!ageGroup || hudlAgeGroups(m).includes(ageGroup)) && (!seasonLabel || m.season_label === seasonLabel)).map(m => `veo:${m.id}`),
+          ] : undefined} scopeLoading={tournamentMatches.isFetching || hudlLibrary.isFetching || veoLibrary.isFetching} games={[
             ...(hudlLibrary.data ?? []).filter(m => tournament.memberships.has(`hudl:${m.id}`)).map(m => ({key: `hudl:${m.id}`, score: matchScore(m, hudlClub, corrections.data)})),
             ...(veoLibrary.data ?? []).filter(m => tournament.memberships.has(`veo:${m.id}`)).map(m => ({key: `veo:${m.id}`, score: matchScore(veoAsHudl(m), veoClubOf(m), corrections.data)})),
           ]} loading={hudlLibrary.isFetching || veoLibrary.isFetching || corrections.isFetching}

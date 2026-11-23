@@ -12,14 +12,14 @@ CATALOG = {
     "matches": [
         {
             "key": "hudl:a",
-            "title": "261122 U11 v Rovers (Game 1)",
+            "title": "261122 U11 Winter Cup v Rovers (Game 1)",
             "club": "Riverside",
             "age_group": "U11",
             "players": PLAYERS,
         },
         {
             "key": "hudl:b",
-            "title": "261122 U11 v Rovers (Game 2)",
+            "title": "261122 U11 Winter Cup v Rovers (Game 2)",
             "club": "Riverside",
             "age_group": "U11",
             "players": PLAYERS,

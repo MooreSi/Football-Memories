@@ -106,7 +106,24 @@ def _fixture(game: DetectionGame) -> str:
         body,
         flags=re.I,
     )
+    body = re.sub(r"\b\d{1,2}\s*v\s*\d{1,2}\b", "", body, flags=re.I)
     return _normal(NUMBER.sub("", body))
+
+
+def _opponent(game: DetectionGame) -> str:
+    sides = SPLIT.split(_fixture(game), maxsplit=1)
+    if len(sides) != 2:
+        return ""
+    club = re.compile(rf"\b{re.escape(_club(game))}\b", re.I)
+    opponent = sides[0] if club.search(sides[1]) else sides[1]
+    opponent = re.sub(r"\b\d{1,2}\s*v\s*\d{1,2}\b", "", opponent, flags=re.I)
+    return _normal(opponent.strip(" -|"))
+
+
+def _game_identity(game: DetectionGame) -> tuple[str, str]:
+    # Same fixture across cameras/halves counts once; numbered rounds remain distinct.
+    number = NUMBER.search(game.title)
+    return _fixture(game), number[1] if number else ""
 
 
 def _roster(game: DetectionGame) -> frozenset[str]:
@@ -226,9 +243,9 @@ def detect(
                 event = next(iter(event_names))
             partitions[event].append(game)
         for event, members in sorted(partitions.items()):
-            numbers = {match[1] for g in members if (match := NUMBER.search(g.title))}
-            fixtures = {_fixture(g) for g in members}
-            if not event and len(numbers) < 2 and len(fixtures) < 2:
+            opponents = {_opponent(g) for g in members} - {""}
+            distinct_games = {_game_identity(g) for g in members}
+            if not event and (len(opponents) < 2 or len(distinct_games) < 3):
                 continue
             identity = hashlib.sha256("|".join((*scope, event)).encode()).hexdigest()[:32]
             old = prior.get(identity)
@@ -246,7 +263,7 @@ def detect(
                 "Named tournament and match date."
                 if event
                 else (
-                    "Same date, club and age; numbered games or multiple fixtures "
+                    "Same date, club and age; at least three games against multiple opponents "
                     "suggest a tournament."
                 )
             )

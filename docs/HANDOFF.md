@@ -11,6 +11,34 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Conservative tournaments and Library layout (2026-11-23)
+
+Branch `codex/tournament-library`, D-049. Owner clarified ordinary weekend pairs,
+including 5v5/7v7/9v9/11v11, are not tournaments and explicitly approved updating
+outdated two-game test expectations. Unnamed inference now requires >=3 distinct
+games against >=2 opponents; duplicates/halves/format variants do not inflate counts.
+Named tournaments still qualify. Complete snapshots withdraw obsolete automatic guesses;
+manual memberships, exclusions, partial snapshots and owner-renamed tournaments survive.
+Cards have stable 16px checkboxes and wrapping actions; the full-width text-input rule
+excludes checkboxes/radios. Rename is directly available on every grouped card. Dropdown
+choices follow actual membership matching age/season across imported/Hudl/Veo metadata;
+all imported pages are considered and search does not hide choices. Hidden active
+selections reset after scope loading finishes; stats still cover the whole tournament.
+
+Verification: new tests observed expected red before implementation; 8 weekend detector,
+4 stale-group API, 2 component-scope/rename and 1 Library-wiring tests added. Owner-approved
+existing persistence/squad fixtures now use named Cup evidence; existing multi-fixture
+expectation now uses three fixtures. `uv run pytest`: **818 passed** SQLite (60.21s),
+dedicated PostgreSQL **818 passed** (96.84s), sequential. `npm test`: **748 passed** in
+147 files (32.82s); typecheck/build pass, bundle `index-BCK9jNN5.js`. Ruff lint/format,
+mypy and dev PostgreSQL Alembic no-drift pass. Existing canvas/media and bundle warnings.
+Synthetic real-API browser review: Safari direct-card rename/save, Chromium desktop1440/
+phone375; no horizontal overflow, checkboxes16px, clean footer. Firefox UI launch timed
+out; not claimed tested. Cached hosted Nov22 title/age audit: U11 twelve games still form
+one group; U12 two-format pair remains ungrouped. No source login/refresh/stream, new
+dependency, schema migration or footage operation. Release/runtime rollout pending this
+checkpoint; earlier tested deployment remains running until applied. No CI workflow.
+
 ## Hosted tournament release repair (2026-11-23)
 
 Owner reported that refreshing Hudl/Library did not classify 22 November matches.

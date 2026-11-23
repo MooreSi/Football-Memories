@@ -485,7 +485,8 @@ cancel outstanding detection and invalidate it after saving; cancelled responses
 cannot overwrite manual UI state or leave an older tournament GET in flight.
 
 `services/tournament_detection.py` scopes by date, normalized club and age, separates
-named event segments, and treats numbered/multiple fixtures as reviewable match days.
+named event segments, and treats at least three distinct games against multiple
+opponents as reviewable match days (D-049).
 Duplicate views/half labels do not turn one fixture into a tournament. Explicit home
 squad labels (including away fixtures) win. Otherwise rosters need >=4 unique player
 tags, >=3 shared names and Jaccard overlap >=0.6 against every roster in a cluster.
@@ -510,3 +511,18 @@ whole-tournament rename and whole-squad correction. Single-game correction, seed
 roster label, rename and reload were reviewed against reference 01/the supplied card
 image in an isolated production-build browser with real temporary tournament APIs and
 synthetic helper metadata, at 1440 and 375px without horizontal overflow.
+
+### Owner clarification: weekend pairs, scoped choices and footers (2026-11-23)
+D-049 supersedes the original spec-500 threshold: unnamed events need >=3 distinct
+fixture/round identities against >=2 opponents. Normalize 5v5/7v7/9v9/11v11 variants;
+source duplicates and halves do not supply extra games. Named events still qualify.
+Complete snapshots withdraw obsolete automatic memberships only; partial evidence,
+manual memberships and owner-renamed tournaments survive. A rename confirms the event.
+
+`TournamentTools.eligibleKeys` scopes dropdown choices by actual member metadata for
+selected age/season. Query all imported pages independently of search; reset a selected
+tournament only after scope loading settles. Whole-tournament stats still cover all its
+games. Card-level Rename works without selecting a tournament filter. The unlayered
+`.match-collection input {width:100%}` rule previously overrode checkbox utilities and
+caused Safari overflow; it now excludes checkbox/radio inputs. Dedicated footer classes
+fix checkbox dimensions to 16px and wrap actions/text without clipping.

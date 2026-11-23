@@ -4,6 +4,23 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-049 (2026-11-23) Ordinary weekend pairs are not tournaments
+Owner clarifies that two games against the same opponent, including different 5v5,
+7v7, 9v9 and 11v11 formats, are ordinary fixtures. Unnamed detection now needs at
+least three distinct games and at least two opponents within date/club/age scope.
+Source duplicates, halves and format-only variants cannot inflate that count.
+Named Cup/Tournament/Festival evidence still qualifies directly. Player overlap
+identifies entered squads only; it does not establish that a tournament occurred.
+The owner explicitly authorized replacing prior tests' two-game discovery expectations;
+keep persistence/correction tests on named synthetic Cup fixtures instead.
+
+A complete snapshot may withdraw obsolete automatic guesses. Partial snapshots,
+manual memberships/exclusions and owner-renamed tournaments are preserved. Library
+tournament choices depend on actual member games matching selected age and season,
+including all imported pages; search does not hide tournament choices. Card-level
+Rename makes the existing stable-ID correction discoverable. Checkbox sizing is
+explicit and excluded from full-width text-input styling, with wrapping footers.
+
 ## D-048 (2026-11-23) Tournament membership is automatic with durable corrections
 Owner supersedes spec 490's manual-first workflow. Group cached matches automatically
 when the Library loads or date/title/player evidence changes. Use date, home club and

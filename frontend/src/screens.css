@@ -61,7 +61,16 @@
 .latest-match-panel h2 { font-weight: 500; }
 .match-collection { overflow: hidden; }
 .match-collection > div:first-child { align-items: center; }
-.match-collection input { width: 100%; }
+.match-collection input:not([type="checkbox"]):not([type="radio"]) { width: 100%; }
+.tournament-card-footer { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tournament-membership { overflow-wrap: anywhere; }
+.tournament-name { line-height: 1.45; }
+.tournament-card-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.tournament-select { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; max-width: 100%; font-size: 12px; line-height: 1.4; }
+.match-collection .tournament-select input[type="checkbox"] { appearance: auto; width: 16px; height: 16px; flex: 0 0 16px; margin: 0; padding: 0; }
+.tournament-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.tournament-toolbar > label { flex: 1 1 220px; min-width: 0; max-width: 100%; }
+.tournament-toolbar select { width: 100%; min-width: 0; }
 .dashboard-overview h2, .dashboard-latest h2 { font-size: 17px; font-weight: 500; }
 /* The analysis canvas follows the compact Smart Tagging reference. */
 .app-surface[data-screen="analysis"] { --color-ink-950: #0c111d; --color-ink-900: #101725; --color-ink-800: #192231; --color-ink-700: #263143; --color-line: #2c3748; --color-accent: #56b8e6; --color-accent-strong: #328bc7; background: #0c111d; }
