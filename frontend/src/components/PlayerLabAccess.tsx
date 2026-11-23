@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, type ReactNode } from "react";
 import { FlaskConical } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { HOSTED } from "../api/hostedFlag";
 import { Spinner } from "./ui/Spinner";
 const PlayerLabPage=lazy(()=>import("../pages/PlayerLabPage"));
@@ -20,5 +20,10 @@ export function PlayerLabAccess({children,quiet=false}:{children:(account:string
   if(!HOSTED||identity.isError||!identity.data)return quiet?null:<div className="panel p-6"><h1 className="text-xl font-semibold">Admin testing area</h1><p className="mt-2 text-fg-muted">Only the signed-in admin with completed verification can open the player lab.</p><Link className="mt-4 inline-block text-accent" to="/player">Back to My Player</Link></div>;
   return children(identity.data);
 }
-export function PlayerLabLink(){return <PlayerLabAccess quiet>{()=> <Link to="/player/lab" className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-2 text-xs text-accent" aria-label="Player lab · admin testing"><FlaskConical size={18} aria-hidden/><span aria-hidden>Player lab · Admin testing</span></Link>}</PlayerLabAccess>;}
+export function PlayerLabLink(){
+  return <PlayerLabAccess quiet>{()=> <NavLink to="/player-lab" end title="Player Lab · Private preview" aria-label="Player Lab · private preview"
+    className={({isActive})=>`screen-link player-lab-tab ${isActive?"is-active":""}`}>
+    {({isActive})=><><FlaskConical size={18} aria-hidden/><span className={isActive?"nav-label active-label":"nav-label"} aria-hidden>Player Lab</span></>}
+  </NavLink>}</PlayerLabAccess>;
+}
 export function PlayerLabRoute(){return <PlayerLabAccess>{account=><Suspense fallback={<Spinner label="Loading player lab"/>}><PlayerLabPage key={account} account={account}/></Suspense>}</PlayerLabAccess>;}

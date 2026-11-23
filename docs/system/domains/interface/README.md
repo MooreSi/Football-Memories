@@ -427,11 +427,13 @@ U10 v Stoke City reads 12-9.
 
 ## Admin player lab (spec 470, 2026-11-23)
 
-`/player/lab` is a hosted-admin presentation experiment. `PlayerLabAccess` checks
+`/player-lab` is a hosted-admin presentation experiment (spec 480 separates it from
+My Player; legacy `/player/lab` redirects). `PlayerLabAccess` checks
 `/_portal/api/me` for role admin AND stage full; local builds and failed/partial
-checks deny access. Only then is the feature chunk mounted. The main-area shortcut
+checks deny access. Only then is the feature chunk mounted. The separate main-navigation tab
 uses the same guard. It grants no new API/data privilege and never reads another
-user's library. Compact/wrapped navigation styles are scoped to this route.
+user's library. Admin headers wrap when the private tab is present; ordinary-user navigation is unchanged.
+My Player retains the original hub/chooser; the preview never shares its active state.
 
 `playerLab.ts` reuses goals/player attribution without changing existing stats.
 Trend windows require ten consecutive dated appearances with one direct source;

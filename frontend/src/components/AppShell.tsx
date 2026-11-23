@@ -2,7 +2,7 @@ import { PlayerLabLink } from "./PlayerLabAccess";
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
 import { useVeoAutoCheck } from "./veo/useVeoAutoCheck";
 import { Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { Fragment, type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Brand } from "./BrandMark";
 import { UpdateBadge } from "./settings/UpdateSettings";
@@ -35,8 +35,7 @@ function PillNav() {
   return (
     <nav aria-label="Main" className="screen-navigation flex items-center gap-1.5 sm:gap-2">
       {NAV.map(({ to, label, icon: Icon, end }) => (
-        <NavLink
-          key={to}
+        <Fragment key={to}><NavLink
           to={to}
           end={end}
           title={label}
@@ -48,7 +47,7 @@ function PillNav() {
               <span className={isActive ? "nav-label active-label" : "nav-label"}>{label}</span>
             </>
           )}
-        </NavLink>
+        </NavLink>{to === "/player" && <PlayerLabLink />}</Fragment>
       ))}
     </nav>
   );
@@ -86,7 +85,7 @@ export function AppShell() {
     : (pathname.startsWith("/matches/") || pathname.startsWith("/hudl/")) || pathname.startsWith("/clips") ? "analysis"
     : pathname === "/" ? "dashboard" : "settings";
   return (
-    <div className={`app-surface min-h-screen ${pathname === "/player/lab" ? "player-lab-surface" : ""}`} data-screen={screen}>
+    <div className={`app-surface min-h-screen ${pathname === "/player-lab" ? "player-lab-surface" : ""}`} data-screen={screen}>
       <header className="app-header sticky top-0 z-30">
         <div className="header-inner">
           <Brand />
@@ -101,7 +100,6 @@ export function AppShell() {
         </div>
       </header>
       <main className="app-main">
-        <PlayerLabLink />
         <Outlet />
       </main>
     </div>

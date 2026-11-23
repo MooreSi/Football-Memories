@@ -11,6 +11,28 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Separate original Hub / private preview tabs (spec 480, 2026-11-23)
+
+Branch `codex/separate-player-lab-tab`, verified; rollout pending. My Player opens
+its original saved-player hub (or existing chooser); admin Player Lab has its own
+main-nav entry and `/player-lab` route, with independent active state. Legacy lab
+bookmarks redirect. Removed the global preview shortcut. Existing Hub/PlayerPage
+implementations, stored selections and profile data were not changed.
+
+New navigation tests observed red, then green; five regressions include real
+PlayerPage → PlayerHubPage navigation/card/timeline, chooser round-trip, legacy
+bookmark and ordinary-user denial. No existing tests edited. Frontend **733**
+across 141 files; types/default+hosted builds pass. SQLite backend **780**, Ruff,
+format, mypy and schema drift pass; PostgreSQL backend **780** passes. Synthetic
+1440/375px browser checks confirm separate active tabs, original hub and no page
+width overflow. No source login/refresh/stream. Read-only profile metadata check:
+hosted admin initially had zero profiles; local primary existed. Owner approved copy
+in chat. Copied display name, shirt/position/club/card style and photo via existing
+profile APIs into the empty admin library, setting primary there. Verified all target
+fields/photo/selection; source local selection, profile fields and photo SHA-256 are
+unchanged. No derived match totals, match history or footage were copied. Hosted
+navigation rollout pending.
+
 ## Admin player lab (spec 470, 2026-11-23)
 
 **Built on `codex/admin-player-lab`, merged/pushed to `main`; admin hosted library deployed.**

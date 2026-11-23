@@ -207,11 +207,11 @@
 @media (max-width: 760px) { .update-label { display: none; } .update-badge { padding: 0 10px; } }
 @media (prefers-reduced-motion: reduce) { .update-badge { animation: none; } }
 
-/* Admin experiment (spec 470): keep the existing navigation usable at review sizes. */
-@media (max-width: 1250px) {
-  .player-lab-surface .header-inner { flex-wrap: wrap; gap: 10px; }
-  .player-lab-surface .nav-wrap { order: 2; width: 100%; min-width: 0; overflow-x: auto; margin: 0; }
+/* Private preview tab (spec 480): wrap admin navigation without changing family pages. */
+@media (max-width: 1550px) {
+  .header-inner:has(.player-lab-tab) { flex-wrap: wrap; gap: 10px; }
+  .header-inner:has(.player-lab-tab) .nav-wrap { order: 2; width: 100%; min-width: 0; overflow-x: auto; margin: 0; }
 }
 .player-lab-surface main select { min-width: 0; max-width: 100%; }
 .player-lab-surface main label { min-width: 0; }
-.player-lab-surface .header-inner { gap: 12px; }
+.header-inner:has(.player-lab-tab) { gap: 12px; }

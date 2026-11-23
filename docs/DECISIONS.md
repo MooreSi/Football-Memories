@@ -4,6 +4,17 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-046 (2026-11-23) Player Hub and private preview are separate main tabs
+Owner reports losing the previous Hub and explicitly requests reinstating it with
+the Lab as a separate tab. Keep original My Player chooser/profile/card/memories,
+move preview to `/player-lab`, redirect its old URL and independently highlight
+the admin-only Lab entry. Remove the global preview shortcut. Keep saved profiles,
+selections and notebook storage intact; copying between local/hosted libraries is
+a separate owner choice, not an automatic consequence of restoring navigation.
+Owner then explicitly approved copying the original local profile to the empty
+hosted admin library. Copy its editable identity/card style/photo, select it there,
+verify both sides and leave original data intact; do not copy derived totals or footage.
+
 ## D-045 (2026-11-23) Player performance experiment is hosted-admin only
 Owner requests all feasible Kickstats-inspired review tools for admin testing.
 Use a separate `/player/lab` workspace guarded by the gateway's full admin identity;
