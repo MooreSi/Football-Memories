@@ -16,7 +16,7 @@ type State = {
   memberships: Set<string>;
   editing: string | null; edit: (key: string | null) => void;
   select: (keys: string[]) => void;
-  compact: boolean; assigning: boolean; assign: (open: boolean) => void;
+  actionsEnabled: boolean; compact: boolean; assigning: boolean; assign: (open: boolean) => void;
   renaming: string | null; rename: (id: string | null) => void;
 };
 const Context = createContext<State | null>(null);
@@ -36,17 +36,23 @@ export function TournamentProvider({children, compact = false}: {children: React
   }), clear: () => setSelected(new Set()), tournamentId, setTournamentId: id => {setId(id); setTeam("");}, team, setTeam,
   editing, edit: key => {setEditing(key); if (key) setSelected(new Set([key]));},
   select: keys => setSelected(new Set(keys)), renaming, rename,
-  compact, assigning, assign,
+  actionsEnabled: true, compact, assigning, assign,
   memberships: new Set(Object.keys(active?.entries ?? {})),
   includes: key => !tournamentId || Boolean(active?.entries[key] && (!team || active.entries[key] === team)),
   }}>{children}</Context.Provider>;
+}
+
+/** View-local controls: browsing All matches never exposes tournament mutations. */
+export function TournamentActions({enabled,children}:{enabled:boolean;children:ReactNode}) {
+  const state=useTournamentSelection();
+  return state?<Context.Provider value={{...state,actionsEnabled:enabled}}>{children}</Context.Provider>:children;
 }
 
 /** Outside the card link so ticking a match never starts playback. */
 export function TournamentSelect({matchKey, title}: {matchKey: string; title: string}) {
   const state = useTournamentSelection();
   const tournaments = useTournaments();
-  if (!state) return null;
+  if (!state || !state.actionsEnabled) return null;
   const memberships = tournaments.data?.filter(t => t.entries[matchKey]) ?? [];
   if (state.compact) return <div className="grouped-match-actions">
     {memberships.length > 0 && <Button variant="ghost" className="text-xs" aria-label={`Correct tournament for ${title}`} onClick={() => state.edit(matchKey)}>Edit</Button>}
@@ -171,7 +177,7 @@ export function TournamentTools({games, eligibleKeys, scopeLoading = false, load
       <form className="space-y-4" onKeyDown={event => {
         if (event.key === "Escape" && !rename.isPending) state.rename(null);
         if (event.key === "Tab") {
-          const fields = [...event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)')];
+          const fields = [...event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), select:not(:disabled), button:not(:disabled)')];
           const first = fields[0], last = fields[fields.length-1];
           if (event.shiftKey && document.activeElement === first) {event.preventDefault(); last?.focus();}
           else if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first?.focus();}
@@ -198,19 +204,20 @@ function TournamentDialog({initialName, initialTeam, onClose, onSaved}: {
   const tournaments = useTournaments();
   const save = useSaveTournament();
   const [name, setName] = useState(initialName);
-  const [team, setTeam] = useState(initialTeam);
+  const enteredTeams = [...new Set(Object.values(tournaments.data?.find(t => t.name.toLowerCase() === name.trim().toLowerCase())?.entries ?? {}))].filter(t=>t!=="Team unassigned").sort();
+  const [team, setTeam] = useState(initialTeam==="Team unassigned"?"":initialTeam);
+  const [creating,setCreating]=useState(!initialTeam&&enteredTeams.length===0);
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     form.current?.querySelector<HTMLInputElement>("input")?.focus();
     return () => previous?.focus();
   }, []);
-  const enteredTeams = [...new Set(Object.values(tournaments.data?.find(t => t.name.toLowerCase() === name.trim().toLowerCase())?.entries ?? {}))];
   return <Overlay label="Add games to tournament" onClose={() => {if (!save.isPending) onClose();}}>
     <form ref={form} className="space-y-4" onKeyDown={event => {
       if (event.key === "Escape" && !save.isPending) onClose();
       if (event.key === "Tab") {
-        const elements = [...form.current!.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)')];
+        const elements = [...form.current!.querySelectorAll<HTMLElement>('input:not(:disabled), select:not(:disabled), button:not(:disabled)')];
         const first = elements[0], last = elements[elements.length-1];
         if (event.shiftKey && document.activeElement === first) {event.preventDefault(); last?.focus();}
         else if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first?.focus();}
@@ -227,11 +234,13 @@ function TournamentDialog({initialName, initialTeam, onClose, onSaved}: {
       <p className="text-sm text-fg-muted">{state.selected.size} selected {state.selected.size === 1 ? "game" : "games"}. Choose an existing name or enter a new tournament and team.</p>
       <label className="block text-sm">Tournament name<input className="field mt-1" list="tournament-names" required maxLength={160} value={name} onChange={e => setName(e.target.value)} placeholder="Winter Cup 2026" disabled={save.isPending} />
         <datalist id="tournament-names">{tournaments.data?.map(t => <option key={t.id} value={t.name} />)}</datalist></label>
-      <label className="block text-sm">Entered home team<input className="field mt-1" list="tournament-team-names" required maxLength={160} value={team} onChange={e => setTeam(e.target.value)} placeholder="Villa Blue" disabled={save.isPending} />
-        <datalist id="tournament-team-names">{enteredTeams.map(t => <option key={t} value={t} />)}</datalist></label>
+      <label className="block text-sm">Entered home team<select className="field mt-1" required value={creating?"__new__":enteredTeams.includes(team)?team:""} disabled={save.isPending} onChange={e=>{setCreating(e.target.value==="__new__");setTeam(e.target.value==="__new__"?"":e.target.value);}}>
+        <option value="" disabled>Choose a squad</option>{enteredTeams.map(t=><option key={t} value={t}>{t}</option>)}<option value="__new__">Create new squad…</option>
+      </select></label>
+      {creating&&<label className="block text-sm">New squad name<input className="field mt-1" required maxLength={160} value={team} onChange={e=>setTeam(e.target.value)} placeholder="Villa Blue" disabled={save.isPending}/></label>}
       <p className="text-xs text-fg-subtle">Each game belongs to one entered team within this tournament. Manual corrections are kept during automatic grouping. Saving moves an automatic assignment; other manual tournament entries stay intact.</p>
       {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
-      <div className="flex flex-wrap justify-end gap-2"><Button type="button" disabled={save.isPending} onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" disabled={save.isPending || !name.trim() || !team.trim()}>{save.isPending ? "Saving…" : `Save ${state.selected.size} ${state.selected.size === 1 ? "game" : "games"}`}</Button></div>
+      <div className="flex flex-wrap justify-end gap-2"><Button type="button" disabled={save.isPending} onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" disabled={save.isPending || !name.trim() || !team.trim() || (!creating&&!enteredTeams.includes(team))}>{save.isPending ? "Saving…" : `Save ${state.selected.size} ${state.selected.size === 1 ? "game" : "games"}`}</Button></div>
     </form>
   </Overlay>;
 }

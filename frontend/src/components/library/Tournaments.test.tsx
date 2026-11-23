@@ -19,7 +19,7 @@ it("selects several source-qualified games and saves a tournament with its enter
   fireEvent.click(screen.getByLabelText("Select Game two for tournament"));
   fireEvent.click(screen.getByRole("button", {name: "Add to tournament (2)"}));
   fireEvent.change(screen.getByLabelText("Tournament name"), {target: {value: "Winter Cup"}});
-  fireEvent.change(screen.getByLabelText("Entered home team"), {target: {value: "Blue"}});
+  fireEvent.change(screen.getByLabelText("New squad name"), {target: {value: "Blue"}});
   fireEvent.click(screen.getByRole("button", {name: "Save 2 games"}));
   await waitFor(() => expect(fetcher).toHaveBeenCalledWith("/api/tournaments", expect.objectContaining({
     method: "PUT", body: JSON.stringify({name: "Winter Cup", team: "Blue", match_keys: ["hudl:one", "veo:one"]}),
@@ -51,7 +51,7 @@ it("retains selection and the dialog when saving fails", async () => {
   fireEvent.click(await screen.findByLabelText("Select Game one for tournament"));
   fireEvent.click(screen.getByRole("button", {name: "Add to tournament (1)"}));
   fireEvent.change(screen.getByLabelText("Tournament name"), {target: {value: "Cup"}});
-  fireEvent.change(screen.getByLabelText("Entered home team"), {target: {value: "Blue"}});
+  fireEvent.change(screen.getByLabelText("New squad name"), {target: {value: "Blue"}});
   fireEvent.click(screen.getByRole("button", {name: "Save 1 game"}));
   expect(await screen.findByRole("alert")).toHaveTextContent("Save unavailable");
   expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -66,7 +66,7 @@ it("keeps the batch action available after selecting a game and opens the saved 
   fireEvent.click(await screen.findByLabelText("Select Game one for tournament"));
   fireEvent.click(screen.getByRole("button", {name: "Add selected games (1)"}));
   fireEvent.change(screen.getByLabelText("Tournament name"), {target: {value: "Cup"}});
-  fireEvent.change(screen.getByLabelText("Entered home team"), {target: {value: "Blue"}});
+  fireEvent.change(screen.getByLabelText("New squad name"), {target: {value: "Blue"}});
   fireEvent.click(screen.getByRole("button", {name: "Save 1 game"}));
   await screen.findByText("1 games added to Cup · Blue");
   expect(screen.getByLabelText("Tournament")).toHaveValue("cup");

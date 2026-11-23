@@ -11,6 +11,44 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## General tournament release (spec 530, 2026-11-23)
+
+Branch `codex/tournament-release`; owner now authorizes main/GitHub release and deployment
+to every hosted library and the local app, superseding the isolated preview restriction.
+All matches is browse-only (no Edit/Select/+ Add tournament); tournament view retains
+correction/selection and removes the misleading + button. Entered home team is a real
+dropdown of this event's squads with Create new squad and a separate name field. Unassigned
+games live in a Needs review bucket and do not inflate squad counts or squad stats.
+
+Cached Liverpool audit: six U11 games, two assigned cohorts plus two unassigned Liverpool
+pitch recordings. Both recordings contain 17 tagged players, covering both established
+squads with substantial tag activity; metadata cannot justify Squad2. Owner explicitly
+leaves both for review. No real assignments changed, no raw rosters stored/printed. New
+relative-overlap rule stops three incidental shared players from making distinct cohorts
+ambiguous, while complete/mixed rosters still need review. A second reproduced bug caused
+manual assignment of a mixed recording to an existing squad to renumber that squad's
+other games. Stable-label claims now distinguish allocated cohorts from reserved manual
+labels; real temporary-API browser confirms two squads stay two after the correction.
+
+Tests: new detector cases observed red for incidental overlap and stable-label reuse;
+mixed-full-roster negative control stays unassigned. Four new UI tests observed red for
+review counts, removed controls and squad dropdown; browser covers existing assignment,
+creation and automatic reconciliation. Owner approved outdated All-matches-selection and
+free-text tests updated. Legacy Library regressions explicitly cover flag0 rollback;
+release/default contract and full Library integration cover the grouped view. Docker and
+normal builds now default on; explicit0 remains rollback. SQLite **825 passed** (69.25s),
+frontend **767 passed in153 files** (45.67s); typecheck/default build, ruff lint/format/mypy
+and dev-PG Alembic no drift pass. Final PostgreSQL **825 passed** (103.25s),
+sequential after SQLite. Existing canvas/media/
+bundle warnings remain. Chromium desktop1440/phone375, native dropdown saves against real
+temporary API; no horizontal overflow, All matches has zero tournament actions. No real
+source login/refresh/index/stream or footage operation; no dependencies/schema changes.
+
+Deployment pending. Preflight confirms all four provisioned hosted libraries running,
+both sources idle and no active renders. Use normal main/updater/default tags and gateway
+moves; preserve every database/volume and other users' update preferences. Restore admin
+automatic updates to pre-preview true after public latest is installed. No CI workflow.
+
 ## Preview refinement: original match cards (2026-11-23)
 
 Owner requests original thumbnail/score-pill cards in All matches, Other matches and

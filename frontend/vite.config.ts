@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: "jsdom",
+    // Legacy Library regression tests cover the explicit rollback mode; release
+    // integration tests opt in and the default-build contract is tested separately.
+    env: { VITE_FM_GROUPED_TOURNAMENTS: "0" },
     setupFiles: ["./src/test/setup.ts"],
     css: false,
   },

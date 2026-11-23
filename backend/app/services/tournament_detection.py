@@ -168,7 +168,11 @@ def _squads(
             labels = {hints[g.key] for g in cluster if hints[g.key]}
             if hints[game.key] and labels and hints[game.key] not in labels:
                 continue
-            if any(len(roster & rosters[g.key]) >= 3 for g in cluster):
+            if any(
+                len(roster & rosters[g.key]) >= 3
+                and len(roster & rosters[g.key]) / min(len(roster), len(rosters[g.key])) >= 0.5
+                for g in cluster
+            ):
                 overlaps.append(index)
             if all(_similar(roster, rosters[g.key]) for g in cluster):
                 eligible.append(index)
@@ -181,12 +185,13 @@ def _squads(
     result: dict[str, tuple[str, str, bool]] = {}
     used: set[str] = {hint for hint in hints.values() if hint}
     reserved = set(old.values()) - {"Team unassigned"}
+    claimed: set[str] = set()
     for cluster in clusters:
         named = next((hints[g.key] for g in cluster if hints[g.key]), None)
         prior = Counter(
             old[g.key] for g in cluster if old.get(g.key) and old[g.key] != "Team unassigned"
         )
-        stable = next((name for name, _ in prior.most_common() if name not in used), None)
+        stable = next((name for name, _ in prior.most_common() if name not in claimed), None)
         if named:
             team = named
         elif stable:
@@ -197,6 +202,7 @@ def _squads(
                 number += 1
             team = f"{_club(cluster[0])} · Squad {number}"
         used.add(team)
+        claimed.add(team)
         for game in cluster:
             result[game.key] = (
                 team,

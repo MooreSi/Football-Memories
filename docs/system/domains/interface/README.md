@@ -539,3 +539,15 @@ A click may land on a dialog backdrop after a text-selection drag begins in an i
 This applies to every shared popup, with cancel/Escape behavior retained. Tournament
 rename changes one shared event name across every membership/squad, never match titles;
 the dialog states that scope. Layout alternatives remain previews pending owner choice.
+
+### Released grouped Library and squad review (spec 530)
+All matches is browse-only: card-level tournament actions are hidden through a scoped
+context and leaving the tournament view clears selected games. Tournament view retains
+per-game/batch correction; no misleading + Add tournament navigation. Entered home team
+is a dropdown of this event's assigned squads plus Create new squad, with a separate
+name field for creation. Team unassigned is a review bucket, excluded from squad counts
+and choices. Actual home club drives crest identity, never a provisional squad number.
+Three shared player labels alone cannot make otherwise separate rosters ambiguous: also
+require coverage of at least half the smaller roster. Complete-link similarity remains
+strict; broad recordings containing both cohorts stay unassigned. The Liverpool pitch
+recordings contain 17 tagged players covering both squads; owner leaves both for review.

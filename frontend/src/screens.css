@@ -231,7 +231,6 @@
 .grouped-view-switch { display: inline-flex; padding: 3px; border: 1px solid var(--color-line); border-radius: 12px; background: #0002; }
 .grouped-view-switch button { font-size: 12px; padding: 8px 13px; }
 .grouped-view-switch button[aria-pressed="true"] { background: #a8aaff24; color: var(--color-accent); }
-.grouped-add { margin-left: auto; font-size: 12px; }
 .grouped-source-refresh { display: flex; flex-wrap: wrap; gap: 6px; }
 .grouped-source-refresh button { font-size: 11px; }
 .grouped-event { border: 1px solid var(--color-line); border-radius: 14px; margin-bottom: 12px; overflow: hidden; background: #0001; }
@@ -273,7 +272,6 @@
 @media (max-width: 640px) {
   .grouped-view-toolbar { gap: 6px; }
   .grouped-view-switch button { padding: 7px 9px; font-size: 11px; }
-  .grouped-add { padding: 7px; font-size: 10px; gap: 4px; }
   .grouped-event-detail { padding: 10px; }
   .grouped-squad-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
   .grouped-squad-card { padding: 12px; }

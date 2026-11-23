@@ -67,10 +67,17 @@ Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-t
   note per five minutes. The page waits until the status file's `checked_at` is at or after
   the request time. Checked live 2026-11-20: note to updater run to new `checked_at` in seconds.
 
-## Admin-only Library preview (spec 520)
-`FM_GROUPED_TOURNAMENTS=1` is an opt-in frontend Docker build argument; the default is 0.
+## Historical admin-only Library preview (spec 520, superseded by spec 530)
+Spec520 used `FM_GROUPED_TOURNAMENTS=1` as an opt-in frontend Docker build argument.
+Spec530 releases this presentation by default (1); explicit 0 retains rollback behavior.
 Preview deployment uses only full-commit version tags on a feature branch, registers the
 version in updater `built` under its normal lock, and moves the admin library explicitly.
 Never move updater `latest` or shared :hosted tags for a preview. Pause admin automatic
 updates during review (record the previous setting), otherwise the normal update round
 would replace this version with latest. Other libraries retain their preferences/images.
+
+## General tournament release (spec 530)
+Owner authorizes release to every hosted library, the local app and default GitHub builds.
+Use normal main/updater/default-image pipeline, then move all provisioned libraries after
+idle source/render checks. Preserve databases/footage and other users' update settings.
+Restore admin auto-update to its pre-preview true once public latest equals the release.

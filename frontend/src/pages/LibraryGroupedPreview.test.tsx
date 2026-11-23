@@ -5,11 +5,11 @@ import {LibraryPage} from "./LibraryPage";
 import {groupedTournamentsEnabled} from "../components/library/GroupedTournaments";
 
 afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();localStorage.clear();});
-it("keeps the new presentation disabled for normal builds",()=>{
+it("enables the released presentation by default for normal builds",()=>{
   vi.stubEnv("VITE_FM_GROUPED_TOURNAMENTS",undefined);
-  expect(groupedTournamentsEnabled()).toBe(false);
+  expect(groupedTournamentsEnabled()).toBe(true);
 });
-it("uses scoped event rows only when the admin preview build opts in",async()=>{
+it("uses scoped event rows in the released grouped presentation",async()=>{
   vi.stubEnv("VITE_FM_GROUPED_TOURNAMENTS","1");
   const groups=[{id:"current",name:"Current U11 Cup",entries:{"hudl:a":"Blue"}},{id:"other",name:"Current U12 Cup",entries:{"hudl:b":"White"}}];
   stubFetch({
@@ -30,4 +30,9 @@ it("uses scoped event rows only when the admin preview build opts in",async()=>{
   await waitFor(()=>expect(screen.queryByRole("region",{name:"Current U12 Cup"})).not.toBeInTheDocument());
   expect(screen.getByRole("region",{name:"Current U11 Cup"})).toBeInTheDocument();
   expect(screen.queryByRole("combobox",{name:"Tournament"})).not.toBeInTheDocument();
+});
+
+it("retains an explicit rollback to the previous Library",()=>{
+  vi.stubEnv("VITE_FM_GROUPED_TOURNAMENTS","0");
+  expect(groupedTournamentsEnabled()).toBe(false);
 });

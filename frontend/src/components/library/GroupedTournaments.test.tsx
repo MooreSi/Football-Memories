@@ -35,9 +35,9 @@ it("keeps ordinary games outside tournament groups and removes the permanent set
   expect(within(ordinary).queryByRole("link",{name:games[0].title})).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Tournament",{exact:true})).not.toBeInTheDocument();
 });
-it("can select games in All matches and open the existing real assignment dialog",async()=>{
+it("can select ordinary games in Tournaments and open the assignment dialog",async()=>{
   renderLibrary();
-  fireEvent.click(await screen.findByRole("button",{name:"All matches"}));
+  await screen.findByRole("button",{name:"Open squad Blue"});
   fireEvent.click(screen.getByLabelText(`Select ${games[2].title} for tournament`));
   fireEvent.click(screen.getByRole("button",{name:"Add selected games (1)"}));
   expect(screen.getByRole("dialog",{name:"Add games to tournament"})).toBeInTheDocument();

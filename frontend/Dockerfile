@@ -2,8 +2,8 @@
 # helper calls in the page and no helper route in nginx. The default is the owner's app.
 FROM node:22-alpine AS build
 ARG FM_HOSTED=0
-# Admin-only preview; default builds retain the released Library.
-ARG FM_GROUPED_TOURNAMENTS=0
+# Grouped Library is released; 0 remains an explicit rollback option.
+ARG FM_GROUPED_TOURNAMENTS=1
 WORKDIR /web
 COPY package.json package-lock.json ./
 RUN npm ci

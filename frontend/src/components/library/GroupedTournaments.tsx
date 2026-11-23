@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState,type ReactNode} from "react";
 import {Link} from "react-router-dom";
 import {useMutation,useQuery,useQueryClient} from "@tanstack/react-query";
-import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,Plus,RefreshCw} from "lucide-react";
+import {ArrowLeft,ChevronDown,ChevronRight,Film,Pencil,CircleHelp,RefreshCw} from "lucide-react";
 import {api} from "../../api/client";
 import {useTournaments} from "../../api/tournaments";
 import type {Tournament} from "../../api/types";
@@ -12,20 +12,19 @@ import {tournamentStats,type TournamentGame} from "../../lib/tournaments";
 import {TeamBadge} from "../TeamBadge";
 import {ScoreBadge} from "../hudl/HudlLibrary";
 import {Button} from "../ui/Button";
-import {TournamentSelect,TournamentTools,useTournamentSelection} from "./Tournaments";
+import {TournamentActions,TournamentSelect,TournamentTools,useTournamentSelection} from "./Tournaments";
 
 export type GroupedLibraryGame={key:string;title:string;href:string;date:string|null;source:string;thumbnail?:string|null;score:()=>Score|null;homeClub?:string|null;renderCard?:()=>ReactNode};
-export function groupedTournamentsEnabled(){return import.meta.env.VITE_FM_GROUPED_TOURNAMENTS==="1";}
+export function groupedTournamentsEnabled(){return import.meta.env.VITE_FM_GROUPED_TOURNAMENTS!=="0";}
 function dateLabel(day:string|null){return day?new Date(`${day.slice(0,10)}T12:00:00`).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"Date unknown";}
 
-/** Mockup 1. The build opt-in is enabled only for the owner's isolated admin preview. */
+/** Released grouped Library. Explicit build flag 0 retains the rollback presentation. */
 export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=false,error=false,scopeLoading=false,scoreError=false,scoresLoading=false,sources=[]}:{
   games:GroupedLibraryGame[];eligibleKeys:string[];scores:TournamentGame[];search?:string;loading?:boolean;error?:boolean;scopeLoading?:boolean;scoreError?:boolean;scoresLoading?:boolean;sources?:string[];
 }){
   const state=useTournamentSelection()!;
   const tournaments=useTournaments();
   const [view,setView]=useState<"all"|"tournaments">("tournaments");
-  const [adding,setAdding]=useState(false);
   const autoOpened=useRef(false);
   const allowed=new Set(eligibleKeys),byKey=new Map(games.map(g=>[g.key,g]));
   const scoped=games.filter(g=>allowed.has(g.key));
@@ -40,24 +39,23 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
     if(!autoOpened.current&&tournaments.isSuccess&&!scopeLoading&&groups.length){autoOpened.current=true;state.setTournamentId(groups[0].id);}
   },[tournaments.data,scopeLoading,eligibleKeys]);
   useEffect(()=>{if(state.tournamentId)setView("tournaments");},[state.tournamentId]);
-  function allMatches(){autoOpened.current=true;setView("all");state.setTournamentId("");}
+  function allMatches(){autoOpened.current=true;setView("all");state.setTournamentId("");state.clear();}
   return <div className="grouped-library">
     <div className="grouped-view-toolbar">
       <div className="grouped-view-switch" role="group" aria-label="Library presentation">
         <Button variant="ghost" aria-pressed={view==="all"} onClick={allMatches}>All matches</Button>
-        <Button variant="ghost" aria-pressed={view==="tournaments"} onClick={()=>{setView("tournaments");setAdding(false);}}>Tournaments</Button>
+        <Button variant="ghost" aria-pressed={view==="tournaments"} onClick={()=>setView("tournaments")}>Tournaments</Button>
       </div>
-      <Button variant="ghost" className="grouped-add" onClick={()=>{allMatches();setAdding(true);}}><Plus size={15}/>Add tournament</Button>
       {view==="all"&&sources.length>0&&<SourceRefresh sources={sources}/>}
     </div>
-    {adding&&<p role="status" className="mb-3 text-xs text-fg-muted">Select games below, then choose Add selected games.</p>}
     {loading&&games.length===0&&<p role="status" className="mb-3 text-xs text-fg-muted">Loading cached matches…</p>}
     {error&&<p role="alert" className="mb-3 text-xs text-danger">Some matches could not be loaded. Showing available cached matches.</p>}
     {tournaments.isError&&<p role="alert" className="mb-3 text-xs text-danger">Could not load tournaments. <Button onClick={()=>void tournaments.refetch()}>Retry tournaments</Button></p>}
     {view==="tournaments"?<>
       {tournaments.isPending?<p role="status" className="text-sm text-fg-muted">Loading tournaments…</p>:!scopeLoading&&groups.length===0&&<p className="py-4 text-sm text-fg-muted">No tournaments match these filters.</p>}
       {groups.map(t=>{
-        const open=state.tournamentId===t.id,day=dateOf(t),teams=[...new Set(Object.values(t.entries))].sort();
+        const open=state.tournamentId===t.id,day=dateOf(t),teams=[...new Set(Object.values(t.entries))].filter(team=>team!=="Team unassigned").sort();
+        const unassigned=Object.values(t.entries).filter(team=>team==="Team unassigned").length;
         const label=!t.name_corrected&&t.name.startsWith("Match day · ")?`Tournament · ${dateLabel(day)}`:t.name;
         const memberKeys=Object.keys(t.entries).filter(key=>!state.team||t.entries[key]===state.team);
         const members=scoped.filter(g=>memberKeys.includes(g.key)&&matchesSearch(g));
@@ -65,15 +63,15 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
           <div className="grouped-event-heading">
             <button className="grouped-event-toggle" aria-expanded={open} onClick={()=>state.setTournamentId(open?"":t.id)}>
               <span className="grouped-date">{day?<><strong>{Number(day.slice(8,10))}</strong><span>{new Date(`${day.slice(0,10)}T12:00:00`).toLocaleDateString("en-GB",{month:"short"})}</span></>:<Film size={18}/>}</span>
-              <span className="grouped-event-identity"><strong>{label}</strong><span>{Object.keys(t.entries).length} matches · {teams.length} {teams.length===1?"squad":"squads"}</span></span>
+              <span className="grouped-event-identity"><strong>{label}</strong><span>{Object.keys(t.entries).length} matches · {teams.length} {teams.length===1?"squad":"squads"}{unassigned>0&&` · ${unassigned} ${unassigned===1?"needs":"need"} review`}</span></span>
               {open?<ChevronDown size={17}/>:<ChevronRight size={17}/>} 
             </button>
             <Button variant="ghost" aria-label={`Rename tournament ${t.name}`} title="Rename tournament" onClick={()=>state.rename(t.id)}><Pencil size={15}/></Button>
           </div>
           {open&&<div className="grouped-event-detail">
             {state.team?<>
-              <div className="grouped-squad-heading"><Button variant="ghost" onClick={()=>state.setTeam("")}><ArrowLeft size={14}/>All squads</Button><h3>{state.team}</h3><Button variant="ghost" className="ml-auto" onClick={()=>{state.select(memberKeys);state.assign(true);}}>Correct squad</Button></div>
-              <SquadStats tournament={t} team={state.team} scores={scores} scoreError={scoreError} loading={scoresLoading}/>
+              <div className="grouped-squad-heading"><Button variant="ghost" onClick={()=>state.setTeam("")}><ArrowLeft size={14}/>All squads</Button><h3>{state.team==="Team unassigned"?"Games needing review":state.team}</h3><Button variant="ghost" className="ml-auto" onClick={()=>{state.select(memberKeys);state.assign(true);}}>{state.team==="Team unassigned"?"Assign squad":"Correct squad"}</Button></div>
+              {state.team!=="Team unassigned"&&<SquadStats tournament={t} team={state.team} scores={scores} scoreError={scoreError} loading={scoresLoading}/>}
               {memberKeys.some(key=>t.automatic?.[key])&&<details className="mb-3 text-xs text-fg-subtle"><summary className="cursor-pointer">Review automatic grouping</summary><div className="mt-2 space-y-1">{[...new Set(memberKeys.map(key=>t.automatic?.[key]?.reason).filter(Boolean))].map(reason=><p key={reason}>{reason}</p>)}<p>Use Edit on a game or Correct squad to change the assignment.</p></div></details>}
               <section aria-label={`${state.team} tournament matches`}><GameRows games={members} resetKey={`${t.id}:${state.team}:${search}`}/></section>
               {members.length<memberKeys.length&&<p className="mt-3 text-xs text-fg-subtle">Showing {members.length} of {memberKeys.length} linked games. Age, season, search and connection visibility apply to this list.</p>}
@@ -81,12 +79,12 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
               const count=Object.values(t.entries).filter(v=>v===team).length;
               const home=games.find(g=>t.entries[g.key]===team&&g.homeClub)?.homeClub||team.split(" · ")[0];
               return <button className="grouped-squad-card" key={team} aria-label={`Open squad ${team}`} onClick={()=>state.setTeam(team)}><TeamBadge name={home} size="md"/><span><strong>{team}</strong><span>{count} {count===1?"match":"matches"} · View matches & stats</span></span><ChevronRight size={16}/></button>;
-            })}</div>}
+            })}{unassigned>0&&<button className="grouped-squad-card" aria-label={`Review ${unassigned} unassigned ${unassigned===1?"game":"games"}`} onClick={()=>state.setTeam("Team unassigned")}><CircleHelp size={26} className="shrink-0 text-warn"/><span><strong>Needs review</strong><span>{unassigned} {unassigned===1?"game":"games"} · Assign a squad</span></span><ChevronRight size={16}/></button>}</div>}
           </div>}
         </section>;
       })}
       <section aria-label="Other matches" className="grouped-ordinary"><div className="grouped-section-heading"><h3>Other matches</h3><span>Not in a tournament</span></div><GameRows games={scoped.filter(g=>!groupedKeys.has(g.key)&&matchesSearch(g))} resetKey={`ordinary:${eligibleKeys.join("|")}:${search}`}/></section>
-    </>:<section aria-label="All cached matches"><GameRows games={scoped.filter(matchesSearch)} resetKey={`all:${eligibleKeys.join("|")}:${search}`}/></section>}
+    </>:<TournamentActions enabled={false}><section aria-label="All cached matches"><GameRows games={scoped.filter(matchesSearch)} resetKey={`all:${eligibleKeys.join("|")}:${search}`}/></section></TournamentActions>}
     <TournamentTools compact games={scores} eligibleKeys={eligibleKeys} scopeLoading={scopeLoading}/>
   </div>;
 }

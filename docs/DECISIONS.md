@@ -4,6 +4,17 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-051 (2026-11-23) Release grouped tournaments, keep ambiguous recordings for review
+Owner authorizes general release to all hosted libraries, local containers and GitHub,
+superseding D-050's admin-only preview. Default grouped presentation on, explicit0 rollback.
+All matches is browse-only; tournament editing uses an existing-squad/create-squad dropdown.
+Unassigned games are a review bucket, not an entered squad. Cached Liverpool pitch games
+contain both established player cohorts; owner explicitly leaves both for review rather
+than forcing Squad2. Improve relative overlap and preserve existing squad labels after
+manual assignment. Owner approves outdated control/free-text test changes. End the admin
+preview hold by restoring its earlier automatic-update preference; preserve other users'
+settings and all databases/footage during the authorized one-time full rollout.
+
 ## D-050 (2026-11-23) Grouped Library is an isolated admin preview
 Owner selects mockup 1: expandable tournaments → squads → matches and compact team stats,
 with ordinary games separate and existing corrections/rename preserved. Review on the
