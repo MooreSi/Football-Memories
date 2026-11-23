@@ -167,7 +167,7 @@ export function TournamentTools({games, eligibleKeys, scopeLoading = false, load
       }}>
         <h2 className="font-semibold">Rename tournament</h2>
         <label className="block text-sm">New tournament name<input autoFocus name="name" className="field mt-1" defaultValue={renaming.name} maxLength={160} required /></label>
-        <p className="text-xs text-fg-muted">The corrected name is kept when new games are grouped automatically.</p>
+        <p className="text-xs text-fg-muted">Applies to all {Object.keys(renaming.entries).length} games and every entered team in this tournament. The name is kept when new games are grouped automatically.</p>
         {rename.isError && <p role="alert" className="text-sm text-danger">{rename.error.message}</p>}
         <div className="flex flex-wrap justify-end gap-2"><Button type="button" disabled={rename.isPending} onClick={() => state.rename(null)}>Cancel</Button><Button type="submit" disabled={rename.isPending}>Save tournament name</Button></div>
       </form>

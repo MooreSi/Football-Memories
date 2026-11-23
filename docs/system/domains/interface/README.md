@@ -526,3 +526,16 @@ games. Card-level Rename works without selecting a tournament filter. The unlaye
 `.match-collection input {width:100%}` rule previously overrode checkbox utilities and
 caused Safari overflow; it now excludes checkbox/radio inputs. Dedicated footer classes
 fix checkbox dimensions to 16px and wrap actions/text without clipping.
+
+### Age aliases, pitch qualifiers and popup selection (spec 510)
+Canonicalize title ages before scoping: U11, U11s, U 11s and Under-11 denote one age.
+Oct26's U11s Liverpool pitch recordings were split from U11 numbered games before this
+repair. Canonicalize fixture identities too. Pitch/field/court numbers identify recording
+context rather than opponents; three pitches against the same opponent cannot prove a
+tournament. Preserve the D-049 three-game/multiple-opponent test and manual decisions.
+
+A click may land on a dialog backdrop after a text-selection drag begins in an input.
+`Overlay` tracks pointer-down origin and only dismisses intentional backdrop clicks.
+This applies to every shared popup, with cancel/Escape behavior retained. Tournament
+rename changes one shared event name across every membership/squad, never match titles;
+the dialog states that scope. Layout alternatives remain previews pending owner choice.

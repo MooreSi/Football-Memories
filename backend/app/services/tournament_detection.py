@@ -98,6 +98,12 @@ def _event(game: DetectionGame) -> str:
     return ""
 
 
+def _canonical_age(label: str) -> str:
+    age = AGE.search(label)
+    number = re.search(r"\d+", age[0]) if age else None
+    return f"U{int(number[0])}" if number else label.strip() or "Age unknown"
+
+
 def _fixture(game: DetectionGame) -> str:
     body = re.sub(r"\([^)]*\)", "", _body(game.title))
     body = re.sub(
@@ -107,6 +113,7 @@ def _fixture(game: DetectionGame) -> str:
         flags=re.I,
     )
     body = re.sub(r"\b\d{1,2}\s*v\s*\d{1,2}\b", "", body, flags=re.I)
+    body = AGE.sub(lambda match: _canonical_age(match[0]), body)
     return _normal(NUMBER.sub("", body))
 
 
@@ -117,6 +124,9 @@ def _opponent(game: DetectionGame) -> str:
     club = re.compile(rf"\b{re.escape(_club(game))}\b", re.I)
     opponent = sides[0] if club.search(sides[1]) else sides[1]
     opponent = re.sub(r"\b\d{1,2}\s*v\s*\d{1,2}\b", "", opponent, flags=re.I)
+    opponent = re.sub(
+        r"\s*(?:[-–|]\s*)?\b(?:pitch|field|court)\s*#?\s*\d+\s*$", "", opponent, flags=re.I
+    )
     return _normal(opponent.strip(" -|"))
 
 
@@ -228,7 +238,7 @@ def detect(
         if day is None:
             continue
         age = AGE.search(_body(game.title))
-        age_label = age[0].replace(" ", "").upper() if age else game.age_group or "Age unknown"
+        age_label = _canonical_age(age[0] if age else game.age_group)
         club = _normal(_club(game))
         if club == "home":
             club += f" ({game.key.split(':')[0]})"
@@ -254,7 +264,7 @@ def detect(
                 if old
                 else (
                     f"{event_names.get(event, 'Match day')} · {scope[0]} · "
-                    f"{_club(members[0])} · {members[0].age_group or 'Age unknown'}"
+                    f"{_club(members[0])} · {scope[2].upper()}"
                 )
             )
             tournament = TournamentOut(id=identity, name=name[:160], entries={})

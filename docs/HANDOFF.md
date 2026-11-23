@@ -11,6 +11,37 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Tournament fixes and design alternatives (spec 510, 2026-11-23)
+
+Branch `codex/tournament-library`. Owner requests mockups before deciding on a new
+presentation; no new main layout implemented. Interactive carousel in the chat workspace
+contains Grouped Library, Tournament Hub and Compact Drawer, with event → squad → matches,
+whole-event rename and optional compact rows/stats. Illustrative squads, no invented scores.
+Design decision pending. Preview is separate from the production app and makes no API calls.
+
+Repairs: normalize U11/U11s/U 11s/Under-11 age identities in scopes and fixture identities;
+strip pitch/field/court number suffixes from opponent identity. Threshold remains three
+distinct games/multiple opponents. Actual cached Oct26 title/age audit now includes both
+previously missed U11 Liverpool pitch recordings in the six-game U11 group; U10 remains
+its own four-game group. No raw roster output or source login/refresh/index/stream.
+
+Popup dismissal reproduced when text-selection drag starts inside and releases on the
+backdrop. Shared Overlay now dismisses only a click that starts on the backdrop; input
+clicks and selection drags keep editing open. Existing cancel/Escape still work. Rename
+scope is explicit: all games and entered teams within the same tournament. API test
+confirms stable identity and every membership across two squads; no per-match title rewrite.
+
+New tests observed red/green for three alias/pitch cases and popup drag (deliberate
+backdrop negative control); API rename characterization passes. Existing tests untouched.
+Full SQLite **822 passed** (60.91s), dedicated PostgreSQL **822 passed** (87.04s), sequential.
+Frontend **750 passed in148 files** (34.66s); lint/format/mypy/typecheck/build and dev-PG
+Alembic no drift pass. Existing canvas/media and bundle warnings remain. Synthetic
+production-build API browser verifies drag/edit/save and all four cards renamed. Mockup
+carousel tested for all three drill-down flows, 375px reflow (343px inner width/scrollwidth),
+syntax/readback and local state. Temporary preview servers/tabs close after verification.
+Fix release/runtime rollout pending this checkpoint. No production layout selected or
+implemented; no real footage/credential operation, schema change, new dependency or CI.
+
 ## Conservative tournaments and Library layout (2026-11-23)
 
 Branch `codex/tournament-library`, D-049. Owner clarified ordinary weekend pairs,
