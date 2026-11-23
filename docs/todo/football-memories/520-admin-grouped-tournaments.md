@@ -1,6 +1,6 @@
 # 520: Grouped Library admin preview
 
-**Status:** Built and verified; isolated deployment pending
+**Status:** Deployed to admin only; awaiting owner review
 **Sensitive:** no; cached metadata and existing APIs only
 
 ## Approved design
@@ -26,3 +26,9 @@ flag-off legacy behavior. Existing tests unchanged. All normal gates, preview bu
 synthetic desktop/phone browser comparison to mockup 1 before admin-only deployment.
 Snapshot runtime and updater/default tags before/after; confirm no other account receives
 preview images. No source account refresh/login/stream needed for verification.
+
+## Installed preview
+Code `e426347`; hosted admin only. Admin auto-update paused (previously true).
+Main/default tags/latest/other accounts/local app unchanged by verified runtime snapshots.
+Health/nginx/served preview bundle verified. See HANDOFF/PROGRESS for test results.
+Restore automatic updates after review; do not apply the stable update during preview.

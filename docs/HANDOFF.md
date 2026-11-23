@@ -33,11 +33,19 @@ checkboxes. Intermediate squad cards now stack based on available width. Existin
 media and bundle warnings remain. No live source login/refresh/index/stream or footage
 operation. No CI workflow exists.
 
-Deployment pending at this checkpoint: only versioned preview images, no main push,
-shared :hosted tag or updater latest change. Move only admin through gateway/provisioner.
-Admin auto-update was true; pause for preview and restore that preference after owner
-review. Preserve all other users, database containers and local running stack. Do not
-merge main or roll out broadly without the owner's further instruction.
+Committed/pushed feature branch only; code commit `e426347` is installed on the hosted
+admin account as `hosted-e426347faf958003e32c28d2483e6fd4989e21e8`. Gateway/provisioner move
+followed idle cached source status and zero active renders. Admin auto-update is now off
+(previously true), audited; restore it after owner review. Normal Settings may offer the
+stable release because updater latest deliberately stays on stable: do not choose Update
+now during this preview. Admin health/nginx and served `index-gSNEcSAO.js` layout verified.
+Runtime before/after comparison proves only admin backend/web/capture changed; all
+32 container names retained, every database, other user's containers, local running stack,
+shared crests, default :hosted tags and updater release metadata/latest remain unchanged.
+Only the preview version was added to built under the updater lock. Main remains
+`2669f8a`. No broad rollout or merge until owner approval. Synthetic preview server/tabs
+closed and viewport reset after review. This final checkpoint is deployment/docs only;
+no repeated suites after the already verified code commit.
 
 ## Tournament fixes and design alternatives (spec 510, 2026-11-23)
 
