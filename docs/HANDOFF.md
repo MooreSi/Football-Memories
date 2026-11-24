@@ -64,7 +64,7 @@ label stays team only (no shirt numbers: identification trial read 0 reliably).
   `pitch_location` is unusable (never "outside"; fence spectators marked inside). Limit: people
   on the near side (coaches at the bottom edge) are not filtered.
 - The owner's dashed-box screenshot was the pre-deploy page; the live bundle had rings.
-**Not deployed.** Gateway 4f3d8bd and worker 6ea1910 pushed.
+**Deployed 2026-11-24 (owner: "Yes, deploy it"): gateway 4f3d8bd rebuilt and recreated with compose.yaml+public+analytics (refine-moments route live, anonymous 401); app b401611 built as :hosted-<sha>, added to status.json built (latest stays 6138b56), admin library alone moved via updates._move; worker 6ea1910 kickstarted idle with no jobs queued. 4 of 32 containers changed (gateway + admin web/backend/capture); shared :hosted unchanged; admin backend health 200; new Video Lab bundle served.**
 
 ## Video Lab player rings (spec 580 follow-up, 2026-11-24)
 

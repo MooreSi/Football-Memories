@@ -86,4 +86,4 @@ checked by mutation). Deployed to admin preview 2026-11-24 (app bca4687).
 
 Dense tracking around moments (worker `moment-refinement`, `dense_tracks.json`) and a far-edge
 rule that drops rings on spectators and neighbouring pitches once a few players are labelled.
-Details in HANDOFF. Not deployed.
+Details in HANDOFF. Deployed to admin preview 2026-11-24 (app b401611).
