@@ -52,7 +52,7 @@ keeper/referee/kit-change cases, camera calibration and specialised jersey reade
 "Pitch map" panel (`PitchMap.tsx`, `metres.ts`): pitch size preset/custom saved in the review
 (`pitch_size`, gateway validated), live positions in metres, team heat maps, selected
 person's distance and top speed. Details: [spec 610](todo/football-memories/610-pitch-metres.md).
-Frontend 845, gateway 448 tests. **Not deployed; gateway before app again (`pitch_size`).**
+Frontend 845, gateway 448 tests. **Deployed 2026-11-24: gateway 52620a1 first, then app d47d7de for the admin library only (latest 6138b56 unchanged); admin health 200.**
 
 ## Adjustable pitch outline (spec 600, 2026-11-24)
 

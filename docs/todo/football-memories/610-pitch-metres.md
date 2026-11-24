@@ -1,6 +1,6 @@
 # 610: Pitch positions in metres
 
-Status: Built, not deployed (2026-11-24). Owner: "move onto pitch position in metres".
+Status: Deployed to admin preview (2026-11-24, app d47d7de). Owner: "move onto pitch position in metres".
 
 ## Design
 
