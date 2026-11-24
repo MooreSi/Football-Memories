@@ -42,7 +42,7 @@ export function TeamSetup({ jobId, appearance, review, update, teams }: { jobId:
     <ol className="list-decimal space-y-1 pl-5 text-sm text-fg-muted">
       <li>Below, mark look-alike groups that are clearly <strong>not players</strong> (spectators, coaches) or referees. Leave mixed groups alone.</li>
       <li>On the video, click three to five players from each team and choose their team. Goalkeepers have their own buttons.</li>
-      <li>Dashed boxes are suggestions from similar-looking players; correct any that are wrong. Each correction improves the rest.</li>
+      <li>Faint rings are suggestions from similar-looking players (blue our team, orange opponent, white not assigned); correct any that are wrong. Each correction improves the rest.</li>
     </ol>
     <div className="space-y-2">{appearance.groups.map(group => {
       const current = review.group_labels.find(g => g.group_id === group.id);

@@ -54,7 +54,7 @@ const ROLES: { label: string; team: Team | null; role: Role }[] = [
 const SOURCE: Record<Assignment["source"], string> = { you: "labelled by you", group: "from your label for its look-alike group", similar: "suggested: looks like players you labelled", model: "suggested from kit colour", none: "not assigned yet" };
 
 function PersonCard({ track, info, appearance, jobId, review, update }: { track: number | null; info?: Assignment; appearance?: Appearance; jobId: string; review: Review; update: Change }) {
-  if (track === null) return <section className={card} aria-label="Selected person"><h2 className="font-semibold">Selected person</h2><p className="text-sm text-fg-muted">Click a person on the video to say which team they play for. Dashed boxes are suggestions; solid boxes are your labels. Each label also improves the suggestions for similar-looking players.</p></section>;
+  if (track === null) return <section className={card} aria-label="Selected person"><h2 className="font-semibold">Selected person</h2><p className="text-sm text-fg-muted">Click a person on the video to say which team they play for. The ring under each player shows their team: blue our team, orange opponent, yellow referee, white not assigned. Faint rings are suggestions; bold, filled rings are your labels. Each label also improves the suggestions for similar-looking players.</p></section>;
   const entry = appearance?.tracks.find(t => t.track_id === track);
   const sprite = appearance?.sprite;
   const mine = review.track_labels.find(l => l.track_id === track);

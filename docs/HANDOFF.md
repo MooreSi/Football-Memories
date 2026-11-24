@@ -47,6 +47,21 @@ Worker report `docs/IDENTIFICATION_TRIAL.md` records exact evidence and limitati
 Next: independent reviewed youth role/team data and part-aware model, hard staff/
 keeper/referee/kit-change cases, camera calibration and specialised jersey reader.
 
+## Video Lab player rings (spec 580 follow-up, 2026-11-24)
+
+Owner: boxes lagged behind players and dotted boxes looked unprofessional. Detections are
+sampled every 0.36 s and the overlay held the last sample (up to 0.36 s stale) and repainted
+only on `timeupdate` (about 4 per second). `LabVideo.tsx` now interpolates each person between
+neighbouring samples (no bridging gaps over 0.75 s; a person missing from the next sample
+stays put until that sample) and repaints on every video frame via `requestVideoFrameCallback`
+(rAF fallback). People are drawn as a ring on the ground under the feet, coloured by team
+(blue ours, orange opponent, yellow referee, grey not a player, white unassigned); faint for
+suggestions, bold and filled for your labels; the selected or hovered person gets a team-coloured
+glow and a label pill. Checked on real run `e11f6aaf` in the browser. **Not deployed yet.**
+Remaining limit: motion between samples is a straight line, and merged detections (tackles)
+stay one ring; tighter tracking needs denser detection in the worker (for example every frame
+around moments), not overlay work.
+
 ## Video Lab review workspace (spec 580, 2026-11-24)
 
 Owner found the spec 570 preview hard to use. Rebuilt `/video-lab` as a desktop workspace

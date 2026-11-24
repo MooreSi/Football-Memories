@@ -74,3 +74,10 @@ Tests first for each behaviour; synthetic browser review; real cached run timing
 - Not done: automatic goalkeeper detection (label a goalkeeper once; similarity spreads it);
   named-player identities and complete-interval training labels from the old panel were
   not carried into the new workspace (gateway and trainer still accept them).
+
+## Follow-up: player rings (2026-11-24)
+
+Owner asked for smoother following and a broadcast-style marker. Overlay now interpolates
+between 0.36 s detection samples, repaints per video frame, and draws team-coloured foot rings
+with a glow and label pill for the selected person. Tests: `LabVideo.test.ts` (interpolation
+checked by mutation). Not deployed.
