@@ -23,6 +23,11 @@ Then `41630cc` deployed admin-only the same way (3/32, health 200, 401): resting
 edge balls skipped, 1.5 s glide; ball audit 21/24 right, 1 wrong (0:15 spare), 2 undetected.
 Live labels (rev 31, 23 labels): yellow 70/73, red 85/87, pink keeper 5/5, referee 14/15,
 our keeper 0/6 (owner chose not to add a keeper label; one "Our goalkeeper" label fixes most).
+Detector follow-up: worker `codex/dense-clip` e42d68b `refine-moments --whole-clip`; published
+run a4cb99cd (refined child of 03964514, labels copied) for the ball (84% to 88% coverage).
+Second match (owner request): Racing Club Warwick vs Kidderminster RMC 18:00-22:00 from the saved
+local sample, run 3ebc1a17, no labels; results and limits in spec660. App `280f3ba` deployed
+admin-only (3/32, health 200, anonymous 401). Next: exposure/cast-robust colour in the worker.
 
 ## Selected-window progress (spec640, 2026-11-24)
 
