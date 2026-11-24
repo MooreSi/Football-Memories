@@ -32,7 +32,13 @@ const notPlayer = (info?: Assignment) => info?.role === "other" && info.source !
 export function inPlay(rows: Observation[], teams: Map<number, Assignment>, selected: number | null): Observation[] {
   const footY = (o: Observation) => o.image_box![3];
   const keep = rows.filter(o => o.track_id === selected || !notPlayer(teams.get(o.track_id)));
-  const mine = rows.filter(o => yours(teams.get(o.track_id))).map(footY).sort((a, b) => a - b);
+  // Spec 660: people matched by kit count like your labels when they are player-sized; tiny kit
+  // matches are children on pitches beyond, whose shirts can share a team's colour.
+  const height = (o: Observation) => o.image_box![3] - o.image_box![1];
+  const sizes = rows.filter(o => assigned(teams.get(o.track_id))).map(height).sort((a, b) => a - b);
+  const typical = sizes.length ? sizes[sizes.length >> 1] : 0;
+  const trusted = (o: Observation) => { const info = teams.get(o.track_id); return yours(info) || (assigned(info) && info!.source === "kit" && height(o) >= typical / 2); };
+  const mine = rows.filter(trusted).map(footY).sort((a, b) => a - b);
   const any = rows.filter(o => assigned(teams.get(o.track_id))).map(footY).sort((a, b) => a - b);
   const edge = mine.length >= 2 ? mine[0] : any.length >= 3 ? any[1] : null;
   if (edge === null) return keep;

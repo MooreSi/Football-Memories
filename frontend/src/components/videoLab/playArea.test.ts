@@ -43,3 +43,12 @@ it("with too few people given a team shows everyone except those marked not play
   const few = [players[0], at(4, 0, 0.5, 0.15), at(9, 0, 0.7, 0.7)];
   expect(inPlay(few, teams, null).map(o => o.track_id)).toEqual([1, 4]);
 });
+
+const kit = (team: "own" | "opponent"): Assignment => ({ team, role: "player", source: "kit", confidence: 0.9 });
+it("player-sized people matched by kit set the far edge like your labels; tiny kit matches on pitches beyond do not", () => {
+  const matched = new Map<number, Assignment>([[1, kit("own")], [2, kit("opponent")], [3, kit("own")], [4, kit("opponent")], [5, kit("opponent")]]);
+  const farPlayer = at(3, 0, 0.5, 0.4, 0.1);           // a real player near the far touchline
+  const close = [at(1, 0, 0.3, 0.7, 0.12), at(2, 0, 0.6, 0.8, 0.13)];
+  const tinyBeyond = [at(4, 0, 0.4, 0.25, 0.03), at(5, 0, 0.45, 0.26, 0.03)]; // red kids on another pitch
+  expect(inPlay([...close, farPlayer, ...tinyBeyond], matched, null).map(o => o.track_id)).toEqual([1, 2, 3]);
+});

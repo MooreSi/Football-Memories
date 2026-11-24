@@ -33,6 +33,8 @@ Measured causes:
 - Overlay colours each person per moment; "kit"-matched rings are solid; the person card says
   "matched to the kit of players you labelled". Team setup shows the kits learned and how many
   people each matched.
+- Far edge of play: player-sized kit matches count like your labels (tiny kit matches on
+  pitches beyond do not), so far-side players are no longer hidden.
 - `ball.ts`: one match-ball path from `detections.jsonl` (confident, smooth, nearer picture
   centre because Veo follows play; spare balls by the bags ignored), drawn as a yellow ring
   with a Show ball toggle.
@@ -50,6 +52,7 @@ before scoring (73 yellow, 88 red, 5 pink keeper, 6 black keeper, 15 referee, 24
 | Before (owner's 19 labels) | 28/186 (15.1%) | 7 | 151 | 0 |
 | After (owner's 19 labels) | 171/186 on screen | 4 | 11 | 3 referee, 1 red, 1 yellow |
 | After + one keeper label | players only: 161/171 (94.2%) | 4 | 2 (+4 hidden off-pitch) | same |
+| + kit matches set the far edge | players+officials 178/186 on screen | 4 | 4 (+1 hidden) | same |
 
 The 4 wrong are two players merged in one detection box (mixed colour). Spectators shown as
 referee are touchline adults in dark jackets (faint suggestion rings, never a team).
