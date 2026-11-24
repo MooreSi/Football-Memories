@@ -57,7 +57,7 @@ stays put until that sample) and repaints on every video frame via `requestVideo
 (rAF fallback). People are drawn as a ring on the ground under the feet, coloured by team
 (blue ours, orange opponent, yellow referee, grey not a player, white unassigned); faint for
 suggestions, bold and filled for your labels; the selected or hovered person gets a team-coloured
-glow and a label pill. Checked on real run `e11f6aaf` in the browser. **Not deployed yet.**
+glow and a label pill. Checked on real run `e11f6aaf` in the browser. **Deployed 2026-11-24 to the admin library only (app bca4687, owner: "Yes, deploy it"): built as :hosted-<sha>, added to updates/status.json built (latest stays 6138b56), admin moved via updates._move. Exactly the admin web/backend/capture changed of 32 containers; gateway and worker unchanged; admin capture idle beforehand; backend health 200, new VideoLabPage bundle served, anonymous analytics 401.**
 Remaining limit: motion between samples is a straight line, and merged detections (tackles)
 stay one ring; tighter tracking needs denser detection in the worker (for example every frame
 around moments), not overlay work.

@@ -80,4 +80,4 @@ Tests first for each behaviour; synthetic browser review; real cached run timing
 Owner asked for smoother following and a broadcast-style marker. Overlay now interpolates
 between 0.36 s detection samples, repaints per video frame, and draws team-coloured foot rings
 with a glow and label pill for the selected person. Tests: `LabVideo.test.ts` (interpolation
-checked by mutation). Not deployed.
+checked by mutation). Deployed to admin preview 2026-11-24 (app bca4687).
