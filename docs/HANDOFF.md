@@ -10,6 +10,12 @@ per-moment team from learned kit colours, label/swap handling, one referee/keepe
 kits remembered across related runs, match-ball overlay. Same-match assistant audit on the real
 RCW run: 15.1% to about 94% of players correct on screen. Frontend 889 tests, typecheck, build.
 Backend/gateway/worker untouched.
+Deployed admin-only `a6fbaa1` (24 Nov ~21:48 UTC) after admin capture sent 0 MB over 60 s:
+built :hosted-<sha>, added to status.json built (latest stays 6138b56), admin library moved via
+updates._move; exactly admin web/backend/capture changed (3/32); auto-update false; health 200;
+VideoLabPage-D-Nein6l.js served; anonymous jobs 401. Not signed in here, so no keeper label was
+added to the live review: one "Our goalkeeper" label lets the keeper carry. Not merged into
+`codex/local-video-analytics` (spec650 in progress there).
 
 ## Selected-window progress (spec640, 2026-11-24)
 
