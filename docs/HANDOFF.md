@@ -25,9 +25,7 @@ sidebar, colour picker, overlay and review panel components with their tests.
 Verification: frontend 813 passed, typecheck/build; gateway 433; worker 89; backend
 unchanged. Logic tests red first; workspace UI tests written after the components and
 proved by mutation (each broke when its behaviour was removed). Real-data browser check
-on a local server with the prepared ten-minute run. **Not deployed.** Deploy needs the
-gateway + admin app images (see memory route) and the worker LaunchAgent started with
-`--reid-config "/Users/simon/Football Video Analytics/models/reid.json"`.
+on a local server with the prepared ten-minute run. **Deployed 2026-11-24 13:12 UTC (owner: "Yes, deploy it"): gateway 8ab2c4b (compose.yaml+public+analytics), admin library alone moved to app a4b50f3 via updates._move (latest stays 6138b56, shared :hosted tags unchanged, auto-update false). 32-container diff: exactly gateway + admin web/backend/capture. Worker LaunchAgent now passes --reid-config models/reid.json (plist backed up first) and was reloaded idle. Deploy waited ~20 min for the admin Hudl/Veo helper to finish an active transfer (~100 MB per 20 s) before recreating anything. No live preparation run queued: the owner clicks Prepare player grouping on a run.**
 
 ## Team segregation and Video Lab metadata rail (spec570, 2026-11-24)
 

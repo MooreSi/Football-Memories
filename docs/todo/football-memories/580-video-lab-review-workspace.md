@@ -1,6 +1,6 @@
 # 580: Video Lab review workspace
 
-Status: Built and verified, not deployed (2026-11-24). Owner feedback on the deployed spec 570 preview.
+Status: Deployed to admin preview (2026-11-24, app a4b50f3). Owner feedback on the deployed spec 570 preview.
 
 ## Problems reported
 
