@@ -62,6 +62,12 @@ Audit every 10 s (24 moments): match ball 21, wrong 1 (0:15, a spare by the coac
 with the camera), no ball detected 2 (2:25, 2:35). Frames every 10 s for all 4 minutes drawn with the app's own
 decisions and reviewed by eye. Synthetic page test red before wiring, green after.
 
+Detector follow-up (owner chose it): worker `refine-moments --whole-clip` (branch
+`codex/dense-clip`) checks about 10 frames a second and keeps balls and colours. Probe at
+2:20-2:40: ball within 0.75 s for 33% of the time at 3/s, 72% at 10/s, 80% at 30/s. Whole clip:
+app ball coverage 84% to 88%. Dense people links made team errors worse (4 to 23), so a
+whole-clip run feeds the ball only.
+
 ## Limits
 Kit colour separates teams only when kits differ in colour; same-colour kits need the
 look-alike model. Merged boxes stay wrong until detection improves. Remembered kits rely on

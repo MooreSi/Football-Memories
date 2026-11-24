@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ballAt, parseBalls, trackBall } from "./ball";
+import { ballAt, denseBalls, parseBalls, trackBall } from "./ball";
 
 const W = 1920, H = 1080;
 const ball = (x: number, y: number, score = 0.8) => ({ kind: "ball", box: [x - 15, y - 15, x + 15, y + 15], score });
@@ -62,5 +62,16 @@ describe("ballAt", () => {
   it("shows nothing across a long gap or far from any sighting", () => {
     expect(ballAt(path, 1.6)).toBeNull();
     expect(ballAt(path, 9)).toBeNull();
+  });
+});
+
+describe("denseBalls", () => {
+  it("turns whole-clip refinement balls (normalised boxes) into per-time samples in pixels", () => {
+    const samples = denseBalls({ balls: [{ time_s: 0.1, image_box: [0.5, 0.5, 0.51, 0.52], score: 0.7 }, { time_s: 0.1, image_box: [0.1, 0.1, 0.11, 0.12], score: 0.4 }, { time_s: 0.2, image_box: [0.52, 0.5, 0.53, 0.52], score: 0.7 }] }, W, H);
+    expect(samples.map(s => [s.time_s, s.balls.length])).toEqual([[0.1, 2], [0.2, 1]]);
+    expect(samples[0].balls[0].box[0]).toBeCloseTo(960, 5);
+  });
+  it("is empty when the refinement kept no balls", () => {
+    expect(denseBalls({}, W, H)).toEqual([]);
   });
 });

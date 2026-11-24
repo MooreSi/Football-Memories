@@ -18,7 +18,7 @@ import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { propagateTeams } from "../components/videoLab/teams";
 import { cleanAnchors, kitTimeline, learnKits, rememberKits, type KitObservation } from "../components/videoLab/kits";
-import { parseBalls, trackBall } from "../components/videoLab/ball";
+import { denseBalls, parseBalls, trackBall } from "../components/videoLab/ball";
 import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } from "../components/videoLab/useLabData";
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
@@ -62,13 +62,17 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const { review, update, state, error } = useReview(job.id);
   const camera = useMemo(() => motion.data ? buildCamera(motion.data) : undefined, [motion.data]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
-  const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], dense.data), [assignments.data, dense.data]);
+  // A whole-clip refinement (it carries balls) adds the ball only: its people are each linked to one
+  // sampled tracklet across the whole clip, which moved labels onto the wrong people on a real run.
+  const peopleDense = dense.data?.balls ? undefined : dense.data;
+  const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], peopleDense), [assignments.data, peopleDense]);
   const offPitch = useMemo(() => camera && marks.length ? offPitchTracks(assignments.data?.observations ?? [], camera, marks) : new Set<number>(), [camera, marks, assignments.data]);
   // Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance
   // model settles only what colour cannot (dark kits). Kits you taught in related runs are reused.
   const saved = useSavedModels(others.filter(o => o.id !== job.id && o.state === "complete"));
   const remembered = useMemo(() => rememberKits(saved.data ?? [], job.match_title ?? ""), [saved.data, job.match_title]);
-  const rows = assignments.data?.observations as KitObservation[] | undefined;
+  // With whole-clip refinement the denser rows (about ten a second, with shirt colours) replace the sampled ones.
+  const rows = (assignments.data ? allRows : undefined) as KitObservation[] | undefined;
   const kits = useMemo(() => learnKits(rows ?? [], review?.track_labels ?? [], remembered), [rows, review?.track_labels, remembered]);
   const timeline = useMemo(() => {
     const labels = review?.track_labels ?? [];
@@ -76,8 +80,13 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
     return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback);
   }, [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch]);
   const teams = timeline.tracks;
-  const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl"));
-  const ball = useMemo(() => detections.data ? trackBall(parseBalls(detections.data), assignments.data?.image_width ?? 1920, assignments.data?.image_height ?? 1080) : [], [detections.data, assignments.data]);
+  const denseHasBalls = !!dense.data?.balls?.length;
+  const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);
+  const ball = useMemo(() => {
+    const w = assignments.data?.image_width ?? 1920, h = assignments.data?.image_height ?? 1080;
+    if (dense.data?.balls?.length) return trackBall(denseBalls(dense.data, w, h), w, h);
+    return detections.data ? trackBall(parseBalls(detections.data), w, h) : [];
+  }, [dense.data, detections.data, assignments.data]);
   const [showBall, setShowBall] = useState(true);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
@@ -114,7 +123,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
       <section className="min-w-0 space-y-3" aria-label="Analysis results">
         {clip
-          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} teamAt={timeline.at} ball={ball} showBall={showBall} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} /></div>
+          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} teamAt={timeline.at} ball={ball} showBall={showBall} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={peopleDense} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} /></div>
           : <div className="flex aspect-video items-center justify-center rounded-xl bg-black/40 text-fg-muted">This run has no video.</div>}
         <div className="panel flex flex-wrap items-center gap-2 p-2" aria-label="Moment playback">
           <Button aria-label="Previous moment" disabled={!visible.length} onClick={() => playAt(Math.max(0, (cursor ?? 1) - 1))}><ChevronLeft size={16} aria-hidden />Previous</Button>

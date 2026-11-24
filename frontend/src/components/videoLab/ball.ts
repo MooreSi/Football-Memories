@@ -99,3 +99,15 @@ export function ballAt(path: BallPoint[], at: number): BallPoint | null {
   if (b && b.time_s - at <= HOLD_S) return b;
   return null;
 }
+
+/** Balls kept by whole-clip refinement (about ten checks a second), as samples in pixels. */
+export function denseBalls(dense: { balls?: { time_s: number; image_box: number[]; score: number }[] }, width: number, height: number): BallSample[] {
+  const byTime = new Map<number, BallSample>();
+  for (const b of dense.balls ?? []) {
+    if (b.image_box?.length !== 4 || !b.image_box.every(Number.isFinite)) continue;
+    const sample = byTime.get(b.time_s) ?? { time_s: b.time_s, balls: [] };
+    sample.balls.push({ box: [b.image_box[0] * width, b.image_box[1] * height, b.image_box[2] * width, b.image_box[3] * height], score: b.score });
+    byTime.set(b.time_s, sample);
+  }
+  return [...byTime.values()].sort((a, b) => a.time_s - b.time_s);
+}

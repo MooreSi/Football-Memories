@@ -52,3 +52,8 @@ it("player-sized people matched by kit set the far edge like your labels; tiny k
   const tinyBeyond = [at(4, 0, 0.4, 0.25, 0.03), at(5, 0, 0.45, 0.26, 0.03)]; // red kids on another pitch
   expect(inPlay([...close, farPlayer, ...tinyBeyond], matched, null).map(o => o.track_id)).toEqual([1, 2, 3]);
 });
+
+it("whole-clip refinement: dense rows keep their shirt colour for the kit decision", () => {
+  const dense = { windows: [{ start_s: 0, end_s: 10 }], observations: [{ track_id: 1, time_s: 0.1, image_box: [0.1, 0.1, 0.2, 0.3], linked: true, colour_lab: [105, 153, 173] }] };
+  expect((mergeDense([], dense)[0] as Observation & { colour_lab?: number[] }).colour_lab).toEqual([105, 153, 173]);
+});

@@ -3,7 +3,9 @@ import type { Assignment, Observation } from "./labTypes";
 /** Worker `dense_tracks.json`: people about ten times a second inside each moment clip. */
 export type DenseTracks = {
   windows: { start_s: number; end_s: number }[];
-  observations: { track_id: number; time_s: number; image_box: number[]; linked: boolean }[];
+  observations: { track_id: number; time_s: number; image_box: number[]; linked: boolean; colour_lab?: number[] | null }[];
+  /** Spec 660 whole-clip refinement: every ball seen (normalised boxes). */
+  balls?: { time_s: number; image_box: number[]; score: number }[];
 };
 
 export const isDense = (v: unknown): v is DenseTracks =>
@@ -13,7 +15,7 @@ export const isDense = (v: unknown): v is DenseTracks =>
 export function mergeDense(sampled: Observation[], dense?: DenseTracks): Observation[] {
   if (!dense?.windows.length) return sampled;
   const inside = (t: number) => dense.windows.some(w => t >= w.start_s - 1e-6 && t <= w.end_s + 1e-6);
-  const refined = dense.observations.map(o => ({ track_id: o.track_id, time_s: o.time_s, team_id: null, role: "unknown", image_box: o.image_box }));
+  const refined = dense.observations.map(o => ({ track_id: o.track_id, time_s: o.time_s, team_id: null, role: "unknown", image_box: o.image_box, ...(o.colour_lab !== undefined ? { colour_lab: o.colour_lab } : {}) }));
   return [...sampled.filter(o => !inside(o.time_s)), ...refined].sort((a, b) => a.time_s - b.time_s);
 }
 
