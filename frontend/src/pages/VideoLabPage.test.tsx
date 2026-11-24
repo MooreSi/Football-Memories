@@ -30,3 +30,9 @@ it("reports API refusal without inventing a finished analysis",async()=>{
  expect(await screen.findByRole("alert")).toHaveTextContent(/unavailable/i);
  expect(screen.queryByRole("link",{name:/Download/})).toBeNull();
 });
+it("shows the selected ten-minute sample duration",async()=>{
+ vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/samples")?Response.json([{id:"ten-minute",label:"Synthetic ten-minute fixture",duration_s:600,source_offset_s:900}]):Response.json([])));
+ renderWithProviders(<VideoLabPage/>);
+ expect(await screen.findByRole("button",{name:"Analyse 10 minutes"})).toBeInTheDocument();
+ expect(screen.getByText(/600-second local sample/)).toBeInTheDocument();
+});

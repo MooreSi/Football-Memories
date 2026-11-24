@@ -11,6 +11,14 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Football training extension (spec560, 2026-11-24)
+
+Building on private worker a0ef724:35 worker tests, real detector fine-tune and
+source-hashed feature extraction. Tracking replay5248→1130 births; no labelled
+identity score. Actual detector pilot is experimental; real action labels missing.
+Admin review API/UI component tests now green, full gates and deployment pending.
+See [spec560](560-football-model-training.md) and worker docs/TRAINING.md.
+
 ## Local admin video analysis (spec 550, 2026-11-23)
 
 Branch `codex/local-video-analytics`, worker private repo
@@ -1611,3 +1619,5 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 Live completion follow-up (docs-only checkpoint): verified actual full capture,
 browser download checksum and 1080p playback; updated pending handoff/spec facts.
 No source changes or additional test run were needed after the green checkpoint.
+
+2026-11-24 spec560/10-minute extension checkpoint: frontend789 passed, typecheck and hosted build clean; synthetic browser desktop/375px review/seek/revision flow verified, ten-minute wording confirmed. Backend unchanged:850 SQLite/850 PostgreSQL plus lint/types/schema drift passed earlier this turn. Worker47 passed, ruff clean; real football API E2E355.51s. Owner nominated cached Veo teacher tags and authorized new assertion correction409→404 for completed undeclared artifact. Native ten-minute admin job running; final gateway/deploy pending. No footage/weights/real roster staged.

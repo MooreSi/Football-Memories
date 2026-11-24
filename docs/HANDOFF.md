@@ -11,6 +11,32 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Active football training extension (spec560, 2026-11-24)
+
+Owner now requests the remaining tracking/training/actions/attribution work.
+See [spec560](todo/football-memories/560-football-model-training.md). Private worker
+checkpoint a0ef724: temporal/global camera association, detector fine-tuning,
+reviewed temporal action trainer/evaluator, source-bounded identity and CLI export.
+Same-box replay5248→1130 track births, not identity accuracy. Real detector pilot
+103 source-filtered images/120 steps; weak roles/ball and visual giant false box
+keep it experimental, not selected as live default. Real960-frame action features
+extracted. Owner nominated a tagged Veo match and requested10-minute analysis. Private
+source/tags are downloaded through the existing helper;18:00–28:00 extracted.
+Native admin-owned job09b509731e6b4ee4a89c46494264c70d is running,600.1s cap
+covered red→green. Veo teacher tags preserve9 event types without inventing
+human confirmation/background negatives; one match cannot span evaluation splits.
+Pinned offline T-DEED and torso OCR are integrated; private worker e46ae32.
+
+App/gateway working changes add private revisioned admin reviews and player
+assignments, preserving original inference results. New API/UI tests observed red
+then green. Frontend789 pass/typecheck/build; backend850 SQLite+850 Postgres,
+ruff/mypy/Alembic pass this turn (backend unchanged). Worker47 pass. Real full
+football API E2E355.51s passed; synthetic desktop/375px UI checked, seeking,
+review and revisions work. Final gateway gates/deployment remain. Existing admin
+preview below is still yesterday's build. Safari is unlocked but the existing
+session shows the ordinary app without the lab; do not fabricate a session. No new app/gateway runtime dependency, source
+login, AWS, biometric identity or input overwrite.
+
 ## Local admin video analysis (spec 550, 2026-11-23)
 
 Branch `codex/local-video-analytics`, based on latest main `6138b56` (including

@@ -565,3 +565,10 @@ breakdowns and every linked result with score source. It makes no standings/winn
 The existing embedded-crest SVG/PNG pipeline is reused; tournament titles/subtitles wrap.
 Print/PDF uses separate text rows with break-inside:avoid, so a page cannot cut through
 SVG lettering. Scoped print styles clear the app's 100vh minimum to avoid a blank page.
+
+Video Lab private admin review keeps immutable inference artifacts separate from
+revisioned admin labels. Only explicit interval review supplies action-background
+negatives; unlabelled time stays unknown. A model suggestion needs explicit
+confirmation; source hashes, clip-relative times and track intervals bound every
+review. Conflicting/stale identities are rejected. Sample button duration follows
+the catalogue (up to600s); long player labels wrap at375px.

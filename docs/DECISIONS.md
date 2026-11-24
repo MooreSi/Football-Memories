@@ -4,6 +4,20 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-054 (2026-11-24) Implement football training with independent review evidence
+
+Owner explicitly requests the baseline's missing tracking, football training,
+goal/pass/tackle recognition and player attribution. Use existing local labelled
+football images, retain originals, and keep the admin-only preview boundary.
+Separate training labels, predictions and human-confirmed facts; do not turn
+heuristic proximity into a pass or unknown identity into a name. Require
+independent Veo match evaluation and class-specific support/precision/recall.
+Use torso colours, jersey evidence and reviewed source/time-bounded identities;
+no face/voice/gait model or biometric embeddings. Earlier sibling caches containing
+such embeddings are not used. Preserve original inference artifacts and source
+footage; admin corrections live as versioned review records. A small detector
+pilot or fewer track births cannot establish reliability of named-player actions.
+
 ## D-053 (2026-11-23) Build and trial local analytics for the admin only
 
 Owner explicitly requests a new private GitHub repository, a local video pipeline
