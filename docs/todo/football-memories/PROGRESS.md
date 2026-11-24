@@ -13,12 +13,22 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Identification before statistics (spec590, 2026-11-24)
 
-Private worker adds an opt-in calibrated identification/replay and audit stage;
-initial103 and measured110 worker tests pass, both checkpoint CPU CIs green.
-Indoor540p different600s trial completed but failed withheld identification quality;
-full-body SportsReID comparison insufficient. A clearer existing1080p outdoor source
-is running on18:00–28:00. App/gateway/deployment unchanged; this checkpoint is docs-only.
-See [spec590](590-identification-first.md) and worker `docs/IDENTIFICATION_TRIAL.md`.
+| Work | Status | Evidence |
+|---|---|---|
+| Opt-in calibrated worker stage | done, experimental | source-bound kit/roles, pitch/track uncertainty, staff/keeper/referee examples, ball evidence, new preview/manifest/ZIP |
+| Real different-game experiments | done | indoor540p rejected; existing1080p outdoor600.04s baseline1058.956s + calibrated569.952s |
+| Team/role reliability | partial, target not met |148 assistant-audited observations: kit coverage52→55/100; overall team-credit precision94.55→94.83%; sideline leaks2→3; role accuracy35.14→51.35%; referee0/6 |
+| Individual identity | not reliable | keeper3/6; existing OCR0 accepted number hints/0 names; track IDs are not people |
+| Validation | done for worker checkpoint |111 tests, lint/format/project and CPU CI green;10+12 artifact hashes/sizes, ZIP CRC/JSON, full decodes and unchanged source/raw/parent |
+| Game statistics/promotion | deferred | no new passing/tackling attribution; app/gateway/default worker/deployment unchanged |
+
+Same-source assistant visual labels are not independent human or match-disjoint
+accuracy. No new source request, weights or dependency; existing footage/results
+preserved. App changes are docs-only, local Markdown links/diff checks pass; no
+app code tests re-run because app code did not change. See [spec590](590-identification-first.md)
+and worker `docs/IDENTIFICATION_TRIAL.md`. Next: reviewed youth role/team data,
+part-aware role model with hard staff/referee/keeper negatives and specialised
+jersey recognition before action statistics.
 
 ## Football training extension (spec560, 2026-11-24)
 

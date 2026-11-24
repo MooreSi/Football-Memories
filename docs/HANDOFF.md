@@ -11,21 +11,30 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
-## Identification-first pipeline (spec 590, 2026-11-24)
+## Identification-first checkpoint (spec 590, 2026-11-24)
 
-Owner prioritises correct player/team attribution before passing/tackling stats.
-Private worker branch `codex/local-pipeline` adds opt-in source-bound multi-view
-kit/role calibration, pitch geometry, track consensus, ball evidence and role/team
-preview plus explicit precision/coverage audit. App/gateway/default worker unchanged.
-See [spec590](todo/football-memories/590-identification-first.md) and
-[domain notes](system/domains/video-analytics/README.md). Worker checkpoints2e9a6e8
-and18b07f4 pushed/CPU CI green. 110 worker tests green at measured checkpoint.
-Different indoor ten-minute archive completed; 540p colour-only withheld check
-failed (3/51 players assigned,2 correct; official0/6). SportsReID comparison also
-insufficient; retain rejected evidence. Higher-resolution1080p outdoor Villa–Stoke
-18:00–28:00 trial is now running from an existing local download. No account
-request, source overwrite, app integration, named identity or deployment claim.
-Final evidence will replace this in-progress note at the next checkpoint.
+Owner prioritises correct player/team attribution before passing/tackling. Private
+worker `codex/local-pipeline` implements opt-in source-bound multi-view kit/role
+examples, pitch polygons, track uncertainty, explicit staff/keeper/referee classes,
+ball evidence, fresh annotated preview and precision/coverage audit. See
+[spec590](todo/football-memories/590-identification-first.md) and
+[domain notes](system/domains/video-analytics/README.md). App/gateway/default worker
+and deployment unchanged; no source account request or new weights/dependency.
+
+Two different ten-minute local sources completed. Indoor540p failed; SportsReID
+and cached footballYOLO comparisons rejected. Latest1080p outdoor Villa–Stoke
+source18:00–28:00: baseline1058.956s, calibrated569.952s. Frozen148-observation
+assistant visual audit,100 outfield observations: kit coverage52→55%, all55 assigned
+outfield kits correct; overall credit precision94.55→94.83%, but sidelined people
+given teams2→3 (worse). Role accuracy35.14→51.35%; keepers3/6, referees0/6; OCR0
+accepted numbers/0 named identities. **Quality target not met; statistics deferred.**
+These are same-source assistant labels, not independent human or match-disjoint
+accuracy. Tracklets are not people. Worker111 tests/lint/format/project gates and
+code CI green; final manifest/ZIP/full-decode/source checks pass. Real footage,
+profiles/audits/results stay private under worker runtime/identification-hd-20261124.
+Worker report `docs/IDENTIFICATION_TRIAL.md` records exact evidence and limitations.
+Next: independent reviewed youth role/team data and part-aware model, hard staff/
+keeper/referee/kit-change cases, camera calibration and specialised jersey reader.
 
 ## Video Lab review workspace (spec 580, 2026-11-24)
 

@@ -28,3 +28,15 @@ Preserve original source and completed results. New calibrations/runs use new
 outputs and verify source/inherited hashes. Footage, roster data, profiles and
 weights remain outside Git. No worker public port, hidden model download or new
 source account flow. App/gateway deployment is a separate operation.
+
+Full-resolution trial still only55% outfield kit coverage; role accuracy and
+sideline errors must be reported separately. A correct kit on an assigned player
+can coexist with missed players, wrong-role keepers, sideline team leaks and
+unstable IDs. Staff examples are useful but do not replace a learned role model.
+Referees can change to a bib mid-recording; opposite keepers need independent kit
+and team evidence. Do not credit a third kit or a nearby goal with a club identity.
+
+A fresh output directory initially contains inherited parent files. Wait for the
+CLI/owning job to complete before evaluating or serving it; mere file existence
+can score the parent's labels as though the new stage had finished. Keep audit
+labels frozen before inspecting predictions and source-bound to the sample.
