@@ -32,8 +32,7 @@ unassigned. Experimental only; worker trial notes in its docs/HANDOFF.md.
 Verification: frontend 799 passed, typecheck/build; gateway admin 104 passed;
 worker 76 passed; gateway full 424 passed; backend unchanged, SQLite and PostgreSQL re-run green with ruff/mypy.
 Synthetic browser desktop and 375px: filter, seek to 0:12, overlay labels, no
-horizontal overflow. **Not deployed; live worker not restarted.** Owner should tag
-real jersey colours from a paused frame once deployed.
+horizontal overflow. **Deployed 2026-11-24 ~11:45 UTC (owner: "Yes, deploy preview"): gateway bcd33f5 recreated with compose.yaml+public+analytics; app 6abd627 built as :hosted-<sha> only, added to updates/status.json built (latest stays 6138b56), admin library alone moved via the gateway updates._move path. 32-container diff: exactly gateway + admin web/backend/capture changed; shared :hosted tags unchanged; admin auto-update stays false. Admin backend health 200, new Video Lab bundle served, anonymous analytics 401. Native worker restarted idle on the new code. Admin capture had a leftover headless browser from a batch that stopped 10:47 UTC (idle: no network over 20s); recreating it cleared that. Signed-in admin browser check not done (no admin session in the embedded browser).** Owner should tag real jersey colours from a paused frame.
 
 ## Active football training extension (spec560, 2026-11-24)
 

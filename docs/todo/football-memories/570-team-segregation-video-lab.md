@@ -1,6 +1,6 @@
 # 570: Pitch-aware teams and Video Lab metadata rail
 
-Status: Built, verified, not deployed (2026-11-24). Sensitive: no new account/authentication or library-write surface.
+Status: Built, verified, deployed to admin preview (2026-11-24, app 6abd627). Sensitive: no new account/authentication or library-write surface.
 
 Separate observed people using visible pitch/white-line evidence and torso kit
 colour, with temporal consistency, explicit uncertainty and sideline/official
