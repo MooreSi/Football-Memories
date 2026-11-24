@@ -21,16 +21,25 @@ Same-box replay5248→1130 track births, not identity accuracy. Real detector pi
 103 source-filtered images/120 steps; weak roles/ball and visual giant false box
 keep it experimental, not selected as live default. Real960-frame action features
 extracted. Owner nominated a tagged Veo match and requested10-minute analysis. Private
-source/tags are downloaded through the existing helper;18:00–28:00 extracted.
-Native admin-owned job09b509731e6b4ee4a89c46494264c70d is running,600.1s cap
+source/tags downloaded through the existing helper;18:00–28:00 analysed.
+Native admin-owned job09b509731e6b4ee4a89c46494264c70d is complete,600.1s cap
 covered red→green. Veo teacher tags preserve9 event types without inventing
 human confirmation/background negatives; one match cannot span evaluation splits.
-Pinned offline T-DEED and torso OCR are integrated; private worker e46ae32.
+Pinned offline T-DEED and torso OCR are integrated. Private worker trial report:
+`/Users/simon/Football Video Analytics/docs/TEN_MINUTE_TRIAL.md`.45m15s local
+queue wall time;52 unreviewed suggestions,44 separate Veo records,1 OCR hint,0
+named identities. No model goal suggestions for either of2 Veo goal tags.
+Ball coverage25.9%; reliable football actions remain unproven. Same-box legacy
+replay16162→2155 births (-86.67%) is not an identity metric.
+Full decode,15 hashes, ZIP CRC and input/archive integrity pass; completed-result
+HTTP replay1 passed with206 byte ranges.4800 real feature frames and44 weak
+candidates prepared; no real supervised action fine-tune or fake split/negatives.
+Native worker reloaded idle with duration-scaled bounded encode timeout.
 
 App/gateway working changes add private revisioned admin reviews and player
 assignments, preserving original inference results. New API/UI tests observed red
 then green. Frontend789 pass/typecheck/build; backend850 SQLite+850 Postgres,
-ruff/mypy/Alembic pass this turn (backend unchanged). Worker47 pass. Real full
+ruff/mypy/Alembic pass this turn (backend unchanged). Worker49 pass. Real full
 football API E2E355.51s passed; synthetic desktop/375px UI checked, seeking,
 review and revisions work. Gateway417+4 Docker and CI pass; portal72/provisioner86 gates pass (provisioner
 Docker test skips via existing populated-stack guard). Admin preview app754aace
