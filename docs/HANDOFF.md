@@ -32,10 +32,13 @@ assignments, preserving original inference results. New API/UI tests observed re
 then green. Frontend789 pass/typecheck/build; backend850 SQLite+850 Postgres,
 ruff/mypy/Alembic pass this turn (backend unchanged). Worker47 pass. Real full
 football API E2E355.51s passed; synthetic desktop/375px UI checked, seeking,
-review and revisions work. Final gateway gates/deployment remain. Existing admin
-preview below is still yesterday's build. Safari is unlocked but the existing
-session shows the ordinary app without the lab; do not fabricate a session. No new app/gateway runtime dependency, source
-login, AWS, biometric identity or input overwrite.
+review and revisions work. Gateway417+4 Docker and CI pass; portal72/provisioner86 gates pass (provisioner
+Docker test skips via existing populated-stack guard). Admin preview app754aace
+and gateway94af8cb deployed.32-container comparison: exactly gateway/admin
+web/backend/capture changed; all other28 unchanged, global latest unchanged.
+Admin auto-update staysfalse. Safari is unlocked but its existing session is an
+ordinary family without lab access; no session/MFA bypass or sign-out performed. No new app/gateway runtime dependency, AWS, biometric identity or input overwrite.
+New match download used the authorized existing Veo helper; no auth/storage changes.
 
 ## Local admin video analysis (spec 550, 2026-11-23)
 
