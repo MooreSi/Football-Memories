@@ -136,7 +136,8 @@ export default function VideoLabPage() {
   const [sample, setSample] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const samples = useQuery({ queryKey: ["video-lab-samples"], queryFn: () => get<Sample[]>("/samples"), retry: false });
-  const jobs = useQuery({ queryKey: ["video-lab-jobs"], queryFn: () => get<Job[]>("/jobs"), retry: false });
+  const jobs = useQuery({ queryKey: ["video-lab-jobs"], queryFn: () => get<Job[]>("/jobs"), retry: false,
+    refetchInterval: q => q.state.data?.some(j => ["queued", "running"].includes(j.state)) ? 2000 : false });
   const job = useQuery({ queryKey: ["video-lab-job", selected], queryFn: () => get<Job>(`/jobs/${selected}`), enabled: !!selected, retry: false,
     refetchInterval: q => ["queued", "running"].includes(q.state.data?.state ?? "") ? 2000 : false });
   useEffect(() => { if (!selected && jobs.data?.length) setSelected(jobs.data[0].id); }, [jobs.data, selected]);

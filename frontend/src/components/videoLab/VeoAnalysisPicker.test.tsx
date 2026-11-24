@@ -1,4 +1,4 @@
-import { screen,waitFor } from "@testing-library/react";
+import { screen,waitFor,within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/render";
@@ -47,4 +47,42 @@ it("does not import the previous clip when analysing the same game with a new du
  await waitFor(()=>expect(imported).toEqual(['1'.repeat(32)]));
  await userEvent.click(await screen.findByRole('button',{name:'Analyse selected match'}));
  await waitFor(()=>expect(imported).toEqual(['1'.repeat(32),'2'.repeat(32)]));
+});
+
+it("unlocks a new match when an earlier background run finishes",async()=>{
+ const runningId='b'.repeat(32),completedId='c'.repeat(32);
+ let finished=false;
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+  if(url.endsWith('/veo/library'))return Response.json([{id:'new-match',title:'Synthetic new match',available:true,duration_s:3600}]);
+  if(url.endsWith('/samples'))return Response.json([]);
+  if(url.endsWith('/jobs'))return Response.json([
+   {id:completedId,sample_id:'old-match',state:'complete',progress:1,artifacts:[]},
+   {id:runningId,sample_id:'background-match',state:finished?'complete':'running',progress:finished?1:0.5}
+  ]);
+  if(url.endsWith(`/jobs/${completedId}`))return Response.json({id:completedId,state:'complete',progress:1,artifacts:[]});
+  throw new Error(`Unexpected request: ${url}`);
+ }));
+ renderWithProviders(<VideoLabPage/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'new-match');
+ const analyse=screen.getByRole('button',{name:'Analyse selected match'});
+ expect(analyse).toBeDisabled();
+ expect(within(screen.getByRole('region',{name:'Analyse a Veo match'})).getByRole('status')).toHaveTextContent('Another analysis is queued or running. This button will unlock automatically when it finishes.');
+ finished=true;
+ await waitFor(()=>expect(analyse).toBeEnabled(),{timeout:4000});
+});
+
+it("explains an out-of-range window and enables a valid correction",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>Response.json([{id:'short-match',title:'Synthetic short match',available:true,duration_s:1140}])));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'short-match');
+ await userEvent.clear(screen.getByRole('spinbutton',{name:'Start minute'}));
+ await userEvent.type(screen.getByRole('spinbutton',{name:'Start minute'}),'16');
+ await userEvent.clear(screen.getByRole('spinbutton',{name:'Minutes to analyse'}));
+ await userEvent.type(screen.getByRole('spinbutton',{name:'Minutes to analyse'}),'4');
+ expect(screen.getByRole('button',{name:'Analyse selected match'})).toBeDisabled();
+ expect(screen.getByRole('status')).toHaveTextContent('The selected window ends after this match. Choose an earlier start or fewer minutes.');
+ await userEvent.clear(screen.getByRole('spinbutton',{name:'Minutes to analyse'}));
+ await userEvent.type(screen.getByRole('spinbutton',{name:'Minutes to analyse'}),'3');
+ expect(screen.getByRole('button',{name:'Analyse selected match'})).toBeEnabled();
 });

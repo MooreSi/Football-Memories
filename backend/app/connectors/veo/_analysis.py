@@ -74,7 +74,8 @@ def export_sample(connection: VeoConnection, identity: str, window: dict[str, An
 def _folder(request: Request, ticket: str) -> Path:
     if not re.fullmatch(r"[a-f0-9]{32}", ticket):
         raise HTTPException(404, "Analysis clip unavailable.")
-    base = request.app.state.veo.directory / "analysis"
+    connection: VeoConnection = request.app.state.veo
+    base = connection.directory / "analysis"
     folder = base / ticket
     if base.is_symlink() or folder.is_symlink() or not (folder / "info.json").is_file():
         raise HTTPException(404, "Analysis clip unavailable.")

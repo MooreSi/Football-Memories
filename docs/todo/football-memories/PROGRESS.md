@@ -1,5 +1,21 @@
 # Football Memories: progress
 
+## Analyse button repair (spec630, 2026-11-24)
+
+Branch `codex/local-video-analytics`. Fixed the stale jobs-list busy guard: poll
+while any job is queued/running, including when viewing a different completed
+run. Veo picker explains running-analysis and invalid-window refusals. Synthetic
+background-completion regression and out-of-range feedback both failed before
+the fix and pass afterwards. All 13 live worker status files were complete;
+reported match cache duration3939s/available confirms16–20min is valid. No new
+source-account operation/analysis, credentials or footage changes.
+Verified: backend852 SQLite +852 PostgreSQL, ruff/format/mypy/Alembic pass;
+existing clip tests2 pass after the annotation-only correction. Frontend858,
+typecheck and hosted build pass. First frontend full run found an ambiguous
+status-role query in the new test; scoped it to the picker (same expected text).
+No existing test expectations weakened. Admin deployment pending; no CI workflow.
+
+
 Live status against [the brief](../../BRIEF.md). Update in the same commit as
 the work (rule [60-handoff](../../system/rules/60-handoff.md)).
 

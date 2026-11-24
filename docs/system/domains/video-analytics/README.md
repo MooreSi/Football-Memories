@@ -70,3 +70,8 @@ CSRF and Veo-permission gateway. It accepts an own-helper clip ID, never a URL,
 owner selector or host path. Start minute and1–10 minute window retain the worker
 600.1s cap. New runs prepare camera/views and skip action/OCR inference. Real
 source-account acceptance remains separate from synthetic helper/API/UI tests.
+
+The Video Lab jobs list must refresh while any owned job is queued/running,
+including when a different completed run is selected. A one-shot list leaves the
+Veo picker disabled after the worker finishes because its busy guard reads stale
+rows. Keep admission enforced and show the busy/range reason beside the picker.
