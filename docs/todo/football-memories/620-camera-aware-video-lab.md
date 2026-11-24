@@ -1,6 +1,6 @@
 # 620: Camera-aware calibration, learned labels and Veo selection
 
-**Status:** Implemented; admin preview update follows verification
+**Status:** Deployed to the existing admin preview,24 November2026
 **Sensitive:** existing Veo helper read-only sample export; no credential/session changes.
 
 ## What is missing
@@ -52,3 +52,12 @@ ORB87.65ms (both100 accepted);998 tracks/4296 views prepared in111.441s. These
 are throughput/integrity checks, not independent identity/pitch accuracy. Gateway
 records final API/security gates and CI in its own handoff. No source account
 contact, new weights/dependencies or existing footage/result overwrite.
+
+
+Deployment: gateway2be7fb7 → app6dd4010; worker d70f345 reloaded idle. Exact
+4/32-container change; global latest6138b56/shared tags/other28 unchanged; admin
+auto-update false. Code CI green in gateway/worker (app no workflow). Admin
+health/new bundle/helper route/schema and anonymous401 checked. Prior trials
+remain complete. Signed-in production playback/fresh Veo analysis not claimed;
+no source operation queued. Existing runs need stage updates to use new camera/
+multiview data; original results and saved labels remain.

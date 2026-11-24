@@ -34,8 +34,18 @@ Real cached120s camera18.508s,599 flow steps,0 rejections;100-pair flow19.33ms
 vs ORB87.65ms; real998-track/4296-view preparation111.441s. Hash/ZIP/source checks
 pass; no independent accuracy or new source-account acceptance established.
 No source credentials, new weights/dependencies, completed-result/input overwrite.
-Code checkpoint precedes admin preview deployment; keep global latest/shared tags
-and all other libraries unchanged.
+Deployed to the existing admin preview on24 November2026: gateway code2be7fb7
+first, app6dd4010 next via updates._move; native worker d70f345 reloaded idle and
+owns its watch lock. Gateway/worker code CI green45478769832/45478213369. App
+has no CI workflow.32-container comparison: exactly gateway +admin web/backend/
+capture changed;28 others, shared :hosted tags and latest6138b56 unchanged; admin
+auto-update staysfalse. Admin helper idle and0 network bytes over10s before move.
+Admin health200, new VideoLabPage-L1AwBVfV.js and new helper route/schema verified;
+anonymous jobs/import401; both published trials still complete. No new live Veo
+analysis queued and no authenticated production browser acceptance claimed. The
+isolated synthetic browser checks are separate from signed-in playback. Refresh
+Video Lab; on older runs use Update camera tracking / Update player view model
+once to gain the new stages. Existing labels/results carry forward.
 
 ## Identification-first checkpoint (spec 590, 2026-11-24)
 

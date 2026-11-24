@@ -24,7 +24,12 @@ no additional code or live capture needed. App/helper run the verified source.
 Originals/completed results preserved; no new dependencies/weights or source
 account request. No new independent identification accuracy claim. No global
 neural fine-tune; online per-game exemplar model uses only human corrections.
-Admin preview deployment/CI is recorded after the code checkpoint.
+Deployed admin preview: gateway2be7fb7, app6dd4010, native worker d70f345.
+Worker/gateway code CI green; app has no workflow. Exactly4/32 containers changed,
+28 others/shared :hosted/global latest6138b56 unchanged; admin auto-update false.
+Health200/new bundle+helper route/schema verified, anonymous APIs401, both prior
+trials complete. No new source-account operation or live analysis queued; signed-in
+production playback/fresh Veo selection remains an owner acceptance check.
 
 ## Identification before statistics (spec590, 2026-11-24)
 
