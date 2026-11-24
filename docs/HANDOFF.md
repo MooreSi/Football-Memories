@@ -13,6 +13,17 @@ timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 
 ## Identification-first checkpoint (spec 590, 2026-11-24)
 
+Owner follow-up: both completed trials are now registered in the live Video Lab
+runtime catalogue and as completed jobs owned by the existing approved admin
+(owner ID verified read-only against the gateway database). Outdoor1080p run
+`c880cae0` and indoor540p run `cbd21303`, both18:00–28:00; refresh Video Lab and
+select the matching completed run. Results were copied into new job directories,
+not rerun; sources/previous results preserved. Live gateway job views expose both
+videos/team files and reject a different owner404; anonymous jobs401. Every copied
+file is byte-identical. No code/image/container/default changes. Signed-in browser
+playback unverified: browser attachment requires an app update/network policy.
+Further model work is advice only, as requested; no training started.
+
 Owner prioritises correct player/team attribution before passing/tackling. Private
 worker `codex/local-pipeline` implements opt-in source-bound multi-view kit/role
 examples, pitch polygons, track uncertainty, explicit staff/keeper/referee classes,

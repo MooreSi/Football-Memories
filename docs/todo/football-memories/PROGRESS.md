@@ -13,6 +13,15 @@ no additional code or live capture needed. App/helper run the verified source.
 
 ## Identification before statistics (spec590, 2026-11-24)
 
+2026-11-24 follow-up: published both completed trials to the live runtime catalogue
+and admin-owned jobs: outdoor1080p `c880cae077d84522875ed0a4fe6e66a4`, indoor540p
+`cbd21303dbcc442b83414654793e079e`. Full copied-file hashes match originals;
+live gateway job views complete with video/team downloads, wrong owner404,
+anonymous jobs401. Catalogue backup retained privately. No code/deployment or
+training change. Docs-only link/diff checks; app suites not rerun. Signed-in
+playback unverified because browser attachment requires an app update/network
+policy. Refresh Video Lab; Runs uses these eight-character prefixes.
+
 | Work | Status | Evidence |
 |---|---|---|
 | Opt-in calibrated worker stage | done, experimental | source-bound kit/roles, pitch/track uncertainty, staff/keeper/referee examples, ball evidence, new preview/manifest/ZIP |

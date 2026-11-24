@@ -40,3 +40,11 @@ A fresh output directory initially contains inherited parent files. Wait for the
 CLI/owning job to complete before evaluating or serving it; mere file existence
 can score the parent's labels as though the new stage had finished. Keep audit
 labels frozen before inspecting predictions and source-bound to the sample.
+
+CLI result folders are not automatically visible in Video Lab: it reads the
+runtime `samples.json` catalogue and owner-bound completed `jobs/<id>/result`.
+The two identification trials were explicitly published there on24 November,
+with full copied-file hashes checked, after verifying the existing approved admin
+owner from gateway metadata. Do not create a session or bypass MFA to register
+local results; normal API access still requires the signed-in full admin. Run
+buttons currently use job prefixes rather than fixture names.
