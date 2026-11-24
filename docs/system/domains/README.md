@@ -16,6 +16,7 @@ same commit when a change teaches you something non-obvious.
 | `connectors/` | capability reporting; Hudl stays disabled (HUDL_INTEGRATION.md) | **yes**: `/safe-change` |
 | `players/` | primary player, player hub, memories timeline (phase 4) | privacy: minimal data about children |
 | `jobs/` | downloads, sync, notifications, backups (phases 5-6) | **yes**: idempotency, no duplicate files |
+| [`video-analytics/`](video-analytics/README.md) | source-bound player/team/role evidence, local worker and honest validation | privacy and full-admin boundary |
 
 Directories are created when the first code for that domain lands. Do not
 create empty ones.

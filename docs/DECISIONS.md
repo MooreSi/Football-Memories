@@ -4,6 +4,16 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-055 (2026-11-24) Identification comes before action statistics
+
+Owner makes correct player/team identification the primary video-pipeline goal.
+Keep team/role/jersey/individual identity evidence separate, explicitly exclude
+sideline people and distinguish officials/keepers. Research and trial a different
+ten-minute game before expanding passes/tackles. Add an opt-in calibrated worker
+stage and precision/coverage checks; do not promote a model because it creates more
+labels. Reject weak trials, retain unknowns, preserve source/results and require
+independent reviewed evidence before using attribution for game statistics.
+
 ## D-054 (2026-11-24) Implement football training with independent review evidence
 
 Owner explicitly requests the baseline's missing tracking, football training,

@@ -11,6 +11,15 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Identification before statistics (spec590, 2026-11-24)
+
+Private worker adds an opt-in calibrated identification/replay and audit stage;
+initial103 and measured110 worker tests pass, both checkpoint CPU CIs green.
+Indoor540p different600s trial completed but failed withheld identification quality;
+full-body SportsReID comparison insufficient. A clearer existing1080p outdoor source
+is running on18:00–28:00. App/gateway/deployment unchanged; this checkpoint is docs-only.
+See [spec590](590-identification-first.md) and worker `docs/IDENTIFICATION_TRIAL.md`.
+
 ## Football training extension (spec560, 2026-11-24)
 
 Building on private worker a0ef724:35 worker tests, real detector fine-tune and

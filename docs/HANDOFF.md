@@ -11,6 +11,22 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Identification-first pipeline (spec 590, 2026-11-24)
+
+Owner prioritises correct player/team attribution before passing/tackling stats.
+Private worker branch `codex/local-pipeline` adds opt-in source-bound multi-view
+kit/role calibration, pitch geometry, track consensus, ball evidence and role/team
+preview plus explicit precision/coverage audit. App/gateway/default worker unchanged.
+See [spec590](todo/football-memories/590-identification-first.md) and
+[domain notes](system/domains/video-analytics/README.md). Worker checkpoints2e9a6e8
+and18b07f4 pushed/CPU CI green. 110 worker tests green at measured checkpoint.
+Different indoor ten-minute archive completed; 540p colour-only withheld check
+failed (3/51 players assigned,2 correct; official0/6). SportsReID comparison also
+insufficient; retain rejected evidence. Higher-resolution1080p outdoor Villa–Stoke
+18:00–28:00 trial is now running from an existing local download. No account
+request, source overwrite, app integration, named identity or deployment claim.
+Final evidence will replace this in-progress note at the next checkpoint.
+
 ## Video Lab review workspace (spec 580, 2026-11-24)
 
 Owner found the spec 570 preview hard to use. Rebuilt `/video-lab` as a desktop workspace
