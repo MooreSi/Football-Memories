@@ -1,3 +1,5 @@
+import type { PitchKeyframe } from "./pitch";
+
 /** Video Lab (spec 580) shared shapes. Everything from the worker is unconfirmed until reviewed. */
 export type Team = "own" | "opponent";
 export type Role = "player" | "goalkeeper" | "referee" | "other";
@@ -25,6 +27,7 @@ export type Review = {
   revision: number; source_sha256: string; events: ReviewEvent[]; identities: Identity[];
   reviewed_intervals: [number, number][]; review_complete: boolean;
   track_labels: TrackLabel[]; group_labels: GroupLabel[]; rejected_suggestions: string[];
+  pitch_keyframes?: PitchKeyframe[];
 };
 
 export type Assignment = { team: Team | null; role: Role | null; source: "you" | "group" | "similar" | "model" | "none"; confidence: number };

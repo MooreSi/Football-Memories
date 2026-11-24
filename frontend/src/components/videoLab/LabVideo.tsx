@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type RefObject } from "react";
 import type { Assignment, Assignments, Observation } from "./labTypes";
 import { inPlay, mergeDense, type DenseTracks } from "./playArea";
+import { feet, footMargin, insidePitch, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
+import { MarkLayer, PAD } from "./MarkLayer";
 
 export const TEAM_COLOUR = { own: "#38bdf8", opponent: "#fb923c", referee: "#facc15", other: "#94a3b8", none: "#e2e8f0" };
 
@@ -86,24 +88,31 @@ type Props = {
   src: string; videoRef: RefObject<HTMLVideoElement | null>; at: number; onTime: (at: number) => void;
   assignments?: Assignments; teams: Map<number, Assignment>; selected: number | null; onSelect: (track: number) => void; showBoxes: boolean;
   dense?: DenseTracks; everyone?: boolean;
+  camera?: Camera; marks?: PitchKeyframe[]; showOutline?: boolean; marking?: Corners | null; onMarking?: (corners: Corners) => void;
 };
 
-export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false }: Props) {
+export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, camera, marks = [], showOutline = true, marking = null, onMarking }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const index = useMemo(() => indexObservations(mergeDense(assignments?.observations ?? [], dense)), [assignments, dense]);
   const now = useFrameTime(videoRef, at);
   const w = assignments?.image_width ?? 1920, h = assignments?.image_height ?? 1080;
   const here = showBoxes && assignments ? boxesAt(index, now) : [];
-  const visible = everyone ? here : inPlay(here, teams, selected);
+  // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
+  const outline = camera ? outlineAt(camera, marks, now) : null;
+  const visible = everyone ? here : outline
+    ? here.filter(o => o.track_id === selected || insidePitch(feet(o), outline, footMargin(o)))
+    : inPlay(here, teams, selected);
   const glows = Object.entries(TEAM_COLOUR);
   // Draw the selected person last so their highlight sits on top.
   const ordered = [...visible].sort((a, b) => Number(a.track_id === selected) - Number(b.track_id === selected));
   return <div className="relative overflow-hidden rounded-xl bg-black">
+    <div className="relative transition-transform" style={marking ? { transform: `scale(${1 - 2 * PAD})` } : undefined}>
     <video ref={videoRef} onTimeUpdate={e => onTime(e.currentTarget.currentTime)} onSeeked={e => onTime(e.currentTarget.currentTime)} className="aspect-video w-full" controls preload="metadata" src={src} aria-label="Match video" />
     {showBoxes && assignments && <svg className="pointer-events-none absolute inset-x-0 top-0 aspect-video w-full" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" aria-label="People on screen">
       <defs>{glows.map(([key, colour]) => <linearGradient key={key} id={`lab-glow-${key}`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stopColor={colour} stopOpacity="0" /><stop offset="0.55" stopColor={colour} stopOpacity="0.22" /><stop offset="1" stopColor={colour} stopOpacity="0.55" />
       </linearGradient>)}</defs>
+      {outline && showOutline && !marking && <polygon points={outline.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="#22c55e" fillOpacity={0.05} stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Pitch outline" />}
       {ordered.map(row => {
         const [x1, y1, x2, y2] = row.image_box!;
         const info = teams.get(row.track_id);
@@ -129,5 +138,7 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
         </g>;
       })}
     </svg>}
+    </div>
+    {marking && onMarking && <MarkLayer corners={marking} onChange={onMarking} />}
   </div>;
 }

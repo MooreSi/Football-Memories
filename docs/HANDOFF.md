@@ -47,6 +47,15 @@ Worker report `docs/IDENTIFICATION_TRIAL.md` records exact evidence and limitati
 Next: independent reviewed youth role/team data and part-aware model, hard staff/
 keeper/referee/kit-change cases, camera calibration and specialised jersey reader.
 
+## Adjustable pitch outline (spec 600, 2026-11-24)
+
+Owner: other matches and sideline people were still analysed; asked for homography with a
+manual adjustment. Built across all three repos (worker 'camera-tracking', gateway
+`pitch_keyframes` + `track-camera`, Video Lab "Pitch outline" panel: Prepare, Mark pitch
+here, draggable corners incl. off screen, marks list). With marks, only people inside the
+outline get rings and team suggestions. Details: [spec 600](todo/football-memories/600-pitch-outline.md).
+Frontend 836, gateway 444, worker 128 tests. **Not deployed; deploy gateway before app.**
+
 ## Refine moments and off-pitch people (spec 580 follow-up 2, 2026-11-24)
 
 Owner: "build the refine moments step"; rings on people outside the pitch are not wanted;

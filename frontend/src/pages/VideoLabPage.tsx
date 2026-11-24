@@ -8,6 +8,8 @@ import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
+import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, type Corners } from "../components/videoLab/pitch";
+import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { propagateTeams } from "../components/videoLab/teams";
 import { BASE, csrfToken, useJobFile, useReview } from "../components/videoLab/useLabData";
@@ -26,7 +28,7 @@ const isVeo = (v: unknown): v is VeoTags => !!v && Array.isArray((v as VeoTags).
 const isList = (v: unknown): v is Suggestion[] => Array.isArray(v);
 const isAssignments = (v: unknown): v is Assignments => !!v && Array.isArray((v as Assignments).observations) && (v as Assignments).image_width > 0;
 const isAppearance = (v: unknown): v is Appearance => !!v && Array.isArray((v as Appearance).tracks) && Array.isArray((v as Appearance).groups);
-const runLabel = (j: Job) => `${j.id.slice(0, 8)} · ${j.state}${j.mode === "team-enrichment" && j.parent_job_id ? ` · jersey tagging of ${j.parent_job_id.slice(0, 8)}` : j.mode === "review-preparation" && j.parent_job_id ? ` · player grouping of ${j.parent_job_id.slice(0, 8)}` : j.mode === "moment-refinement" && j.parent_job_id ? ` · refined moments of ${j.parent_job_id.slice(0, 8)}` : ""}`;
+const runLabel = (j: Job) => `${j.id.slice(0, 8)} · ${j.state}${j.mode === "team-enrichment" && j.parent_job_id ? ` · jersey tagging of ${j.parent_job_id.slice(0, 8)}` : j.mode === "review-preparation" && j.parent_job_id ? ` · player grouping of ${j.parent_job_id.slice(0, 8)}` : j.mode === "moment-refinement" && j.parent_job_id ? ` · refined moments of ${j.parent_job_id.slice(0, 8)}` : j.mode === "camera-tracking" && j.parent_job_id ? ` · pitch tracking of ${j.parent_job_id.slice(0, 8)}` : ""}`;
 
 function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -38,6 +40,8 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const [track, setTrack] = useState<number | null>(null);
   const [boxes, setBoxes] = useState(true);
   const [everyone, setEveryone] = useState(false);
+  const [marking, setMarking] = useState<Corners | null>(null);
+  const [showOutline, setShowOutline] = useState(true);
   const artifacts = job.artifacts ?? [];
   const has = (name: string) => artifacts.includes(name);
   const veo = useJobFile(job.id, "veo_tags.json", has("veo_tags.json"), isVeo);
@@ -45,8 +49,12 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const assignments = useJobFile(job.id, "team_assignments.json", has("team_assignments.json"), isAssignments);
   const appearance = useJobFile(job.id, "track_appearance.json", has("track_appearance.json"), isAppearance);
   const dense = useJobFile(job.id, "dense_tracks.json", has("dense_tracks.json"), isDense);
+  const motion = useJobFile(job.id, "camera_motion.json", has("camera_motion.json"), isCameraMotion);
   const { review, update, state, error } = useReview(job.id);
-  const teams = useMemo(() => propagateTeams(appearance.data?.tracks ?? [], review?.track_labels ?? [], review?.group_labels ?? [], appearance.data ? [] : assignments.data?.observations ?? []), [appearance.data, assignments.data, review?.track_labels, review?.group_labels]);
+  const camera = useMemo(() => motion.data ? buildCamera(motion.data) : undefined, [motion.data]);
+  const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
+  const offPitch = useMemo(() => camera && marks.length ? offPitchTracks(assignments.data?.observations ?? [], camera, marks) : new Set<number>(), [camera, marks, assignments.data]);
+  const teams = useMemo(() => propagateTeams(appearance.data?.tracks ?? [], review?.track_labels ?? [], review?.group_labels ?? [], appearance.data ? [] : assignments.data?.observations ?? [], offPitch), [appearance.data, assignments.data, review?.track_labels, review?.group_labels, offPitch]);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
   const current = cursor !== null ? visible[cursor] ?? null : visible.find(m => Math.abs(m.time - at) <= LEAD) ?? null;
@@ -82,7 +90,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
       <section className="min-w-0 space-y-3" aria-label="Analysis results">
         {clip
-          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} /></div>
+          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} /></div>
           : <div className="flex aspect-video items-center justify-center rounded-xl bg-black/40 text-fg-muted">This run has no video.</div>}
         <div className="panel flex flex-wrap items-center gap-2 p-2" aria-label="Moment playback">
           <Button aria-label="Previous moment" disabled={!visible.length} onClick={() => playAt(Math.max(0, (cursor ?? 1) - 1))}><ChevronLeft size={16} aria-hidden />Previous</Button>
@@ -93,6 +101,11 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={boxes} onChange={e => setBoxes(e.target.checked)} />Show people</label>}
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
+        {has("team_assignments.json") && summary?.source_sha256 && <PitchPanel jobId={job.id} sourceHash={summary.source_sha256} hasCamera={has("camera_motion.json")} marks={marks} at={at} marking={!!marking} onQueued={onQueued}
+          onStart={() => { video.current?.pause(); setMarking((camera && outlineAt(camera, marks, video.current?.currentTime ?? at)) ?? DEFAULT_CORNERS); }}
+          onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
+          onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
+          onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}

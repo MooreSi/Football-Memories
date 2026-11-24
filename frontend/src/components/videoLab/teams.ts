@@ -27,7 +27,7 @@ function similarity(a: AppearanceTrack, b: AppearanceTrack) {
  * Team and role per track: your label wins, then your label for its appearance group, then
  * the closest labelled people in appearance space when they agree. Otherwise unassigned.
  */
-export function propagateTeams(tracks: AppearanceTrack[], trackLabels: TrackLabel[], groupLabels: GroupLabel[], observations: Observation[]): Map<number, Assignment> {
+export function propagateTeams(tracks: AppearanceTrack[], trackLabels: TrackLabel[], groupLabels: GroupLabel[], observations: Observation[], offPitch: Set<number> = new Set()): Map<number, Assignment> {
   const result = new Map<number, Assignment>();
   const own = new Map(trackLabels.map(l => [l.track_id, l]));
   const groups = new Map(groupLabels.map(l => [l.group_id, l]));
@@ -51,6 +51,8 @@ export function propagateTeams(tracks: AppearanceTrack[], trackLabels: TrackLabe
   const anchors = tracks.filter(t => own.has(t.track_id));
   for (const track of tracks) {
     if (result.has(track.track_id)) continue;
+    // People seen mostly off the marked pitch (spec 600) get no suggested team.
+    if (offPitch.has(track.track_id)) { result.set(track.track_id, NONE); continue; }
     // Closest labelled person per label (team + role). On real Veo footage absolute similarity
     // varies with light; "clearly closer to one label than any other" is what holds up.
     const best = new Map<string, number>();

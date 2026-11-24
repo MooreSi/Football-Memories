@@ -26,7 +26,7 @@ export async function csrfToken() {
 
 const empty = (review: Partial<Review>): Review => ({
   revision: 0, source_sha256: "", events: [], identities: [], reviewed_intervals: [], review_complete: false,
-  track_labels: [], group_labels: [], rejected_suggestions: [], ...review,
+  track_labels: [], group_labels: [], rejected_suggestions: [], pitch_keyframes: [], ...review,
 });
 
 function body(review: Review) {
@@ -36,6 +36,7 @@ function body(review: Review) {
     identities: review.identities.map(({ track_id, player_id, start_s, end_s }) => ({ track_id, player_id, start_s, end_s })),
     reviewed_intervals: review.reviewed_intervals, review_complete: review.review_complete,
     track_labels: review.track_labels, group_labels: review.group_labels, rejected_suggestions: review.rejected_suggestions,
+    pitch_keyframes: review.pitch_keyframes ?? [],
   };
 }
 
