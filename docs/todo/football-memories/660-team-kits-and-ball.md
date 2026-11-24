@@ -56,8 +56,10 @@ before scoring (73 yellow, 88 red, 5 pink keeper, 6 black keeper, 15 referee, 24
 
 The 4 wrong are two players merged in one detection box (mixed colour). Spectators shown as
 referee are touchline adults in dark jackets (faint suggestion rings, never a team).
-Ball: 484 of 720 samples on the chosen path; checked at 0:01, 0:45, 1:30, 2:30 (correct ball
-each time, spare balls ignored). Frames every 10 s for all 4 minutes drawn with the app's own
+Ball: spares resting 6 s+ (15+ sightings in one spot) and balls cut off at the picture's side
+are ignored; free kicks (4-5 s rest) kept; gaps up to 1.5 s glide. Shown for 83.8% of the clip.
+Audit every 10 s (24 moments): match ball 21, wrong 1 (0:15, a spare by the coach that moves
+with the camera), no ball detected 2 (2:25, 2:35). Frames every 10 s for all 4 minutes drawn with the app's own
 decisions and reviewed by eye. Synthetic page test red before wiring, green after.
 
 ## Limits

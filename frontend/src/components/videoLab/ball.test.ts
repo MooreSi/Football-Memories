@@ -26,6 +26,19 @@ describe("trackBall", () => {
     expect(path).toHaveLength(12);
     expect(path.every(p => p.x > 0.3)).toBe(true);
   });
+  it("ignores a ball resting in one spot for many seconds (a spare by the bags), but keeps a ball waiting for a free kick", () => {
+    const samples = Array.from({ length: 36 }, (_, i) => ({ time_s: i / 3, balls: [
+      { box: ball(1770, 608).box, score: 0.75 },                                   // spare: 12 s in one spot
+      ...(i < 15 ? [{ box: ball(1200, 536).box, score: 0.6 }] : i < 21 || i > 27 ? [{ box: ball(1200 - (i - 15) * 15, 520).box, score: 0.6 }] : []), // free kick: 5 s rest, played, then unseen 2 s
+    ] }));
+    const path = trackBall(samples, W, H);
+    expect(path.every(p => p.x < 1700 / W)).toBe(true);
+    expect(path.filter(p => p.time_s < 5)).toHaveLength(15);
+  });
+  it("ignores a ball cut off at the side of the picture (Veo keeps the match ball inside the frame)", () => {
+    const samples = Array.from({ length: 6 }, (_, i) => ({ time_s: i / 3, balls: [{ box: [1895, 590, 1920, 612], score: 0.95 }] }));
+    expect(trackBall(samples, W, H)).toEqual([]);
+  });
   it("does not jump to a far-away ball for one sample", () => {
     const samples = Array.from({ length: 9 }, (_, i) => ({ time_s: i / 3, balls: [{ box: ball(900 + i * 10, 500).box, score: 0.7 }, ...(i === 4 ? [{ box: ball(1800, 100).box, score: 0.9 }] : [])] }));
     const path = trackBall(samples, W, H);
@@ -41,6 +54,10 @@ describe("ballAt", () => {
   const path = [{ time_s: 0, x: 0.4, y: 0.5, r: 0.01 }, { time_s: 0.5, x: 0.5, y: 0.5, r: 0.01 }, { time_s: 3, x: 0.9, y: 0.5, r: 0.01 }];
   it("glides between neighbouring sightings", () => {
     expect(ballAt(path, 0.25)!.x).toBeCloseTo(0.45, 5);
+  });
+  it("glides across a short unseen stretch (up to a second and a half) between sightings", () => {
+    const gap = [{ time_s: 10, x: 0.4, y: 0.5, r: 0.01 }, { time_s: 11.4, x: 0.54, y: 0.5, r: 0.01 }];
+    expect(ballAt(gap, 10.7)!.x).toBeCloseTo(0.47, 5);
   });
   it("shows nothing across a long gap or far from any sighting", () => {
     expect(ballAt(path, 1.6)).toBeNull();

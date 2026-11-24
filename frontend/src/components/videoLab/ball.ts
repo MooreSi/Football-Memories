@@ -30,7 +30,27 @@ const CENTRE = 1.2;      // preference for the middle of the picture (the camera
 const JUMP = 2.0;        // cost per picture width moved between sightings
 const FAST = 4.0, CRUISE = 0.6; // extra cost per picture width per second above a fast shot's pace
 
-export function trackBall(samples: BallSample[], width: number, height: number): BallPoint[] {
+const SPARE_S = 6, SPARE_SEEN = 15, SPARE_PX = 12, SPARE_LOOK_S = 8;
+
+/**
+ * Balls resting in one spot for many seconds are spares by the bags or beyond a fence; a match ball
+ * waiting for a free kick or goal kick rests only a few seconds. (On the RCW run: spares 10-11 s,
+ * 24-34 sightings; a free kick 4-5 s.)
+ */
+function withoutSpares(samples: BallSample[]): BallSample[] {
+  const all = samples.flatMap(s => s.balls.map(b => ({ t: s.time_s, x: (b.box[0] + b.box[2]) / 2, y: (b.box[1] + b.box[3]) / 2 })));
+  const spare = (t: number, box: number[]) => {
+    const x = (box[0] + box[2]) / 2, y = (box[1] + box[3]) / 2;
+    let first = Infinity, last = -Infinity, seen = 0;
+    for (const b of all) if (Math.abs(b.t - t) <= SPARE_LOOK_S && Math.abs(b.x - x) <= SPARE_PX && Math.abs(b.y - y) <= SPARE_PX) { seen++; first = Math.min(first, b.t); last = Math.max(last, b.t); }
+    return seen >= SPARE_SEEN && last - first >= SPARE_S;
+  };
+  return samples.map(s => ({ ...s, balls: s.balls.filter(b => !spare(s.time_s, b.box)) }));
+}
+
+export function trackBall(input: BallSample[], width: number, height: number): BallPoint[] {
+  // A ball cut off at the left or right edge is a spare by the touchline; Veo keeps play inside the frame.
+  const samples = withoutSpares(input).map(s => ({ ...s, balls: s.balls.filter(b => b.box[0] > 2 && b.box[2] < width - 2) }));
   type Node = { i: number; time_s: number; x: number; y: number; r: number; cost: number; best: number; back: number };
   const nodes: Node[] = [];
   const firstOf: number[] = [];
@@ -64,7 +84,7 @@ export function trackBall(samples: BallSample[], width: number, height: number):
   return path.reverse();
 }
 
-const GLIDE_S = 0.75, HOLD_S = 0.2;
+const GLIDE_S = 1.5, HOLD_S = 0.2;
 
 /** Ball position at the playhead: interpolated between close sightings, otherwise nothing. */
 export function ballAt(path: BallPoint[], at: number): BallPoint | null {
