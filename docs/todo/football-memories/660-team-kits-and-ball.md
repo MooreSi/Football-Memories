@@ -68,6 +68,27 @@ Detector follow-up (owner chose it): worker `refine-moments --whole-clip` (branc
 app ball coverage 84% to 88%. Dense people links made team errors worse (4 to 23), so a
 whole-clip run feeds the ball only.
 
+## Second match: Racing Club Warwick vs Kidderminster RMC (16 Nov, 18:00-22:00)
+Owner asked for a 4-minute check on another Veo match. Used the saved local 10-minute sample
+(no source-account access); cut 4 minutes, standard analysis + player views (647 tracklets),
+published as run `3ebc1a17` with no labels. Low winter sun: blown-out shirts, purple colour cast
+(the referee's black reads purple; the vivid-pixel torso measure picks armbands), and RCW amber
+vs opponent orange differ mainly in a*. Assistant audit, 407 crops at 18 moments (67 RCW, 59
+opponent, 8 pink keeper, 21 referee, 177 non-players, 75 unsure):
+
+| Labels in this match | Players right | Wrong | Unassigned | Non-players given a role |
+|---|---|---|---|---|
+| none, nothing remembered | 0 | 0 | 155 | 0 |
+| none, RCW kit remembered from the CG match (title initials) | 26 | 1 | 128 | 0 |
+| one per team | 56 | 8 | 91 | 1 |
+| six (2 per team, their keeper, referee) | 103 | 3 | 49 | 3 |
+
+Precision stays high but coverage is limited by the colour measurement under harsh light. Tried
+and rejected: single-reading decisions (more right with memory only, but wrong 8 to 15 with one
+label per team). Two shades per kit (sun/shadow) kept; no measured gain on these clips. Next step:
+worker colour measurement robust to exposure and casts (turf-referenced white balance, ignore
+blown-out and armband pixels), then re-measure both matches.
+
 ## Limits
 Kit colour separates teams only when kits differ in colour; same-colour kits need the
 look-alike model. Merged boxes stay wrong until detection improves. Remembered kits rely on

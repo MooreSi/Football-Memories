@@ -39,7 +39,7 @@ export function KitsLearned({ kits, remembered, teams }: { kits: KitPrototype[];
   const matched = (k: KitPrototype) => [...teams.values()].filter(t => t.source === "kit" && t.team === k.team && t.role === k.role).length;
   return <div className="space-y-1" aria-label="Kits learned">
     <h3 className="text-sm font-semibold">Kits learned from your labels</h3>
-    <ul className="flex flex-wrap gap-2">{kits.map(k => <li key={`${k.team}|${k.role}`} className="flex items-center gap-2 rounded-lg border border-line px-2 py-1 text-xs">
+    <ul className="flex flex-wrap gap-2">{kits.map((k, i) => <li key={`${k.team}|${k.role}|${i}`} className="flex items-center gap-2 rounded-lg border border-line px-2 py-1 text-xs">
       <span className="inline-block size-4 rounded-sm border border-line" style={{ background: kitColour(k.lab) }} aria-hidden />
       <span>{kitName(k)}{remembered.includes(k) ? " · remembered from an earlier run" : ""}</span>
       <span className="tabular-nums text-fg-muted">{matched(k) ? `${matched(k)} matched by kit` : "dark kit: decided by your labels and look-alikes"}</span>

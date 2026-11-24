@@ -52,8 +52,12 @@ function mode(points: number[][]): { lab: number[]; examples: number } | null {
   return { lab: lab.map(v => Math.round(v * 10) / 10), examples: near.length };
 }
 
+const SECOND_SHADE = 0.2; // a second shade (sun or shadow) needs this share of the label's samples
+
 /**
- * One kit per label you used (team and role), learned from the samples of the people you labelled.
+ * Up to two shades per label you used (team and role), learned from the samples of the people you
+ * labelled: low winter sun can wash a shirt out and shadow can turn orange to red. A second shade must
+ * be common on its own and must not sit on another label's kit (a tracker swap is not a shade).
  * Kits remembered from earlier matches fill in labels you have not used in this match yet; any label
  * you use here replaces the remembered kit for it (a team can wear an away kit).
  */
@@ -73,28 +77,42 @@ export function learnKits(rows: KitObservation[], labels: TrackLabel[], remember
     const found = mode(points);
     if (found) learned.push({ team, role, ...found });
   }
+  const firsts = [...learned];
+  for (const { team, role, points } of samples.values()) {
+    const first = firsts.find(k => k.team === team && k.role === role);
+    if (!first) continue;
+    const rest = points.filter(p => kitDistance(p, first.lab) > RADIUS);
+    if (rest.length < Math.max(MIN_EXAMPLES, points.length * SECOND_SHADE)) continue;
+    const found = mode(rest);
+    if (!found || found.examples < points.length * SECOND_SHADE) continue;
+    if (firsts.some(k => (k.team !== team || k.role !== role) && kitDistance(found.lab, k.lab) <= RADIUS + MARGIN)) continue;
+    learned.push({ team, role, ...found });
+  }
   const here = new Set(labels.map(l => keyOf(l.team, l.role)));
   return [...learned, ...remembered.filter(k => !here.has(keyOf(k.team, k.role)) && valid(k.lab))];
 }
 
-/** The decisive kit a sample matches, if one is clearly nearest. */
+const sameKit = (a: KitPrototype, b: KitPrototype) => a.team === b.team && a.role === b.role;
+
+/** The decisive kit a sample matches, if one is clearly nearer than any other label's kit. */
 function match(colour: number[] | null | undefined, kits: KitPrototype[]): KitPrototype | null {
   if (!valid(colour)) return null;
-  let first: KitPrototype | null = null, d1 = Infinity, d2 = Infinity;
-  for (const kit of kits) {
-    const d = kitDistance(colour, kit.lab);
-    if (d < d1) { d2 = d1; d1 = d; first = kit; } else if (d < d2) d2 = d;
-  }
-  return first && d1 <= RADIUS && d2 - d1 >= MARGIN && chroma(first.lab) >= CHROMA ? first : null;
+  let first: KitPrototype | null = null, d1 = Infinity;
+  for (const kit of kits) { const d = kitDistance(colour, kit.lab); if (d < d1) { d1 = d; first = kit; } }
+  if (!first || d1 > RADIUS || chroma(first.lab) < CHROMA) return null;
+  let d2 = Infinity;
+  for (const kit of kits) if (!sameKit(kit, first)) d2 = Math.min(d2, kitDistance(colour, kit.lab));
+  return d2 - d1 >= MARGIN ? first : null;
 }
 
 /**
  * Does this colour show a different known kit from `label`'s own? (The tracker moved from a labelled
  * player onto someone else, often the referee in black.) Only a colourful label kit can be contradicted.
  */
-function contradicts(colour: number[] | null | undefined, own: KitPrototype | undefined, kits: KitPrototype[]) {
-  if (!own || !valid(colour) || chroma(own.lab) < CHROMA || kitDistance(colour, own.lab) <= 2 * RADIUS) return false;
-  return kits.some(k => k !== own && kitDistance(colour, k.lab) <= RADIUS);
+function contradicts(colour: number[] | null | undefined, own: KitPrototype | KitPrototype[] | undefined, kits: KitPrototype[]) {
+  const shades = own === undefined ? [] : Array.isArray(own) ? own : kits.filter(k => sameKit(k, own));
+  if (!shades.length || !valid(colour) || !shades.some(k => chroma(k.lab) >= CHROMA) || shades.some(k => kitDistance(colour, k.lab) <= 2 * RADIUS)) return false;
+  return kits.some(k => !shades.includes(k) && kitDistance(colour, k.lab) <= RADIUS);
 }
 
 /**
@@ -110,7 +128,7 @@ export function cleanAnchors(tracks: AppearanceTrack[], labels: TrackLabel[], ki
   const prepared = tracks.map(track => {
     if (!track.views?.length) return track;
     const l = label.get(track.track_id);
-    const own = l && kits.find(k => k.team === l.team && k.role === l.role);
+    const own = l ? kits.filter(k => k.team === l.team && k.role === l.role) : [];
     if (l) {
       // The stretch after a tracker swap is judged separately, as track -id, never with your label.
       const swapped = track.views.filter(v => contradicts(v.kit, own, kits));
@@ -132,6 +150,8 @@ const assignment = (kit: KitPrototype, source: Assignment["source"], confidence:
  */
 export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels: TrackLabel[], fallback: Map<number, Assignment>): TeamTimeline {
   const decisive = kits.filter(k => chroma(k.lab) >= CHROMA);
+  const canon = new Map<string, KitPrototype>();
+  for (const k of kits) if (!canon.has(keyOf(k.team, k.role))) canon.set(keyOf(k.team, k.role), k);
   const label = new Map(labels.map(l => [l.track_id, l]));
   const byTrack = new Map<number, KitObservation[]>();
   for (const row of rows) { const list = byTrack.get(row.track_id) ?? []; list.push(row); byTrack.set(row.track_id, list); }
@@ -139,7 +159,8 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
   const tracks = new Map<number, Assignment>();
   for (const [track, list] of byTrack) {
     list.sort((a, b) => a.time_s - b.time_s);
-    const matched = list.map(r => match(r.colour_lab, decisive));
+    // Shades of one kit vote as that kit.
+    const matched = list.map(r => { const m = match(r.colour_lab, decisive); return m && canon.get(keyOf(m.team, m.role))!; });
     // A short window of samples votes, so one odd frame cannot flip a player.
     const decided: ({ kit: KitPrototype; share: number } | null)[] = list.map((r, i) => {
       const votes = new Map<KitPrototype, number>();
@@ -158,13 +179,13 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
         if (decided[j] && g <= CARRY_S && g < gap) { gap = g; best = decided[j]; }
       }
       // ...unless this sample plainly shows another known kit (the tracker moved onto someone else).
-      return best && !contradicts(list[i].colour_lab, best.kit, kits) ? best : null;
+      return best && !contradicts(list[i].colour_lab, kits.filter(k => sameKit(k, best!.kit)), kits) ? best : null;
     });
     const counts = new Map<KitPrototype, number>();
     for (const f of filled) if (f) counts.set(f.kit, (counts.get(f.kit) ?? 0) + 1);
     const mine = label.get(track);
-    const ownKit = mine && kits.find(k => k.team === mine.team && k.role === mine.role);
-    const ownKitDecides = !!ownKit && chroma(ownKit.lab) >= CHROMA;
+    const ownKit = mine ? kits.filter(k => k.team === mine.team && k.role === mine.role) : [];
+    const ownKitDecides = ownKit.some(k => chroma(k.lab) >= CHROMA);
     const values = filled.map((f, i) => {
       if (!f) {
         if (!mine) return fallback.get(track);
@@ -216,7 +237,11 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
 /** A saved human-only learned model of another run (gateway `review/learned-model`), with its match title. */
 export type SavedModel = { title: string; examples: { team: Team | null; role: Role; views?: { kit?: number[] | null }[] }[] };
 
-const clubs = (title: string) => title.replace(/^\s*\d+\s+/, "").split(/\s+vs\.?\s+/i).map(c => c.trim().toLowerCase()).filter(Boolean);
+// "261107 RCW vs Kidderminster CG", "Racing Club Warwick vs Kidderminster RMC · 16 Nov 2026 · 18:00–28:00"
+const clubs = (title: string) => title.split("·")[0].replace(/^\s*\d+\s+/, "").split(/\s+vs\.?\s+/i).map(c => c.trim().toLowerCase()).filter(Boolean);
+const initials = (club: string) => club.split(/\s+/).map(w => w.replace(/[^a-z0-9]/g, "")[0] ?? "").join("");
+/** The same club, written in full or as its initials (RCW = Racing Club Warwick). */
+const sameClub = (a: string, b: string) => a === b || (!a.includes(" ") && a.length >= 2 && initials(b) === a) || (!b.includes(" ") && b.length >= 2 && initials(a) === b);
 
 /**
  * Kits taught in your other runs. Another window of the same match brings back every kit; another
@@ -229,7 +254,7 @@ export function rememberKits(models: SavedModel[], title: string): KitPrototype[
   const samples = new Map<string, { team: Team | null; role: Role; points: number[][] }>();
   for (const model of models) {
     const same = model.title.trim() !== "" && model.title.trim() === title.trim();
-    if (!same && !clubs(model.title).some(c => here.includes(c))) continue;
+    if (!same && !clubs(model.title).some(c => here.some(h => sameClub(c, h)))) continue;
     for (const example of model.examples) {
       if (!same && example.team !== "own") continue;
       const key = keyOf(example.team, example.role);

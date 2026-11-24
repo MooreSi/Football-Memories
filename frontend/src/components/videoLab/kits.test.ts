@@ -46,6 +46,20 @@ describe("learnKits", () => {
     expect(own.lab[1]).toBeCloseTo(YELLOW[1], 0); expect(own.lab[2]).toBeCloseTo(YELLOW[2], 0);
     expect(opponent.lab[1]).toBeCloseTo(RED[1], 0); expect(opponent.lab[2]).toBeCloseTo(RED[2], 0);
   });
+  it("learns a kit seen in sun and in shadow as two shades of the same kit", () => {
+    const SUN = [190, 150, 175], SHADE = [70, 160, 150];
+    const rows = [...run(1, 0, 4, SUN), ...run(1, 4.33, 8, SHADE), ...run(2, 0, 8, [80, 128, 200])];
+    const kits = learnKits(rows, [{ track_id: 1, team: "own", role: "player" }, { track_id: 2, team: "opponent", role: "player" }]);
+    expect(kits.filter(k => k.team === "own")).toHaveLength(2);
+    const teams = kitTimeline([...rows, ...run(9, 20, 22, [72, 161, 151]), ...run(10, 20, 22, [188, 151, 174])], kits, [{ track_id: 1, team: "own", role: "player" }, { track_id: 2, team: "opponent", role: "player" }], none);
+    expect(teams.at(9, 21)).toMatchObject({ team: "own", source: "kit" });
+    expect(teams.at(10, 21)).toMatchObject({ team: "own", source: "kit" });
+    expect(teams.at(1, 6)).toMatchObject({ team: "own", source: "you" });
+  });
+  it("a passing minority colour on a labelled player is not learned as a second shade", () => {
+    const rows = [...run(1, 0, 8, YELLOW), ...run(1, 8.33, 8.7, BLACK)];
+    expect(learnKits(rows, [{ track_id: 1, team: "own", role: "player" }])).toHaveLength(1);
+  });
   it("learns nothing without your labels or remembered kits", () => {
     expect(learnKits(labelled, [])).toEqual([]);
   });
@@ -152,6 +166,14 @@ describe("rememberKits", () => {
     expect(kits).toHaveLength(1);
     expect(kits[0]).toMatchObject({ team: "own", role: "player" });
     expect(kits[0].lab[1]).toBeCloseTo(YELLOW[1], 0);
+  });
+  it("a club written as its initials in one title and in full in another is the same club", () => {
+    const kits = rememberKits([model("261107 RCW vs Kidderminster CG")], "Racing Club Warwick vs Kidderminster RMC · 16 Nov 2026 · 18:00–28:00");
+    expect(kits).toHaveLength(1);
+    expect(kits[0]).toMatchObject({ team: "own" });
+  });
+  it("a shared place name alone does not make two different clubs the same", () => {
+    expect(rememberKits([model("Kidderminster CG vs Redditch")], "Racing Club Warwick vs Kidderminster RMC")).toEqual([]);
   });
   it("unrelated or untitled runs teach nothing", () => {
     expect(rememberKits([model("Villa vs Stoke"), model("")], "261107 RCW vs Kidderminster CG")).toEqual([]);
