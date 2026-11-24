@@ -11,6 +11,24 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Video Lab review workspace (spec 580, 2026-11-24)
+
+Owner found the spec 570 preview hard to use. Rebuilt `/video-lab` as a desktop workspace
+(`frontend/src/components/videoLab/`): moments rail with play-through and previous/next,
+clickable people on a clean video, an inspector to approve/reject/retype actions with a
+team, label people (team, goalkeeper, referee, not a player), and look-alike groups. Worker
+0.4.0 `review-preparation` adds SportsReID groups, shirt colours and actor candidates;
+gateway accepts team/role labels and queues preparation. Details and calibration numbers:
+[spec 580](todo/football-memories/580-video-lab-review-workspace.md). Removed the old
+sidebar, colour picker, overlay and review panel components with their tests.
+
+Verification: frontend 813 passed, typecheck/build; gateway 433; worker 89; backend
+unchanged. Logic tests red first; workspace UI tests written after the components and
+proved by mutation (each broke when its behaviour was removed). Real-data browser check
+on a local server with the prepared ten-minute run. **Not deployed.** Deploy needs the
+gateway + admin app images (see memory route) and the worker LaunchAgent started with
+`--reid-config "/Users/simon/Football Video Analytics/models/reid.json"`.
+
 ## Team segregation and Video Lab metadata rail (spec570, 2026-11-24)
 
 Codex built this; Claude reviewed, fixed and completed it. App branch

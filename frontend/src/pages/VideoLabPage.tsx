@@ -1,74 +1,142 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Film, FlaskConical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { LabVideo } from "../components/videoLab/LabVideo";
+import { MomentRail } from "../components/videoLab/MomentRail";
+import { Inspector, decide } from "../components/videoLab/Inspector";
+import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
+import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
+import { propagateTeams } from "../components/videoLab/teams";
+import { BASE, csrfToken, useJobFile, useReview } from "../components/videoLab/useLabData";
+import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
-import { VideoMetadataSidebar, VideoTeamStats } from "../components/VideoMetadataSidebar";
-import { VideoTeamCalibration } from "../components/VideoTeamCalibration";
-import { VideoTeamOverlay } from "../components/VideoTeamOverlay";
-import { VideoReviewPanel } from "../components/VideoReviewPanel";
-
-const BASE="/_admin/api/video-analytics";
-type Sample={id:string;label:string;duration_s:number;source_offset_s:number};
-type Summary={source_sha256?:string;sampled_frames:number;person_detections:number;ball_detections:number;unique_tracklets:number;ball_observation_coverage:number;football_events_confirmed:number;elapsed_s?:number;quality?:string};
-type Job={id:string;sample_id?:string;state:string;progress:number;summary?:Summary;artifacts?:string[];error?:string;mode?:string;parent_job_id?:string};
-async function get<T,>(path:string):Promise<T>{
- const response=await fetch(BASE+path,{credentials:"same-origin",cache:"no-store"});
- if(!response.ok)throw new Error("Local video analysis is unavailable. Please retry when the worker is connected.");
- return response.json() as Promise<T>;
+type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
+type Summary = { source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
+type Job = { id: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string };
+const LEAD = 3, AFTER = 4;
+async function get<T,>(path: string): Promise<T> {
+  const response = await fetch(BASE + path, { credentials: "same-origin", cache: "no-store" });
+  if (!response.ok) throw new Error("Local video analysis is unavailable. Please retry when the worker is connected.");
+  return response.json() as Promise<T>;
 }
-export default function VideoLabPage(){
- const cache=useQueryClient();
- const video=useRef<HTMLVideoElement>(null);
- const [at,setAt]=useState(0);
- const [overlay,setOverlay]=useState(false);
- const [sample,setSample]=useState("");
- const [selected,setSelected]=useState<string|null>(null);
- useEffect(()=>{setOverlay(false);setAt(0);},[selected]);
- const samples=useQuery({queryKey:["video-lab-samples"],queryFn:()=>get<Sample[]>("/samples"),retry:false});
- const jobs=useQuery({queryKey:["video-lab-jobs"],queryFn:()=>get<Job[]>("/jobs"),retry:false});
- const job=useQuery({queryKey:["video-lab-job",selected],queryFn:()=>get<Job>(`/jobs/${selected}`),enabled:!!selected,retry:false,
-  refetchInterval:q=>["queued","running"].includes(q.state.data?.state??"")?2000:false});
- useEffect(()=>{if(!selected&&jobs.data?.length)setSelected(jobs.data[0].id);},[jobs.data,selected]);
- const submit=useMutation({mutationFn:async()=>{
-  const me=await fetch("/_portal/api/me",{credentials:"same-origin",cache:"no-store"});
-  if(!me.ok)throw new Error("Please sign in again.");
-  const identity=await me.json() as {csrf_token:string};
-  const response=await fetch(BASE+"/jobs",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRF-Token":identity.csrf_token},body:JSON.stringify({sample_id:sample||samples.data?.[0]?.id})});
-  if(!response.ok)throw new Error(response.status===409?"An analysis is already queued or running.":"Could not start analysis.");
-  return response.json() as Promise<Job>;
- },onSuccess:data=>{setSelected(data.id);cache.setQueryData(["video-lab-job",data.id],data);void cache.invalidateQueries({queryKey:["video-lab-jobs"]});}});
- const active=job.data;
- const running=active&&["queued","running"].includes(active.state);
- const error=samples.error||jobs.error||job.error||submit.error;
- const summary=active?.summary;
- const chosen=samples.data?.find(s=>s.id===sample)||samples.data?.[0];
- const duration=chosen?.duration_s??120;
- const durationLabel=duration===120?"two minutes":`${duration/60} minutes`;
- return <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
-  <header><p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden/>Private admin preview · local processing</p><h1 className="text-3xl font-semibold">Video analysis lab</h1><p className="mt-3 max-w-3xl text-sm text-fg-muted">Explore what the camera can see. Analyse a Veo sample of up to ten minutes, inspect the detections and download the video and metadata.</p></header>
-  {error&&<p role="alert" className="panel p-4 text-warn">{error.message}</p>}
-  <div className="grid min-w-0 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-   <aside className="panel min-w-0 space-y-5 p-5"><h2 className="font-semibold">Sample footage</h2>
-    <label className="block text-sm">Veo sample<select className="mt-2 w-full rounded-lg border border-line bg-ink-900 p-2" value={sample||samples.data?.[0]?.id||""} onChange={e=>setSample(e.target.value)}>
-     {samples.data?.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
-    </select></label>
-    <p className="text-xs leading-relaxed text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
-    <Button onClick={()=>submit.mutate()} disabled={!samples.data?.length||submit.isPending||!!running}>{submit.isPending?"Queueing…":`Analyse ${durationLabel}`}</Button>
-    {active&&<div role="status" className="space-y-2"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress||0)*100)}%</p><progress className="h-2 w-full accent-blue-500" aria-label="Analysis progress" max={1} value={active.progress||0}/>{active.error&&<p className="text-sm text-warn">{active.error}</p>}</div>}
-    {!!jobs.data?.length&&<div className="space-y-2"><h3 className="text-xs uppercase tracking-wider text-fg-muted">Previous runs</h3>{jobs.data.map(j=><button key={j.id} onClick={()=>setSelected(j.id)} className="block w-full rounded-lg border border-line p-2 text-left text-xs">{j.id.slice(0,8)} · {j.state}{j.mode==="team-enrichment"&&j.parent_job_id?` · jersey tagging of ${j.parent_job_id.slice(0,8)}`:""}</button>)}</div>}
-    {active?.state==="complete"&&<VideoMetadataSidebar key={active.id} jobId={active.id} artifacts={active.artifacts??[]} onSeek={time=>{if(video.current){video.current.currentTime=time;setAt(time);}}}/>}
-   </aside>
-   <section className="min-w-0 space-y-5" aria-label="Analysis results">
-    {active?.state==="complete"&&active.artifacts?.includes("team_assignments.json")&&<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={overlay} onChange={e=>setOverlay(e.target.checked)}/>Show team and role candidates on video</label>}
-    <div className="panel overflow-hidden p-3"><div className="relative">{active?.state==="complete"&&active.artifacts?.includes("annotated.mp4")?<video ref={video} onTimeUpdate={e=>setAt(e.currentTarget.currentTime)} className="aspect-video w-full rounded-xl bg-black" controls preload="metadata" src={`${BASE}/jobs/${active.id}/files/annotated.mp4`} aria-label="Annotated Veo sample"/>:<div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-xl bg-black/40 p-5 text-center text-fg-muted"><Film size={36} aria-hidden/><p>{running?"Analysing the sample…":"Your annotated video will appear here."}</p></div>}{overlay&&active?.state==="complete"&&<VideoTeamOverlay key={active.id} jobId={active.id} at={at}/>}</div></div>
-    {summary&&<><dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[["Sampled frames",summary.sampled_frames],["Person detections",summary.person_detections],["Ball detections",summary.ball_detections],["Short tracklets",summary.unique_tracklets]].map(([label,value])=><div className="panel min-w-0 p-4" key={label}><dt className="text-xs text-fg-muted">{label}</dt><dd className="mt-2 text-2xl font-semibold">{Number(value).toLocaleString()}</dd></div>)}</dl>
-    <div className="panel p-5"><h2 className="font-semibold">What these results mean</h2><p className="mt-2 text-sm leading-relaxed text-fg-muted">No confirmed football events are produced automatically. Review model suggestions and verify player labels below. People may include referees and spectators. Tracklets are temporary tracks, not named players. Ball proximity does not establish possession, passes or tackles.</p><p className="mt-3 text-sm">Ball observed in {(summary.ball_observation_coverage*100).toFixed(1)}% of sampled frames{summary.elapsed_s!==undefined?` · Processing time ${Math.round(summary.elapsed_s)} seconds`:""}.</p>{summary.quality==="insufficient_ball_evidence"&&<p className="mt-2 text-sm text-warn">Insufficient ball evidence for reliable action analysis.</p>}</div></>}
-    {active?.state==="complete"&&summary?.source_sha256&&<VideoTeamCalibration key={`calibration-${active.id}`} jobId={active.id} sourceHash={summary.source_sha256} artifacts={active.artifacts??[]} onQueued={next=>{setSelected(next.id);setAt(0);void cache.invalidateQueries({queryKey:["video-lab-jobs"]});}}/>}
-    {active?.state==="complete"&&<VideoTeamStats key={`teams-${active.id}`} jobId={active.id} artifacts={active.artifacts??[]}/>}
-    {active?.state==="complete"&&<VideoReviewPanel key={active.id} jobId={active.id} hasSuggestions={active.artifacts?.includes("event_suggestions.json")} hasJerseys={active.artifacts?.includes("jersey_candidates.json")} at={at} onSeek={time=>{if(video.current){video.current.currentTime=time;setAt(time);}}}/>}
-    {active?.state==="complete"&&<div className="panel p-5"><h2 className="mb-3 font-semibold">Download results</h2><div className="flex flex-wrap gap-3">{active.artifacts?.map(name=><a key={name} className="inline-flex max-w-full items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm hover:border-accent" href={`${BASE}/jobs/${active.id}/files/${name}`} download><Download size={14} aria-hidden/><span className="break-all">Download {name}</span></a>)}</div></div>}
-   </section>
-  </div>
- </div>;
+const isVeo = (v: unknown): v is VeoTags => !!v && Array.isArray((v as VeoTags).events) && Array.isArray((v as VeoTags).highlights);
+const isList = (v: unknown): v is Suggestion[] => Array.isArray(v);
+const isAssignments = (v: unknown): v is Assignments => !!v && Array.isArray((v as Assignments).observations) && (v as Assignments).image_width > 0;
+const isAppearance = (v: unknown): v is Appearance => !!v && Array.isArray((v as Appearance).tracks) && Array.isArray((v as Appearance).groups);
+const runLabel = (j: Job) => `${j.id.slice(0, 8)} · ${j.state}${j.mode === "team-enrichment" && j.parent_job_id ? ` · jersey tagging of ${j.parent_job_id.slice(0, 8)}` : j.mode === "review-preparation" && j.parent_job_id ? ` · player grouping of ${j.parent_job_id.slice(0, 8)}` : ""}`;
+
+function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const [at, setAt] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [filter, setFilter] = useState<Filter>({ source: null, team: null, type: null });
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [auto, setAuto] = useState(true);
+  const [track, setTrack] = useState<number | null>(null);
+  const [boxes, setBoxes] = useState(true);
+  const artifacts = job.artifacts ?? [];
+  const has = (name: string) => artifacts.includes(name);
+  const veo = useJobFile(job.id, "veo_tags.json", has("veo_tags.json"), isVeo);
+  const suggestions = useJobFile(job.id, "event_suggestions.json", has("event_suggestions.json"), isList);
+  const assignments = useJobFile(job.id, "team_assignments.json", has("team_assignments.json"), isAssignments);
+  const appearance = useJobFile(job.id, "track_appearance.json", has("track_appearance.json"), isAppearance);
+  const { review, update, state, error } = useReview(job.id);
+  const teams = useMemo(() => propagateTeams(appearance.data?.tracks ?? [], review?.track_labels ?? [], review?.group_labels ?? [], appearance.data ? [] : assignments.data?.observations ?? []), [appearance.data, assignments.data, review?.track_labels, review?.group_labels]);
+  const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
+  const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
+  const current = cursor !== null ? visible[cursor] ?? null : visible.find(m => Math.abs(m.time - at) <= LEAD) ?? null;
+  const playAt = useCallback((index: number) => {
+    const moment = visible[index], player = video.current;
+    if (!moment || !player) return;
+    player.currentTime = Math.max(0, moment.time - LEAD); setAt(player.currentTime); setCursor(index);
+    void player.play()?.catch(() => undefined);
+  }, [visible]);
+  useEffect(() => { setCursor(null); }, [filter]);
+  useEffect(() => {
+    if (!auto || !playing || cursor === null || !visible[cursor] || at <= visible[cursor].time + AFTER) return;
+    if (cursor + 1 < visible.length) playAt(cursor + 1); else video.current?.pause();
+  }, [at, auto, playing, cursor, visible, playAt]);
+  useEffect(() => {
+    function key(e: KeyboardEvent) {
+      if (e.target instanceof HTMLElement && ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(e.target.tagName) && e.key === " ") return;
+      if (e.target instanceof HTMLElement && ["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
+      const step = (d: number) => playAt(Math.min(visible.length - 1, Math.max(0, (cursor ?? (d > 0 ? -1 : visible.length)) + d)));
+      if (e.key === " ") { e.preventDefault(); if (video.current?.paused) void video.current.play()?.catch(() => undefined); else video.current?.pause(); }
+      else if (e.key === "n") step(1);
+      else if (e.key === "p") step(-1);
+      else if (current && current.source !== "veo" && ["1", "2", "r"].includes(e.key)) update(r => decide(r, current, e.key === "1" ? "own" : e.key === "2" ? "opponent" : "reject"));
+    }
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [visible, cursor, current, playAt, update]);
+  const summary = job.summary;
+  // The clean sample sits under the clickable overlay; annotated.mp4 has boxes burned in.
+  const clip = has("sample.mp4") ? "sample.mp4" : has("annotated.mp4") ? "annotated.mp4" : null;
+  return <>
+    <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[250px_minmax(0,1fr)_330px]">
+      <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
+      <section className="min-w-0 space-y-3" aria-label="Analysis results">
+        {clip
+          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} /></div>
+          : <div className="flex aspect-video items-center justify-center rounded-xl bg-black/40 text-fg-muted">This run has no video.</div>}
+        <div className="panel flex flex-wrap items-center gap-2 p-2" aria-label="Moment playback">
+          <Button aria-label="Previous moment" disabled={!visible.length} onClick={() => playAt(Math.max(0, (cursor ?? 1) - 1))}><ChevronLeft size={16} aria-hidden />Previous</Button>
+          <Button aria-label={playing ? "Pause" : "Play"} onClick={() => { if (video.current?.paused) void video.current.play()?.catch(() => undefined); else video.current?.pause(); }}>{playing ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}</Button>
+          <Button aria-label="Next moment" disabled={!visible.length} onClick={() => playAt(Math.min(visible.length - 1, (cursor ?? -1) + 1))}>Next<ChevronRight size={16} aria-hidden /></Button>
+          <span className="text-sm tabular-nums text-fg-muted">{cursor !== null ? `${cursor + 1} of ${visible.length}` : `${visible.length} moments`}</span>
+          <label className="ml-auto flex items-center gap-2 text-sm"><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />Play through the list</label>
+          {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={boxes} onChange={e => setBoxes(e.target.checked)} />Show people</label>}
+        </div>
+        {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} />
+          : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
+        <TeamSummary moments={moments} />
+        {summary && <details className="panel p-4"><summary className="cursor-pointer font-semibold">What these results mean</summary>
+          <p className="mt-2 text-sm leading-relaxed text-fg-muted">No confirmed football events are produced automatically. Model suggestions and estimated teams wait for your approval. Tracked people are short stretches, not named players, and may include referees and spectators. Ball proximity does not establish possession.</p>
+          <dl className="mt-3 grid grid-cols-4 gap-3 text-sm">{[["Sampled frames", summary.sampled_frames], ["Person detections", summary.person_detections], ["Ball detections", summary.ball_detections], ["Short tracklets", summary.unique_tracklets]].map(([label, value]) => <div key={label}><dt className="text-xs text-fg-muted">{label}</dt><dd className="font-semibold">{Number(value).toLocaleString()}</dd></div>)}</dl>
+          <p className="mt-2 text-sm">Ball observed in {(summary.ball_observation_coverage * 100).toFixed(1)}% of sampled frames.</p></details>}
+        <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />Download {name}</a>)}</div></details>
+      </section>
+      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} appearance={appearance.data} at={at} />
+    </div>
+  </>;
+}
+
+export default function VideoLabPage() {
+  const cache = useQueryClient();
+  const [sample, setSample] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const samples = useQuery({ queryKey: ["video-lab-samples"], queryFn: () => get<Sample[]>("/samples"), retry: false });
+  const jobs = useQuery({ queryKey: ["video-lab-jobs"], queryFn: () => get<Job[]>("/jobs"), retry: false });
+  const job = useQuery({ queryKey: ["video-lab-job", selected], queryFn: () => get<Job>(`/jobs/${selected}`), enabled: !!selected, retry: false,
+    refetchInterval: q => ["queued", "running"].includes(q.state.data?.state ?? "") ? 2000 : false });
+  useEffect(() => { if (!selected && jobs.data?.length) setSelected(jobs.data[0].id); }, [jobs.data, selected]);
+  const submit = useMutation({ mutationFn: async () => {
+    const response = await fetch(BASE + "/jobs", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": await csrfToken() }, body: JSON.stringify({ sample_id: sample || samples.data?.[0]?.id }) });
+    if (!response.ok) throw new Error(response.status === 409 ? "An analysis is already queued or running." : "Could not start analysis.");
+    return response.json() as Promise<Job>;
+  }, onSuccess: data => { setSelected(data.id); cache.setQueryData(["video-lab-job", data.id], data); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); } });
+  const queued = (id: string) => { setSelected(id); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); };
+  const active = job.data;
+  const running = active && ["queued", "running"].includes(active.state);
+  const error = samples.error || jobs.error || job.error || submit.error;
+  const chosen = samples.data?.find(s => s.id === sample) || samples.data?.[0];
+  const duration = chosen?.duration_s ?? 120;
+  const durationLabel = duration === 120 ? "two minutes" : `${duration / 60} minutes`;
+  return <div className="mx-auto w-full max-w-[1800px] space-y-4 pb-10">
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private admin preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
+        <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
+      <div className="panel flex flex-wrap items-end gap-3 p-3">
+        <label className="text-sm">Veo sample<select className="mt-1 block w-64 rounded-lg border border-line bg-ink-900 p-1.5" value={sample || samples.data?.[0]?.id || ""} onChange={e => setSample(e.target.value)}>{samples.data?.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
+        <div><p className="mb-1 max-w-52 text-xs text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
+          <Button onClick={() => submit.mutate()} disabled={!samples.data?.length || submit.isPending || !!running}>{submit.isPending ? "Queueing…" : `Analyse ${durationLabel}`}</Button></div>
+      </div>
+    </header>
+    {error && <p role="alert" className="panel p-4 text-warn">{error.message}</p>}
+    {!!jobs.data?.length && <nav className="flex flex-wrap items-center gap-2" aria-label="Previous runs"><span className="text-xs uppercase tracking-wider text-fg-muted">Runs</span>{jobs.data.map(j => <button key={j.id} onClick={() => setSelected(j.id)} aria-current={j.id === selected ? "true" : undefined} className={`rounded-lg border px-2 py-1 text-xs ${j.id === selected ? "border-accent text-fg" : "border-line text-fg-muted"}`}>{runLabel(j)}</button>)}</nav>}
+    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><progress className="h-2 w-full accent-blue-500" aria-label="Analysis progress" max={1} value={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
+      <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
+    {active?.state === "complete" && <Workspace key={active.id} job={active} onQueued={queued} />}
+  </div>;
 }
