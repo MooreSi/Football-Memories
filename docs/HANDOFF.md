@@ -47,6 +47,25 @@ Worker report `docs/IDENTIFICATION_TRIAL.md` records exact evidence and limitati
 Next: independent reviewed youth role/team data and part-aware model, hard staff/
 keeper/referee/kit-change cases, camera calibration and specialised jersey reader.
 
+## Refine moments and off-pitch people (spec 580 follow-up 2, 2026-11-24)
+
+Owner: "build the refine moments step"; rings on people outside the pitch are not wanted;
+label stays team only (no shirt numbers: identification trial read 0 reliably).
+- **Refine moments** button (`RefineMoments.tsx`) queues a `moment-refinement` run (gateway
+  `POST .../refine-moments`, worker `refinement.py`): detector about 10/s inside each moment
+  clip, dense tracklets take the sampled track IDs so labels carry over. Overlay merges
+  `dense_tracks.json` inside clips (`playArea.ts mergeDense`). Real 120 s trial: 205 s for
+  45 s of clips; ten-minute match estimate about 27 min.
+- **Off-pitch filter** (`playArea.ts inPlay`): Veo films from the near side, so spectators and
+  other pitches sit beyond the far edge of play. The edge is your furthest labelled player on
+  screen (fewer than two: the second furthest with any team). People beyond it by more than
+  their own height lose their ring; "Show everyone" brings them back. Rejected first: a hull
+  around labelled players hid real players outside it on the real run. The worker's
+  `pitch_location` is unusable (never "outside"; fence spectators marked inside). Limit: people
+  on the near side (coaches at the bottom edge) are not filtered.
+- The owner's dashed-box screenshot was the pre-deploy page; the live bundle had rings.
+**Not deployed.** Gateway 4f3d8bd and worker 6ea1910 pushed.
+
 ## Video Lab player rings (spec 580 follow-up, 2026-11-24)
 
 Owner: boxes lagged behind players and dotted boxes looked unprofessional. Detections are

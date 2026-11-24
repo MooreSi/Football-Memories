@@ -81,3 +81,9 @@ Owner asked for smoother following and a broadcast-style marker. Overlay now int
 between 0.36 s detection samples, repaints per video frame, and draws team-coloured foot rings
 with a glow and label pill for the selected person. Tests: `LabVideo.test.ts` (interpolation
 checked by mutation). Deployed to admin preview 2026-11-24 (app bca4687).
+
+## Follow-up: refine moments and off-pitch filter (2026-11-24)
+
+Dense tracking around moments (worker `moment-refinement`, `dense_tracks.json`) and a far-edge
+rule that drops rings on spectators and neighbouring pitches once a few players are labelled.
+Details in HANDOFF. Not deployed.

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type RefObject } from "react";
 import type { Assignment, Assignments, Observation } from "./labTypes";
+import { inPlay, mergeDense, type DenseTracks } from "./playArea";
 
 export const TEAM_COLOUR = { own: "#38bdf8", opponent: "#fb923c", referee: "#facc15", other: "#94a3b8", none: "#e2e8f0" };
 
@@ -84,14 +85,16 @@ function useFrameTime(videoRef: RefObject<HTMLVideoElement | null>, at: number) 
 type Props = {
   src: string; videoRef: RefObject<HTMLVideoElement | null>; at: number; onTime: (at: number) => void;
   assignments?: Assignments; teams: Map<number, Assignment>; selected: number | null; onSelect: (track: number) => void; showBoxes: boolean;
+  dense?: DenseTracks; everyone?: boolean;
 };
 
-export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes }: Props) {
+export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false }: Props) {
   const [hover, setHover] = useState<number | null>(null);
-  const index = useMemo(() => indexObservations(assignments?.observations ?? []), [assignments]);
+  const index = useMemo(() => indexObservations(mergeDense(assignments?.observations ?? [], dense)), [assignments, dense]);
   const now = useFrameTime(videoRef, at);
-  const visible = showBoxes && assignments ? boxesAt(index, now) : [];
   const w = assignments?.image_width ?? 1920, h = assignments?.image_height ?? 1080;
+  const here = showBoxes && assignments ? boxesAt(index, now) : [];
+  const visible = everyone ? here : inPlay(here, teams, selected);
   const glows = Object.entries(TEAM_COLOUR);
   // Draw the selected person last so their highlight sits on top.
   const ordered = [...visible].sort((a, b) => Number(a.track_id === selected) - Number(b.track_id === selected));
