@@ -75,3 +75,16 @@ The Video Lab jobs list must refresh while any owned job is queued/running,
 including when a different completed run is selected. A one-shot list leaves the
 Veo picker disabled after the worker finishes because its busy guard reads stale
 rows. Keep admission enforced and show the busy/range reason beside the picker.
+
+Analysis source selection reuses an archived match or the existing private range
+relay; input-side `-ss` and output `-t` bound the chosen footage. Range reads also
+need the MP4 index, preceding keyframe and bounded read-ahead, so fetched bytes
+are not exactly proportional to clip duration. No full-match download fallback.
+Synthetic90s source /4s late-window export verifies nonzero reads below60% of
+source bytes and no full-download/archive entry. This is synthetic evidence,
+not a byte audit of the owner's real transfer.
+
+Preparation progress is ffmpeg output seconds for that selected clip, separate
+from worker analysis progress. Connection, verification and gateway import have
+no measured total and use indeterminate activity; never fabricate a combined
+percentage. Keep ffmpeg stderr/private relay addresses out of status and logs.

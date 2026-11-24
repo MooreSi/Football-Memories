@@ -1,9 +1,8 @@
 """Highlight reels from a Veo match (owner request 2026-11-13).
 
-The chosen highlights are cut from the full match saved on this computer. When it
-is not saved yet it is downloaded first, through the same path as Download (one
-video read, `.part`, verify, never overwrite), so the archive keeps the whole match
-and nothing else reads Veo's video. The reel is then joined with the title cards by
+The chosen highlights reuse a match already saved on this computer. Otherwise a
+private range relay reads the video index and footage needed for the selected
+windows, without first downloading the full match. The reel joins title cards via
 `assemble_reel`, which publishes it without replacing any file.
 """
 
@@ -13,7 +12,7 @@ import re
 import secrets
 import tempfile
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -22,6 +21,7 @@ from app.connectors.hudl_batch import _ffmpeg, assemble_reel
 from app.connectors.hudl_capture import CaptureError
 from app.services.publish import publish_new
 
+from ._encoding import encode
 from ._parse import team_moments
 from ._ranges import RelayState, range_relay
 
@@ -33,22 +33,27 @@ MAX_HIGHLIGHTS = 150
 CARDS = ("opening_card", "match_card", "stats_card", "closing_card")
 
 
-def _cut(source: str, start: float, length: float, target: Path) -> None:
+def _cut(
+    source: str,
+    start: float,
+    length: float,
+    target: Path,
+    progress: Callable[[float], None] | None = None,
+) -> None:
     # A relay address (owner request 2026-11-15) gets a read timeout so a stalled
     # read ends the job instead of hanging it.
     remote = ["-rw_timeout", "60000000"] if source.startswith("http://127.0.0.1:") else []
-    ok = _ffmpeg(
-        [
-            *remote,
-            "-ss", f"{max(0.0, start):.3f}",
-            "-i", source,
-            "-t", f"{length:.3f}",
-            "-map", "0:v:0", "-map", "0:a:0?",
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
-            str(target),
-        ]
-    )  # fmt: skip
+    arguments = [
+        *remote,
+        "-ss", f"{max(0.0, start):.3f}",
+        "-i", source,
+        "-t", f"{length:.3f}",
+        "-map", "0:v:0", "-map", "0:a:0?",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+        str(target),
+    ]  # fmt: skip
+    ok = _ffmpeg(arguments) if progress is None else encode(arguments, length, progress)
     if not ok or not target.is_file():
         raise CaptureError("A highlight could not be cut from the saved match; nothing was saved.")
 

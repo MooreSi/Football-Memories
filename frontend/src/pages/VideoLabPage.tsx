@@ -7,6 +7,7 @@ import { MomentRail } from "../components/videoLab/MomentRail";
 import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
+import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
 import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, type Corners } from "../components/videoLab/pitch";
@@ -164,7 +165,7 @@ export default function VideoLabPage() {
     {!!jobs.data?.length && <nav className="panel space-y-2 p-3" aria-label="Previous runs"><label className="block text-sm">Analysis run<select className="mt-1 block w-full rounded-lg border border-line bg-ink-900 p-2" value={selected ?? ""} onChange={e=>setSelected(e.target.value)}>{jobs.data.map(j=>{const sample=samples.data?.find(s=>s.id===j.sample_id);const name=j.match_title || sample?.label || j.sample_id || "Uncatalogued run";return <option key={j.id} value={j.id}>{name}{sample?.duration_s?` · ${Math.round(sample.duration_s/60)} min`:""} · {runLabel(j)}</option>;})}</select></label>
       {jobs.data.filter(j=>!j.sample_id).map(j=><button key={j.id} className="mr-2 text-xs text-fg-muted" onClick={()=>setSelected(j.id)}>{runLabel(j)}</button>)}
     </nav>}
-    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><progress className="h-2 w-full accent-blue-500" aria-label="Analysis progress" max={1} value={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
+    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
       <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
     {active?.state === "complete" && <Workspace key={active.id} job={active} onQueued={queued} />}
       <div className="panel flex flex-wrap items-end gap-3 p-3">

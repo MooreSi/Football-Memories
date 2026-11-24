@@ -1,5 +1,24 @@
 # Football Memories: progress
 
+## Selected-window progress (spec640, 2026-11-24)
+
+Branch `codex/local-video-analytics`. Confirmed analysis reuses saved footage or
+input-side seek plus existing range relay; no full-match download fallback.
+Added ffmpeg output-seconds progress and remote fetched-byte detail. Gradient
+bar shows measured encoding/worker progress, indeterminate connection, clip
+verification and gateway import. Synthetic90s/late4s range export passes with
+nonzero bytes below60% and no full download/archive entry. This does not claim
+a byte audit of the real transfer. Progress tests red first; no existing test
+expectations changed. Owner's in-flight window left running; read-only status
+subsequently reported done. No new source request queued.
+Verified: backend854 SQLite +854 PostgreSQL; ruff/format/mypy/Alembic;
+frontend860, typecheck and hosted build. Measured-progress test failed before
+implementation; UI determinate/indeterminate tests failed before implementation.
+Existing tests unchanged except the import needed to register the shared synthetic
+fixture. Synthetic gradient preview checked against reference02; no real source
+transfer byte audit or new live analysis. Admin deployment pending. No app CI.
+
+
 ## Analyse button repair (spec630, 2026-11-24)
 
 Branch `codex/local-video-analytics`. Fixed the stale jobs-list busy guard: poll

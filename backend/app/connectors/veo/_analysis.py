@@ -36,11 +36,26 @@ def export_sample(connection: VeoConnection, identity: str, window: dict[str, An
     output = connection.directory / "analysis" / ticket
     output.mkdir(parents=True, exist_ok=False)
     partial = output / "sample.part.mp4"
-    connection._report(message="Preparing the selected analysis window…", analysis_ticket=None)
+    connection._report(
+        message="Connecting to the selected footage…", analysis_ticket=None, progress=None
+    )
     with _match_source(connection, identity, connection._folder()) as (address, relay):
-        _cut(address, start, duration, partial)
+
+        def progress(done: float) -> None:
+            read = (
+                f" · {relay.bytes / 1_000_000:.1f} MB fetched"
+                if relay
+                else " · using saved footage"
+            )
+            connection._report(
+                message=f"Preparing selected footage · {done:.0f} of {duration:.0f} seconds{read}",
+                progress={"done": done, "total": duration, "fraction": done / duration},
+            )
+
+        _cut(address, start, duration, partial, progress=progress)
         if relay is not None and relay.failure is not None:
             raise CaptureError("Veo's video could not be read. Nothing was retried.")
+    connection._report(message="Verifying the prepared clip…", progress=None)
     info = probe(partial)
     if info.video_codec != "h264" or abs(info.duration_s - duration) > 0.1:
         raise CaptureError("The analysis clip was incomplete; its partial file was kept.")

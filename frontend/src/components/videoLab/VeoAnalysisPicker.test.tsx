@@ -86,3 +86,36 @@ it("explains an out-of-range window and enables a valid correction",async()=>{
  await userEvent.type(screen.getByRole('spinbutton',{name:'Minutes to analyse'}),'3');
  expect(screen.getByRole('button',{name:'Analyse selected match'})).toBeEnabled();
 });
+
+it("shows measured preparation progress with a gradient bar",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+  if(url.endsWith('/veo/library'))return Response.json([{id:'progress-match',title:'Synthetic progress match',available:true,duration_s:3600}]);
+  if(url.endsWith('/veo/action'))return Response.json({accepted:true});
+  if(url.endsWith('/veo/account'))return Response.json({busy:true,state:'working',message:'Preparing selected footage · 150 of 600 seconds',progress:{done:150,total:600,fraction:0.25}});
+  throw new Error(`Unexpected request: ${url}`);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'progress-match');
+ await userEvent.click(screen.getByRole('button',{name:'Analyse selected match'}));
+ const bar=await screen.findByRole('progressbar',{name:'Preparing analysis clip'});
+ await waitFor(()=>expect(bar).toHaveAttribute('aria-valuenow','25'));
+ expect(bar).toHaveTextContent('25%');
+ expect(screen.getByText(/150 of 600 seconds/)).toBeInTheDocument();
+});
+
+it("uses indeterminate progress while connecting instead of inventing a percentage",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+  if(url.endsWith('/veo/library'))return Response.json([{id:'connecting-match',title:'Synthetic connecting match',available:true,duration_s:3600}]);
+  if(url.endsWith('/veo/action'))return Response.json({accepted:true});
+  if(url.endsWith('/veo/account'))return Response.json({busy:true,state:'working',message:'Connecting to the selected footage…',progress:null});
+  throw new Error(`Unexpected request: ${url}`);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'connecting-match');
+ await userEvent.click(screen.getByRole('button',{name:'Analyse selected match'}));
+ const bar=await screen.findByRole('progressbar',{name:'Preparing analysis clip'});
+ expect(bar).not.toHaveAttribute('aria-valuenow');
+ expect(bar).not.toHaveTextContent('%');
+});

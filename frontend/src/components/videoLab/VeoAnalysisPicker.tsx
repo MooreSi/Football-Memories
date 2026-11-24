@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useVeoLibrary, veoRequest, type VeoStatus } from "../../api/veo";
 import { Button } from "../ui/Button";
 import { BASE, csrfToken } from "./useLabData";
+import { AnalysisProgress } from "./AnalysisProgress";
 
 type Status = VeoStatus & { analysis_ticket?: string | null };
 /** Uses the same permission-guarded helper and serialized Veo operation as the library. */
@@ -13,6 +14,7 @@ export function VeoAnalysisPicker({busy,onQueued}:{busy:boolean;onQueued:(id:str
   const [minutes,setMinutes]=useState("10"),[start,setStart]=useState("0");
   const [pending,setPending]=useState<{match:string;serial:number}|null>(null),[error,setError]=useState("");
   const importing=useRef(false);
+  const [importStage,setImportStage]=useState(false);
   const status=useQuery({queryKey:["video-lab-veo-preparation",pending],enabled:!!pending,retry:false,queryFn:()=>veoRequest<Status>("/account"),refetchInterval:1500});
   const chosen=matches.find(m=>m.id===match),duration=Number(minutes)*60,offset=Number(start)*60;
   const valid=chosen?.available && Number.isInteger(Number(minutes)) && duration>=60 && duration<=600 && Number.isFinite(offset) && offset>=0 && (!chosen.duration_s || offset+duration<=chosen.duration_s+0.1);
@@ -27,13 +29,14 @@ export function VeoAnalysisPicker({busy,onQueued}:{busy:boolean;onQueued:(id:str
     if(current.state==="error") {setError(current.message);setPending(null);return;}
     if(current.state!=="done" || current.match_id!==pending.match || !current.analysis_ticket) return;
     importing.current=true;
+    setImportStage(true);
     void (async()=>{
       try {
         const response=await fetch(BASE+"/veo-jobs",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRF-Token":await csrfToken()},body:JSON.stringify({ticket:current.analysis_ticket})});
         if(!response.ok) throw new Error(response.status===409?"Another analysis is running, or the clip could not be verified. Retry when it finishes.":"The clip could not be added to Video Lab.");
         onQueued((await response.json() as {id:string}).id);
       } catch(e) {setError(e instanceof Error?e.message:"Clip import failed.");}
-      finally {setPending(null);}
+      finally {setPending(null);setImportStage(false);}
     })();
   },[pending,status.data,onQueued]);
   return <section className="panel space-y-3 p-4" aria-label="Analyse a Veo match">
@@ -46,10 +49,10 @@ export function VeoAnalysisPicker({busy,onQueued}:{busy:boolean;onQueued:(id:str
       <label className="text-sm">Minutes to analyse<input type="number" min={1} max={10} step={1} value={minutes} onChange={e=>setMinutes(e.target.value)} disabled={!!pending} className="mt-1 block w-24 rounded-lg border border-line bg-ink-900 p-2"/></label>
       <Button variant="primary" aria-describedby={blockedReason ? "veo-analysis-blocked" : undefined} disabled={!valid||busy||!!pending||begin.isPending} onClick={()=>begin.mutate()}>{pending?"Preparing clip…":begin.isPending?"Starting…":"Analyse selected match"}</Button>
     </div>
-    <p className="text-xs text-fg-muted">Choose 1–10 minutes anywhere in the match. The lab prepares camera tracking and multiple player views; your full match is kept.</p>
+    <p className="text-xs text-fg-muted">Choose 1–10 minutes anywhere in the match. Only the selected footage is fetched, plus the video index and a small seeking buffer; an existing saved match is reused. The lab prepares camera tracking and multiple player views.</p>
     {blockedReason && <p id="veo-analysis-blocked" role="status" className="text-sm text-fg-muted">{blockedReason}</p>}
     {library.isError && <p className="text-sm text-warn">Veo library unavailable. Check Connections and refresh your Veo matches.</p>}
-    {!!pending && <p role="status" className="text-sm text-accent">{status.data?.message || "Preparing the selected window…"}</p>}
+    {!!pending && <AnalysisProgress label={importStage ? "Adding clip to Video Lab" : "Preparing analysis clip"} fraction={importStage ? null : status.data?.progress?.fraction} detail={importStage ? "Transferring and verifying the selected clip…" : status.data?.message || "Connecting to the selected footage…"} />}
     {(error||status.isError) && <p role="alert" className="text-sm text-warn">{error||"Could not check the Veo preparation. Reopen the page and retry."}</p>}
   </section>;
 }
