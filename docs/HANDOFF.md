@@ -1,5 +1,16 @@
 # Handoff
 
+## Teams by kit and the ball (spec660, 2026-11-24)
+
+Branch `codex/team-kits` (worktree `../Football Memories kits`, cut from
+`codex/local-video-analytics` de91f29 because another session was editing spec650 files in the
+main checkout; merge this into that branch after spec650 lands: expect conflicts in
+`LabVideo.tsx`, `VideoLabPage.tsx`, `labTypes.ts`). Frontend only. [Spec660](todo/football-memories/660-team-kits-and-ball.md):
+per-moment team from learned kit colours, label/swap handling, one referee/keeper per moment,
+kits remembered across related runs, match-ball overlay. Same-match assistant audit on the real
+RCW run: 15.1% to about 94% of players correct on screen. Frontend 889 tests, typecheck, build.
+Backend/gateway/worker untouched.
+
 ## Selected-window progress (spec640, 2026-11-24)
 
 Branch `codex/local-video-analytics`. Confirmed analysis reuses saved footage or

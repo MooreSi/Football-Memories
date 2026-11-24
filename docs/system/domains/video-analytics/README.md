@@ -88,3 +88,12 @@ Preparation progress is ffmpeg output seconds for that selected clip, separate
 from worker analysis progress. Connection, verification and gateway import have
 no measured total and use indeterminate activity; never fabricate a combined
 percentage. Keep ffmpeg stderr/private relay addresses out of status and logs.
+
+Spec660 (Video Lab teams): tracklets are short and the tracker swaps people, so a label must
+not colour a whole tracklet. Teams are decided per sampled detection from `colour_lab` against
+kits learned from labels (1 s window vote); dark kits (referee, keeper in black, coats) cannot
+be told apart by colour and fall back to the look-alike model with dark views only. One
+referee/keeper per team per moment. On RCW vs Kidderminster CG this took same-match assistant
+audit accuracy from 15% to about 94% of players on screen; merged two-player boxes remain
+wrong. The ball is not in `sample.mp4`: draw it from `detections.jsonl`, choosing one smooth,
+central path (Veo follows play) so spare balls by the bags are ignored.

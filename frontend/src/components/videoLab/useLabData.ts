@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Review } from "./labTypes";
+import type { SavedModel } from "./kits";
 
 export const BASE = "/_admin/api/video-analytics";
 
@@ -84,4 +85,32 @@ export function useReview(jobId: string, delay = 1200) {
     timer.current = setTimeout(() => void save(), delay);
   }, [save, delay]);
   return { review, update, state, error, saveNow: save };
+}
+
+/** A fixed-name text artifact (e.g. `detections.jsonl`), fetched once. */
+export function useJobText(jobId: string, name: string, available: boolean) {
+  return useQuery({
+    queryKey: ["video-lab-text", jobId, name], enabled: available, retry: false, staleTime: Infinity,
+    queryFn: async () => {
+      const response = await fetch(`${BASE}/jobs/${jobId}/files/${name}`, { credentials: "same-origin", cache: "no-store" });
+      if (!response.ok) throw new Error(`${name} unavailable`);
+      return response.text();
+    },
+  });
+}
+
+/** Saved human-only learned models of your other titled runs (spec 660), newest first, at most six. */
+export function useSavedModels(others: { id: string; match_title?: string }[]) {
+  const runs = others.filter(j => j.match_title).slice(0, 6);
+  return useQuery({
+    queryKey: ["video-lab-saved-models", runs.map(r => r.id)], enabled: runs.length > 0, retry: false, staleTime: 60_000,
+    queryFn: async () => (await Promise.all(runs.map(async run => {
+      try {
+        const response = await fetch(`${BASE}/jobs/${run.id}/review/learned-model`, { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return null;
+        const model = await response.json() as { examples?: unknown };
+        return Array.isArray(model.examples) ? { title: run.match_title ?? "", examples: model.examples as SavedModel["examples"] } : null;
+      } catch { return null; }
+    }))).filter((m): m is SavedModel => m !== null),
+  });
 }

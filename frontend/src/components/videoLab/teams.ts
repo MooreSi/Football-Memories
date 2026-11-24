@@ -19,7 +19,11 @@ function cosine(a: number[], b: number[]) {
 function similarity(a: AppearanceView, b: AppearanceView) {
   const look = cosine(a.v, b.v);
   if (!a.kit || !b.kit) return look;
-  const kit = Math.exp(-Math.hypot(a.kit[1] - b.kit[1], a.kit[2] - b.kit[2]) / 18);
+  // Brightness changes with sun and shade, so colourful kits compare by hue only; among dark kits
+  // (black referee, dark-grey coats) hue is flat and brightness is what tells them apart.
+  const dark = (k: number[]) => Math.hypot(k[1] - 128, k[2] - 128) < 15;
+  const light = dark(a.kit) && dark(b.kit) ? 0.8 * (a.kit[0] - b.kit[0]) : 0;
+  const kit = Math.exp(-Math.hypot(a.kit[1] - b.kit[1], a.kit[2] - b.kit[2], light) / 18);
   return 0.35 * look + 0.65 * kit;
 }
 
