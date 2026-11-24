@@ -19,6 +19,10 @@ added to the live review: one "Our goalkeeper" label lets the keeper carry. Not 
 Redeployed admin-only `e5f2454` (player-sized kit matches set the far edge; capture idle,
 3/32 containers changed, latest unchanged, health 200, anonymous 401). Ball audit every 10 s:
 on the match ball 16/24, uncertain 1, no ball shown 7 (detector missed), never a spare ball.
+Then `41630cc` deployed admin-only the same way (3/32, health 200, 401): resting spares and
+edge balls skipped, 1.5 s glide; ball audit 21/24 right, 1 wrong (0:15 spare), 2 undetected.
+Live labels (rev 31, 23 labels): yellow 70/73, red 85/87, pink keeper 5/5, referee 14/15,
+our keeper 0/6 (owner chose not to add a keeper label; one "Our goalkeeper" label fixes most).
 
 ## Selected-window progress (spec640, 2026-11-24)
 
