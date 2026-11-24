@@ -28,7 +28,14 @@ Run full owning-repo checks and inspect gradient in browser with synthetic data.
 ## Verification
 Backend854 SQLite +854 PostgreSQL; ruff/format/mypy/Alembic pass.
 Frontend860, typecheck/hosted build and10 focused UI tests pass.
-Admin deployment pending.
+Deployed admin-only app `f14fc04` after helper preparation completed
+(busy=false/state=done). Exactly admin web/backend/capture changed (3/32), other29,
+shared tags/global latest6138b56, gateway and worker unchanged. Auto-update remains
+false. Health200, new VideoLabPage-C0M4t4WV bundle and measured-progress code loaded.
+Owner-submitted worker job remained running throughout; no new analysis queued.
+Synthetic browser gradient/stage acceptance passed; no fresh live source run to
+verify the new preparation callbacks. Safari was on another page, so it was not
+reloaded or interrupted. Refresh Video Lab to load the new gradient bars.
 Synthetic gradient preview inspected in browser against reference02: measured
 preparation37%, indeterminate import, worker62%; temporary harness removed.
 No source-account request or new live analysis was started for validation.

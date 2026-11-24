@@ -16,7 +16,16 @@ frontend860, typecheck and hosted build. Measured-progress test failed before
 implementation; UI determinate/indeterminate tests failed before implementation.
 Existing tests unchanged except the import needed to register the shared synthetic
 fixture. Synthetic gradient preview checked against reference02; no real source
-transfer byte audit or new live analysis. Admin deployment pending. No app CI.
+transfer byte audit or new live analysis. No app CI.
+
+Deployed admin-only app `f14fc04` after helper preparation completed
+(busy=false/state=done). Exactly admin web/backend/capture changed (3/32), other29,
+shared tags/global latest6138b56, gateway and worker unchanged. Auto-update remains
+false. Health200, new VideoLabPage-C0M4t4WV bundle and measured-progress code loaded.
+Owner-submitted worker job remained running throughout; no new analysis queued.
+Synthetic browser gradient/stage acceptance passed; no fresh live source run to
+verify the new preparation callbacks. Safari was on another page, so it was not
+reloaded or interrupted. Refresh Video Lab to load the new gradient bars.
 
 
 ## Analyse button repair (spec630, 2026-11-24)
