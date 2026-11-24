@@ -11,6 +11,30 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Team segregation and Video Lab metadata rail (spec570, 2026-11-24)
+
+Codex built this; Claude reviewed, fixed and completed it. App branch
+`codex/local-video-analytics`, gateway branch of the same name, worker
+`codex/local-pipeline`. Video Lab adds a library-style metadata rail (Veo highlights,
+Our/Opponent Veo tags, analysed actions, people/teams; filters, counts, seek to
+clip time), team statistics (analysed kit groups separate from Veo counts;
+unknown actors never credited to a team), an optional team/role overlay on the
+video, and "Tag team jerseys", which queues a new run from cached detections with
+the chosen colours. Previous runs label tagging runs ("jersey tagging of <parent>").
+Old jobs without team files still show Veo/model metadata.
+
+Real cached ten-minute check exposed far-side spectators labelled referee
+candidates (117 tracks). Fixed in the worker (max 3 concurrent third-kit people);
+re-run 3547→514 official observations, teams unchanged, parent unchanged. Players are
+still often unassigned (6.8% player-candidate observations) and all 52 actions are
+unassigned. Experimental only; worker trial notes in its docs/HANDOFF.md.
+
+Verification: frontend 799 passed, typecheck/build; gateway admin 104 passed;
+worker 76 passed; gateway full 424 passed; backend unchanged, SQLite and PostgreSQL re-run green with ruff/mypy.
+Synthetic browser desktop and 375px: filter, seek to 0:12, overlay labels, no
+horizontal overflow. **Not deployed; live worker not restarted.** Owner should tag
+real jersey colours from a paused frame once deployed.
+
 ## Active football training extension (spec560, 2026-11-24)
 
 Owner now requests the remaining tracking/training/actions/attribution work.

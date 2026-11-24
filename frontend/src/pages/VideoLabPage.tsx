@@ -3,12 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Film, FlaskConical } from "lucide-react";
 import { Button } from "../components/ui/Button";
 
+import { VideoMetadataSidebar, VideoTeamStats } from "../components/VideoMetadataSidebar";
+import { VideoTeamCalibration } from "../components/VideoTeamCalibration";
+import { VideoTeamOverlay } from "../components/VideoTeamOverlay";
 import { VideoReviewPanel } from "../components/VideoReviewPanel";
 
 const BASE="/_admin/api/video-analytics";
 type Sample={id:string;label:string;duration_s:number;source_offset_s:number};
-type Summary={sampled_frames:number;person_detections:number;ball_detections:number;unique_tracklets:number;ball_observation_coverage:number;football_events_confirmed:number;elapsed_s?:number;quality?:string};
-type Job={id:string;sample_id?:string;state:string;progress:number;summary?:Summary;artifacts?:string[];error?:string};
+type Summary={source_sha256?:string;sampled_frames:number;person_detections:number;ball_detections:number;unique_tracklets:number;ball_observation_coverage:number;football_events_confirmed:number;elapsed_s?:number;quality?:string};
+type Job={id:string;sample_id?:string;state:string;progress:number;summary?:Summary;artifacts?:string[];error?:string;mode?:string;parent_job_id?:string};
 async function get<T,>(path:string):Promise<T>{
  const response=await fetch(BASE+path,{credentials:"same-origin",cache:"no-store"});
  if(!response.ok)throw new Error("Local video analysis is unavailable. Please retry when the worker is connected.");
@@ -18,8 +21,10 @@ export default function VideoLabPage(){
  const cache=useQueryClient();
  const video=useRef<HTMLVideoElement>(null);
  const [at,setAt]=useState(0);
+ const [overlay,setOverlay]=useState(false);
  const [sample,setSample]=useState("");
  const [selected,setSelected]=useState<string|null>(null);
+ useEffect(()=>{setOverlay(false);setAt(0);},[selected]);
  const samples=useQuery({queryKey:["video-lab-samples"],queryFn:()=>get<Sample[]>("/samples"),retry:false});
  const jobs=useQuery({queryKey:["video-lab-jobs"],queryFn:()=>get<Job[]>("/jobs"),retry:false});
  const job=useQuery({queryKey:["video-lab-job",selected],queryFn:()=>get<Job>(`/jobs/${selected}`),enabled:!!selected,retry:false,
@@ -51,12 +56,16 @@ export default function VideoLabPage(){
     <p className="text-xs leading-relaxed text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
     <Button onClick={()=>submit.mutate()} disabled={!samples.data?.length||submit.isPending||!!running}>{submit.isPending?"Queueing…":`Analyse ${durationLabel}`}</Button>
     {active&&<div role="status" className="space-y-2"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress||0)*100)}%</p><progress className="h-2 w-full accent-blue-500" aria-label="Analysis progress" max={1} value={active.progress||0}/>{active.error&&<p className="text-sm text-warn">{active.error}</p>}</div>}
-    {!!jobs.data?.length&&<div className="space-y-2"><h3 className="text-xs uppercase tracking-wider text-fg-muted">Previous runs</h3>{jobs.data.map(j=><button key={j.id} onClick={()=>setSelected(j.id)} className="block w-full rounded-lg border border-line p-2 text-left text-xs">{j.id.slice(0,8)} · {j.state}</button>)}</div>}
+    {!!jobs.data?.length&&<div className="space-y-2"><h3 className="text-xs uppercase tracking-wider text-fg-muted">Previous runs</h3>{jobs.data.map(j=><button key={j.id} onClick={()=>setSelected(j.id)} className="block w-full rounded-lg border border-line p-2 text-left text-xs">{j.id.slice(0,8)} · {j.state}{j.mode==="team-enrichment"&&j.parent_job_id?` · jersey tagging of ${j.parent_job_id.slice(0,8)}`:""}</button>)}</div>}
+    {active?.state==="complete"&&<VideoMetadataSidebar key={active.id} jobId={active.id} artifacts={active.artifacts??[]} onSeek={time=>{if(video.current){video.current.currentTime=time;setAt(time);}}}/>}
    </aside>
    <section className="min-w-0 space-y-5" aria-label="Analysis results">
-    <div className="panel overflow-hidden p-3">{active?.state==="complete"&&active.artifacts?.includes("annotated.mp4")?<video ref={video} onTimeUpdate={e=>setAt(e.currentTarget.currentTime)} className="aspect-video w-full rounded-xl bg-black" controls preload="metadata" src={`${BASE}/jobs/${active.id}/files/annotated.mp4`} aria-label="Annotated Veo sample"/>:<div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-xl bg-black/40 p-5 text-center text-fg-muted"><Film size={36} aria-hidden/><p>{running?"Analysing the sample…":"Your annotated video will appear here."}</p></div>}</div>
+    {active?.state==="complete"&&active.artifacts?.includes("team_assignments.json")&&<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={overlay} onChange={e=>setOverlay(e.target.checked)}/>Show team and role candidates on video</label>}
+    <div className="panel overflow-hidden p-3"><div className="relative">{active?.state==="complete"&&active.artifacts?.includes("annotated.mp4")?<video ref={video} onTimeUpdate={e=>setAt(e.currentTarget.currentTime)} className="aspect-video w-full rounded-xl bg-black" controls preload="metadata" src={`${BASE}/jobs/${active.id}/files/annotated.mp4`} aria-label="Annotated Veo sample"/>:<div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-xl bg-black/40 p-5 text-center text-fg-muted"><Film size={36} aria-hidden/><p>{running?"Analysing the sample…":"Your annotated video will appear here."}</p></div>}{overlay&&active?.state==="complete"&&<VideoTeamOverlay key={active.id} jobId={active.id} at={at}/>}</div></div>
     {summary&&<><dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[["Sampled frames",summary.sampled_frames],["Person detections",summary.person_detections],["Ball detections",summary.ball_detections],["Short tracklets",summary.unique_tracklets]].map(([label,value])=><div className="panel min-w-0 p-4" key={label}><dt className="text-xs text-fg-muted">{label}</dt><dd className="mt-2 text-2xl font-semibold">{Number(value).toLocaleString()}</dd></div>)}</dl>
     <div className="panel p-5"><h2 className="font-semibold">What these results mean</h2><p className="mt-2 text-sm leading-relaxed text-fg-muted">No confirmed football events are produced automatically. Review model suggestions and verify player labels below. People may include referees and spectators. Tracklets are temporary tracks, not named players. Ball proximity does not establish possession, passes or tackles.</p><p className="mt-3 text-sm">Ball observed in {(summary.ball_observation_coverage*100).toFixed(1)}% of sampled frames{summary.elapsed_s!==undefined?` · Processing time ${Math.round(summary.elapsed_s)} seconds`:""}.</p>{summary.quality==="insufficient_ball_evidence"&&<p className="mt-2 text-sm text-warn">Insufficient ball evidence for reliable action analysis.</p>}</div></>}
+    {active?.state==="complete"&&summary?.source_sha256&&<VideoTeamCalibration key={`calibration-${active.id}`} jobId={active.id} sourceHash={summary.source_sha256} artifacts={active.artifacts??[]} onQueued={next=>{setSelected(next.id);setAt(0);void cache.invalidateQueries({queryKey:["video-lab-jobs"]});}}/>}
+    {active?.state==="complete"&&<VideoTeamStats key={`teams-${active.id}`} jobId={active.id} artifacts={active.artifacts??[]}/>}
     {active?.state==="complete"&&<VideoReviewPanel key={active.id} jobId={active.id} hasSuggestions={active.artifacts?.includes("event_suggestions.json")} hasJerseys={active.artifacts?.includes("jersey_candidates.json")} at={at} onSeek={time=>{if(video.current){video.current.currentTime=time;setAt(time);}}}/>}
     {active?.state==="complete"&&<div className="panel p-5"><h2 className="mb-3 font-semibold">Download results</h2><div className="flex flex-wrap gap-3">{active.artifacts?.map(name=><a key={name} className="inline-flex max-w-full items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm hover:border-accent" href={`${BASE}/jobs/${active.id}/files/${name}`} download><Download size={14} aria-hidden/><span className="break-all">Download {name}</span></a>)}</div></div>}
    </section>

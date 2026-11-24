@@ -36,3 +36,14 @@ it("shows the selected ten-minute sample duration",async()=>{
  expect(await screen.findByRole("button",{name:"Analyse 10 minutes"})).toBeInTheDocument();
  expect(screen.getByText(/600-second local sample/)).toBeInTheDocument();
 });
+it("labels jersey-tagging runs with the run they were tagged from",async()=>{
+ const parent="b".repeat(32),child="c".repeat(32);
+ vi.stubGlobal("fetch",vi.fn(async(url:string)=>{
+  if(url.endsWith("/samples"))return Response.json([]);
+  if(url.endsWith("/jobs"))return Response.json([{id:child,state:"complete",progress:1,mode:"team-enrichment",parent_job_id:parent},{id:parent,state:"complete",progress:1}]);
+  return Response.json({id:url.includes(child)?child:parent,state:"queued",progress:0});
+ }));
+ renderWithProviders(<VideoLabPage/>);
+ expect(await screen.findByRole("button",{name:"cccccccc · complete · jersey tagging of bbbbbbbb"})).toBeInTheDocument();
+ expect(screen.getByRole("button",{name:"bbbbbbbb · complete"})).toBeInTheDocument();
+});
