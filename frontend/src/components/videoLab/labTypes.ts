@@ -1,4 +1,5 @@
 import type { PitchKeyframe } from "./pitch";
+import type { PitchSize } from "./metres";
 
 /** Video Lab (spec 580) shared shapes. Everything from the worker is unconfirmed until reviewed. */
 export type Team = "own" | "opponent";
@@ -28,6 +29,7 @@ export type Review = {
   reviewed_intervals: [number, number][]; review_complete: boolean;
   track_labels: TrackLabel[]; group_labels: GroupLabel[]; rejected_suggestions: string[];
   pitch_keyframes?: PitchKeyframe[];
+  pitch_size?: PitchSize | null;
 };
 
 export type Assignment = { team: Team | null; role: Role | null; source: "you" | "group" | "similar" | "model" | "none"; confidence: number };

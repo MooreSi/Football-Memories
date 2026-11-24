@@ -10,6 +10,8 @@ import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
 import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, type Corners } from "../components/videoLab/pitch";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
+import { PitchMap } from "../components/videoLab/PitchMap";
+import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { propagateTeams } from "../components/videoLab/teams";
 import { BASE, csrfToken, useJobFile, useReview } from "../components/videoLab/useLabData";
@@ -53,6 +55,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const { review, update, state, error } = useReview(job.id);
   const camera = useMemo(() => motion.data ? buildCamera(motion.data) : undefined, [motion.data]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
+  const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], dense.data), [assignments.data, dense.data]);
   const offPitch = useMemo(() => camera && marks.length ? offPitchTracks(assignments.data?.observations ?? [], camera, marks) : new Set<number>(), [camera, marks, assignments.data]);
   const teams = useMemo(() => propagateTeams(appearance.data?.tracks ?? [], review?.track_labels ?? [], review?.group_labels ?? [], appearance.data ? [] : assignments.data?.observations ?? [], offPitch), [appearance.data, assignments.data, review?.track_labels, review?.group_labels, offPitch]);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
@@ -106,6 +109,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
+        {camera && marks.length > 0 && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} selected={track} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}

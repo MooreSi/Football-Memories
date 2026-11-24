@@ -47,6 +47,13 @@ Worker report `docs/IDENTIFICATION_TRIAL.md` records exact evidence and limitati
 Next: independent reviewed youth role/team data and part-aware model, hard staff/
 keeper/referee/kit-change cases, camera calibration and specialised jersey reader.
 
+## Pitch positions in metres (spec 610, 2026-11-24)
+
+"Pitch map" panel (`PitchMap.tsx`, `metres.ts`): pitch size preset/custom saved in the review
+(`pitch_size`, gateway validated), live positions in metres, team heat maps, selected
+person's distance and top speed. Details: [spec 610](todo/football-memories/610-pitch-metres.md).
+Frontend 845, gateway 448 tests. **Not deployed; gateway before app again (`pitch_size`).**
+
 ## Adjustable pitch outline (spec 600, 2026-11-24)
 
 Owner: other matches and sideline people were still analysed; asked for homography with a
@@ -54,7 +61,7 @@ manual adjustment. Built across all three repos (worker 'camera-tracking', gatew
 `pitch_keyframes` + `track-camera`, Video Lab "Pitch outline" panel: Prepare, Mark pitch
 here, draggable corners incl. off screen, marks list). With marks, only people inside the
 outline get rings and team suggestions. Details: [spec 600](todo/football-memories/600-pitch-outline.md).
-Frontend 836, gateway 444, worker 128 tests. **Not deployed; deploy gateway before app.**
+Frontend 836, gateway 444, worker 128 tests. **Deployed 2026-11-24 ~19:10 UTC (owner: "Yes deploy"): gateway cbb21c4 image recreated first (track-camera, pitch_keyframes live; anonymous 401), then app bfee873 for the admin library only via updates._move (latest stays 6138b56), worker c4a391c kickstarted with no jobs queued. Waited about 40 minutes for the admin helper's transfer to go quiet (12 GB sent). 4 of 32 containers changed; shared :hosted unchanged; admin health 200.**
 
 ## Refine moments and off-pitch people (spec 580 follow-up 2, 2026-11-24)
 

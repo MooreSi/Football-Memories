@@ -36,7 +36,7 @@ function body(review: Review) {
     identities: review.identities.map(({ track_id, player_id, start_s, end_s }) => ({ track_id, player_id, start_s, end_s })),
     reviewed_intervals: review.reviewed_intervals, review_complete: review.review_complete,
     track_labels: review.track_labels, group_labels: review.group_labels, rejected_suggestions: review.rejected_suggestions,
-    pitch_keyframes: review.pitch_keyframes ?? [],
+    pitch_keyframes: review.pitch_keyframes ?? [], pitch_size: review.pitch_size ?? null,
   };
 }
 

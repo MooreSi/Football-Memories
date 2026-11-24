@@ -1,6 +1,6 @@
 # 600: Adjustable pitch outline (homography)
 
-Status: Built, not deployed (2026-11-24). Owner: "Yes, build it".
+Status: Deployed to admin preview (2026-11-24, app bfee873, gateway cbb21c4). Owner: "Yes, build it".
 
 ## Problem
 
