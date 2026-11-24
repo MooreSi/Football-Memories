@@ -1,9 +1,11 @@
 import type { Observation } from "./labTypes";
+import { fittedCorners, type Landmark } from "./landmarks";
+export { fitLandmarks } from "./landmarks";
 
 /** Worker `camera_motion.json` (spec 600): step i maps normalised points at times[i] to times[i+1]. */
 export type CameraMotion = { times: number[]; steps: number[][]; cuts: boolean[] };
 export type Corners = [number, number][];
-export type PitchKeyframe = { time_s: number; corners: Corners };
+export type PitchKeyframe = { time_s: number; corners: Corners; landmarks?: Landmark[]; fit_corner_indices?: number[] };
 type Matrix = number[];
 
 export const isCameraMotion = (v: unknown): v is CameraMotion =>
@@ -48,9 +50,30 @@ function cornersAt(camera: Camera, keyframes: PitchKeyframe[], index: number): C
     .map(k => ({ k, at: Math.max(0, sampleIndex(camera.times, k.time_s)) }))
     .filter(({ at }) => camera.segment[at] === camera.segment[index]);
   if (!usable.length) return null;
+  const reference = ({k,at}: typeof usable[number]): Matrix => {
+    if(at+1>=camera.times.length || camera.segment[at+1]!==camera.segment[at]) return camera.inverse[at];
+    const f=Math.max(0,Math.min(1,(k.time_s-camera.times[at])/(camera.times[at+1]-camera.times[at])));
+    const step=multiply(camera.total[at+1],camera.inverse[at]);
+    const identity=[1,0,0,0,1,0,0,0,1];
+    const partial=step.map((v,n)=>identity[n]+(v/step[8]-identity[n])*f);
+    return multiply(camera.inverse[at],invert(partial));
+  };
   const { k, at } = usable.reduce((best, item) => Math.abs(item.k.time_s - camera.times[index]) < Math.abs(best.k.time_s - camera.times[index]) ? item : best);
-  const move = multiply(camera.total[index], camera.inverse[at]);
-  return k.corners.map(p => apply(move, p));
+  const move = multiply(camera.total[index], reference({k,at}));
+  const fitted = fittedCorners(k.corners, k.landmarks, k.fit_corner_indices);
+  if (!fitted) return null;
+  const carried = fitted.map(p => apply(move, p));
+  // New calibrations use corrections from both directions, avoiding a jump at the
+  // nearest-mark boundary. Never blend across a cut; old four-corner reviews stay compatible.
+  if (!usable.some(item => item.k.landmarks !== undefined)) return carried;
+  const before = usable.filter(item => item.k.time_s <= camera.times[index]).sort((a,b) => b.k.time_s-a.k.time_s)[0];
+  const after = usable.filter(item => item.k.time_s >= camera.times[index]).sort((a,b) => a.k.time_s-b.k.time_s)[0];
+  if (!before || !after || before.k.time_s === after.k.time_s) return carried;
+  const carry = (item: typeof before) => fittedCorners(item.k.corners,item.k.landmarks,item.k.fit_corner_indices)?.map(p => apply(multiply(camera.total[index],reference(item)),p));
+  const left=carry(before), right=carry(after);
+  if(!left || !right) return null;
+  const f=(camera.times[index]-before.k.time_s)/(after.k.time_s-before.k.time_s);
+  return left.map(([x,y],n)=>[x+(right[n][0]-x)*f,y+(right[n][1]-y)*f]);
 }
 
 /** The owner's pitch outline at time `t`, carried with the camera from the nearest mark in the same

@@ -11,6 +11,21 @@ separate package split and complete spec 180. Every local/remote branch tip is
 an ancestor; no branches deleted. Docs-only handoff update after the green suites;
 no additional code or live capture needed. App/helper run the verified source.
 
+## Camera-aware Video Lab (spec620, 2026-11-24)
+
+| Work | State | Evidence |
+|---|---|---|
+| Extra pitch points and visible-corner fit | implemented | up to9 named UI points; skip guessed corners; known-point least squares, singular refusal, exact paused-time interpolation, corrections blended within camera shots |
+| Learned team/role corrections | implemented, experimental | full multiview embeddings + torso colours; reviewed example bank; conflict abstention; per-review source-bound model; legacy review compatibility |
+| Veo game/duration and named runs | implemented | own-helper cache/serialized range export; start +1–10 min; H.264 duration/hash verification; CSRF/admin/permission guards; named run dropdown |
+| Local gates | pass | backend852 SQLite +852 Postgres; lint/format/mypy/schema; frontend856/types/hosted build; worker133/lint/format/project; gateway reports its final gates |
+| Manual evidence | limited, honest | synthetic browser1280/375 controls/save/no overflow; real cached120s camera18.508s/599 steps; real998 tracks/4296 views111.441s; hashes/ZIP verified |
+
+Originals/completed results preserved; no new dependencies/weights or source
+account request. No new independent identification accuracy claim. No global
+neural fine-tune; online per-game exemplar model uses only human corrections.
+Admin preview deployment/CI is recorded after the code checkpoint.
+
 ## Identification before statistics (spec590, 2026-11-24)
 
 2026-11-24 follow-up: published both completed trials to the live runtime catalogue

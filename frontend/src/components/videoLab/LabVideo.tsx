@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type RefObject } from "react";
 import type { Assignment, Assignments, Observation } from "./labTypes";
 import { inPlay, mergeDense, type DenseTracks } from "./playArea";
 import { feet, footMargin, insidePitch, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
+import type { Landmark } from "./landmarks";
 import { MarkLayer, PAD } from "./MarkLayer";
 
 export const TEAM_COLOUR = { own: "#38bdf8", opponent: "#fb923c", referee: "#facc15", other: "#94a3b8", none: "#e2e8f0" };
@@ -88,10 +89,11 @@ type Props = {
   src: string; videoRef: RefObject<HTMLVideoElement | null>; at: number; onTime: (at: number) => void;
   assignments?: Assignments; teams: Map<number, Assignment>; selected: number | null; onSelect: (track: number) => void; showBoxes: boolean;
   dense?: DenseTracks; everyone?: boolean;
+  markLandmarks?: Landmark[]; onMarkLandmarks?: (points: Landmark[]) => void;
   camera?: Camera; marks?: PitchKeyframe[]; showOutline?: boolean; marking?: Corners | null; onMarking?: (corners: Corners) => void;
 };
 
-export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, camera, marks = [], showOutline = true, marking = null, onMarking }: Props) {
+export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, camera, marks = [], showOutline = true, marking = null, onMarking, markLandmarks, onMarkLandmarks }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const index = useMemo(() => indexObservations(mergeDense(assignments?.observations ?? [], dense)), [assignments, dense]);
   const now = useFrameTime(videoRef, at);
@@ -139,6 +141,6 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
       })}
     </svg>}
     </div>
-    {marking && onMarking && <MarkLayer corners={marking} onChange={onMarking} />}
+    {marking && onMarking && <MarkLayer corners={marking} onChange={onMarking} landmarks={markLandmarks} onLandmarks={onMarkLandmarks} />}
   </div>;
 }

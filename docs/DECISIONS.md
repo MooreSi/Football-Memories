@@ -4,6 +4,19 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-056 (2026-11-24) Learn from corrections and separate camera/ML compute
+
+Owner requests more pitch points, camera-aware updates, labels that teach team/
+role identification across the game, Veo match/minute selection and named runs.
+Use visible corners plus known landmarks (exclude off-screen guesses), robust
+CPU camera flow and same-shot correction blending. Retain CoreML ALL for person/
+ball inference and existing MPS ReID. Per-game reviewed multiview exemplar banks
+update immediately; predictions do not train themselves and no global neural
+weights are silently fine-tuned. Preserve all completed results and prior reviews.
+Keep source access through the existing own-helper permission/serialized path,
+verified bounded clips and full-admin/CSRF/owner gateways. Existing admin preview
+scope applies; global releases/other libraries are outside this change.
+
 ## D-055 (2026-11-24) Identification comes before action statistics
 
 Owner makes correct player/team identification the primary video-pipeline goal.

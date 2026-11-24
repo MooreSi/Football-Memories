@@ -1,4 +1,4 @@
-import type { ActorCandidate, AppearanceTrack, Assignment, GroupLabel, Observation, Role, Team, TrackLabel } from "./labTypes";
+import type { ActorCandidate, AppearanceTrack, AppearanceView, Assignment, GroupLabel, Observation, Role, Team, TrackLabel } from "./labTypes";
 
 const NONE: Assignment = { team: null, role: null, source: "none", confidence: 0 };
 // Calibrated by eye on the ten-minute Veo match (spec 580): 9 labels → 406 suggestions, no
@@ -16,7 +16,7 @@ function cosine(a: number[], b: number[]) {
 
 /** Appearance (ReID) and shirt colour together. Colour ignores brightness (Lab a*, b*) so the
  * same kit in sun and shade still matches; it carries most weight because it decides teams. */
-function similarity(a: AppearanceTrack, b: AppearanceTrack) {
+function similarity(a: AppearanceView, b: AppearanceView) {
   const look = cosine(a.v, b.v);
   if (!a.kit || !b.kit) return look;
   const kit = Math.exp(-Math.hypot(a.kit[1] - b.kit[1], a.kit[2] - b.kit[2]) / 18);
@@ -53,6 +53,27 @@ export function propagateTeams(tracks: AppearanceTrack[], trackLabels: TrackLabe
     if (result.has(track.track_id)) continue;
     // People seen mostly off the marked pitch (spec 600) get no suggested team.
     if (offPitch.has(track.track_id)) { result.set(track.track_id, NONE); continue; }
+    if (track.views?.length && anchors.some(a=>a.views?.length)) {
+      // A source-bound exemplar classifier is refit on every human correction.
+      // Keep views separate: a shirt's front/back and shade are different examples.
+      // Predictions never enter the example bank; mixed tracks cannot become teachers.
+      const votes: { key: string; score: number }[] = [];
+      for (const view of track.views) {
+        const byLabel = new Map<string,number>();
+        for (const anchor of anchors) {
+          const label=own.get(anchor.track_id)!, key=`${label.team}|${label.role}`;
+          for (const sample of anchor.views ?? []) byLabel.set(key,Math.max(byLabel.get(key) ?? -1,similarity(view,sample)));
+        }
+        const [first,second]=[...byLabel].sort((a,b)=>b[1]-a[1]);
+        if(first && first[1]>=0.65 && (!second || first[1]-second[1]>=0.1)) votes.push({key:first[0],score:first[1]});
+      }
+      const keys=new Set(votes.map(v=>v.key));
+      if(keys.size===1 && votes.length>=Math.min(2,track.views.length) && votes.length/track.views.length>=0.8) {
+        const [team,role]=votes[0].key.split("|");
+        result.set(track.track_id,{team:team==="null"?null:team as Team,role:role as Role,source:"similar",confidence:Math.min(...votes.map(v=>v.score))});
+      } else result.set(track.track_id,NONE);
+      continue;
+    }
     // Closest labelled person per label (team + role). On real Veo footage absolute similarity
     // varies with light; "clearly closer to one label than any other" is what holds up.
     const best = new Map<string, number>();

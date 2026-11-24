@@ -16,7 +16,8 @@ export type VeoEvent = { id: string; type: string; time_s: number; side?: string
 export type VeoHighlight = { source_id?: string; source_label?: string; time_s: number; source_time_s?: number };
 export type VeoTags = { events: VeoEvent[]; highlights: VeoHighlight[] };
 
-export type AppearanceTrack = { track_id: number; group: number; start_s: number; end_s: number; thumb: number; v: number[]; kit?: number[] | null };
+export type AppearanceView = { v: number[]; kit?: number[] | null };
+export type AppearanceTrack = { track_id: number; group: number; start_s: number; end_s: number; thumb: number; v: number[]; kit?: number[] | null; views?: AppearanceView[] };
 export type AppearanceGroup = { id: number; size: number; colour_hex: string | null; examples: number[] };
 export type Appearance = { groups: AppearanceGroup[]; tracks: AppearanceTrack[]; sprite: { file: string; cols: number; w: number; h: number } };
 

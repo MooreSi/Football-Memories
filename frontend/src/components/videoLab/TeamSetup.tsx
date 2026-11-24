@@ -10,7 +10,7 @@ const GROUP_CHOICES: { label: string; team: Team | null; role: Role | null }[] =
   { label: "Opponent players", team: "opponent", role: "player" }, { label: "Referees", team: null, role: "referee" }, { label: "Not players", team: null, role: "other" },
 ];
 
-export function PrepareGrouping({ jobId, sourceHash, onQueued }: { jobId: string; sourceHash: string; onQueued: (id: string) => void }) {
+export function PrepareGrouping({ jobId, sourceHash, onQueued, upgrade = false }: { jobId: string; sourceHash: string; onQueued: (id: string) => void; upgrade?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function prepare() {
@@ -22,10 +22,10 @@ export function PrepareGrouping({ jobId, sourceHash, onQueued }: { jobId: string
     } catch (e) { setError(e instanceof Error ? e.message : "Player grouping could not be started."); }
     finally { setBusy(false); }
   }
-  return <section className="panel space-y-3 p-4" aria-label="Team setup">
-    <h2 className="font-semibold">Set up teams</h2>
-    <p className="text-sm text-fg-muted">This run has no player grouping yet. Preparing it groups people by how they look and finds who was nearest each action, using the saved detections (about 4 minutes for ten minutes of video). Your labels so far are carried over; the original run is kept.</p>
-    <Button variant="primary" disabled={busy} onClick={() => void prepare()}>{busy ? "Starting…" : "Prepare player grouping"}</Button>
+  return <section className="panel space-y-3 p-4" aria-label={upgrade ? "Player view model" : "Team setup"}>
+    <h2 className="font-semibold">{upgrade ? "Learn across camera views" : "Set up teams"}</h2>
+    <p className="text-sm text-fg-muted">{upgrade ? "Update this older run to learn from separate front, back and shaded views. Your saved corrections carry over to the new run." : "Prepare multiple player views to apply your team and role corrections across the game. Your saved labels carry over; the original run is kept."}</p>
+    <Button variant="primary" disabled={busy} onClick={() => void prepare()}>{busy ? "Starting…" : upgrade ? "Update player view model" : "Prepare player grouping"}</Button>
     {error && <p role="alert" className="text-sm text-warn">{error}</p>}
   </section>;
 }
@@ -39,6 +39,7 @@ export function TeamSetup({ jobId, appearance, review, update, teams }: { jobId:
   return <section className="panel space-y-4 p-4" aria-label="Team setup">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-semibold">Set up teams</h2>
       <p className="text-sm text-fg-muted">You labelled {mine.length} players · tracked people now: {teamName("own")} {tally("own")}, {teamName("opponent")} {tally("opponent")}</p></div>
+    <p className="text-sm text-fg-muted">Team and role suggestions update across this run as you correct people. Different camera views are learned separately; conflicting views stay unassigned. <a className="text-accent underline" href={`${BASE}/jobs/${jobId}/review/learned-model`}>View saved learned model</a></p>
     <ol className="list-decimal space-y-1 pl-5 text-sm text-fg-muted">
       <li>Below, mark look-alike groups that are clearly <strong>not players</strong> (spectators, coaches) or referees. Leave mixed groups alone.</li>
       <li>On the video, click three to five players from each team and choose their team. Goalkeepers have their own buttons.</li>

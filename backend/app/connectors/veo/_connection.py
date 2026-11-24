@@ -177,11 +177,20 @@ class VeoConnection:
         if action == "disconnect":
             self.disconnect()
             return
-        if action not in {"test", "refresh", "shared", "watch", "download", "reel", "moments"}:
+        if action not in {
+            "test",
+            "refresh",
+            "shared",
+            "watch",
+            "download",
+            "reel",
+            "moments",
+            "analysis",
+        }:
             raise CaptureError("Choose Connect, Refresh, Watch or Download.")
         if action == "shared" and not self.shared_links():
             raise CaptureError("Add a shared match link first.")
-        if action in {"watch", "download", "reel", "moments"}:
+        if action in {"watch", "download", "reel", "moments", "analysis"}:
             item = self._match(match_id)
             if item is None or not item.get("available") or not item.get("slug"):
                 raise CaptureError("Veo has no video for this match.")
@@ -189,7 +198,7 @@ class VeoConnection:
             if self._busy:
                 raise CaptureError("A Veo operation is already running.")
             self._busy = True
-            self._downloading = action in {"download", "reel", "moments"}
+            self._downloading = action in {"download", "reel", "moments", "analysis"}
             message = "Signing in to Veo…"
             if action == "shared":
                 message = "Reading shared Veo matches…"
@@ -268,6 +277,11 @@ class VeoConnection:
         only_missing: bool = False,
     ) -> None:
         try:
+            if action == "analysis" and match_id:
+                from ._analysis import export_sample
+
+                export_sample(self, match_id, reel or {})
+                return
             if action in {"reel", "moments"} and match_id:
                 from ._reels import make_reel, save_moments
 

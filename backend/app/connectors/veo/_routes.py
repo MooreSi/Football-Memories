@@ -13,9 +13,11 @@ from pydantic import BaseModel, Field, SecretStr
 from app.connectors.hudl_account import Credentials
 from app.connectors.hudl_capture import CaptureError
 
+from ._analysis import router as analysis_router
 from ._parse import team_moments
 
 router = APIRouter(prefix="/veo")
+router.include_router(analysis_router)
 
 
 class VeoCredentials(BaseModel):
@@ -25,8 +27,18 @@ class VeoCredentials(BaseModel):
 
 class VeoAction(BaseModel):
     action: Literal[
-        "test", "refresh", "shared", "watch", "download", "reel", "moments", "disconnect"
+        "test",
+        "refresh",
+        "shared",
+        "watch",
+        "download",
+        "reel",
+        "moments",
+        "disconnect",
+        "analysis",
     ]
+    start_s: float = Field(default=0, ge=0, le=86400, allow_inf_nan=False)
+    duration_s: float = Field(default=120, gt=0, le=600.1, allow_inf_nan=False)
     only_missing: bool = False  # automatic checks reuse completed match metadata
     match_id: str | None = Field(default=None, max_length=200)
     name: str | None = Field(default=None, max_length=200)
@@ -96,7 +108,13 @@ def action(body: VeoAction, request: Request) -> dict[str, bool]:
             return {"accepted": True}
         if not (body.action == "shared" or state.veo.is_shared(body.match_id)):
             raise CaptureError("Save the Veo email and password first.")
-    if body.action in {"reel", "moments"}:
+    if body.action == "analysis":
+        if not body.match_id:
+            raise CaptureError("Select a Veo match first.")
+        state.veo.start(
+            "analysis", body.match_id, reel={"start_s": body.start_s, "duration_s": body.duration_s}
+        )
+    elif body.action in {"reel", "moments"}:
         if not body.match_id or not body.moment_ids:
             raise CaptureError("Choose the Veo highlights for the reel first.")
         reel = {

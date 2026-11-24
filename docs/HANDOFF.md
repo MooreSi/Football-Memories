@@ -11,6 +11,32 @@ footage, indexes tagged moments, and (next) builds a player's memories
 timeline. Full brief: [BRIEF.md](BRIEF.md). Design references:
 [design/](design/DESIGN.md).
 
+## Camera-aware Video Lab (spec620, 2026-11-24)
+
+Branches: app/gateway `codex/local-video-analytics`, worker `codex/local-pipeline`.
+[Spec620](todo/football-memories/620-camera-aware-video-lab.md) implements extra known
+pitch landmarks, visible-corner selection, overdetermined homography and camera
+correction blending; exact paused timestamps are anchored between motion samples.
+Pitch motion uses forward/backward CPU flow with ORB recovery/cut refusal. User
+team/keeper/referee corrections refit a source-bound multiview exemplar model;
+gateway saves revisioned human-only prototype banks separately from inference.
+No neural-weight fine-tuning or named-identity accuracy claim. New Veo picker uses
+the existing own-helper library, start minute and1–10 minute window; bounded verified
+H.264 clip imported via admin/CSRF/permission/owner route. New runs prepare camera
+and multiple views automatically, skipping action/OCR compute. Named run dropdown;
+old runs offer Update camera tracking / Update player view model, retaining labels.
+
+Verified: backend852 SQLite +852 PostgreSQL, ruff/mypy/schema; frontend856,
+typecheck/hosted build; worker133 + lint/format/project. Gateway final checks/CI
+recorded separately in its handoff. Synthetic1280/375 browser checked against
+reference02: selection, extra point, excluded corners, save;375px no overflow.
+Real cached120s camera18.508s,599 flow steps,0 rejections;100-pair flow19.33ms
+vs ORB87.65ms; real998-track/4296-view preparation111.441s. Hash/ZIP/source checks
+pass; no independent accuracy or new source-account acceptance established.
+No source credentials, new weights/dependencies, completed-result/input overwrite.
+Code checkpoint precedes admin preview deployment; keep global latest/shared tags
+and all other libraries unchanged.
+
 ## Identification-first checkpoint (spec 590, 2026-11-24)
 
 Owner follow-up: both completed trials are now registered in the live Video Lab

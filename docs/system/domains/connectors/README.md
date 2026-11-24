@@ -864,3 +864,15 @@ existing full-refresh tests remain intact. Saved shared matches are reused durin
 automatic account checks; shared-link expiry/details require explicit Refresh because
 there is no account listing for those links. Account reset/forget clears both caches
 as before. No full video download occurs during either type of metadata refresh.
+
+
+## Bounded Veo analysis windows (spec620)
+
+The existing serialized Veo action path accepts analysis with a cached match ID,
+start_s and duration_s<=600.1. It reuses the saved match or existing private range
+relay, writes a new H.264 derivative under the helper cache's analysis directory,
+checks duration/codec/SHA-256 and publishes metadata after video verification.
+The full match and download index are unchanged. No remote media URL or account
+state is exposed. The gateway imports only the signed-in admin's own helper clip,
+with permission/CSRF checks and streamed byte/hash validation, then queues the
+native worker. Source credentials/login/pacing remain unchanged.

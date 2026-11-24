@@ -6,9 +6,11 @@ import { LabVideo } from "../components/videoLab/LabVideo";
 import { MomentRail } from "../components/videoLab/MomentRail";
 import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
+import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
 import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, type Corners } from "../components/videoLab/pitch";
+import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
 import { mergeDense } from "../components/videoLab/playArea";
@@ -19,7 +21,7 @@ import type { Appearance, Assignments, Suggestion, VeoTags } from "../components
 
 type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
 type Summary = { source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
-type Job = { id: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string };
+type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string };
 const LEAD = 3, AFTER = 4;
 async function get<T,>(path: string): Promise<T> {
   const response = await fetch(BASE + path, { credentials: "same-origin", cache: "no-store" });
@@ -43,6 +45,8 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const [boxes, setBoxes] = useState(true);
   const [everyone, setEveryone] = useState(false);
   const [marking, setMarking] = useState<Corners | null>(null);
+  const [cornerIndices, setCornerIndices] = useState([0,1,2,3]);
+  const [markLandmarks, setMarkLandmarks] = useState<Landmark[]>([]);
   const [showOutline, setShowOutline] = useState(true);
   const artifacts = job.artifacts ?? [];
   const has = (name: string) => artifacts.includes(name);
@@ -93,7 +97,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
       <section className="min-w-0 space-y-3" aria-label="Analysis results">
         {clip
-          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} /></div>
+          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} /></div>
           : <div className="flex aspect-video items-center justify-center rounded-xl bg-black/40 text-fg-muted">This run has no video.</div>}
         <div className="panel flex flex-wrap items-center gap-2 p-2" aria-label="Moment playback">
           <Button aria-label="Previous moment" disabled={!visible.length} onClick={() => playAt(Math.max(0, (cursor ?? 1) - 1))}><ChevronLeft size={16} aria-hidden />Previous</Button>
@@ -105,14 +109,16 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
         {has("team_assignments.json") && summary?.source_sha256 && <PitchPanel jobId={job.id} sourceHash={summary.source_sha256} hasCamera={has("camera_motion.json")} marks={marks} at={at} marking={!!marking} onQueued={onQueued}
-          onStart={() => { video.current?.pause(); setMarking((camera && outlineAt(camera, marks, video.current?.currentTime ?? at)) ?? DEFAULT_CORNERS); }}
-          onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
+          cornerIndices={cornerIndices} onCornerIndices={setCornerIndices} canSave={!!(marking && fitLandmarks([...marking.flatMap((image,i)=>cornerIndices.includes(i)?[{image,pitch:PITCH_CORNERS[i]}]:[]),...markLandmarks]))} landmarks={markLandmarks} onAddPoint={name => { const point=EXTRA_POINTS.find(p=>p.name===name); const h=marking && fitLandmarks(marking.map((image,i)=>({image,pitch:PITCH_CORNERS[i]}))); if(point && h) setMarkLandmarks(points=>[...points,{...point,image:project(inverse(h),point.pitch)}]); }}
+          onStart={() => { video.current?.pause(); const time=video.current?.currentTime ?? at; const existing=marks.find(m=>Math.abs(m.time_s-time)<0.05); setCornerIndices(existing?.fit_corner_indices ?? [0,1,2,3]); setMarkLandmarks(existing?.landmarks ?? []); setMarking(existing?.corners ?? (camera && outlineAt(camera, marks, time)) ?? DEFAULT_CORNERS); }}
+          onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
         {camera && marks.length > 0 && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} selected={track} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
+        {appearance.data && !appearance.data.tracks.some(t=>t.views?.length) && summary?.source_sha256 && <PrepareGrouping upgrade jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         <TeamSummary moments={moments} />
         {summary && <details className="panel p-4"><summary className="cursor-pointer font-semibold">What these results mean</summary>
           <p className="mt-2 text-sm leading-relaxed text-fg-muted">No confirmed football events are produced automatically. Model suggestions and estimated teams wait for your approval. Tracked people are short stretches, not named players, and may include referees and spectators. Ball proximity does not establish possession.</p>
@@ -139,7 +145,7 @@ export default function VideoLabPage() {
     if (!response.ok) throw new Error(response.status === 409 ? "An analysis is already queued or running." : "Could not start analysis.");
     return response.json() as Promise<Job>;
   }, onSuccess: data => { setSelected(data.id); cache.setQueryData(["video-lab-job", data.id], data); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); } });
-  const queued = (id: string) => { setSelected(id); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); };
+  const queued = useCallback((id: string) => { setSelected(id); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); void cache.invalidateQueries({queryKey:["video-lab-samples"]}); },[cache]);
   const active = job.data;
   const running = active && ["queued", "running"].includes(active.state);
   const error = samples.error || jobs.error || job.error || submit.error;
@@ -150,16 +156,20 @@ export default function VideoLabPage() {
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private admin preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
         <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
-      <div className="panel flex flex-wrap items-end gap-3 p-3">
-        <label className="text-sm">Veo sample<select className="mt-1 block w-64 rounded-lg border border-line bg-ink-900 p-1.5" value={sample || samples.data?.[0]?.id || ""} onChange={e => setSample(e.target.value)}>{samples.data?.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
-        <div><p className="mb-1 max-w-52 text-xs text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
-          <Button onClick={() => submit.mutate()} disabled={!samples.data?.length || submit.isPending || !!running}>{submit.isPending ? "Queueing…" : `Analyse ${durationLabel}`}</Button></div>
-      </div>
+
     </header>
+    <VeoAnalysisPicker busy={!!running || !!jobs.data?.some(j=>["queued","running"].includes(j.state))} onQueued={queued} />
     {error && <p role="alert" className="panel p-4 text-warn">{error.message}</p>}
-    {!!jobs.data?.length && <nav className="flex flex-wrap items-center gap-2" aria-label="Previous runs"><span className="text-xs uppercase tracking-wider text-fg-muted">Runs</span>{jobs.data.map(j => <button key={j.id} onClick={() => setSelected(j.id)} aria-current={j.id === selected ? "true" : undefined} className={`rounded-lg border px-2 py-1 text-xs ${j.id === selected ? "border-accent text-fg" : "border-line text-fg-muted"}`}>{runLabel(j)}</button>)}</nav>}
+    {!!jobs.data?.length && <nav className="panel space-y-2 p-3" aria-label="Previous runs"><label className="block text-sm">Analysis run<select className="mt-1 block w-full rounded-lg border border-line bg-ink-900 p-2" value={selected ?? ""} onChange={e=>setSelected(e.target.value)}>{jobs.data.map(j=>{const sample=samples.data?.find(s=>s.id===j.sample_id);const name=j.match_title || sample?.label || j.sample_id || "Uncatalogued run";return <option key={j.id} value={j.id}>{name}{sample?.duration_s?` · ${Math.round(sample.duration_s/60)} min`:""} · {runLabel(j)}</option>;})}</select></label>
+      {jobs.data.filter(j=>!j.sample_id).map(j=><button key={j.id} className="mr-2 text-xs text-fg-muted" onClick={()=>setSelected(j.id)}>{runLabel(j)}</button>)}
+    </nav>}
     {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><progress className="h-2 w-full accent-blue-500" aria-label="Analysis progress" max={1} value={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
       <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
     {active?.state === "complete" && <Workspace key={active.id} job={active} onQueued={queued} />}
+      <div className="panel flex flex-wrap items-end gap-3 p-3">
+        <label className="text-sm">Prepared sample<select className="mt-1 block w-64 rounded-lg border border-line bg-ink-900 p-1.5" value={sample || samples.data?.[0]?.id || ""} onChange={e => setSample(e.target.value)}>{samples.data?.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
+        <div><p className="mb-1 max-w-52 text-xs text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
+          <Button onClick={() => submit.mutate()} disabled={!samples.data?.length || submit.isPending || !!running}>{submit.isPending ? "Queueing…" : `Analyse ${durationLabel}`}</Button></div>
+      </div>
   </div>;
 }
