@@ -16,6 +16,9 @@ updates._move; exactly admin web/backend/capture changed (3/32); auto-update fal
 VideoLabPage-D-Nein6l.js served; anonymous jobs 401. Not signed in here, so no keeper label was
 added to the live review: one "Our goalkeeper" label lets the keeper carry. Not merged into
 `codex/local-video-analytics` (spec650 in progress there).
+Redeployed admin-only `e5f2454` (player-sized kit matches set the far edge; capture idle,
+3/32 containers changed, latest unchanged, health 200, anonymous 401). Ball audit every 10 s:
+on the match ball 16/24, uncertain 1, no ball shown 7 (detector missed), never a spare ball.
 
 ## Selected-window progress (spec640, 2026-11-24)
 
