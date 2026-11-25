@@ -117,8 +117,15 @@ right on screen, 3 wrong (two players in one box at 3:21, a swap at 3:34). The o
 the live run (8389ebf0 review rev 35 at 08:33 UTC) so the assistant wrote no labels; keeper
 tracklets still unlabelled there: 317 (0:35-0:48) and 897 (2:53-3:01), plus 14 more listed in
 spec660. Ball 23/24 on the 10-s audit; 2:35 is unseen by every local detector.
-App `e0f0796` deployed admin-only (capture flat, 3/32 changed, latest 6138b56 unchanged,
-health 200, anonymous 401).
+App `e0f0796` was deployed admin-only over the other session's `2de8b34` (pitch boundaries)
+by mistake; it removed the boundary editor for ~5 minutes while the owner used it. Rolled back to
+2de8b34, merged `codex/local-video-analytics` into `codex/team-kits` (008de0f), deployed that.
+Then `64e1383` (split-window own colour; not-a-player holds on subs in kit) deployed admin-only:
+3/32 changed, latest 6138b56 unchanged, health 200, anonymous 401. Capture moved ~46 MB during
+the build; no capture file changed in 20 min and no download was mid-way afterwards.
+Assistant labels written to run 8389ebf0 as review rev 39 after the owner was idle 5 min (15
+keeper tracklets, 198/199 not players). Live labels: 184/186 on screen, 2 wrong (3:21 overlap).
+`codex/team-kits` now contains all of `codex/local-video-analytics`; that branch can fast-forward.
 
 ## Selected-window progress (spec640, 2026-11-24)
 
