@@ -39,6 +39,8 @@ right on screen, 3 wrong (two players in one box at 3:21, a swap at 3:34). The o
 the live run (8389ebf0 review rev 35 at 08:33 UTC) so the assistant wrote no labels; keeper
 tracklets still unlabelled there: 317 (0:35-0:48) and 897 (2:53-3:01), plus 14 more listed in
 spec660. Ball 23/24 on the 10-s audit; 2:35 is unseen by every local detector.
+App `e0f0796` deployed admin-only (capture flat, 3/32 changed, latest 6138b56 unchanged,
+health 200, anonymous 401).
 
 ## Selected-window progress (spec640, 2026-11-24)
 
