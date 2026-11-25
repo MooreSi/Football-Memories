@@ -1,6 +1,6 @@
 # 700: Learned pitch landmarks and camera-aware temporal calibration
 
-**Status:** Built and benchmarked; no calibration candidate promoted. Admin deployment pending.
+**Status:** Built and benchmarked; no calibration candidate promoted. Admin preview deployed; comparison child76bc3c6b.
 **Sensitive:** cached local footage and explicit public model preparation only.
 
 ## What is wrong or missing today

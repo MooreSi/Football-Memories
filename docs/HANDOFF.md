@@ -1,3 +1,46 @@
+## Spec700 calibration benchmark COMPLETE; admin preview deployed — 25 November2026
+
+App eae7898, gateway bbbdf20 and native worker1af9782 deployed, gateway first.
+New completed child76bc3c6bf03542bc9c4e0f42623f72cb ofab208abe6e984da6b8b21664fec9bb8b
+ends “Calibration comparison”. Refresh Video Lab and select that run. Copied44
+labels/revision39 exactly, same atlas and source. Experimental candidates are
+read-only and NOT applied; no real calibration accepted. Full observed atlas and
+linked bird's-eye review from spec690 remain available. Routine jobs keep their
+existing calibration workflow; optional pinned models are operator-only.
+
+Both official PnLCalib MV/SV variants tested on four cached games (114 frames each).
+Only6 assistant-marked frames/8 lines across3 games, not independent human truth;
+fourth active pitch ambiguous among overlapping markings/spare goals, excluded
+from accuracy. Neither variant met accuracy/coverage gates. On one game MV raw
+median9.4px covers only1/2 checked views versus current94.1px at2/2; this is NOT a
+whole-pitch improvement. Other views have substantial errors and both methods
+need further validation. No universal Veo/Hudl/youth accuracy claim. Full scores,
+weight hashes, timing and explicit limitations in worker docs/PITCH_CALIBRATION.md
+and app spec700. Independent reviewed checks/verified dimensions remain necessary
+before promotion; no silent threshold tuning or training on assistant markings.
+
+Verified frontend958/188 files (--maxWorkers=4), typecheck/hosted build; backend854
+SQLite+854 PostgreSQL/lint/format/mypy/Alembic; worker187/lint/format/project; gateway
+482 plus4 Docker cases/lint/format/mypy (2 opt-in skips). Code CI worker45605869616
+and gateway45605872041 success. App has no CI. New regressions observed behavioural
+red then green; workspace integration was added after implementation. No existing
+assertion weakened. Final validator null-entry regression also observed red/green.
+Browser isolated real cached footage:1280px table/comparison image,375px iframe
+wrapped table and controls visually checked; reference02 compared. Desktop actual
+scrollWidth=clientWidth1280. No measured375 viewport-override claim; no signed-in
+production playback/acceptance exercised. Screenshots retained outside repo.
+
+Deployment audit: exactly gateway+approved admin web/backend/capture changed4/32;
+other28, shared hosted tags/global latest6138b56 and auto-update=false preserved.
+All400 previously existing job JSON hashes unchanged;27 new artifact hashes and
+parent atlas/source/review equality verified, all8 offline report manifests/ZIP
+CRCs verified. Helpers idle/not busy/not syncing, unchanged network counters before
+move; worker restarted idle and holds processing lock. Admin healthok and new
+VideoLabPage-0ZlYg7RG.js served; anonymous jobs/report/image401. No source-account
+access, old media/result overwrite or fabricated production session. Explicit
+public model preparation used the separate optional environment, leaving base
+deps/lockfile unchanged. External .claude/launch.json in app untouched/unstaged.
+
 ## Spec700 app release verified — 25 November2026
 
 Frontend958 tests/188 files (--maxWorkers=4), typecheck and hosted build pass.
