@@ -74,6 +74,20 @@ Release checks and admin deployment still being finished.
 
 # Handoff
 
+## Spec710 production rebuilds verified — 25 November 2026
+
+Queued through the gateway's own queue_child (same code as "Rebuild complete pitch",
+owner 2b550815, parents untouched, review/labels copied): b8ed9169 (child of 76bc3c6b,
+RCW vs Kidderminster CG) and 16a49509 (child of da671289, Racing Club Warwick vs
+Kidderminster RMC). Both complete with registration "refined" (residual 0.09 px).
+Painted lines projected from each atlas into 24 live frames: median 0 px, p90 <=0.8 px
+near and far. Deployed web build (ff5d96e, read-only local harness; harness review
+saves in memory only, production review.json untouched) shows camera-level bird's-eye
+and a boundary snapped to halfway line/touchline/goal line following those lines in
+live frames. Other cached games checked the same way (scratch): all five consistent.
+Owner still needs to edit/accept the boundary on the new runs; old runs unchanged.
+
+
 ## Spec710 DEPLOYED: app ff5d96e admin preview + native worker 95ede4d — 25 November 2026
 
 App: images hosted-ff5d96e built (FM_BUILD_LATEST=0), added to updates built list
