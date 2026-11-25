@@ -1,5 +1,42 @@
 # Handoff
 
+## Stitched pitch review implemented (spec680) — 25 November 2026
+
+App/gateway branch `codex/local-video-analytics`, worker `codex/local-pipeline`.
+Camera preparation now publishes a source-bound left/centre/right pitch panorama,
+image and registration JSON. Explicit review accepts an editable3–32-point mask
+against the exact panorama ID; optional reviewed four physical corners compose
+image→panorama→metres for live positions/heat/distance. Homogeneous ground clipping
+handles distant vertices behind the current view. Unknown views abstain. Existing
+local corrections, labels/results and10-minute analysis limit remain. New analyses
+include preparation; older runs offer Build stitched pitch. No source-account,
+credentials/session-format, dependencies/weights or media overwrite changes.
+
+Includes committed team-kit/ball updates through1b34a6d; the concurrent spec670
+Veo detector-training plan is outside this feature. Worker cached240.006s trial:
+initial end-reference image rejected for extreme stretching; centred/render-bounded
+mosaic2057x773,37 rendered views,24 unreviewed turf vertices.1174/1199 camera views
+registered (97.91%); homogeneous clipping gives visible ground in all1174. Real
+pitch-line/metric accuracy is NOT independently established; grass proposal includes
+apron/adjacent ground. Genuine observed pixels fill people masks (no inpainting);
+unseen areas black, people may repeat. Final private output panorama-680-rcw-v6;
+source/18 artifact hashes/ZIP CRC pass. First full tracking85.47s; final panorama
+replay13.00s. Original sources/parents and production reviews unchanged.
+
+Verified: frontend933/typecheck/hosted build; backend854 SQLite+854 PostgreSQL,
+ruff/format/mypy/Alembic no drift; worker149/lint/format/project checks;
+gateway470 passed,2 opt-in skips plus4 Docker tests; lint/format/mypy clean.
+New panorama, publishing, geometry, API acceptance and UI regressions observed
+red then green. An initial full frontend run caught the new malformed-schema test
+before its validator implementation; no existing assertions changed. Isolated
+cached-footage browser1280/375/reference02: keyboard, drag (saved point changed),
+add/remove, accept, All changes saved, reload persistence, optional corners remain
+off, phone scrollWidth=clientWidth. Production acceptance/playback not claimed.
+Deployment pending at this code checkpoint: gateway first, approved admin only,
+idle worker reload; preserve other libraries/shared hosted tags/global latest and
+admin auto-update=false. Do not accept a real panorama on the owner's behalf.
+
+
 ## Combined admin deployment completed — 25 November 2026
 
 App `2de8b34` (`codex/local-video-analytics`) combines spec650 boundaries with

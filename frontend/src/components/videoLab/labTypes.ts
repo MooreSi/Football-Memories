@@ -32,6 +32,7 @@ export type Review = {
   pitch_keyframes?: PitchKeyframe[];
   pitch_boundaries?: import("./boundary").Boundary[];
   pitch_size?: PitchSize | null;
+  pitch_panorama?: import("./panorama").PanoramaReview | null;
 };
 
 export type Assignment = { team: Team | null; role: Role | null; source: "you" | "kit" | "group" | "similar" | "model" | "none"; confidence: number };

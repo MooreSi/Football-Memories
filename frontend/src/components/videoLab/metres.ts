@@ -1,3 +1,4 @@
+import {panoramaMatrixAt} from "./panorama";
 import type { Observation } from "./labTypes";
 import { feet, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
 
@@ -47,16 +48,30 @@ export function toPitch(h: Matrix, [x, y]: [number, number]): [number, number] {
   return [(h[0] * x + h[1] * y + h[2]) / d, (h[3] * x + h[4] * y + h[5]) / d];
 }
 
+/** Compose the shared pitch calibration with each camera pose directly. */
+export function imageToPitch(camera:Camera,marks:PitchKeyframe[],size:PitchSize,at:number):Matrix|null {
+ if(camera.panorama?.review.corners){
+  const pose=panoramaMatrixAt(camera.panorama.data,at);
+  if(!pose)return null;
+  const h=pitchHomography(camera.panorama.review.corners,size);
+  const out=[0,1,2].flatMap(r=>[0,1,2].map(c=>h[r*3]*pose[c]+h[r*3+1]*pose[3+c]+h[r*3+2]*pose[6+c]));
+  return out.every(Number.isFinite)?out:null;
+ }
+ const outline=outlineAt(camera,marks,at);
+ return outline?pitchHomography(outline,size):null;
+}
+
 /** Each observation's feet in metres, where an outline is known at its time. */
 export function positions(rows: Observation[], camera: Camera, marks: PitchKeyframe[], size: PitchSize) {
   const cache = new Map<number, Matrix | null>();
   const out: { track_id: number; time_s: number; x: number; y: number }[] = [];
   for (const o of rows) {
     if (!o.image_box) continue;
-    if (!cache.has(o.time_s)) { const outline = outlineAt(camera, marks, o.time_s); cache.set(o.time_s, outline ? pitchHomography(outline, size) : null); }
+    if (!cache.has(o.time_s)) cache.set(o.time_s,imageToPitch(camera,marks,size,o.time_s));
     const h = cache.get(o.time_s);
     if (!h) continue;
     const [x, y] = toPitch(h, feet(o));
+    if(!Number.isFinite(x)||!Number.isFinite(y))continue;
     out.push({ track_id: o.track_id, time_s: o.time_s, x, y });
   }
   return out;

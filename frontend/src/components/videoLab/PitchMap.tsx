@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { clock, teamName, type Assignment, type Observation } from "./labTypes";
 import { boxesAt, indexObservations, TEAM_COLOUR, colourFor } from "./LabVideo";
-import { heatGrid, PITCH_PRESETS, pitchHomography, toPitch, trackMovement, type PitchSize } from "./metres";
-import { feet, outlineAt, type Camera, type PitchKeyframe } from "./pitch";
+import { heatGrid, PITCH_PRESETS, imageToPitch, toPitch, trackMovement, type PitchSize } from "./metres";
+import { feet, type Camera, type PitchKeyframe } from "./pitch";
 
 type Props = {
   rows: Observation[]; camera: Camera; marks: PitchKeyframe[]; size: PitchSize | null; at: number;
@@ -30,8 +30,8 @@ export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSiz
     return heatGrid(rows, camera, marks, size, teamOf, COLS, ROWS);
   }, [rows, camera, marks, size, view, teams]);
   const moved = useMemo(() => size && selected !== null ? trackMovement(rows.filter(r => r.track_id === selected), camera, marks, size).get(selected) : undefined, [rows, camera, marks, size, selected]);
-  const outline = outlineAt(camera, marks, at);
-  const live = size && outline ? boxesAt(index, at).map(o => { const [x, y] = toPitch(pitchHomography(outline, size), feet(o)); return { o, x, y }; })
+  const projection = size?imageToPitch(camera,marks,size,at):null;
+  const live = size && projection ? boxesAt(index, at).map(o => { const [x, y] = toPitch(projection, feet(o)); return { o, x, y }; })
     .filter(p => p.x > -2 && p.y > -2 && p.x < size.length_m + 2 && p.y < size.width_m + 2) : [];
   const l = size?.length_m ?? 100, w = size?.width_m ?? 64, line = Math.max(l, w) / 250;
   return <section className="panel space-y-3 p-3" aria-label="Pitch map">
