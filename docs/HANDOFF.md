@@ -91,6 +91,10 @@ lines -> 24 live frames): 600 s cut-heavy game new near 0 px p90 0.96 / far 0 px
 decision and was deliberately not done by the agent: 16a49509 has no automatic
 outline (editing starts from a ground rectangle) and its goal pair is still a false
 detection (no longer used by the bird's-eye). Old runs unchanged.
+Linked editing on both owner runs, deployed web build, real mouse drags (harness,
+nothing saved): 16a49509 bird corner 4 -> halfway/circle point in panorama, panorama
+corner 3 -> touchline in bird, untouched corners fixed; b8ed9169 panorama point 18 of
+the 24-point outline -> halfway line in bird, only point 18 moved.
 
 
 ## Spec710 DEPLOYED: app ff5d96e admin preview + native worker 95ede4d — 25 November 2026
