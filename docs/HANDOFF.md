@@ -89,7 +89,10 @@ harness over cached jobs 76bc3c6b and da671289 (no gateway, no sign-in): game 2
 bird's-eye round centre circle/straight lines; bird drags on halfway line and
 touchline land on those lines in the panorama. Live overlay follows lines in the
 far field but near-field ground is ~3% of frame width off: worker per-frame
-registration limit, next step (ground-weighted refinement in the worker).
+registration limit. Offline ECC test (scratch only, no worker change): refining
+each pose on the lower ground band raised near-field line correlation ~0.16->0.33
+but dropped far-field 0.89->0.12. One 3x3 pose per frame cannot fit both, so the
+fix needs non-homographic (mesh) registration across worker, gateway and app.
 Not deployed. External .claude/launch.json edit still untouched/unstaged.
 
 

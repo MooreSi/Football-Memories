@@ -165,4 +165,6 @@ rectangle (never the draft, so it does not spin while dragging). Pixel line-angl
 detection was tried and rejected: shadows and far-field radial streaks swamp it.
 Remaining: per-frame registration fits mostly distant texture, so near-field ground
 in live frames can sit ~3% of frame width off the atlas (two-lens seam parallax at
-bottom-centre). That is a worker registration limit, not the ground model.
+bottom-centre). That is a worker registration limit, not the ground model. A
+ground-band ECC refit of each 3x3 pose fixes the near field only by breaking the
+far field; a real fix needs a non-homographic per-frame warp.
