@@ -1,3 +1,4 @@
+import {CalibrationBenchmarkPanel,isCalibrationBenchmark} from "../components/videoLab/CalibrationBenchmark";
 import {PanoramaPanel} from "../components/videoLab/PanoramaPanel";
 import {bindPanorama,isPanorama,panoramaBoundaryAt} from "../components/videoLab/panorama";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -66,6 +67,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const appearance = useJobFile(job.id, "track_appearance.json", has("track_appearance.json"), isAppearance);
   const dense = useJobFile(job.id, "dense_tracks.json", has("dense_tracks.json"), isDense);
   const motion = useJobFile(job.id, "camera_motion.json", has("camera_motion.json"), isCameraMotion);
+  const calibrationBenchmark=useJobFile(job.id,"pitch_calibration_benchmark.json",has("pitch_calibration_benchmark.json"),isCalibrationBenchmark);
   const atlas=has("pitch_atlas.json")&&has("pitch_atlas.jpg");
   const panorama=useJobFile(job.id,atlas?"pitch_atlas.json":"pitch_panorama.json",atlas||(has("pitch_panorama.json")&&has("pitch_panorama.jpg")),isPanorama);
   const { review, update, state, error } = useReview(job.id);
@@ -149,6 +151,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
+        {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}
         {camera && review && !camera.panorama && <BoundaryPanel editing={boundaryEditing} selected={boundarySelected} setSelected={setBoundarySelected} onChange={setBoundaryEditing} marks={boundaries} manual={!!boundaryAt(camera,boundaries,[],at)} automatic={!!currentBoundary}
           onStart={()=>{video.current?.pause();setMarking(null);setBoundarySelected(0);const time=video.current?.currentTime ?? at;setBoundaryEditing(boundaryAt(camera,boundaries,automaticBoundaries,time) ?? outlineAt(camera,marks,time) ?? DEFAULT_CORNERS);}}

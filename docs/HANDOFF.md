@@ -1,3 +1,34 @@
+## Spec700 app release verified — 25 November2026
+
+Frontend958 tests/188 files (--maxWorkers=4), typecheck and hosted build pass.
+Backend854 SQLite+854 PostgreSQL, ruff check/format, mypy and Alembic check pass.
+Worker187 and gateway482 plus4 Docker tests verified. Worker CI45605869616 green;
+gateway CI45605872041 pending. Browser isolated cached footage:1280px table/image
+and source-bound report visible, no page overflow;375px iframe table wraps within
+panel, screenshot saved. Reference02 compared. New null-method validator regression
+observed red then green; original checks unchanged. UI provenance explicitly says
+assistant checks, experimental/not applied, missing coverage and adult-template
+assumptions. No signed-in production acceptance/playback exercised. Admin deployment
+and comparison-child publication pending. External .claude/launch.json untouched.
+
+
+## Spec700 benchmark implemented — 25 November2026
+
+Pinned offline MV/SV model observations and immutable operator benchmark completed
+on four cached games. Six assistant-marked frames/eight lines across three games,
+not independent human ground truth; fourth active pitch ambiguous and excluded
+from accuracy. Every third prediction frame withheld from temporal anchors.
+Neither model passes coverage/accuracy gates; no candidate promoted or applied.
+Current goal estimate also has substantial errors in some views. Keep owner review
+and explicit youth dimensions; do not advertise universal or whole-game accuracy.
+Worker docs/PITCH_CALIBRATION.md records all scores/hashes/limitations; private
+runtime/pitch-benchmark-700 holds eight fresh reports. No old result/source writes.
+Video Lab source-bound read-only comparison shows errors AND missing views, adult
+geometry warning, check provenance, frame image and downloads. Gateway allows
+only the five declared artifacts with existing owner/admin checks. Optional
+models remain outside runtime; base deps and normal inference defaults unchanged.
+Release checks and admin deployment still being finished.
+
 # Handoff
 
 ## Spec700 calibration benchmark IN PROGRESS — 25 November2026

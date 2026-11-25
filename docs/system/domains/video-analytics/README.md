@@ -128,3 +128,21 @@ vertices on bird's-eye edits: reprojecting an entire boundary can flip unrelated
 points across a chart horizon. Atlas images retain the observed ground even when
 the goal-guided starting boundary is narrower. Width without two recovered
 white touchlines is explicitly estimated and must be corrected by the reviewer.
+
+
+## Spec700 benchmark implemented — 25 November2026
+
+Pinned offline MV/SV model observations and immutable operator benchmark completed
+on four cached games. Six assistant-marked frames/eight lines across three games,
+not independent human ground truth; fourth active pitch ambiguous and excluded
+from accuracy. Every third prediction frame withheld from temporal anchors.
+Neither model passes coverage/accuracy gates; no candidate promoted or applied.
+Current goal estimate also has substantial errors in some views. Keep owner review
+and explicit youth dimensions; do not advertise universal or whole-game accuracy.
+Worker docs/PITCH_CALIBRATION.md records all scores/hashes/limitations; private
+runtime/pitch-benchmark-700 holds eight fresh reports. No old result/source writes.
+Video Lab source-bound read-only comparison shows errors AND missing views, adult
+geometry warning, check provenance, frame image and downloads. Gateway allows
+only the five declared artifacts with existing owner/admin checks. Optional
+models remain outside runtime; base deps and normal inference defaults unchanged.
+Release checks and admin deployment still being finished.

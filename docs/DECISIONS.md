@@ -658,3 +658,12 @@ Open owner question: [002-hudl-access.md](owner-decisions/002-hudl-access.md).
 ## D-001 (2026-11-09) Stack as specified in the brief
 React + TypeScript + Vite + Tailwind; FastAPI + SQLAlchemy 2 + Alembic +
 PostgreSQL 17; FFmpeg; Docker Compose. Python 3.12 via `uv` (backend/.venv).
+
+## Spec700: retain current default after negative calibration benchmark (2026-11-25)
+
+Use explicit offline pinned PnLCalib MV/SV inference only as an operator experiment.
+Sparse adult-template matches on amateur youth footage can have low fitting error
+and poor end coverage. Six assistant checks cannot establish independent accuracy.
+No measured candidate passed gates; expose evidence read-only rather than replace
+the owner's accepted calibration. Promotion needs new independent checks, verified
+geometry and adequate coverage. Base runtime deps and automatic jobs unchanged.
