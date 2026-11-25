@@ -1,5 +1,48 @@
 # Football Memories: progress
 
+## Complete pitch atlas admin preview DEPLOYED — 25 November 2026
+
+App3e276e3 (includes committed spec670 frame labels), gateway4a878df and native
+worker97577fa deployed, gateway first. Fresh completed childab208abe6e984da6b8b21664fec9bb8b
+of8af26291 ends in “Complete pitch + bird’s-eye”. Copied44 labels/revision39;
+no real calibration accepted. Refresh Video Lab and select this run. Future camera
+preparation publishes the atlas; older runs can rebuild. Accepted geometry applies
+to registered frames of the analysed video; the10-minute analysis cap remains.
+
+Full-duration cylindrical rendering retains both goal ends in cached240s and600s
+different games, including the left end previously discarded by the planar guard.
+Final outputs pitch-atlas-690-rcw-v5 (92.87s,98 rendered/236 candidate views,27 goal
+clusters) and pitch-atlas-690-outdoor-v2 (101.38s,96/265,18 clusters) each have two
+unconfirmed goal candidates. Both final images and relative top-down images visually
+reviewed. Source/22 and21 artifact hashes, ZIP CRCs and exact atlas binding verified.
+Neither game yielded a trustworthy pair of white touchlines: proposed width is
+explicitly estimated in goal-mouth units, not a measured full pitch boundary.
+The complete observed atlas stays editable beyond that starting mask; unseen
+pixels stay black. Goal/contact estimates and physical corners require review.
+No universal all-game detector/metric accuracy or unseen-ground recovery claim.
+
+Verified combined frontend954/typecheck/hosted build; backend854 SQLite+854
+PostgreSQL/lint/format/mypy/Alembic; worker160/lint/format/project checks; gateway477
+plus4 Docker cases/lint/format/mypy (2 opt-in skips). Worker CI45596394947 and gateway
+CI45596397912 green. App has no CI. New seam, goal, late-view, live projection,
+source/ID, review/UI and unrelated-vertex regressions observed behavioural red then
+green. Rectification correspondence tests were added after implementation.
+Browser isolated cached footage1280: dragged both views, keyboard edit, save/reload
+revision1, only intended points6/12/17 changed; corners=null and goals_confirmed=false.
+Reference02 compared;375px iframe controls visually checked. Browser viewport
+override did not change the actual1280px viewport, so no measured375px overflow
+claim. Signed-in production acceptance/playback not independently exercised.
+
+Exactly gateway+approved admin web/backend/capture changed(4/32). Other28 containers,
+shared hosted tags/global latest6138b56 and admin auto-update=false preserved.
+All375 previously existing job JSON hashes unchanged. Helpers idle/busy=false/not
+syncing with unchanged network counters before move. Worker restarted idle and
+holds its processing lock. Admin health ok and VideoLabPage-B8T00I6f.js served;
+anonymous jobs/atlas image401. No source account access, media/result overwrite,
+new dependency/weight download or real review acceptance. Unrelated external
+.claude/launch.json remains untouched/unstaged in the app.
+
+
 ## Combined atlas and frame-label checkpoint — 25 November 2026
 
 Merged committed `codex/team-kits` throughc12ab55, preserving spec670 frame labelling

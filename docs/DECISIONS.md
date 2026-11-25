@@ -4,6 +4,17 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-058 (2026-11-25) Preserve both ends with cylindrical rays and reviewed goal contacts
+
+The planar horizon guard discarded an observed end despite high registration
+coverage. Render a full-duration cylindrical atlas and retain image-to-world rays
+for live masks and true ground homography composition. Reuse source/time-bound
+white goal-frame candidates as explicitly unconfirmed landmarks. Linked top-down
+editing preserves untouched vertices rather than round-tripping an entire polygon
+through a chart horizon. Only reviewed physical corners enable metres. When both
+touchlines cannot be recovered, label goal-guided width as estimated; retain the
+complete observed image for correction and never synthesize unseen ground.
+
 ## D-057 (2026-11-25) Review one source-bound stitched pitch
 
 Owner requests a panned left/centre/right pitch image with an automatic editable

@@ -1,6 +1,6 @@
 # 690: Both goal ends, complete pitch atlas and linked bird's-eye review
 
-**Status:** Building
+**Status:** Implemented, verified and deployed to the admin preview
 **Sensitive:** no; cached local footage, new outputs, existing admin/source/revision guards.
 
 ## What is wrong or missing today
@@ -42,4 +42,22 @@ review against reference02. Record every failure and limitation honestly.
 Not needed: existing cached games only.
 
 ## Verification
-Pending.
+App3e276e3, gateway4a878df, worker97577fa. Frontend954; backend854 SQLite +854
+PostgreSQL; worker160; gateway477 plus4 Docker cases; lint/format/types/build/schema
+checks and worker/gateway code CI green. Cached240s/600s games retain both goal ends;
+22/21 output artifact hashes, sources and ZIP CRC verified. Linked drag/save/reload
+verified in an isolated cached-footage browser. Admin-only deployment preserved
+other28 containers, shared tags/latest and375 existing job JSON hashes. New child
+ab208abe retains44 labels/revision39 and awaits the owner’s calibration acceptance.
+
+## Limits discovered in review
+Both cached games have spare goals/goal-like white frames. Goal candidates remain
+unconfirmed; correct their ground contacts before using the estimated top-down
+shape as evidence. Neither game supplied two stable detected white touchline
+levels. The starting mask uses an explicitly estimated relative goal-mouth width;
+it does not claim measured touchlines or physical dimensions. The full panorama
+remains editable beyond the proposal. Mark real corners to improve rectification
+and enable metres. Unseen ground stays black; whole-match support is not inferred
+from a10-minute analysis window. No independently reviewed held-out accuracy claim.
+The375px iframe was visually checked; browser viewport override was ineffective,
+so a measured375px overflow check is not claimed.
