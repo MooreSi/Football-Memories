@@ -10,7 +10,7 @@ import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
-import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, type Corners } from "../components/videoLab/pitch";
+import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, type Corners } from "../components/videoLab/pitch";
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
@@ -84,9 +84,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);
   const ball = useMemo(() => {
     const w = assignments.data?.image_width ?? 1920, h = assignments.data?.image_height ?? 1080;
-    if (dense.data?.balls?.length) return trackBall(denseBalls(dense.data, w, h), w, h);
-    return detections.data ? trackBall(parseBalls(detections.data), w, h) : [];
-  }, [dense.data, detections.data, assignments.data]);
+    const toPitch = camera ? (t: number, x: number, y: number) => stabilise(camera, t, x, y) : undefined;
+    if (dense.data?.balls?.length) return trackBall(denseBalls(dense.data, w, h), w, h, toPitch);
+    return detections.data ? trackBall(parseBalls(detections.data), w, h, toPitch) : [];
+  }, [dense.data, detections.data, assignments.data, camera]);
   const [showBall, setShowBall] = useState(true);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);

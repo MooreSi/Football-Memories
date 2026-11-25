@@ -75,3 +75,13 @@ describe("denseBalls", () => {
     expect(denseBalls({}, W, H)).toEqual([]);
   });
 });
+
+describe("spares while the camera pans", () => {
+  it("a ball resting on the ground is a spare even when the camera pan moves it across the picture", () => {
+    const pan = (t: number) => t * 60; // pixels the camera has panned by time t
+    const samples = Array.from({ length: 36 }, (_, i) => ({ time_s: i / 3, balls: [{ box: ball(1400 - pan(i / 3), 900).box, score: 0.9 }] }));
+    const toPitch = (t: number, x: number, y: number): [number, number, number] => [0, x + pan(t) / W, y];
+    expect(trackBall(samples, W, H, toPitch)).toEqual([]);
+    expect(trackBall(samples, W, H).length).toBeGreaterThan(0); // in picture terms it moves
+  });
+});

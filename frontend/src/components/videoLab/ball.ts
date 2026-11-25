@@ -37,20 +37,31 @@ const SPARE_S = 6, SPARE_SEEN = 15, SPARE_PX = 12, SPARE_LOOK_S = 8;
  * waiting for a free kick or goal kick rests only a few seconds. (On the RCW run: spares 10-11 s,
  * 24-34 sightings; a free kick 4-5 s.)
  */
-function withoutSpares(samples: BallSample[]): BallSample[] {
-  const all = samples.flatMap(s => s.balls.map(b => ({ t: s.time_s, x: (b.box[0] + b.box[2]) / 2, y: (b.box[1] + b.box[3]) / 2 })));
+/** Picture point (normalised) at time t to a camera-steadied point: [camera shot, x, y]. */
+export type ToPitch = (t: number, x: number, y: number) => [number, number, number] | null;
+
+function withoutSpares(samples: BallSample[], width: number, height: number, toPitch?: ToPitch): BallSample[] {
+  // With camera motion, "resting" is judged on the ground, not in the picture: Veo pans while a
+  // spare ball lies still by the bags.
+  const place = (t: number, box: number[]): [number, number, number] | null => {
+    const x = (box[0] + box[2]) / 2 / width, y = (box[1] + box[3]) / 2 / height;
+    return toPitch ? toPitch(t, x, y) : [0, x, y];
+  };
+  const all = samples.flatMap(s => s.balls.map(b => ({ t: s.time_s, p: place(s.time_s, b.box) })));
+  const tol = SPARE_PX / width;
   const spare = (t: number, box: number[]) => {
-    const x = (box[0] + box[2]) / 2, y = (box[1] + box[3]) / 2;
+    const p = place(t, box);
+    if (!p) return false;
     let first = Infinity, last = -Infinity, seen = 0;
-    for (const b of all) if (Math.abs(b.t - t) <= SPARE_LOOK_S && Math.abs(b.x - x) <= SPARE_PX && Math.abs(b.y - y) <= SPARE_PX) { seen++; first = Math.min(first, b.t); last = Math.max(last, b.t); }
+    for (const b of all) if (b.p && b.p[0] === p[0] && Math.abs(b.t - t) <= SPARE_LOOK_S && Math.abs(b.p[1] - p[1]) <= tol && Math.abs(b.p[2] - p[2]) * height / width <= tol) { seen++; first = Math.min(first, b.t); last = Math.max(last, b.t); }
     return seen >= SPARE_SEEN && last - first >= SPARE_S;
   };
   return samples.map(s => ({ ...s, balls: s.balls.filter(b => !spare(s.time_s, b.box)) }));
 }
 
-export function trackBall(input: BallSample[], width: number, height: number): BallPoint[] {
+export function trackBall(input: BallSample[], width: number, height: number, toPitch?: ToPitch): BallPoint[] {
   // A ball cut off at the left or right edge is a spare by the touchline; Veo keeps play inside the frame.
-  const samples = withoutSpares(input).map(s => ({ ...s, balls: s.balls.filter(b => b.box[0] > 2 && b.box[2] < width - 2) }));
+  const samples = withoutSpares(input, width, height, toPitch).map(s => ({ ...s, balls: s.balls.filter(b => b.box[0] > 2 && b.box[2] < width - 2) }));
   type Node = { i: number; time_s: number; x: number; y: number; r: number; cost: number; best: number; back: number };
   const nodes: Node[] = [];
   const firstOf: number[] = [];

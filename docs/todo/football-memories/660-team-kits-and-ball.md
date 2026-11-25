@@ -68,6 +68,11 @@ Detector follow-up (owner chose it): worker `refine-moments --whole-clip` (branc
 app ball coverage 84% to 88%. Dense people links made team errors worse (4 to 23), so a
 whole-clip run feeds the ball only.
 
+Owner chose "try a football model": the cached broadcast football YOLO was already rejected on
+Veo footage (worker docs), so first tried tiles with the existing model (no download). Worker
+`--ball-tiles` + app camera-steadied spare filter (`stabilise`): ball shown 92.6% of the clip;
+10-s audit 22/24 right, 1 wrong (0:15 spare by the coach, resting only ~3 s), 1 unseen (2:35).
+
 ## Second match: Racing Club Warwick vs Kidderminster RMC (16 Nov, 18:00-22:00)
 Owner asked for a 4-minute check on another Veo match. Used the saved local 10-minute sample
 (no source-account access); cut 4 minutes, standard analysis + player views (647 tracklets),
