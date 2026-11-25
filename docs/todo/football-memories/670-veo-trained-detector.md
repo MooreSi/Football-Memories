@@ -1,6 +1,6 @@
 # 670: A detector trained on the owner's own Veo footage
 
-**Status:** Draft (owner asked for the plan 25 Nov 2026; nothing built)
+**Status:** Building. Owner approved all four open questions on 25 Nov 2026 ("yes to all four").
 **Sensitive:** no. No Hudl/Veo requests, credentials or library deletes. Owner decisions below.
 
 ## What is wrong or missing today
@@ -84,3 +84,32 @@ None needed. Footage is already in your library; nothing talks to Hudl or Veo.
 - [ ] no credential, cookie or token written to the repo, a log or a fixture
 - [ ] nothing on Hudl modified; no existing library file deleted or overwritten
 - [ ] real-account check: not needed
+
+## Build log (25 Nov 2026)
+- **Matches:** the only Veo footage on this Mac is:
+  - RCW vs CG (4 min);
+  - RCW vs Kidderminster RMC (`veo-racing-ten`, 10 min of the full match);
+  - `veo-f7925d9ffc637ab3` (25 min, 3G; `veo-trial` is a 2-minute cut of it);
+  - Norton Lindsay vs SBITC Eagles (69 min, 3G).
+
+  Villa-Stoke is not Veo. Training: CG, f7925 and Norton. Held out: RMC. A second
+  never-seen test match needs one more Veo match from the owner.
+- **Worker** (`codex/veo-detector`, worktree `../Football Video Analytics detector`):
+  - optional `train` group (ultralytics 8.4.46, opencv-python pinned to the headless 4.14);
+  - `label-frames`: hard frames first, overlaps between player-sized people only, a 20% random share;
+  - `train-veo-detector` and `eval-detector`;
+  - CoreML export in the isolated environment from DETECTOR_TRIAL.md, because coremltools 9.0
+    cannot convert torch 2.11's attention ops.
+
+  Smoke check: one epoch on synthetic frames trained on MPS, exported, and loaded in
+  CoreMLDetector. The live worker checkout and its LaunchAgent are untouched.
+- **Gateway** (`codex/frame-labels`, merged into `codex/local-video-analytics` 477008a and deployed):
+  - `label-sets` list, get and frames;
+  - revisioned `labels` PUT (403 without CSRF, 409 stale or another recording, 422 bad box or frame);
+  - `presort.json` shown apart from labels.
+- **App:** `/video-lab/labels` (admin gate as the Video Lab):
+  - boxes start from proposals (person 0.4+, ball 0.4+);
+  - click a box to remove it, drag to draw one;
+  - Z zooms, Enter confirms, S skips.
+
+  Deployed admin-only `a7b2933` (contains the other session's panorama build 014a3ad).

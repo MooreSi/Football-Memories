@@ -160,6 +160,24 @@ check idle runtime, deploy gateway before admin app, reload worker only idle;
 preserve other libraries/shared tags/global latest and existing admin update hold.
 
 
+## Detector trained on owner-confirmed Veo frames (spec670, 2026-11-25, building)
+
+[Spec670](todo/football-memories/670-veo-trained-detector.md): owner said yes to ultralytics,
+a 300-frame pilot, the match choice and assistant pre-sort.
+- **Built in three repos:**
+  - worker `codex/veo-detector`: label-frames, train-veo-detector, eval-detector;
+  - gateway frame labels (merged and deployed);
+  - app `/video-lab/labels` (admin `a7b2933`).
+- **Label sets** are written to `runtime/label-sets/<id>/`; an index is in
+  `runtime/label-sets-index.txt`.
+- **Next:**
+  1. The assistant pre-sorts (`presort.json`).
+  2. The owner confirms frames.
+  3. Run train-veo-detector on CG, f7925 and Norton with base
+     `~/Football Analysis Worker/models/yolo11m.pt`.
+  4. Run eval-detector on RMC against the current `models/detector.json`, with and without tiles.
+  5. Promote only past the spec's gates.
+
 ## Teams by kit and the ball (spec660, 2026-11-24)
 
 Branch `codex/team-kits` (worktree `../Football Memories kits`, cut from
