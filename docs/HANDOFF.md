@@ -85,7 +85,12 @@ near and far. Deployed web build (ff5d96e, read-only local harness; harness revi
 saves in memory only, production review.json untouched) shows camera-level bird's-eye
 and a boundary snapped to halfway line/touchline/goal line following those lines in
 live frames. Other cached games checked the same way (scratch): all five consistent.
-Owner still needs to edit/accept the boundary on the new runs; old runs unchanged.
+Independent check, same unchanged projection script for every game (atlas painted
+lines -> 24 live frames): 600 s cut-heavy game new near 0 px p90 0.96 / far 0 px p90
+0.96 vs old near 5.2 px p90 44 / far 4.3 px p90 11. Acceptance is the owner's review
+decision and was deliberately not done by the agent: 16a49509 has no automatic
+outline (editing starts from a ground rectangle) and its goal pair is still a false
+detection (no longer used by the bird's-eye). Old runs unchanged.
 
 
 ## Spec710 DEPLOYED: app ff5d96e admin preview + native worker 95ede4d — 25 November 2026
