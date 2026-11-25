@@ -133,6 +133,15 @@ the run, each checked by eye: 0:23-0:25 edge ball, 2:34-2:37 corner taker, 2:37-
 at the flag, 3:39-3:41 free-kick ball behind the referee. Shown 93.3% of the clip; 10-s audit
 24/24 (0:15 shows nothing while our keeper holds the ball).
 
+### What is still not shown (16.1 s of 240 s)
+- 0:13.7-0:15.4: our keeper holding the ball after a save.
+- 2:26.5-2:33.3: play in the far goalmouth ~60 m away; YOLO11 tiles, a 3x zoom probe on the goal
+  area (35 frames, 0 balls) and the owner's three local football models all find nothing.
+- 2:57.5-3:05: a restart (keeper walking back, a player waiting at the centre spot); no ball in view.
+Players: 2 wrong at one ~0.3 s moment at 3:21 (982/989 overlap, two people per box). Closing these
+needs a detector that sees a ball among legs at that distance and separates overlapping players:
+a model trained on labelled Veo frames (owner decision: labelling effort, weights, licence).
+
 ## Second match: Racing Club Warwick vs Kidderminster RMC (16 Nov, 18:00-22:00)
 Owner asked for a 4-minute check on another Veo match. Used the saved local 10-minute sample
 (no source-account access); cut 4 minutes, standard analysis + player views (647 tracklets),
