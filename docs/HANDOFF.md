@@ -126,6 +126,9 @@ the build; no capture file changed in 20 min and no download was mid-way afterwa
 Assistant labels written to run 8389ebf0 as review rev 39 after the owner was idle 5 min (15
 keeper tracklets, 198/199 not players). Live labels: 184/186 on screen, 2 wrong (3:21 overlap).
 `codex/team-kits` now contains all of `codex/local-video-analytics`; that branch can fast-forward.
+Then `3a39a2c` (ball held for a set piece bridged up to 4 s; corner at 2:35 now shown) deployed
+admin-only the same way (capture flat, 3/32, latest unchanged, health 200, anonymous 401).
+Ball 10-s audit 24/24 (0:15 none: keeper holding it); shown 93.3% of the clip.
 
 ## Selected-window progress (spec640, 2026-11-24)
 
