@@ -1,3 +1,4 @@
+import {panoramaPointsAt,type BoundPanorama} from "./panorama";
 import type { Observation } from "./labTypes";
 import { fittedCorners, type Landmark } from "./landmarks";
 export { fitLandmarks } from "./landmarks";
@@ -26,7 +27,7 @@ function apply(m: Matrix, [x, y]: [number, number]): [number, number] {
 }
 
 /** Each sample's camera relative to the start of its segment (segments are split at cuts). */
-export type Camera = { times: number[]; segment: number[]; total: Matrix[]; inverse: Matrix[] };
+export type Camera = { panorama?:BoundPanorama; times: number[]; segment: number[]; total: Matrix[]; inverse: Matrix[] };
 
 export function buildCamera(motion: CameraMotion): Camera {
   const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -79,6 +80,7 @@ function cornersAt(camera: Camera, keyframes: PitchKeyframe[], index: number): C
 /** The owner's pitch outline at time `t`, carried with the camera from the nearest mark in the same
  * camera segment and blended between samples; null where no mark reaches (beyond a cut). */
 export function outlineAt(camera: Camera, keyframes: PitchKeyframe[], t: number): Corners | null {
+  if(camera.panorama?.review.corners) return panoramaPointsAt(camera.panorama,t,true);
   if (!keyframes.length || !camera.times.length) return null;
   const i = Math.max(0, sampleIndex(camera.times, t));
   const here = cornersAt(camera, keyframes, i);

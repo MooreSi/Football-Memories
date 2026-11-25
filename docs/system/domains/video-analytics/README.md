@@ -109,3 +109,12 @@ Dark kits share colour, so a dark person takes a labelled dark role only when th
 (ReID cosine) is also 0.58+: on RCW vs CG our keeper's tracklets score 0.73+ to each other and
 coats at most 0.66. A keeper holding the ball is undetectable as a ball; a spare that rests,
 leaves the picture and returns is still a spare (judge resting over 15 s on the ground).
+
+Spec680: prepare a perspective panorama and register revisited camera views to it.
+Rendering the whole frame needs stricter bounds than projecting observed ground;
+use a centred reference, clip the accepted polygon in homogeneous coordinates,
+and compose optional panorama-to-metres directly. Rejecting a whole polygon merely
+because distant vertices cross the horizon discards known visible ground. Green
+union envelopes are suggestions, not physical touchlines. Exact panorama/source
+IDs bind acceptance; unknown poses abstain, never inherit by match title. Old local
+corrections remain. The analysis window cap is unchanged.

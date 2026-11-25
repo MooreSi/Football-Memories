@@ -4,6 +4,17 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-057 (2026-11-25) Review one source-bound stitched pitch
+
+Owner requests a panned left/centre/right pitch image with an automatic editable
+boundary accepted once for the game. Build it from cached analysed footage using
+existing CPU features; separate rendered-mosaic quality from camera registration.
+Bind acceptance to the exact content-derived panorama and source hash. Apply to
+registered moments, clip visible ground before division, and compose optional
+reviewed physical-corner calibration for metres. Unmatched views abstain. Do not
+invent unseen corners, extend the10-minute analysis cap, request source media or
+accept the real proposal on the owner's behalf. Preserve existing reviews/results.
+
 ## D-056 (2026-11-24) Learn from corrections and separate camera/ML compute
 
 Owner requests more pitch points, camera-aware updates, labels that teach team/
