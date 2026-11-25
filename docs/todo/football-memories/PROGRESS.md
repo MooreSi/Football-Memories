@@ -1,5 +1,25 @@
 # Football Memories: progress
 
+## Combined boundary, kit and ball checkpoint — 25 November 2026
+
+Branch `codex/local-video-analytics`: merged `codex/team-kits` after spec650.
+Resolved shared editor/workspace code by retaining both multi-vertex source-bound
+boundaries and per-moment kit assignments, remembered kits, camera-steadied ball
+filtering and the ball-only use of whole-clip dense refinements. Existing labels,
+metre calibration and original outputs remain separate. No existing test changed
+in conflict resolution; inherited branch tests were not observed red this session.
+
+Verified this session: backend854 SQLite and854 PostgreSQL; ruff/format/mypy and
+Alembic no drift; frontend910 tests, typecheck and hosted build. Cached isolated
+browser1280/375: keyboard point movement, insert/remove/save, All changes saved;
+375px scrollWidth=clientWidth. Compared reference02. Existing kit/ball integration
+tests pass; no new real analysis or signed-in production acceptance. Worker merged
+its dense-clip branch separately,142 tests and lint/format/project checks pass.
+Deployment pending at this checkpoint; retain newer live kit/ball functionality,
+update gateway before app and reload worker only idle. Other libraries, shared
+hosted tags, global latest and admin auto-update hold must remain unchanged.
+
+
 ## Automatic editable pitch boundaries (spec650, 2026-11-25)
 
 Branch `codex/local-video-analytics`. Resumed the unfinished spec650 app, gateway

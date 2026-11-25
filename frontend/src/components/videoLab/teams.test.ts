@@ -18,6 +18,12 @@ describe("propagateTeams", () => {
     expect(result.get(2)).toMatchObject({ team: "own", source: "similar" });
     expect(result.get(3)).toMatchObject({ team: null, source: "none" });
   });
+  it("among dark kits brightness counts: a referee's black is not a spectator's dark-grey coat", () => {
+    const dark = (track_id: number, v: number[], kit: number[]): AppearanceTrack => ({ ...track(track_id, 0, v), kit, views: [{ v, kit }, { v, kit }] });
+    const people = [dark(1, [1, 0], [9, 128, 125]), dark(2, [1, 0], [34, 126, 123]), dark(3, [1, 0], [10, 128, 126])];
+    const result = propagateTeams(people, [{ track_id: 1, team: null, role: "referee" }, { track_id: 2, team: null, role: "other" }], [], []);
+    expect(result.get(3)).toMatchObject({ role: "referee", source: "similar" });
+  });
   it("a close match to players you labelled outranks a look-alike group label", () => {
     const result = propagateTeams(tracks, [{ track_id: 1, team: "own", role: "player" }], [{ group_id: 2, team: null, role: "other" }], []);
     expect(result.get(4)).toMatchObject({ team: "own", role: "player", source: "similar" });

@@ -51,7 +51,7 @@ const ROLES: { label: string; team: Team | null; role: Role }[] = [
   { label: "Our goalkeeper", team: "own", role: "goalkeeper" }, { label: "Opponent goalkeeper", team: "opponent", role: "goalkeeper" },
   { label: "Referee", team: null, role: "referee" }, { label: "Not a player", team: null, role: "other" },
 ];
-const SOURCE: Record<Assignment["source"], string> = { you: "labelled by you", group: "from your label for its look-alike group", similar: "suggested: looks like players you labelled", model: "suggested from kit colour", none: "not assigned yet" };
+const SOURCE: Record<Assignment["source"], string> = { you: "labelled by you", kit: "matched to the kit of players you labelled", group: "from your label for its look-alike group", similar: "suggested: looks like players you labelled", model: "suggested from kit colour", none: "not assigned yet" };
 
 function PersonCard({ track, info, appearance, jobId, review, update }: { track: number | null; info?: Assignment; appearance?: Appearance; jobId: string; review: Review; update: Change }) {
   if (track === null) return <section className={card} aria-label="Selected person"><h2 className="font-semibold">Selected person</h2><p className="text-sm text-fg-muted">Click a person on the video to say which team they play for. The ring under each player shows their team: blue our team, orange opponent, yellow referee, white not assigned. Faint rings are suggestions; bold, filled rings are your labels. Each label also improves the suggestions for similar-looking players.</p></section>;
@@ -80,14 +80,14 @@ function AddMoment({ at, update }: { at: number; update: Change }) {
   </section>;
 }
 
-type Props = { jobId: string; review: Review | null; update: Change; state: SaveState; error: string; moment: Moment | null; track: number | null; teams: Map<number, Assignment>; appearance?: Appearance; at: number };
+type Props = { jobId: string; review: Review | null; update: Change; state: SaveState; error: string; moment: Moment | null; track: number | null; teams: Map<number, Assignment>; teamAt?: (track: number, time: number) => Assignment | undefined; appearance?: Appearance; at: number };
 
-export function Inspector({ jobId, review, update, state, error, moment, track, teams, appearance, at }: Props) {
+export function Inspector({ jobId, review, update, state, error, moment, track, teams, teamAt, appearance, at }: Props) {
   return <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] lg:overflow-y-auto" aria-label="Review tools">
     <p role="status" className={`text-right text-xs ${state === "error" ? "text-warn" : "text-fg-muted"}`}>{error || SAVE[state]}</p>
     {review ? <>
       <MomentCard key={moment?.key ?? "none"} moment={moment} update={update} />
-      <PersonCard track={track} info={track === null ? undefined : teams.get(track)} appearance={appearance} jobId={jobId} review={review} update={update} />
+      <PersonCard track={track} info={track === null ? undefined : teamAt?.(track, at) ?? teams.get(track)} appearance={appearance} jobId={jobId} review={review} update={update} />
       <AddMoment at={at} update={update} />
     </> : !error && <p className="text-sm text-fg-muted">Loading your labels…</p>}
     <p className="text-xs leading-relaxed text-fg-muted">Keys: Space play/pause · N next · P previous · 1 Our team · 2 Opponent · R reject. Nothing is confirmed until you approve it; your labels are saved separately and the analysis files never change.</p>

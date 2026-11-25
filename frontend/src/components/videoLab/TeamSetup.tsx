@@ -3,6 +3,7 @@ import { Button } from "../ui/Button";
 import type { Moment } from "./moments";
 import { teamName, type Appearance, type Assignment, type Review, type Role, type Team } from "./labTypes";
 import { BASE, csrfToken } from "./useLabData";
+import { kitColour, type KitPrototype } from "./kits";
 
 type Change = (change: (review: Review) => Review) => void;
 const GROUP_CHOICES: { label: string; team: Team | null; role: Role | null }[] = [
@@ -30,7 +31,23 @@ export function PrepareGrouping({ jobId, sourceHash, onQueued, upgrade = false }
   </section>;
 }
 
-export function TeamSetup({ jobId, appearance, review, update, teams }: { jobId: string; appearance: Appearance; review: Review; update: Change; teams: Map<number, Assignment> }) {
+const kitName = (k: KitPrototype) => k.role === "referee" ? "Referee" : k.role === "other" ? "Not players" : `${teamName(k.team)}${k.role === "goalkeeper" ? " goalkeeper" : ""}`;
+
+/** What your labels taught: one kit per label you used, and how many tracked people it matched. */
+export function KitsLearned({ kits, remembered, teams }: { kits: KitPrototype[]; remembered: KitPrototype[]; teams: Map<number, Assignment> }) {
+  if (!kits.length) return <p className="text-sm text-fg-muted">Label one player from each team on the video. The lab learns each team's kit from them and assigns everyone else wearing it, right through the clip.</p>;
+  const matched = (k: KitPrototype) => [...teams.values()].filter(t => t.source === "kit" && t.team === k.team && t.role === k.role).length;
+  return <div className="space-y-1" aria-label="Kits learned">
+    <h3 className="text-sm font-semibold">Kits learned from your labels</h3>
+    <ul className="flex flex-wrap gap-2">{kits.map((k, i) => <li key={`${k.team}|${k.role}|${i}`} className="flex items-center gap-2 rounded-lg border border-line px-2 py-1 text-xs">
+      <span className="inline-block size-4 rounded-sm border border-line" style={{ background: kitColour(k.lab) }} aria-hidden />
+      <span>{kitName(k)}{remembered.includes(k) ? " · remembered from an earlier run" : ""}</span>
+      <span className="tabular-nums text-fg-muted">{matched(k) ? `${matched(k)} matched by kit` : "dark kit: decided by your labels and look-alikes"}</span>
+    </li>)}</ul>
+  </div>;
+}
+
+export function TeamSetup({ jobId, appearance, review, update, teams, kits = [], remembered = [] }: { jobId: string; appearance: Appearance; review: Review; update: Change; teams: Map<number, Assignment>; kits?: KitPrototype[]; remembered?: KitPrototype[] }) {
   const mine = review.track_labels.filter(l => l.role === "player" || l.role === "goalkeeper");
   const tally = (team: Team) => [...teams.values()].filter(t => t.team === team && t.role !== "referee").length;
   const sprite = appearance.sprite;
@@ -39,11 +56,12 @@ export function TeamSetup({ jobId, appearance, review, update, teams }: { jobId:
   return <section className="panel space-y-4 p-4" aria-label="Team setup">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="font-semibold">Set up teams</h2>
       <p className="text-sm text-fg-muted">You labelled {mine.length} players · tracked people now: {teamName("own")} {tally("own")}, {teamName("opponent")} {tally("opponent")}</p></div>
+    <KitsLearned kits={kits} remembered={remembered} teams={teams} />
     <p className="text-sm text-fg-muted">Team and role suggestions update across this run as you correct people. Different camera views are learned separately; conflicting views stay unassigned. <a className="text-accent underline" href={`${BASE}/jobs/${jobId}/review/learned-model`}>View saved learned model</a></p>
     <ol className="list-decimal space-y-1 pl-5 text-sm text-fg-muted">
       <li>Below, mark look-alike groups that are clearly <strong>not players</strong> (spectators, coaches) or referees. Leave mixed groups alone.</li>
-      <li>On the video, click three to five players from each team and choose their team. Goalkeepers have their own buttons.</li>
-      <li>Faint rings are suggestions from similar-looking players (blue our team, orange opponent, white not assigned); correct any that are wrong. Each correction improves the rest.</li>
+      <li>On the video, click one player from each team and choose their team. Everyone else in that kit is assigned straight away, through the whole clip, even when the tracker loses and picks them up again. Goalkeepers have their own buttons.</li>
+      <li>Keepers and referees in black or dark kits look alike, so label one of each; similar-looking people follow. Rings: blue our team, orange opponent, yellow referee, white not assigned. Bold rings are your labels, solid rings are matched by kit, faint rings are look-alike suggestions. Correct any that are wrong.</li>
       <li>Once a few players are labelled, people beyond the far edge of play (spectators, other pitches) lose their rings. Tick <strong>Show everyone</strong> under the video to see them again.</li>
     </ol>
     <div className="space-y-2">{appearance.groups.map(group => {

@@ -1,5 +1,25 @@
 # Handoff
 
+## Combined boundary, kit and ball checkpoint — 25 November 2026
+
+Branch `codex/local-video-analytics`: merged `codex/team-kits` after spec650.
+Resolved shared editor/workspace code by retaining both multi-vertex source-bound
+boundaries and per-moment kit assignments, remembered kits, camera-steadied ball
+filtering and the ball-only use of whole-clip dense refinements. Existing labels,
+metre calibration and original outputs remain separate. No existing test changed
+in conflict resolution; inherited branch tests were not observed red this session.
+
+Verified this session: backend854 SQLite and854 PostgreSQL; ruff/format/mypy and
+Alembic no drift; frontend910 tests, typecheck and hosted build. Cached isolated
+browser1280/375: keyboard point movement, insert/remove/save, All changes saved;
+375px scrollWidth=clientWidth. Compared reference02. Existing kit/ball integration
+tests pass; no new real analysis or signed-in production acceptance. Worker merged
+its dense-clip branch separately,142 tests and lint/format/project checks pass.
+Deployment pending at this checkpoint; retain newer live kit/ball functionality,
+update gateway before app and reload worker only idle. Other libraries, shared
+hosted tags, global latest and admin auto-update hold must remain unchanged.
+
+
 ## Automatic editable pitch boundaries (spec650, 2026-11-25)
 
 Branch `codex/local-video-analytics`. Resumed the unfinished spec650 app, gateway
@@ -29,6 +49,38 @@ media overwrite or training. Not yet deployed at this code checkpoint. Next:
 check idle runtime, deploy gateway before admin app, reload worker only idle;
 preserve other libraries/shared tags/global latest and existing admin update hold.
 
+
+## Teams by kit and the ball (spec660, 2026-11-24)
+
+Branch `codex/team-kits` (worktree `../Football Memories kits`, cut from
+`codex/local-video-analytics` de91f29 because another session was editing spec650 files in the
+main checkout; merge this into that branch after spec650 lands: expect conflicts in
+`LabVideo.tsx`, `VideoLabPage.tsx`, `labTypes.ts`). Frontend only. [Spec660](todo/football-memories/660-team-kits-and-ball.md):
+per-moment team from learned kit colours, label/swap handling, one referee/keeper per moment,
+kits remembered across related runs, match-ball overlay. Same-match assistant audit on the real
+RCW run: 15.1% to about 94% of players correct on screen. Frontend 889 tests, typecheck, build.
+Backend/gateway/worker untouched.
+Deployed admin-only `a6fbaa1` (24 Nov ~21:48 UTC) after admin capture sent 0 MB over 60 s:
+built :hosted-<sha>, added to status.json built (latest stays 6138b56), admin library moved via
+updates._move; exactly admin web/backend/capture changed (3/32); auto-update false; health 200;
+VideoLabPage-D-Nein6l.js served; anonymous jobs 401. Not signed in here, so no keeper label was
+added to the live review: one "Our goalkeeper" label lets the keeper carry. Not merged into
+`codex/local-video-analytics` (spec650 in progress there).
+Redeployed admin-only `e5f2454` (player-sized kit matches set the far edge; capture idle,
+3/32 containers changed, latest unchanged, health 200, anonymous 401). Ball audit every 10 s:
+on the match ball 16/24, uncertain 1, no ball shown 7 (detector missed), never a spare ball.
+Then `41630cc` deployed admin-only the same way (3/32, health 200, 401): resting spares and
+edge balls skipped, 1.5 s glide; ball audit 21/24 right, 1 wrong (0:15 spare), 2 undetected.
+Live labels (rev 31, 23 labels): yellow 70/73, red 85/87, pink keeper 5/5, referee 14/15,
+our keeper 0/6 (owner chose not to add a keeper label; one "Our goalkeeper" label fixes most).
+Detector follow-up: worker `codex/dense-clip` e42d68b `refine-moments --whole-clip`; published
+run a4cb99cd (refined child of 03964514, labels copied) for the ball (84% to 88% coverage).
+Second match (owner request): Racing Club Warwick vs Kidderminster RMC 18:00-22:00 from the saved
+local sample, run 3ebc1a17, no labels; results and limits in spec660. App `280f3ba` deployed
+admin-only (3/32, health 200, anonymous 401). Next: exposure/cast-robust colour in the worker.
+Tiled ball run published as 8389ebf0 (refined child of 03964514, 23 labels copied; worker
+bc5d91a `--ball-tiles`). App `4a2b5d0` (camera-steadied spare filter) deployed admin-only the
+same way (3/32, health 200, anonymous 401). Ball audit 22/24 right on that run.
 
 ## Selected-window progress (spec640, 2026-11-24)
 

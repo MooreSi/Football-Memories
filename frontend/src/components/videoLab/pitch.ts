@@ -138,3 +138,11 @@ export function carryPoints(camera: Camera, points: Corners, from: number, to: n
   const out=points.map(p=>apply(move,p));
   return out.every(p=>p.every(Number.isFinite)) ? out : null;
 }
+
+/** A picture point (normalised) at time t, steadied against camera motion: [camera shot, x, y]. */
+export function stabilise(camera: Camera, t: number, x: number, y: number): [number, number, number] | null {
+  if (!camera.times.length) return null;
+  const i = Math.max(0, sampleIndex(camera.times, t));
+  const [px, py] = apply(camera.inverse[i], [x, y]);
+  return Number.isFinite(px) && Number.isFinite(py) ? [camera.segment[i], px, py] : null;
+}

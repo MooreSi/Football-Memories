@@ -3,7 +3,9 @@ import type { Assignment, Observation } from "./labTypes";
 /** Worker `dense_tracks.json`: people about ten times a second inside each moment clip. */
 export type DenseTracks = {
   windows: { start_s: number; end_s: number }[];
-  observations: { track_id: number; time_s: number; image_box: number[]; linked: boolean }[];
+  observations: { track_id: number; time_s: number; image_box: number[]; linked: boolean; colour_lab?: number[] | null }[];
+  /** Spec 660 whole-clip refinement: every ball seen (normalised boxes). */
+  balls?: { time_s: number; image_box: number[]; score: number }[];
 };
 
 export const isDense = (v: unknown): v is DenseTracks =>
@@ -13,7 +15,7 @@ export const isDense = (v: unknown): v is DenseTracks =>
 export function mergeDense(sampled: Observation[], dense?: DenseTracks): Observation[] {
   if (!dense?.windows.length) return sampled;
   const inside = (t: number) => dense.windows.some(w => t >= w.start_s - 1e-6 && t <= w.end_s + 1e-6);
-  const refined = dense.observations.map(o => ({ track_id: o.track_id, time_s: o.time_s, team_id: null, role: "unknown", image_box: o.image_box }));
+  const refined = dense.observations.map(o => ({ track_id: o.track_id, time_s: o.time_s, team_id: null, role: "unknown", image_box: o.image_box, ...(o.colour_lab !== undefined ? { colour_lab: o.colour_lab } : {}) }));
   return [...sampled.filter(o => !inside(o.time_s)), ...refined].sort((a, b) => a.time_s - b.time_s);
 }
 
@@ -32,7 +34,13 @@ const notPlayer = (info?: Assignment) => info?.role === "other" && info.source !
 export function inPlay(rows: Observation[], teams: Map<number, Assignment>, selected: number | null): Observation[] {
   const footY = (o: Observation) => o.image_box![3];
   const keep = rows.filter(o => o.track_id === selected || !notPlayer(teams.get(o.track_id)));
-  const mine = rows.filter(o => yours(teams.get(o.track_id))).map(footY).sort((a, b) => a - b);
+  // Spec 660: people matched by kit count like your labels when they are player-sized; tiny kit
+  // matches are children on pitches beyond, whose shirts can share a team's colour.
+  const height = (o: Observation) => o.image_box![3] - o.image_box![1];
+  const sizes = rows.filter(o => assigned(teams.get(o.track_id))).map(height).sort((a, b) => a - b);
+  const typical = sizes.length ? sizes[sizes.length >> 1] : 0;
+  const trusted = (o: Observation) => { const info = teams.get(o.track_id); return yours(info) || (assigned(info) && info!.source === "kit" && height(o) >= typical / 2); };
+  const mine = rows.filter(trusted).map(footY).sort((a, b) => a - b);
   const any = rows.filter(o => assigned(teams.get(o.track_id))).map(footY).sort((a, b) => a - b);
   const edge = mine.length >= 2 ? mine[0] : any.length >= 3 ? any[1] : null;
   if (edge === null) return keep;

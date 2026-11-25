@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { buildCamera, insidePitch, offPitchTracks, outlineAt, type CameraMotion } from "./pitch";
+import { buildCamera, insidePitch, offPitchTracks, outlineAt, stabilise, type CameraMotion } from "./pitch";
 import { propagateTeams } from "./teams";
 import type { AppearanceTrack, Observation } from "./labTypes";
 
@@ -52,4 +52,12 @@ it("look-alike suggestions skip people off the pitch; your own labels stay", () 
   const teams = propagateTeams([track(1), track(2), track(3)], [{ track_id: 1, team: "own", role: "player" }, { track_id: 3, team: "own", role: "player" }], [{ group_id: 0, team: "own", role: "player" }], [], new Set([2, 3]));
   expect(teams.get(2)?.source).toBe("none");
   expect(teams.get(3)?.source).toBe("you");
+});
+
+it("stabilise undoes the camera pan, so a point resting on the ground keeps one place", () => {
+  const right = [1, 0, -0.1, 0, 1, 0, 0, 0, 1]; // each step the picture shifts left by 0.1
+  const camera = buildCamera({ times: [0, 1, 2], steps: [right, right], cuts: [false, false] });
+  expect(stabilise(camera, 0, 0.5, 0.5)).toEqual([0, 0.5, 0.5]);
+  const later = stabilise(camera, 2, 0.3, 0.5)!;
+  expect(later[0]).toBe(0); expect(later[1]).toBeCloseTo(0.5, 6); expect(later[2]).toBeCloseTo(0.5, 6);
 });

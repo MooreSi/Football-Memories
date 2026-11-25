@@ -12,14 +12,16 @@ import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
-import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, type Corners } from "../components/videoLab/pitch";
+import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, type Corners } from "../components/videoLab/pitch";
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { propagateTeams } from "../components/videoLab/teams";
-import { BASE, csrfToken, useJobFile, useReview } from "../components/videoLab/useLabData";
+import { cleanAnchors, kitTimeline, learnKits, rememberKits, type KitObservation } from "../components/videoLab/kits";
+import { denseBalls, parseBalls, trackBall } from "../components/videoLab/ball";
+import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } from "../components/videoLab/useLabData";
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
 type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
@@ -37,7 +39,7 @@ const isAssignments = (v: unknown): v is Assignments => !!v && Array.isArray((v 
 const isAppearance = (v: unknown): v is Appearance => !!v && Array.isArray((v as Appearance).tracks) && Array.isArray((v as Appearance).groups);
 const runLabel = (j: Job) => `${j.id.slice(0, 8)} · ${j.state}${j.mode === "team-enrichment" && j.parent_job_id ? ` · jersey tagging of ${j.parent_job_id.slice(0, 8)}` : j.mode === "review-preparation" && j.parent_job_id ? ` · player grouping of ${j.parent_job_id.slice(0, 8)}` : j.mode === "moment-refinement" && j.parent_job_id ? ` · refined moments of ${j.parent_job_id.slice(0, 8)}` : j.mode === "camera-tracking" && j.parent_job_id ? ` · pitch tracking of ${j.parent_job_id.slice(0, 8)}` : ""}`;
 
-function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void }) {
+function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueued: (id: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const [at, setAt] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -67,9 +69,33 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const boundaries=useMemo(()=>review?.pitch_boundaries ?? [],[review?.pitch_boundaries]);
   const automaticBoundaries=useMemo(()=>job.summary?.source_sha256 && motion.data?.source_sha256===job.summary.source_sha256 ? motion.data?.pitch_boundaries ?? []:[],[motion.data,job.summary?.source_sha256]);
   const currentBoundary=camera ? boundaryAt(camera,boundaries,automaticBoundaries,at):null;
-  const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], dense.data), [assignments.data, dense.data]);
+  // A whole-clip refinement (it carries balls) adds the ball only: its people are each linked to one
+  // sampled tracklet across the whole clip, which moved labels onto the wrong people on a real run.
+  const peopleDense = dense.data?.balls ? undefined : dense.data;
+  const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], peopleDense), [assignments.data, peopleDense]);
   const offPitch = useMemo(() => camera && (marks.length || boundaries.length || automaticBoundaries.length) ? offPitchTracks(assignments.data?.observations ?? [], camera, marks,t=>boundaryAt(camera,boundaries,automaticBoundaries,t) ?? outlineAt(camera,marks,t)) : new Set<number>(), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
-  const teams = useMemo(() => propagateTeams(appearance.data?.tracks ?? [], review?.track_labels ?? [], review?.group_labels ?? [], appearance.data ? [] : assignments.data?.observations ?? [], offPitch), [appearance.data, assignments.data, review?.track_labels, review?.group_labels, offPitch]);
+  // Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance
+  // model settles only what colour cannot (dark kits). Kits you taught in related runs are reused.
+  const saved = useSavedModels(others.filter(o => o.id !== job.id && o.state === "complete"));
+  const remembered = useMemo(() => rememberKits(saved.data ?? [], job.match_title ?? ""), [saved.data, job.match_title]);
+  // With whole-clip refinement the denser rows (about ten a second, with shirt colours) replace the sampled ones.
+  const rows = (assignments.data ? allRows : undefined) as KitObservation[] | undefined;
+  const kits = useMemo(() => learnKits(rows ?? [], review?.track_labels ?? [], remembered), [rows, review?.track_labels, remembered]);
+  const timeline = useMemo(() => {
+    const labels = review?.track_labels ?? [];
+    const fallback = propagateTeams(appearance.data ? cleanAnchors(appearance.data.tracks, labels, kits) : [], labels, review?.group_labels ?? [], appearance.data ? [] : rows ?? [], offPitch);
+    return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback);
+  }, [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch]);
+  const teams = timeline.tracks;
+  const denseHasBalls = !!dense.data?.balls?.length;
+  const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);
+  const ball = useMemo(() => {
+    const w = assignments.data?.image_width ?? 1920, h = assignments.data?.image_height ?? 1080;
+    const toPitch = camera ? (t: number, x: number, y: number) => stabilise(camera, t, x, y) : undefined;
+    if (dense.data?.balls?.length) return trackBall(denseBalls(dense.data, w, h), w, h, toPitch);
+    return detections.data ? trackBall(parseBalls(detections.data), w, h, toPitch) : [];
+  }, [dense.data, detections.data, assignments.data, camera]);
+  const [showBall, setShowBall] = useState(true);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
   const current = cursor !== null ? visible[cursor] ?? null : visible.find(m => Math.abs(m.time - at) <= LEAD) ?? null;
@@ -105,7 +131,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
       <section className="min-w-0 space-y-3" aria-label="Analysis results">
         {clip
-          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} boundaries={boundaries} automaticBoundaries={automaticBoundaries} boundaryEditing={boundaryEditing} onBoundaryEditing={setBoundaryEditing} boundarySelected={boundarySelected} onBoundarySelect={setBoundarySelected} /></div>
+          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} teamAt={timeline.at} ball={ball} showBall={showBall} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={peopleDense} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} boundaries={boundaries} automaticBoundaries={automaticBoundaries} boundaryEditing={boundaryEditing} onBoundaryEditing={setBoundaryEditing} boundarySelected={boundarySelected} onBoundarySelect={setBoundarySelected} /></div>
           : <div className="flex aspect-video items-center justify-center rounded-xl bg-black/40 text-fg-muted">This run has no video.</div>}
         <div className="panel flex flex-wrap items-center gap-2 p-2" aria-label="Moment playback">
           <Button aria-label="Previous moment" disabled={!visible.length} onClick={() => playAt(Math.max(0, (cursor ?? 1) - 1))}><ChevronLeft size={16} aria-hidden />Previous</Button>
@@ -114,6 +140,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           <span className="text-sm tabular-nums text-fg-muted">{cursor !== null ? `${cursor + 1} of ${visible.length}` : `${visible.length} moments`}</span>
           <label className="ml-auto flex items-center gap-2 text-sm"><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />Play through the list</label>
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={boxes} onChange={e => setBoxes(e.target.checked)} />Show people</label>}
+          {ball.length > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showBall} onChange={e => setShowBall(e.target.checked)} />Show ball</label>}
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
         {camera && review && <BoundaryPanel editing={boundaryEditing} selected={boundarySelected} setSelected={setBoundarySelected} onChange={setBoundaryEditing} marks={boundaries} manual={!!boundaryAt(camera,boundaries,[],at)} automatic={!!currentBoundary}
@@ -129,7 +156,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
         {camera && marks.length > 0 && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} selected={track} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
-        {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} />
+        {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} kits={kits} remembered={remembered} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && !appearance.data.tracks.some(t=>t.views?.length) && summary?.source_sha256 && <PrepareGrouping upgrade jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         <TeamSummary moments={moments} />
@@ -139,7 +166,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           <p className="mt-2 text-sm">Ball observed in {(summary.ball_observation_coverage * 100).toFixed(1)}% of sampled frames.</p></details>}
         <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />Download {name}</a>)}</div></details>
       </section>
-      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} appearance={appearance.data} at={at} />
+      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} teamAt={timeline.at} appearance={appearance.data} at={at} />
     </div>
   </>;
 }
@@ -179,7 +206,7 @@ export default function VideoLabPage() {
     </nav>}
     {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
       <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
-    {active?.state === "complete" && <Workspace key={active.id} job={active} onQueued={queued} />}
+    {active?.state === "complete" && <Workspace key={active.id} job={active} others={jobs.data ?? []} onQueued={queued} />}
       <div className="panel flex flex-wrap items-end gap-3 p-3">
         <label className="text-sm">Prepared sample<select className="mt-1 block w-64 rounded-lg border border-line bg-ink-900 p-1.5" value={sample || samples.data?.[0]?.id || ""} onChange={e => setSample(e.target.value)}>{samples.data?.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
         <div><p className="mb-1 max-w-52 text-xs text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
