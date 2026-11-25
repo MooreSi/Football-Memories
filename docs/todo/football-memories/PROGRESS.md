@@ -1,5 +1,38 @@
 # Football Memories: progress
 
+## Stitched panorama admin deployment COMPLETE — 25 November 2026
+
+App014a3ad, gatewaybfb32f5 and native worker6a02bf2 deployed, gateway first.
+Worker kickstarted idle and holds its processing lock. Admin-only app moved via
+updates._move; auto-update remainsfalse. Exactly gateway+admin web/backend/capture
+changed(4/32); other28/shared hosted tags/global latest6138b56 preserved. Helpers
+were idle/busy=false/not syncing before the move. Admin health ok and combined
+VideoLabPage-DLZgErej.js served. Anonymous jobs/panorama artifact401; other-owner
+job metadata404. No production session fabricated or source account contacted.
+
+New completed child8af26291 of8389ebf0 ends in "Pitch panorama" in the run picker.
+Copied44 labels at review revision39, no real panorama acceptance. Source/18 result
+artifact hashes/ZIP CRC verified; all352 previously existing job JSON hashes
+unchanged. Other completed results preserved. New analyses build panoramas through
+camera preparation; older runs use Build stitched pitch. Edit/accept once to apply
+throughout registered moments; Stop using panorama restores local boundaries.
+Metres requires explicit review of the four real corners. Unmatched views abstain.
+Current1–10-minute analysis window cap remains; no unanalysed full match is claimed.
+
+Final gates: frontend934 tests (--maxWorkers=4), typecheck/hosted build; backend854
+SQLite+854 PostgreSQL/lint/format/mypy/Alembic; worker149/lint/format/project checks;
+gateway470 plus4 Docker tests/lint/format/mypy (2 opt-in skips). Worker code
+CI45583957929 and gateway code CI45583952572 green; app has no CI. Initial default
+frontend release run hit the unchanged LibraryHosted5s timeout; four tests pass
+alone, all934 pass with four workers, no assertion/timeout changes. Browser checks
+were isolated cached-footage1280/375/reference02, including drag/save/reload and
+corners opt-in; signed-in production playback/acceptance not independently checked.
+Unrelated external .claude/launch.json edit remains untouched/unstaged in the app.
+Next: refresh Video Lab and review the new panorama run.24-point turf proposal is
+not semantic touchline truth;1174/1199 registered views is geometric coverage, not
+an independent accuracy score. Real reviewed calibration still belongs to owner.
+
+
 ## Panorama acceptance precedence — 25 November 2026
 
 Accepted panorama geometry now overrides older local boundaries throughout registered

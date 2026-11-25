@@ -1,6 +1,6 @@
 # 680: Review a stitched pitch once and apply it across camera views
 
-**Status:** Implemented and verified; admin deployment pending
+**Status:** Shipped to admin preview
 **Sensitive:** no; cached footage only, append-only worker artifacts and existing review guards.
 
 ## What is wrong or missing today
@@ -46,7 +46,7 @@ reference02, cached-footage manual stitch and integrity audit.
 None needed. Use existing cached footage only.
 
 ## Verification
-See the spec680 checkpoint in HANDOFF.md/PROGRESS.md for exact149 worker,470 gateway,933 frontend and854x2 backend gates, red/green and browser evidence. No production acceptance or independent accuracy claim.
+See the spec680 checkpoint in HANDOFF.md/PROGRESS.md for exact149 worker,470 gateway,934 frontend and854x2 backend gates, red/green and browser evidence. No production acceptance or independent accuracy claim.
 
 ## Design details
 The mosaic is a perspective view, not a top-down metric map. Re-centre the complete
