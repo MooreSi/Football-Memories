@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { BoundaryPanel } from "../components/videoLab/BoundaryEditor";
 import { boundaryAt } from "../components/videoLab/boundary";
@@ -197,6 +198,7 @@ export default function VideoLabPage() {
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private admin preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
         <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
+      <Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link>
 
     </header>
     <VeoAnalysisPicker busy={!!running || !!jobs.data?.some(j=>["queued","running"].includes(j.state))} onQueued={queued} />
