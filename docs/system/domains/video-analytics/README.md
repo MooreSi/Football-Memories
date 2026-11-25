@@ -163,8 +163,10 @@ Scale is relative; corners still give metres; goals are a fallback only when the
 camera never pans. The view is turned by the reviewed boundary's minimum-area
 rectangle (never the draft, so it does not spin while dragging). Pixel line-angle
 detection was tried and rejected: shadows and far-field radial streaks swamp it.
-Remaining: per-frame registration fits mostly distant texture, so near-field ground
-in live frames can sit ~3% of frame width off the atlas (two-lens seam parallax at
-bottom-centre). That is a worker registration limit, not the ground model. A
-ground-band ECC refit of each 3x3 pose fixes the near field only by breaking the
-far field; a real fix needs a non-homographic per-frame warp.
+Near-field offset in live frames (first measured ~3% of frame width) was registration
+drift, not the footage: neighbouring Veo frames fit one homography to ~0.2 px with no
+lens distortion, but chained/re-localised 8-DOF poses drift in their perspective terms.
+A ground-band ECC refit of each 3x3 pose only traded near for far error. The worker now
+re-solves every view as one rotating, zooming camera (spec710 `camera_bundle`): cached
+games went from 25-60 px to <1 px near-field frame-to-atlas error and atlas seams went
+away. Existing runs need "Rebuild complete pitch" (a new child) to get refined poses.
