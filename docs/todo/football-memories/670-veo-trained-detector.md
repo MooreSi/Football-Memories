@@ -113,3 +113,19 @@ None needed. Footage is already in your library; nothing talks to Hudl or Veo.
   - Z zooms, Enter confirms, S skips.
 
   Deployed admin-only `a7b2933` (contains the other session's panorama build 014a3ad).
+- **Label sets** (runtime/label-sets; old sets moved to the scratchpad unlabelled):
+  - e5f190e9: RCW vs CG, 100 frames;
+  - e24126a4: f7925, 100 frames;
+  - 73cf7b83: Norton Lindsay, 100 frames;
+  - ce844e01: held-out RMC, 80 frames.
+- **Assistant pre-sort:** every proposal the frame starts with ticked (score 0.4+) was checked by
+  eye on numbered zoomed crops. There were 1,342 in all:
+  - RCW vs CG: 135 balls, 4 not;
+  - f7925: 163 balls, 139 not, 85 unsure;
+  - Norton: about 261 balls, 542 not, 45 unsure;
+  - RMC: 9 balls, 1 not (the Veo logo).
+
+  On the 3G pitches most "balls" are disc cones, flat markers, flag cones and signs. That is the
+  main thing training should teach. `presort.json` per set lists each frame's balls, not_balls
+  and unsure proposals. Not-balls start unticked (app bb1b387); the note is shown on the frame;
+  nothing is a label until the owner confirms the frame.
