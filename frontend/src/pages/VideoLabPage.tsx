@@ -65,7 +65,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const appearance = useJobFile(job.id, "track_appearance.json", has("track_appearance.json"), isAppearance);
   const dense = useJobFile(job.id, "dense_tracks.json", has("dense_tracks.json"), isDense);
   const motion = useJobFile(job.id, "camera_motion.json", has("camera_motion.json"), isCameraMotion);
-  const panorama=useJobFile(job.id,"pitch_panorama.json",has("pitch_panorama.json")&&has("pitch_panorama.jpg"),isPanorama);
+  const atlas=has("pitch_atlas.json")&&has("pitch_atlas.jpg");
+  const panorama=useJobFile(job.id,atlas?"pitch_atlas.json":"pitch_panorama.json",atlas||(has("pitch_panorama.json")&&has("pitch_panorama.jpg")),isPanorama);
   const { review, update, state, error } = useReview(job.id);
   const camera = useMemo(() => motion.data ? {...buildCamera(motion.data),panorama:bindPanorama(panorama.data,review?.pitch_panorama,job.summary?.source_sha256)} : undefined, [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);

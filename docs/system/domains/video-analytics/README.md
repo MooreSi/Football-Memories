@@ -118,3 +118,13 @@ because distant vertices cross the horizon discards known visible ground. Green
 union envelopes are suggestions, not physical touchlines. Exact panorama/source
 IDs bind acceptance; unknown poses abstain, never inherit by match title. Old local
 corrections remain. The analysis window cap is unchanged.
+
+Spec690: a matched-camera percentage does not prove goal-end coverage. Wide pans
+need a reversible cylindrical ray atlas: a planar horizon guard can silently drop
+an entire end. Goal frames are geometric candidates (spare goals/fences can match),
+not semantic ground truth. Four post ground contacts give relative rectification;
+only explicitly reviewed physical corners enable metres. Preserve unchanged
+vertices on bird's-eye edits: reprojecting an entire boundary can flip unrelated
+points across a chart horizon. Atlas images retain the observed ground even when
+the goal-guided starting boundary is narrower. Width without two recovered
+white touchlines is explicitly estimated and must be corrected by the reviewer.

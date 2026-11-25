@@ -1,3 +1,4 @@
+import {groundCalibration,multiply} from "./atlasGeometry";
 import {panoramaMatrixAt} from "./panorama";
 import type { Observation } from "./labTypes";
 import { feet, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
@@ -53,6 +54,11 @@ export function imageToPitch(camera:Camera,marks:PitchKeyframe[],size:PitchSize,
  if(camera.panorama?.review.corners){
   const pose=panoramaMatrixAt(camera.panorama.data,at);
   if(!pose)return null;
+  if(camera.panorama.data.projection){
+   const fit=groundCalibration(camera.panorama.data,camera.panorama.review.corners,null);
+   if(!fit)return null;
+   return multiply([size.length_m,0,0,0,size.width_m,0,0,0,1],multiply(fit.matrix,pose));
+  }
   const h=pitchHomography(camera.panorama.review.corners,size);
   const out=[0,1,2].flatMap(r=>[0,1,2].map(c=>h[r*3]*pose[c]+h[r*3+1]*pose[3+c]+h[r*3+2]*pose[6+c]));
   return out.every(Number.isFinite)?out:null;

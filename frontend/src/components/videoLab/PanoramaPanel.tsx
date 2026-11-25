@@ -1,3 +1,4 @@
+import {AtlasReview} from "./AtlasReview";
 import {useState} from "react";
 import {Button} from "../ui/Button";
 import {BoundaryLayer} from "./BoundaryEditor";
@@ -31,6 +32,7 @@ export function PanoramaPanel({jobId,sourceHash,data,review,onAccept,onQueued}:P
   }catch(e){setError(e instanceof Error?e.message:"Preparation failed.");}finally{setBusy(false);}
  }
  const begin=()=>{setDraft(points.length>=3?points:DEFAULT_CORNERS);setSelected(0);setCorners(accepted?.corners??null);setChecked(!!accepted?.corners);setCornerMode(false);};
+ if(usable?.projection)return <AtlasReview jobId={jobId} sourceHash={sourceHash} data={usable} review={review} onAccept={onAccept} onQueued={onQueued}/>;
  return <section className="panel min-w-0 space-y-3 p-3" aria-label="Stitched pitch review">
   <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Whole-pitch panorama</h2><span className="text-xs text-fg-muted">{accepted?"Accepted · applied to registered views":usable?"Automatic proposal · check before accepting":"Prepare from saved footage"}</span></div>
   <p className="text-sm text-fg-muted">Left, centre and right views stitched into one image. Adjust the boundary, then accept it once for all registered moments in this analysed video. Unseen ground and unmatched camera views remain uncalibrated.</p>

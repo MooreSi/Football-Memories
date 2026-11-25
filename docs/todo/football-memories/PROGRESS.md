@@ -1,5 +1,28 @@
 # Football Memories: progress
 
+## Complete pitch atlas implementation checkpoint — 25 November 2026
+
+Branch `codex/local-video-analytics` (worker `codex/local-pipeline`). Spec690 replaces
+new-run planar previews with a full-duration cylindrical atlas that retains both
+observed goal ends. Legacy reviews remain supported. Reusable source/time-bound
+goalpost observations, explicit unconfirmed goal anchors, linked panorama/bird's-eye
+boundary editing and optional physical-corner metre calibration are implemented.
+Goal-guided turf is an estimated starting mask; width is approximate without both
+observed touchlines. Unseen pixels stay black. No universal detector accuracy or
+unanalysed whole-match coverage is claimed; the 10-minute analysis cap remains.
+
+Verified app frontend942 tests (four workers), typecheck/hosted build; backend854
+SQLite+854 PostgreSQL, lint/format/mypy/Alembic. New goal/edit/seam/schema/API tests
+observed behavioural red then green; rectification correspondence tests were added
+after implementation (not claimed TDD). Worker/gateway final checks recorded in
+their repos. Cached240s and600s different games show both ends in the complete
+atlas; final masked versions and browser acceptance review still in progress.
+No source-account access, new dependency/weights or original-media overwrite.
+Deployment remains pending; preserve concurrent spec670 frame-label work, all
+other libraries/shared hosted tags/global latest and admin auto-update=false.
+Unrelated `.claude/launch.json` remains untouched/unstaged.
+
+
 ## Stitched panorama admin deployment COMPLETE — 25 November 2026
 
 App014a3ad, gatewaybfb32f5 and native worker6a02bf2 deployed, gateway first.
