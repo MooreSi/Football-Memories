@@ -123,6 +123,16 @@ the touchline in red and amber coats.
 - Deploy slip: e0f0796 was deployed over the other session's 2de8b34 (pitch boundaries) for
   ~5 minutes; rolled back, merged, and the merge deployed instead.
 
+### Ball at 2:35 was a corner, not a scramble
+Earlier note was wrong: at 2:34-2:37 the ball is in the corner taker's hands at the flag (seen at
+2:33.6 and 2:36.9 within ~35 px). `ball.ts`: a gap up to 4 s is bridged when the ball is in the
+same spot after (0.03 picture widths) in the picture and, where the camera model is sound, on the
+ground (keeper walking with the ball at 0:12-0:15 while the camera pans is not bridged; the
+camera model gives 6-8 widths at the far corner, so the picture decides there). Four bridges on
+the run, each checked by eye: 0:23-0:25 edge ball, 2:34-2:37 corner taker, 2:37-2:41 ball placed
+at the flag, 3:39-3:41 free-kick ball behind the referee. Shown 93.3% of the clip; 10-s audit
+24/24 (0:15 shows nothing while our keeper holds the ball).
+
 ## Second match: Racing Club Warwick vs Kidderminster RMC (16 Nov, 18:00-22:00)
 Owner asked for a 4-minute check on another Veo match. Used the saved local 10-minute sample
 (no source-account access); cut 4 minutes, standard analysis + player views (647 tracklets),

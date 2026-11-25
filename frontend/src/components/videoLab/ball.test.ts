@@ -57,6 +57,24 @@ describe("trackBall", () => {
     const samples = [0, 1 / 3, 2 / 3, 1].map((t, i) => ({ time_s: t, balls: i === 1 ? [{ box: ball(900, 500).box, score: 0.8 }] : [] }));
     expect(trackBall(samples, W, H)).toHaveLength(1);
   });
+  it("a ball held for a set piece (seen in the same spot before and after a few unseen seconds) stays shown (RCW vs CG 2:35 corner)", () => {
+    const seen = (t: number, x: number) => ({ time_s: t, balls: [{ box: ball(x, 290).box, score: 0.65 }] });
+    const samples = [...[153.5, 153.6, 153.7].map(t => seen(t, 875)), ...Array.from({ length: 31 }, (_, i) => ({ time_s: 153.8 + i / 10, balls: [] })), ...[156.9, 157.0, 157.1].map(t => seen(t, 893))];
+    const path = trackBall(samples, W, H);
+    expect(path.map(p => p.time_s)).toEqual([153.5, 153.6, 153.7, 156.9, 157.0, 157.1]);
+    expect(ballAt(path, 155)!.x).toBeCloseTo(884 / W, 2);
+  });
+  it("a ball carried while the camera pans to keep it in the same picture spot is not 'held' (RCW vs CG 0:12-0:15, keeper walking)", () => {
+    const seen = (t: number) => ({ time_s: t, balls: [{ box: ball(740, 370).box, score: 0.7 }] });
+    const samples = [...[12, 12.1, 12.2].map(seen), ...Array.from({ length: 30 }, (_, i) => ({ time_s: 12.3 + i / 10, balls: [] })), ...[15.3, 15.4, 15.5].map(seen)];
+    const toPitch = (t: number, x: number, y: number): [number, number, number] => [0, x + (t - 12) * 0.016, y];
+    const path = trackBall(samples, W, H, toPitch);
+    expect(ballAt(path, 13.8)).toBeNull();
+  });
+  it("a ball that moved far while unseen is not glided across a long gap", () => {
+    const path = [{ time_s: 10, x: 0.3, y: 0.5, r: 0.01 }, { time_s: 13, x: 0.6, y: 0.5, r: 0.01 }];
+    expect(ballAt(path, 11.5)).toBeNull();
+  });
   it("ignores a ball cut off at the side of the picture (Veo keeps the match ball inside the frame)", () => {
     const samples = Array.from({ length: 6 }, (_, i) => ({ time_s: i / 3, balls: [{ box: [1895, 590, 1920, 612], score: 0.95 }] }));
     expect(trackBall(samples, W, H)).toEqual([]);

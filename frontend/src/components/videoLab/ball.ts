@@ -5,7 +5,7 @@
  * movement, and nearer the middle of the picture, because Veo's camera follows the play.
  */
 export type BallSample = { time_s: number; balls: { box: number[]; score: number }[] };
-export type BallPoint = { time_s: number; x: number; y: number; r: number };
+export type BallPoint = { time_s: number; x: number; y: number; r: number; /** reached across a few unseen seconds in the same spot */ held?: boolean };
 
 export function parseBalls(text: string): BallSample[] {
   const out: BallSample[] = [];
@@ -24,6 +24,7 @@ export function parseBalls(text: string): BallSample[] {
 }
 
 const MAX_GAP_S = 1.5;   // a path may skip unseen samples up to this long
+const HELD_S = 4, HELD_W = 0.03; // ...or this long when the ball is in the same spot after (held for a set piece)
 const MISS = 1.0;        // cost of a sample without the ball on the path
 const BREAK = 3.0;       // cost of losing the ball and picking it up somewhere else
 const CENTRE = 1.2;      // preference for the middle of the picture (the camera follows play)
@@ -62,17 +63,25 @@ function withoutSpares(samples: BallSample[], width: number, height: number, toP
 export function trackBall(input: BallSample[], width: number, height: number, toPitch?: ToPitch): BallPoint[] {
   // A ball cut off at the left or right edge is a spare by the touchline; Veo keeps play inside the frame.
   const samples = withoutSpares(input, width, height, toPitch).map(s => ({ ...s, balls: s.balls.filter(b => b.box[0] > 2 && b.box[2] < width - 2) }));
-  type Node = { i: number; time_s: number; x: number; y: number; r: number; cost: number; best: number; back: number };
+  type Node = { i: number; time_s: number; x: number; y: number; r: number; cost: number; best: number; back: number; held: boolean };
   const nodes: Node[] = [];
   const firstOf: number[] = [];
   samples.forEach((sample, i) => {
     firstOf.push(nodes.length);
     for (const { box, score } of sample.balls) {
       const x = (box[0] + box[2]) / 2 / width, y = (box[1] + box[3]) / 2 / height;
-      nodes.push({ i, time_s: sample.time_s, x, y, r: Math.abs(box[2] - box[0]) / 2 / width, cost: -Math.log(Math.max(score, 1e-3)) + CENTRE * Math.abs(x - 0.5) - MISS, best: 0, back: -1 });
+      nodes.push({ i, time_s: sample.time_s, x, y, r: Math.abs(box[2] - box[0]) / 2 / width, cost: -Math.log(Math.max(score, 1e-3)) + CENTRE * Math.abs(x - 0.5) - MISS, best: 0, back: -1, held: false });
     }
   });
   firstOf.push(nodes.length);
+  // Held for a set piece: the same spot in the picture and, where the camera model is sound, on the
+  // ground too (a keeper walking with the ball while the camera pans stays in the same picture spot).
+  const sound = (p: [number, number, number] | null) => !!p && p[1] > -0.5 && p[1] < 1.5 && p[2] > -0.5 && p[2] < 1.5;
+  const stayed = (a: Node, b: Node, dist: number) => {
+    if (dist > HELD_W) return false;
+    const pa = toPitch?.(a.time_s, a.x, a.y) ?? null, pb = toPitch?.(b.time_s, b.x, b.y) ?? null;
+    return !sound(pa) || !sound(pb) || pa![0] !== pb![0] || Math.hypot(pb![1] - pa![1], pb![2] - pa![2]) <= HELD_W;
+  };
   // Best path ending at each sighting; a path may also start fresh after the best earlier ending.
   let bestEnded = 0, bestEndedNode = -1, scan = 0;
   for (let n = 0; n < nodes.length; n++) {
@@ -80,18 +89,20 @@ export function trackBall(input: BallSample[], width: number, height: number, to
     while (scan < firstOf[node.i]) { if (nodes[scan].best < bestEnded) { bestEnded = nodes[scan].best; bestEndedNode = scan; } scan++; }
     node.best = node.cost + BREAK + bestEnded; node.back = bestEndedNode;
     if (bestEndedNode < 0) node.best = node.cost; // the first sighting needs no break
-    for (let p = firstOf[node.i] - 1; p >= 0 && node.time_s - nodes[p].time_s <= MAX_GAP_S; p--) {
+    for (let p = firstOf[node.i] - 1; p >= 0 && node.time_s - nodes[p].time_s <= HELD_S; p--) {
       const prev = nodes[p], gap = node.time_s - prev.time_s;
       if (gap <= 0) continue;
       const dist = Math.hypot(node.x - prev.x, (node.y - prev.y) * height / width);
+      const held = gap > MAX_GAP_S;
+      if (held && !stayed(prev, node, dist)) continue;
       const total = prev.best + JUMP * dist + FAST * Math.max(0, dist / gap - CRUISE) + node.cost;
-      if (total < node.best) { node.best = total; node.back = p; }
+      if (total < node.best) { node.best = total; node.back = p; node.held = held; }
     }
   }
   let end = -1, lowest = 0;
   nodes.forEach((node, n) => { if (node.best < lowest) { lowest = node.best; end = n; } });
   const path: BallPoint[] = [];
-  for (let n = end; n >= 0; n = nodes[n].back) path.push({ time_s: nodes[n].time_s, x: nodes[n].x, y: nodes[n].y, r: nodes[n].r });
+  for (let n = end; n >= 0; n = nodes[n].back) path.push({ time_s: nodes[n].time_s, x: nodes[n].x, y: nodes[n].y, r: nodes[n].r, ...(nodes[n].held ? { held: true } : {}) });
   return withoutStrays(path.reverse(), samples, width, height);
 }
 
@@ -119,12 +130,13 @@ function withoutStrays(path: BallPoint[], samples: BallSample[], width: number, 
 
 const GLIDE_S = 1.5, HOLD_S = 0.2;
 
-/** Ball position at the playhead: interpolated between close sightings, otherwise nothing. */
+/** Ball position at the playhead: interpolated between close sightings (or across a few seconds when
+ * it is in the same spot after, held for a set piece), otherwise nothing. */
 export function ballAt(path: BallPoint[], at: number): BallPoint | null {
   let lo = 0, hi = path.length - 1, found = -1;
   while (lo <= hi) { const mid = (lo + hi) >> 1; if (path[mid].time_s <= at) { found = mid; lo = mid + 1; } else hi = mid - 1; }
   const a = path[found], b = path[found + 1];
-  if (a && b && b.time_s - a.time_s <= GLIDE_S) {
+  if (a && b && (b.time_s - a.time_s <= GLIDE_S || b.held)) {
     const f = (at - a.time_s) / (b.time_s - a.time_s);
     return { time_s: at, x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, r: a.r + (b.r - a.r) * f };
   }
