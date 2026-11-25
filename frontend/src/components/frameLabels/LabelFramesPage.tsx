@@ -132,7 +132,8 @@ export default function LabelFramesPage() {
             <img src={`${BASE}/label-sets/${set.id}/${frame.image}`} alt={`Frame ${at + 1} of ${set.frames.length} at ${clock(frame.time_s)}`} className="block w-full select-none" draggable={false} />
             <svg ref={picture} className="absolute inset-0 h-full w-full cursor-crosshair touch-none" viewBox="0 0 1 1" preserveAspectRatio="none"
               onPointerDown={e => { drag.current = point(e); }} onPointerUp={end} aria-label="Drag to draw a box">
-              {boxes.map((b, i) => <rect key={i} x={b.box[0]} y={b.box[1]} width={b.box[2] - b.box[0]} height={b.box[3] - b.box[1]} fill="none" stroke={COLOUR[b.kind]} strokeWidth={2} vectorEffect="non-scaling-stroke" />)}
+              {boxes.map((b, i) => { const n = boxes.slice(0, i + 1).filter(x => x.kind === b.kind).length; return <rect key={i} role="button" aria-label={`Remove ${b.kind} box ${n}`} x={b.box[0]} y={b.box[1]} width={b.box[2] - b.box[0]} height={b.box[3] - b.box[1]} fill="transparent" stroke={COLOUR[b.kind]} strokeWidth={2} vectorEffect="non-scaling-stroke" className="cursor-pointer hover:stroke-red-400"
+                onPointerDown={e => e.stopPropagation()} onClick={() => setBoxes(all => all.filter((_, j) => j !== i))} />; })}
             </svg>
           </div>
         </div>
@@ -141,9 +142,7 @@ export default function LabelFramesPage() {
             {(["ball", "person"] as Kind[]).map(k => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={`rounded-md px-3 py-1.5 ${kind === k ? "bg-[#287fb4] text-white" : "border border-white/15 text-slate-300"}`}>{k === "ball" ? "Ball (B)" : "Person (P)"}</button>)}
           </div>
           <button type="button" aria-pressed={zoom} onClick={() => setZoom(z => !z)} className="rounded-md border border-white/15 px-3 py-1.5 text-slate-300">Zoom (Z)</button>
-          <ul className="flex flex-wrap gap-1" aria-label="Boxes">
-            {boxes.map((b, i) => { const n = boxes.slice(0, i + 1).filter(x => x.kind === b.kind).length; return <li key={i}><button type="button" onClick={() => setBoxes(all => all.filter((_, j) => j !== i))} aria-label={`Remove ${b.kind} box ${n}`} className="rounded-full border px-2 py-0.5 text-xs" style={{ borderColor: COLOUR[b.kind], color: COLOUR[b.kind] }}>{b.kind} {n} ×</button></li>; })}
-          </ul>
+          <span className="text-xs text-slate-400">{boxes.filter(b => b.kind === "ball").length} ball, {boxes.filter(b => b.kind === "person").length} people · click a box to remove it, drag to draw one</span>
           <span className="ml-auto flex gap-2">
             <button type="button" onClick={() => go(at - 1)} disabled={at === 0} className="rounded-md border border-white/15 px-3 py-1.5 text-slate-300 disabled:opacity-40">‹ Back</button>
             <button type="button" onClick={() => void decide("skipped")} disabled={saving} className="rounded-md border border-white/15 px-3 py-1.5 text-slate-300">Skip frame</button>
