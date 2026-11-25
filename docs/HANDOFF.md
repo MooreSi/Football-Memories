@@ -28,6 +28,9 @@ run a4cb99cd (refined child of 03964514, labels copied) for the ball (84% to 88%
 Second match (owner request): Racing Club Warwick vs Kidderminster RMC 18:00-22:00 from the saved
 local sample, run 3ebc1a17, no labels; results and limits in spec660. App `280f3ba` deployed
 admin-only (3/32, health 200, anonymous 401). Next: exposure/cast-robust colour in the worker.
+Tiled ball run published as 8389ebf0 (refined child of 03964514, 23 labels copied; worker
+bc5d91a `--ball-tiles`). App `4a2b5d0` (camera-steadied spare filter) deployed admin-only the
+same way (3/32, health 200, anonymous 401). Ball audit 22/24 right on that run.
 
 ## Selected-window progress (spec640, 2026-11-24)
 
