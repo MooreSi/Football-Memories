@@ -140,8 +140,8 @@ at the flag, 3:39-3:41 free-kick ball behind the referee. Shown 93.3% of the cli
 - 2:57.5-3:05: a restart (keeper walking back, a player waiting at the centre spot); no ball in view.
 Players: where two boxes overlap (IoU 0.25+, ~4% of samples) and the colour seen plainly shows a
 kit the tracklet vote disagrees with, the seen colour decides (982 at 3:21 fixed). Live labels:
-185/186, 1 wrong (989 at 3:21: red and pink overlapping, colour reading ambiguous). Second match
-unchanged. Closing these
+185/186, then inside overlaps a kit 4+ nearer than the other decides (normal lead is 6): 989 fixed.
+Live labels: 186/186 on screen (same-match assistant audit, 18 moments). Second match unchanged. Closing these
 needs a detector that sees a ball among legs at that distance and separates overlapping players:
 a model trained on labelled Veo frames (owner decision: labelling effort, weights, licence).
 

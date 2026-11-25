@@ -104,6 +104,12 @@ describe("kitTimeline", () => {
     expect(teams.at(25, 12.333)).toMatchObject({ team: "own" });
     expect(teams.at(25, 11)).toMatchObject({ team: "opponent" });
   });
+  it("in an overlap, a colour only a little nearer the other kit still decides (RCW vs CG 3:21, red player and pink keeper)", () => {
+    const at = (track_id: number, time_s: number, colour: number[], box: number[]): KitObservation => ({ ...row(track_id, time_s, colour), image_box: box });
+    const near = [...run(27, 10, 12, YELLOW), at(27, 12.333, [90, 166, 164], [0.5, 0.4, 0.53, 0.5]), at(28, 12.333, PINK, [0.505, 0.4, 0.535, 0.5]), ...run(27, 12.667, 15, YELLOW)];
+    const teams = kitTimeline([...labelled, ...near], kits, labels, none);
+    expect(teams.at(27, 12.333)).toMatchObject({ team: "opponent" });
+  });
   it("recognises the opposition keeper's pink kit", () => {
     const teams = kitTimeline([...labelled, ...run(22, 10, 12, [118, 190, 131])], kits, labels, none);
     expect(teams.at(22, 11)).toMatchObject({ team: "opponent", role: "goalkeeper", source: "kit" });

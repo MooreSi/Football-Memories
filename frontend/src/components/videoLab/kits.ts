@@ -22,6 +22,7 @@ const PLAIN = 25;       // a reading this much nearer one kit than any other dec
 const CARRY_S = 2.0;    // an unreadable sample takes the nearest decided one within this time
 const SWAP_S = 2.0;     // a team colour held this long on your dark-kit label is the tracker on someone else
 const MIN_EXAMPLES = 3;
+const NEAR = 4;         // ...and inside an overlap, where the tracklet's vote cannot be trusted
 const OVERLAP = 0.25;    // boxes overlapping this much (intersection over union) hold two people
 
 function iou(a: number[], b: number[]) {
@@ -104,14 +105,14 @@ export function learnKits(rows: KitObservation[], labels: TrackLabel[], remember
 const sameKit = (a: KitPrototype, b: KitPrototype) => a.team === b.team && a.role === b.role;
 
 /** The decisive kit a sample matches, if one is clearly nearer than any other label's kit. */
-function match(colour: number[] | null | undefined, kits: KitPrototype[]): KitPrototype | null {
+function match(colour: number[] | null | undefined, kits: KitPrototype[], margin = MARGIN): KitPrototype | null {
   if (!valid(colour)) return null;
   let first: KitPrototype | null = null, d1 = Infinity;
   for (const kit of kits) { const d = kitDistance(colour, kit.lab); if (d < d1) { d1 = d; first = kit; } }
   if (!first || d1 > RADIUS || chroma(first.lab) < CHROMA) return null;
   let d2 = Infinity;
   for (const kit of kits) if (!sameKit(kit, first)) d2 = Math.min(d2, kitDistance(colour, kit.lab));
-  return d2 - d1 >= MARGIN ? first : null;
+  return d2 - d1 >= margin ? first : null;
 }
 
 /** Kit of a reading so plain that it decides its moment alone (a tracker swap starts exactly here). */
@@ -224,8 +225,10 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     const mine = label.get(track);
     const ownKit = mine ? kits.filter(k => k.team === mine.team && k.role === mine.role) : [];
     const ownKitDecides = ownKit.some(k => chroma(k.lab) >= CHROMA);
+    // In an overlap the vote along the tracklet is unreliable, so a nearer kit decides with a smaller lead.
+    const matchedNear = (r: KitObservation) => { const m = match(r.colour_lab, decisive, NEAR); return m && canon.get(keyOf(m.team, m.role))!; };
     const values = filled.map((f, i) => {
-      const seen = overlapped.has(list[i]) ? matched[i] : null;
+      const seen = overlapped.has(list[i]) ? matchedNear(list[i]) : null;
       if (seen && f?.kit !== seen) return mine && seen.team === mine.team && seen.role === mine.role ? { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 } : assignment(seen, "kit", 0.5);
       if (!f) {
         if (!mine) return fallback.get(track);
