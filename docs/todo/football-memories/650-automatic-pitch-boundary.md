@@ -1,6 +1,6 @@
 # 650: Automatic editable pitch boundaries
 
-**Status:** Implemented and verified; admin deployment pending
+**Status:** Implemented, verified and deployed to admin preview (combined with spec660)
 **Sensitive:** no; cached footage only, new result paths.
 
 ## What is wrong or missing today

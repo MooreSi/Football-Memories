@@ -1,5 +1,33 @@
 # Football Memories: progress
 
+## Combined admin deployment completed — 25 November 2026
+
+App `2de8b34` (`codex/local-video-analytics`) combines spec650 boundaries with
+spec660 team-kit/ball work. Gateway `44bf89e` deployed first; app built with
+FM_BUILD_LATEST=0 and moved only the approved admin via updates._move. Worker
+`1039d6a` (`codex/local-pipeline`) merges dense-clip and was kickstarted idle;
+PID21022 owns its watch lock. All17 jobs remain complete;337 existing job JSON
+hashes unchanged. Exactly gateway plus admin web/backend/capture changed (4/32);
+other28 containers/shared hosted tags/global latest6138b56 unchanged. Admin
+auto-update remainsfalse. Before move helpers were ready/busy=false/not syncing;
+capture traffic369 bytes over12.6s (not zero; no claim of a silent network).
+
+Admin /api/health reports ok; combined VideoLabPage-DSmwwAic.js served with boundary,
+kit and ball code. Deployed gateway accepts boundary schema; anonymous jobs/samples
+401. No source request, real rerun, credentials/session-format change, new weights
+or dependency. Existing labels/results retained; no signed-in production playback
+or pointer drag/edge-double-click acceptance claimed. Isolated cached-footage UI
+save/keyboard/add/remove and1280/375/reference02 checks passed; phone no overflow.
+
+Fresh verification: backend854 SQLite+854 PostgreSQL, ruff/format/mypy/Alembic;
+frontend910/typecheck/hosted build; worker142/lint/format/project checks;
+gateway466 passed,2 opt-in skips plus4 Docker cases, lint/format/mypy pass.
+Worker code CI45576125935 and gateway code CI45530315662 green. App has no CI.
+Next: refresh Video Lab. Existing runs need Update camera tracking to generate
+new automatic masks; review turf proposals around apron/adjacent pitches. Team,
+role, ball and identity accuracy remain experimental; no new independent audit.
+
+
 ## Combined boundary, kit and ball checkpoint — 25 November 2026
 
 Branch `codex/local-video-analytics`: merged `codex/team-kits` after spec650.
