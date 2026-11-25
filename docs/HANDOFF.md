@@ -129,6 +129,8 @@ keeper tracklets, 198/199 not players). Live labels: 184/186 on screen, 2 wrong 
 Then `3a39a2c` (ball held for a set piece bridged up to 4 s; corner at 2:35 now shown) deployed
 admin-only the same way (capture flat, 3/32, latest unchanged, health 200, anonymous 401).
 Ball 10-s audit 24/24 (0:15 none: keeper holding it); shown 93.3% of the clip.
+Then `7d09941` (overlapping boxes: the colour seen decides) deployed admin-only the same way
+(capture flat, 3/32, health 200, anonymous 401). Live labels 185/186; remaining gaps in spec660.
 
 ## Selected-window progress (spec640, 2026-11-24)
 
