@@ -1,5 +1,35 @@
 # Football Memories: progress
 
+## Automatic editable pitch boundaries (spec650, 2026-11-25)
+
+Branch `codex/local-video-analytics`. Resumed the unfinished spec650 app, gateway
+and worker changes. Camera preparation proposes a refreshed 24-point visible-turf
+envelope, independent of physical metre calibration. Video Lab supports 3–32
+vertices with insert/remove/drag/keyboard controls and revisioned human corrections.
+Corrections follow camera motion within one shot; automatic suggestions expire
+and explicit no-turf observations clear them. Source binding now requires a
+present matching hash (new regression observed red, then green). Existing runs
+use Update camera tracking; labels and original results carry forward.
+
+Verified: backend854 SQLite +854 PostgreSQL, ruff/format/mypy and Alembic no drift;
+frontend867/typecheck/hosted build; worker138/lint/format/project checks;
+gateway466 passed,2 opt-in skips,4 Docker cases passed separately, lint/types clean.
+Inherited unfinished tests already passed when resumed; their original red runs
+were not independently observed this session. No existing assertions changed.
+Isolated cached-footage browser1280/375: add/remove/save, saved confirmation,
+24 handles and no phone overflow; reference02 compared. Pointer drag/edge double
+click and authenticated production acceptance not independently exercised.
+
+Existing private cached600.04s camera trial:130.158s,3000 steps,24 rejected/cut
+steps,612 proposals. Current output visually checked at16/30/31/34/120/300/480/590s;
+13 artifact hashes, source hash, parent manifest and ZIP CRC pass. Turf includes
+apron/adjacent ground: these are unreviewed masks, not semantic touchlines or
+independent accuracy evidence. No source account operation, dependencies/weights,
+media overwrite or training. Not yet deployed at this code checkpoint. Next:
+check idle runtime, deploy gateway before admin app, reload worker only idle;
+preserve other libraries/shared tags/global latest and existing admin update hold.
+
+
 ## Selected-window progress (spec640, 2026-11-24)
 
 Branch `codex/local-video-analytics`. Confirmed analysis reuses saved footage or

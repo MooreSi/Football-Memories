@@ -30,6 +30,7 @@ export type Review = {
   reviewed_intervals: [number, number][]; review_complete: boolean;
   track_labels: TrackLabel[]; group_labels: GroupLabel[]; rejected_suggestions: string[];
   pitch_keyframes?: PitchKeyframe[];
+  pitch_boundaries?: import("./boundary").Boundary[];
   pitch_size?: PitchSize | null;
 };
 

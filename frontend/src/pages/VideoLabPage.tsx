@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { BoundaryPanel } from "../components/videoLab/BoundaryEditor";
+import { boundaryAt } from "../components/videoLab/boundary";
 import { LabVideo } from "../components/videoLab/LabVideo";
 import { MomentRail } from "../components/videoLab/MomentRail";
 import { Inspector, decide } from "../components/videoLab/Inspector";
@@ -45,6 +47,8 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const [track, setTrack] = useState<number | null>(null);
   const [boxes, setBoxes] = useState(true);
   const [everyone, setEveryone] = useState(false);
+  const [boundaryEditing,setBoundaryEditing]=useState<Corners|null>(null);
+  const [boundarySelected,setBoundarySelected]=useState(0);
   const [marking, setMarking] = useState<Corners | null>(null);
   const [cornerIndices, setCornerIndices] = useState([0,1,2,3]);
   const [markLandmarks, setMarkLandmarks] = useState<Landmark[]>([]);
@@ -60,8 +64,11 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
   const { review, update, state, error } = useReview(job.id);
   const camera = useMemo(() => motion.data ? buildCamera(motion.data) : undefined, [motion.data]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
+  const boundaries=useMemo(()=>review?.pitch_boundaries ?? [],[review?.pitch_boundaries]);
+  const automaticBoundaries=useMemo(()=>job.summary?.source_sha256 && motion.data?.source_sha256===job.summary.source_sha256 ? motion.data?.pitch_boundaries ?? []:[],[motion.data,job.summary?.source_sha256]);
+  const currentBoundary=camera ? boundaryAt(camera,boundaries,automaticBoundaries,at):null;
   const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], dense.data), [assignments.data, dense.data]);
-  const offPitch = useMemo(() => camera && marks.length ? offPitchTracks(assignments.data?.observations ?? [], camera, marks) : new Set<number>(), [camera, marks, assignments.data]);
+  const offPitch = useMemo(() => camera && (marks.length || boundaries.length || automaticBoundaries.length) ? offPitchTracks(assignments.data?.observations ?? [], camera, marks,t=>boundaryAt(camera,boundaries,automaticBoundaries,t) ?? outlineAt(camera,marks,t)) : new Set<number>(), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
   const teams = useMemo(() => propagateTeams(appearance.data?.tracks ?? [], review?.track_labels ?? [], review?.group_labels ?? [], appearance.data ? [] : assignments.data?.observations ?? [], offPitch), [appearance.data, assignments.data, review?.track_labels, review?.group_labels, offPitch]);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
@@ -98,7 +105,7 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
       <section className="min-w-0 space-y-3" aria-label="Analysis results">
         {clip
-          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} /></div>
+          ? <div onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}><LabVideo src={`${BASE}/jobs/${job.id}/files/${clip}`} videoRef={video} at={at} onTime={setAt} assignments={assignments.data} teams={teams} selected={track} onSelect={id => { setTrack(id); video.current?.pause(); }} showBoxes={boxes} dense={dense.data} everyone={everyone} camera={camera} marks={marks} showOutline={showOutline} marking={marking} onMarking={setMarking} markLandmarks={markLandmarks} onMarkLandmarks={setMarkLandmarks} boundaries={boundaries} automaticBoundaries={automaticBoundaries} boundaryEditing={boundaryEditing} onBoundaryEditing={setBoundaryEditing} boundarySelected={boundarySelected} onBoundarySelect={setBoundarySelected} /></div>
           : <div className="flex aspect-video items-center justify-center rounded-xl bg-black/40 text-fg-muted">This run has no video.</div>}
         <div className="panel flex flex-wrap items-center gap-2 p-2" aria-label="Moment playback">
           <Button aria-label="Previous moment" disabled={!visible.length} onClick={() => playAt(Math.max(0, (cursor ?? 1) - 1))}><ChevronLeft size={16} aria-hidden />Previous</Button>
@@ -109,9 +116,14 @@ function Workspace({ job, onQueued }: { job: Job; onQueued: (id: string) => void
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={boxes} onChange={e => setBoxes(e.target.checked)} />Show people</label>}
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
+        {camera && review && <BoundaryPanel editing={boundaryEditing} selected={boundarySelected} setSelected={setBoundarySelected} onChange={setBoundaryEditing} marks={boundaries} manual={!!boundaryAt(camera,boundaries,[],at)} automatic={!!currentBoundary}
+          onStart={()=>{video.current?.pause();setMarking(null);setBoundarySelected(0);const time=video.current?.currentTime ?? at;setBoundaryEditing(boundaryAt(camera,boundaries,automaticBoundaries,time) ?? outlineAt(camera,marks,time) ?? DEFAULT_CORNERS);}}
+          onSave={()=>{const time=Math.round((video.current?.currentTime ?? at)*1000)/1000;update(r=>({...r,pitch_boundaries:[...(r.pitch_boundaries ?? []).filter(k=>Math.abs(k.time_s-time)>=0.001),{time_s:time,points:boundaryEditing!}].sort((a,b)=>a.time_s-b.time_s)}));setBoundaryEditing(null);}}
+          onCancel={()=>setBoundaryEditing(null)} onDelete={time=>update(r=>({...r,pitch_boundaries:(r.pitch_boundaries ?? []).filter(k=>k.time_s!==time)}))}
+          onSeek={time=>{if(video.current){video.current.pause();video.current.currentTime=time;setAt(time);}}} />}
         {has("team_assignments.json") && summary?.source_sha256 && <PitchPanel jobId={job.id} sourceHash={summary.source_sha256} hasCamera={has("camera_motion.json")} marks={marks} at={at} marking={!!marking} onQueued={onQueued}
           cornerIndices={cornerIndices} onCornerIndices={setCornerIndices} canSave={!!(marking && fitLandmarks([...marking.flatMap((image,i)=>cornerIndices.includes(i)?[{image,pitch:PITCH_CORNERS[i]}]:[]),...markLandmarks]))} landmarks={markLandmarks} onAddPoint={name => { const point=EXTRA_POINTS.find(p=>p.name===name); const h=marking && fitLandmarks(marking.map((image,i)=>({image,pitch:PITCH_CORNERS[i]}))); if(point && h) setMarkLandmarks(points=>[...points,{...point,image:project(inverse(h),point.pitch)}]); }}
-          onStart={() => { video.current?.pause(); const time=video.current?.currentTime ?? at; const existing=marks.find(m=>Math.abs(m.time_s-time)<0.05); setCornerIndices(existing?.fit_corner_indices ?? [0,1,2,3]); setMarkLandmarks(existing?.landmarks ?? []); setMarking(existing?.corners ?? (camera && outlineAt(camera, marks, time)) ?? DEFAULT_CORNERS); }}
+          onStart={() => { setBoundaryEditing(null); video.current?.pause(); const time=video.current?.currentTime ?? at; const existing=marks.find(m=>Math.abs(m.time_s-time)<0.05); setCornerIndices(existing?.fit_corner_indices ?? [0,1,2,3]); setMarkLandmarks(existing?.landmarks ?? []); setMarking(existing?.corners ?? (camera && outlineAt(camera, marks, time)) ?? DEFAULT_CORNERS); }}
           onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}

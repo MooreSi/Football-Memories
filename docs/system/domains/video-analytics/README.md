@@ -88,3 +88,11 @@ Preparation progress is ffmpeg output seconds for that selected clip, separate
 from worker analysis progress. Connection, verification and gateway import have
 no measured total and use indeterminate activity; never fabricate a combined
 percentage. Keep ffmpeg stderr/private relay addresses out of status and logs.
+
+Spec650 separates visible playing-area masks (`pitch_boundaries`,3–32 vertices)
+from physical four-corner/landmark metre calibration. Automatic colour-based
+visible-turf proposals refresh about once a second and are always unreviewed:
+green apron/adjacent pitches can be included. Human masks override automatic
+ones only within the same shot; explicit absence and1.5s freshness prevent stale
+automatic propagation. Require present matching source hashes, never accept
+missing==missing as binding. Old runs upgrade through Update camera tracking.
