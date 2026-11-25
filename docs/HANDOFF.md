@@ -74,6 +74,24 @@ Release checks and admin deployment still being finished.
 
 # Handoff
 
+## Spec710 DEPLOYED: app ff5d96e admin preview + native worker 95ede4d — 25 November 2026
+
+App: images hosted-ff5d96e built (FM_BUILD_LATEST=0), added to updates built list
+(latest 6138b56 untouched), admin library moved with updates._move. Inventory diff:
+exactly admin web/backend/capture changed (3 of 36); capture idle (net counters flat,
+no ffmpeg/browser) before the move; backend health ok; VideoLabPage-XhgeU3fu.js
+serves the camera-level bird's-eye. Gateway unchanged (it only binds panorama_id).
+Worker: codex/local-pipeline 95ede4d (rotation/zoom pose solve, see worker
+docs/PITCH_PANORAMA.md), CI green, kickstarted while no job queued/running.
+Existing runs keep their old atlas: use "Rebuild complete pitch" in Video Lab to
+get a new child with refined poses; then edit/accept the boundary. No existing job
+or review was modified; no source-account access. Verified on five cached games in
+scratch only (runtime untouched): near-field painted-line error frame vs atlas
+2.9-12 px -> 0-1.4 px; live overlay with a boundary snapped to the RCW 261116
+halfway line/touchline lies on those lines near and far. Not yet exercised: a real
+"Rebuild complete pitch" job in production and signed-in production review.
+
+
 ## Spec710 pitch homography fix (app) — 25 November 2026
 
 Branch codex/local-video-analytics. Bird's-eye/panorama/live boundary now agree:
