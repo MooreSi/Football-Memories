@@ -74,6 +74,19 @@ Release checks and admin deployment still being finished.
 
 # Handoff
 
+## Spec710 line-based pitch outline DEPLOYED — 25 November 2026
+
+App ae13328 (admin only, same route; 3 admin containers changed, latest untouched,
+capture idle 45 s before move) and worker e627a7d (kickstarted idle). New worker
+`pitch_outline`: whole-pitch outline from painted lines on the camera-level plan,
+centre-circle symmetric completion, camera-facing prior; app shows it live
+(`pitchProposal`) until a boundary is accepted, below human corrections. Turf-colour
+envelopes are never promoted. 5 cached games visually correct (tuned on these 5; no
+held-out claim). Worker 203 tests, frontend 968, all checks green. New tests observed
+red first. Rebuilt owner run f6d0bcb2 (Racing Club Warwick) outline: near touchline
+and halfway on the painted lines; far/side edges flagged unseen (estimated).
+
+
 ## Spec710 production rebuilds verified — 25 November 2026
 
 Queued through the gateway's own queue_child (same code as "Rebuild complete pitch",
