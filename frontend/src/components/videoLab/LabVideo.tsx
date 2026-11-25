@@ -3,6 +3,8 @@ import type { Assignment, Assignments, Observation } from "./labTypes";
 import { inPlay, mergeDense, type DenseTracks } from "./playArea";
 import { feet, footMargin, insidePitch, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
 import type { Landmark } from "./landmarks";
+import { boundaryAt, type Boundary } from "./boundary";
+import { BoundaryLayer } from "./BoundaryEditor";
 import { MarkLayer, PAD } from "./MarkLayer";
 import { ballAt, type BallPoint } from "./ball";
 
@@ -94,10 +96,11 @@ type Props = {
   teamAt?: (track: number, time: number) => Assignment | undefined;
   ball?: BallPoint[]; showBall?: boolean;
   markLandmarks?: Landmark[]; onMarkLandmarks?: (points: Landmark[]) => void;
+  boundaries?: Boundary[]; automaticBoundaries?: Boundary[]; boundaryEditing?:Corners|null; onBoundaryEditing?:(p:Corners)=>void; boundarySelected?:number; onBoundarySelect?:(n:number)=>void;
   camera?: Camera; marks?: PitchKeyframe[]; showOutline?: boolean; marking?: Corners | null; onMarking?: (corners: Corners) => void;
 };
 
-export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, teamAt, ball, showBall = true, camera, marks = [], showOutline = true, marking = null, onMarking, markLandmarks, onMarkLandmarks }: Props) {
+export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, teamAt, ball, showBall = true, camera, marks = [], showOutline = true, marking = null, onMarking, markLandmarks, onMarkLandmarks, boundaries=[], automaticBoundaries=[], boundaryEditing=null, onBoundaryEditing, boundarySelected=0, onBoundarySelect }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const index = useMemo(() => indexObservations(mergeDense(assignments?.observations ?? [], dense)), [assignments, dense]);
   const now = useFrameTime(videoRef, at);
@@ -107,7 +110,7 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
   for (const o of here) { const info = teamAt?.(o.track_id, now) ?? teams.get(o.track_id); if (info) frameTeams.set(o.track_id, info); }
   const ballNow = showBall && ball?.length ? ballAt(ball, now) : null;
   // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
-  const outline = camera ? outlineAt(camera, marks, now) : null;
+  const outline = camera ? boundaryAt(camera,boundaries,automaticBoundaries,now) ?? outlineAt(camera, marks, now) : null;
   const visible = everyone ? here : outline
     ? here.filter(o => o.track_id === selected || insidePitch(feet(o), outline, footMargin(o)))
     : inPlay(here, frameTeams, selected);
@@ -115,13 +118,13 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
   // Draw the selected person last so their highlight sits on top.
   const ordered = [...visible].sort((a, b) => Number(a.track_id === selected) - Number(b.track_id === selected));
   return <div className="relative overflow-hidden rounded-xl bg-black">
-    <div className="relative transition-transform" style={marking ? { transform: `scale(${1 - 2 * PAD})` } : undefined}>
+    <div className="relative transition-transform" style={marking || boundaryEditing ? { transform: `scale(${1 - 2 * PAD})` } : undefined}>
     <video ref={videoRef} onTimeUpdate={e => onTime(e.currentTarget.currentTime)} onSeeked={e => onTime(e.currentTarget.currentTime)} className="aspect-video w-full" controls preload="metadata" src={src} aria-label="Match video" />
     {((showBoxes && assignments) || ballNow) && <svg className="pointer-events-none absolute inset-x-0 top-0 aspect-video w-full" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" aria-label="People on screen">
       <defs>{glows.map(([key, colour]) => <linearGradient key={key} id={`lab-glow-${key}`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stopColor={colour} stopOpacity="0" /><stop offset="0.55" stopColor={colour} stopOpacity="0.22" /><stop offset="1" stopColor={colour} stopOpacity="0.55" />
       </linearGradient>)}</defs>
-      {outline && showOutline && !marking && <polygon points={outline.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="#22c55e" fillOpacity={0.05} stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Pitch outline" />}
+      {outline && showOutline && !marking && !boundaryEditing && <polygon points={outline.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="#22c55e" fillOpacity={0.05} stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Pitch outline" />}
       {ordered.map(row => {
         const [x1, y1, x2, y2] = row.image_box!;
         const info = frameTeams.get(row.track_id);
@@ -152,6 +155,7 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
       </g>}
     </svg>}
     </div>
+    {boundaryEditing && onBoundaryEditing && <BoundaryLayer points={boundaryEditing} onChange={onBoundaryEditing} selected={boundarySelected} onSelect={onBoundarySelect ?? (()=>undefined)} />}
     {marking && onMarking && <MarkLayer corners={marking} onChange={onMarking} landmarks={markLandmarks} onLandmarks={onMarkLandmarks} />}
   </div>;
 }

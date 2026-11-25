@@ -1,5 +1,83 @@
 # Football Memories: progress
 
+## Combined admin deployment completed — 25 November 2026
+
+App `2de8b34` (`codex/local-video-analytics`) combines spec650 boundaries with
+spec660 team-kit/ball work. Gateway `44bf89e` deployed first; app built with
+FM_BUILD_LATEST=0 and moved only the approved admin via updates._move. Worker
+`1039d6a` (`codex/local-pipeline`) merges dense-clip and was kickstarted idle;
+PID21022 owns its watch lock. All17 jobs remain complete;337 existing job JSON
+hashes unchanged. Exactly gateway plus admin web/backend/capture changed (4/32);
+other28 containers/shared hosted tags/global latest6138b56 unchanged. Admin
+auto-update remainsfalse. Before move helpers were ready/busy=false/not syncing;
+capture traffic369 bytes over12.6s (not zero; no claim of a silent network).
+
+Admin /api/health reports ok; combined VideoLabPage-DSmwwAic.js served with boundary,
+kit and ball code. Deployed gateway accepts boundary schema; anonymous jobs/samples
+401. No source request, real rerun, credentials/session-format change, new weights
+or dependency. Existing labels/results retained; no signed-in production playback
+or pointer drag/edge-double-click acceptance claimed. Isolated cached-footage UI
+save/keyboard/add/remove and1280/375/reference02 checks passed; phone no overflow.
+
+Fresh verification: backend854 SQLite+854 PostgreSQL, ruff/format/mypy/Alembic;
+frontend910/typecheck/hosted build; worker142/lint/format/project checks;
+gateway466 passed,2 opt-in skips plus4 Docker cases, lint/format/mypy pass.
+Worker code CI45576125935 and gateway code CI45530315662 green. App has no CI.
+Next: refresh Video Lab. Existing runs need Update camera tracking to generate
+new automatic masks; review turf proposals around apron/adjacent pitches. Team,
+role, ball and identity accuracy remain experimental; no new independent audit.
+
+
+## Combined boundary, kit and ball checkpoint — 25 November 2026
+
+Branch `codex/local-video-analytics`: merged `codex/team-kits` after spec650.
+Resolved shared editor/workspace code by retaining both multi-vertex source-bound
+boundaries and per-moment kit assignments, remembered kits, camera-steadied ball
+filtering and the ball-only use of whole-clip dense refinements. Existing labels,
+metre calibration and original outputs remain separate. No existing test changed
+in conflict resolution; inherited branch tests were not observed red this session.
+
+Verified this session: backend854 SQLite and854 PostgreSQL; ruff/format/mypy and
+Alembic no drift; frontend910 tests, typecheck and hosted build. Cached isolated
+browser1280/375: keyboard point movement, insert/remove/save, All changes saved;
+375px scrollWidth=clientWidth. Compared reference02. Existing kit/ball integration
+tests pass; no new real analysis or signed-in production acceptance. Worker merged
+its dense-clip branch separately,142 tests and lint/format/project checks pass.
+Deployment pending at this checkpoint; retain newer live kit/ball functionality,
+update gateway before app and reload worker only idle. Other libraries, shared
+hosted tags, global latest and admin auto-update hold must remain unchanged.
+
+
+## Automatic editable pitch boundaries (spec650, 2026-11-25)
+
+Branch `codex/local-video-analytics`. Resumed the unfinished spec650 app, gateway
+and worker changes. Camera preparation proposes a refreshed 24-point visible-turf
+envelope, independent of physical metre calibration. Video Lab supports 3–32
+vertices with insert/remove/drag/keyboard controls and revisioned human corrections.
+Corrections follow camera motion within one shot; automatic suggestions expire
+and explicit no-turf observations clear them. Source binding now requires a
+present matching hash (new regression observed red, then green). Existing runs
+use Update camera tracking; labels and original results carry forward.
+
+Verified: backend854 SQLite +854 PostgreSQL, ruff/format/mypy and Alembic no drift;
+frontend867/typecheck/hosted build; worker138/lint/format/project checks;
+gateway466 passed,2 opt-in skips,4 Docker cases passed separately, lint/types clean.
+Inherited unfinished tests already passed when resumed; their original red runs
+were not independently observed this session. No existing assertions changed.
+Isolated cached-footage browser1280/375: add/remove/save, saved confirmation,
+24 handles and no phone overflow; reference02 compared. Pointer drag/edge double
+click and authenticated production acceptance not independently exercised.
+
+Existing private cached600.04s camera trial:130.158s,3000 steps,24 rejected/cut
+steps,612 proposals. Current output visually checked at16/30/31/34/120/300/480/590s;
+13 artifact hashes, source hash, parent manifest and ZIP CRC pass. Turf includes
+apron/adjacent ground: these are unreviewed masks, not semantic touchlines or
+independent accuracy evidence. No source account operation, dependencies/weights,
+media overwrite or training. Not yet deployed at this code checkpoint. Next:
+check idle runtime, deploy gateway before admin app, reload worker only idle;
+preserve other libraries/shared tags/global latest and existing admin update hold.
+
+
 ## Selected-window progress (spec640, 2026-11-24)
 
 Branch `codex/local-video-analytics`. Confirmed analysis reuses saved footage or

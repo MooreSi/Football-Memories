@@ -31,11 +31,11 @@ export function PitchPanel(p: Props) {
   }
   return <section className="panel space-y-3 p-3" aria-label="Pitch outline">
     <div className="flex flex-wrap items-center gap-2">
-      <h2 className="font-semibold">Pitch outline</h2>
+      <h2 className="font-semibold">Pitch calibration and tracking</h2>
       {p.hasCamera && p.marks.length > 0 && <label className="ml-auto flex items-center gap-2 text-sm"><input type="checkbox" checked={p.showOutline} onChange={e => p.setShowOutline(e.target.checked)} />Show pitch outline</label>}
     </div>
     {!p.hasCamera ? <>
-      <p className="text-sm text-fg-muted">Mark the pitch your match is on so people on other pitches and along the sidelines are left out. First the lab works out how the camera moves (about 5 minutes for ten minutes of video); your labels carry over and this run is kept.</p>
+      <p className="text-sm text-fg-muted">Prepare automatic boundary suggestions and camera motion for this clip. You can then adjust the outline with extra points. Your labels carry over and this run is kept.</p>
       <Button disabled={busy} onClick={() => void prepare()}>{busy ? "Starting…" : "Prepare pitch outline"}</Button>
     </> : p.marking ? <>
       <p className="text-sm text-fg-muted">Drag the green corners onto the pitch. Add visible known points such as the halfway-line intersections, then drag their blue handles to those exact markings. Add another calibration at a different camera angle; corrections are blended within the same camera shot. Arrow keys nudge handles.</p>
@@ -44,7 +44,7 @@ export function PitchPanel(p: Props) {
       {p.canSave===false && <p className="text-xs text-warn">Use at least four non-collinear known points. Add visible halfway-line intersections or other pitch markings.</p>}
       <div className="flex gap-2"><Button variant="primary" disabled={p.canSave===false} onClick={p.onSave}>Save pitch mark</Button><Button onClick={p.onCancel}>Cancel</Button></div>
     </> : <>
-      <p className="text-sm text-fg-muted">{p.marks.length ? "Only people inside the outline get rings, team suggestions and a say in which team made an action. If the outline drifts, pause there and mark again." : "Pause on a clear view of your pitch and mark its four corners. The outline then follows the camera."}</p>
+      <p className="text-sm text-fg-muted">{p.marks.length ? "Only people inside the outline get rings, team suggestions and a say in which team made an action. If the outline drifts, pause there and mark again." : "Use the boundary editor above for the playing area. For positions in metres, pause on visible known pitch markings and calibrate below."}</p>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant={p.marks.length ? undefined : "primary"} onClick={p.onStart}>Mark pitch here</Button>
         <Button disabled={busy} onClick={()=>void prepare()}>{busy ? "Starting…" : "Update camera tracking"}</Button>

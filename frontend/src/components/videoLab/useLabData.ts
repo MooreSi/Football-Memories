@@ -38,6 +38,7 @@ function body(review: Review) {
     reviewed_intervals: review.reviewed_intervals, review_complete: review.review_complete,
     track_labels: review.track_labels, group_labels: review.group_labels, rejected_suggestions: review.rejected_suggestions,
     pitch_keyframes: review.pitch_keyframes ?? [], pitch_size: review.pitch_size ?? null,
+    ...(review.pitch_boundaries !== undefined ? {pitch_boundaries:review.pitch_boundaries}:{}),
   };
 }
 

@@ -3,7 +3,7 @@ import { fittedCorners, type Landmark } from "./landmarks";
 export { fitLandmarks } from "./landmarks";
 
 /** Worker `camera_motion.json` (spec 600): step i maps normalised points at times[i] to times[i+1]. */
-export type CameraMotion = { times: number[]; steps: number[][]; cuts: boolean[] };
+export type CameraMotion = { times: number[]; steps: number[][]; cuts: boolean[]; source_sha256?:string; pitch_boundaries?: {time_s:number;points:Corners}[] };
 export type Corners = [number, number][];
 export type PitchKeyframe = { time_s: number; corners: Corners; landmarks?: Landmark[]; fit_corner_indices?: number[] };
 type Matrix = number[];
@@ -110,18 +110,33 @@ export const feet = (o: Observation): [number, number] => [(o.image_box![0] + o.
 export const footMargin = (o: Observation) => (o.image_box![3] - o.image_box![1]) * 0.5;
 
 /** Tracks seen mostly off the marked pitch (where an outline is known). */
-export function offPitchTracks(observations: Observation[], camera: Camera, keyframes: PitchKeyframe[]): Set<number> {
+export function offPitchTracks(observations: Observation[], camera: Camera, keyframes: PitchKeyframe[], resolve?: (t:number)=>Corners|null): Set<number> {
   const outlines = new Map<number, Corners | null>();
   const tally = new Map<number, [number, number]>();
   for (const o of observations) {
     if (!o.image_box) continue;
-    if (!outlines.has(o.time_s)) outlines.set(o.time_s, outlineAt(camera, keyframes, o.time_s));
+    if (!outlines.has(o.time_s)) outlines.set(o.time_s, resolve ? resolve(o.time_s) : outlineAt(camera, keyframes, o.time_s));
     const outline = outlines.get(o.time_s);
     if (!outline) continue;
     const [on, all] = tally.get(o.track_id) ?? [0, 0];
     tally.set(o.track_id, [on + (insidePitch(feet(o), outline, footMargin(o)) ? 1 : 0), all + 1]);
   }
   return new Set([...tally].filter(([, [on, all]]) => on / all < 0.5).map(([track]) => track));
+}
+
+/** Transport arbitrary mask vertices. Physical calibration remains four corners. */
+export function carryPoints(camera: Camera, points: Corners, from: number, to: number): Corners | null {
+  const pose = (t:number) => {
+    const i=Math.max(0,sampleIndex(camera.times,t)), j=i+1;
+    if(j>=camera.times.length || camera.segment[i]!==camera.segment[j]) return camera.total[i];
+    const f=Math.max(0,Math.min(1,(t-camera.times[i])/(camera.times[j]-camera.times[i])));
+    const step=multiply(camera.total[j],camera.inverse[i]),identity=[1,0,0,0,1,0,0,0,1];
+    return multiply(step.map((v,n)=>identity[n]+(v/step[8]-identity[n])*f),camera.total[i]);
+  };
+  if(!camera.times.length || camera.segment[Math.max(0,sampleIndex(camera.times,from))]!==camera.segment[Math.max(0,sampleIndex(camera.times,to))]) return null;
+  const move=multiply(pose(to),invert(pose(from)));
+  const out=points.map(p=>apply(move,p));
+  return out.every(p=>p.every(Number.isFinite)) ? out : null;
 }
 
 /** A picture point (normalised) at time t, steadied against camera motion: [camera shot, x, y]. */

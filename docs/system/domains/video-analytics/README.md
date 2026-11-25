@@ -89,6 +89,14 @@ from worker analysis progress. Connection, verification and gateway import have
 no measured total and use indeterminate activity; never fabricate a combined
 percentage. Keep ffmpeg stderr/private relay addresses out of status and logs.
 
+Spec650 separates visible playing-area masks (`pitch_boundaries`,3–32 vertices)
+from physical four-corner/landmark metre calibration. Automatic colour-based
+visible-turf proposals refresh about once a second and are always unreviewed:
+green apron/adjacent pitches can be included. Human masks override automatic
+ones only within the same shot; explicit absence and1.5s freshness prevent stale
+automatic propagation. Require present matching source hashes, never accept
+missing==missing as binding. Old runs upgrade through Update camera tracking.
+
 Spec660 (Video Lab teams): tracklets are short and the tracker swaps people, so a label must
 not colour a whole tracklet. Teams are decided per sampled detection from `colour_lab` against
 kits learned from labels (1 s window vote); dark kits (referee, keeper in black, coats) cannot
