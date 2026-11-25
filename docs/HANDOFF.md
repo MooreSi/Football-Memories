@@ -1,5 +1,16 @@
 # Handoff
 
+## Combined atlas and frame-label checkpoint — 25 November 2026
+
+Merged committed `codex/team-kits` throughc12ab55, preserving spec670 frame labelling
+alongside spec690. No code conflicts or existing assertion changes. Combined
+frontend954 tests, typecheck and hosted build pass. Backend854 SQLite+854 PostgreSQL,
+lint/format/mypy/Alembic unchanged green. Isolated cached-footage browser: actual
+drags in both views changed only points6/12/17 (17 keyboard); saved revision1,
+goals_confirmed=false and corners=null. Production acceptance remains the owner’s.
+Deployment, final responsive check and publication pending at this checkpoint.
+
+
 ## Complete pitch atlas implementation checkpoint — 25 November 2026
 
 Branch `codex/local-video-analytics` (worker `codex/local-pipeline`). Spec690 replaces
@@ -182,6 +193,24 @@ media overwrite or training. Not yet deployed at this code checkpoint. Next:
 check idle runtime, deploy gateway before admin app, reload worker only idle;
 preserve other libraries/shared tags/global latest and existing admin update hold.
 
+
+## Detector trained on owner-confirmed Veo frames (spec670, 2026-11-25, building)
+
+[Spec670](todo/football-memories/670-veo-trained-detector.md): owner said yes to ultralytics,
+a 300-frame pilot, the match choice and assistant pre-sort.
+- **Built in three repos:**
+  - worker `codex/veo-detector`: label-frames, train-veo-detector, eval-detector;
+  - gateway frame labels (merged and deployed);
+  - app `/video-lab/labels` (admin `a7b2933`).
+- **Label sets** are written to `runtime/label-sets/<id>/`; an index is in
+  `runtime/label-sets-index.txt`.
+- **Next:**
+  1. The assistant pre-sorts (`presort.json`).
+  2. The owner confirms frames.
+  3. Run train-veo-detector on CG, f7925 and Norton with base
+     `~/Football Analysis Worker/models/yolo11m.pt`.
+  4. Run eval-detector on RMC against the current `models/detector.json`, with and without tiles.
+  5. Promote only past the spec's gates.
 
 ## Teams by kit and the ball (spec660, 2026-11-24)
 

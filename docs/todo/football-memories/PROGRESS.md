@@ -1,5 +1,16 @@
 # Football Memories: progress
 
+## Combined atlas and frame-label checkpoint — 25 November 2026
+
+Merged committed `codex/team-kits` throughc12ab55, preserving spec670 frame labelling
+alongside spec690. No code conflicts or existing assertion changes. Combined
+frontend954 tests, typecheck and hosted build pass. Backend854 SQLite+854 PostgreSQL,
+lint/format/mypy/Alembic unchanged green. Isolated cached-footage browser: actual
+drags in both views changed only points6/12/17 (17 keyboard); saved revision1,
+goals_confirmed=false and corners=null. Production acceptance remains the owner’s.
+Deployment, final responsive check and publication pending at this checkpoint.
+
+
 ## Complete pitch atlas implementation checkpoint — 25 November 2026
 
 Branch `codex/local-video-analytics` (worker `codex/local-pipeline`). Spec690 replaces

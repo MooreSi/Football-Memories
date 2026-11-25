@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PlayerLabRoute } from "./components/PlayerLabAccess";
-import { VideoLabRoute } from "./components/VideoLabAccess";
+import { LabelFramesRoute, VideoLabRoute } from "./components/VideoLabAccess";
 import { AppShell } from "./components/AppShell";
 import { EmptyState } from "./components/ui/EmptyState";
 import { ClipExplorerPage } from "./pages/ClipExplorerPage";
@@ -58,6 +58,7 @@ export function App() {
         <Route path="player" element={<PlayerPage />} />
         <Route path="player-lab" element={<PlayerLabRoute />} />
         <Route path="video-lab" element={<VideoLabRoute />} />
+        <Route path="video-lab/labels" element={<LabelFramesRoute />} />
         <Route path="player/lab" element={<Navigate to="/player-lab" replace />} />
         <Route path="player/choose" element={<PlayerPage choose />} />
         <Route path="player/:id" element={<PlayerHubPage />} />
