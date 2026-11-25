@@ -27,3 +27,22 @@ it("carries every boundary vertex through a pan at fractional correction times",
  expect(actual[0][0]).toBeCloseTo(-0.1);
  expect(actual[3][0]).toBeCloseTo(0.4);
 });
+
+it("shows a painted-line pitch proposal live instead of the colour guess, below human and accepted boundaries",async()=>{
+ const {pitchProposal}=await import("./panorama");
+ const base={panorama_id:"a".repeat(64),source_sha256:"b".repeat(64),image:"pitch_atlas.jpg",width:2400,height:900,times:[0,1,2],cuts:[false,true],frame_to_panorama:[id,id,id],frame_to_world:[id,id,id],projection:{kind:"cylindrical" as const,origin:[-1,-.5] as [number,number],span:[2,1.5] as [number,number]},keyframe_times:[0]};
+ const outline:[number,number][]=[[.3,.5],[.7,.5],[.7,.9],[.3,.9]];
+ const lined={...base,suggested_boundary:outline,pitch_outline:{method:"painted_lines"}};
+ const proposal=pitchProposal(lined,"b".repeat(64))!;
+ expect(proposal).toBeDefined();
+ const withProposal={...camera,proposal};
+ const live=boundaryAt(withProposal,[],[{time_s:0,points}],0.5)!;
+ expect(live).not.toEqual(points);
+ expect(live.length).toBeGreaterThanOrEqual(3);
+ // A human correction in this shot still wins.
+ const corrected=points.map(([x,y])=>[x,y+0.05] as [number,number]);
+ expect(boundaryAt(withProposal,[{time_s:0,points:corrected}],[],0.5)).toEqual(corrected);
+ // Colour envelopes are not presented as a line-based proposal; nor is another video's atlas.
+ expect(pitchProposal({...base,suggested_boundary:outline},"b".repeat(64))).toBeUndefined();
+ expect(pitchProposal(lined,"c".repeat(64))).toBeUndefined();
+});

@@ -8,6 +8,7 @@ export function boundaryAt(camera:Camera,manual:Boundary[],automatic:Boundary[],
  if(camera.panorama) return panoramaBoundaryAt(camera.panorama,at);
  const human=manual.map(k=>({k,points:carryPoints(camera,k.points,k.time_s,at)})).filter(v=>v.points);
  if(human.length) return human.reduce((a,b)=>Math.abs(a.k.time_s-at)<=Math.abs(b.k.time_s-at)?a:b).points;
+ if(camera.proposal) return panoramaBoundaryAt(camera.proposal,at);
  const latest=automatic.filter(k=>k.time_s<=at).sort((a,b)=>b.time_s-a.time_s)[0];
  if(!latest || at-latest.time_s>1.5 || latest.points.length<3) return null;
  return carryPoints(camera,latest.points,latest.time_s,at);

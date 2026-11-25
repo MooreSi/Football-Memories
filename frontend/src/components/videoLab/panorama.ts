@@ -3,9 +3,16 @@ import { inverse } from "./landmarks";
 import type { Corners } from "./pitch";
 export type GoalCandidate={id:string;posts:Corners;tops:Corners;time_s:number;support:number;score:number;requires_review:true};
 export type CylinderProjection={kind:"cylindrical";origin:[number,number];span:[number,number]};
-export type Panorama = { projection?:CylinderProjection;frame_to_world?:(number[]|null)[];selected_goals?:GoalCandidate[];goal_candidates?:GoalCandidate[];birdseye?:{matrix:number[];normal:number[];bounds:number[]}; panorama_id:string;source_sha256:string;image:string;width:number;height:number;times:number[];cuts:boolean[];frame_to_panorama:(number[]|null)[];suggested_boundary:Corners;keyframe_times:number[] };
+export type PitchOutline={method:string;unseen_sides?:boolean[];centre_circle?:boolean};
+export type Panorama = { pitch_outline?:PitchOutline|null;projection?:CylinderProjection;frame_to_world?:(number[]|null)[];selected_goals?:GoalCandidate[];goal_candidates?:GoalCandidate[];birdseye?:{matrix:number[];normal:number[];bounds:number[]}; panorama_id:string;source_sha256:string;image:string;width:number;height:number;times:number[];cuts:boolean[];frame_to_panorama:(number[]|null)[];suggested_boundary:Corners;keyframe_times:number[] };
 export type PanoramaReview = {panorama_id:string;points:Corners;corners?:Corners|null;goal_posts?:Corners|null;goals_confirmed?:boolean;accepted:true};
 export type BoundPanorama = {data:Panorama;review:PanoramaReview};
+/** An unreviewed outline found from painted pitch lines, shown live until a boundary is
+ * accepted. Turf-colour envelopes are never promoted this way. */
+export function pitchProposal(data:Panorama|undefined,hash:string|undefined):BoundPanorama|undefined {
+ if(!data?.projection||!hash||data.source_sha256!==hash||data.pitch_outline?.method!=="painted_lines"||data.suggested_boundary.length<3)return undefined;
+ return {data,review:{panorama_id:data.panorama_id,points:data.suggested_boundary,accepted:true}};
+}
 export function bindPanorama(data:Panorama|undefined,review:PanoramaReview|null|undefined,hash:string|undefined):BoundPanorama|undefined {
  return data&&hash&&data.source_sha256===hash&&review?.accepted&&review.panorama_id===data.panorama_id?{data,review}:undefined;
 }

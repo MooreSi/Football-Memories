@@ -27,7 +27,7 @@ function apply(m: Matrix, [x, y]: [number, number]): [number, number] {
 }
 
 /** Each sample's camera relative to the start of its segment (segments are split at cuts). */
-export type Camera = { panorama?:BoundPanorama; times: number[]; segment: number[]; total: Matrix[]; inverse: Matrix[] };
+export type Camera = { panorama?:BoundPanorama; proposal?:BoundPanorama; times: number[]; segment: number[]; total: Matrix[]; inverse: Matrix[] };
 
 export function buildCamera(motion: CameraMotion): Camera {
   const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
