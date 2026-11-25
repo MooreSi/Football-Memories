@@ -1,5 +1,34 @@
 # Handoff
 
+## Spec700 calibration benchmark IN PROGRESS — 25 November2026
+
+Owner approved PnLCalib + camera-aware refinement experiment. App branch
+codex/local-video-analytics; worker codex/local-pipeline. Pinned official PnLCalib
+42088864170f75ea02e76d20e9a9a1db59edb3e3, public MV keypoint/line weights and separate
+Python3.12 models/pnl-env prepared explicitly, outside gateway runtime. Base worker
+lockfile/deps unchanged. Weight hashes/licenses recorded in private profile and
+preparation records. No source-account access or existing result writes.
+
+Worker new pitch_geometry, pitch_template, pitch_models, pnl_inference and
+pitch_temporal modules: robust mixed point/dual-line DLT + refinement, degeneracy/
+horizon checks, youth-safe outline semantics with explicit extra dimensions,
+pinned offline subprocess adapter and camera-step transfer refusing cuts/expiry.
+New geometry/profile/template/temporal tests observed behavioural red then green.
+Real observations cached for four different games in runtime/pitch-benchmark-700:
+30/40/24/20 frames,157/353/73/35 raw keypoints,95/200/86/63 lines at thresholds
+.3434/.25. First unmodified .7867 line threshold found no lines in probes. Adult
+model assumptions and low fit residuals can yield wrong/collapsed fields; these
+predictions are not human labels and have NOT been promoted or deployed.
+
+Next: finish held-out assistant-marking benchmark, CLI and immutable report
+publication; compare current/adult-template/temporal candidates; integrate useful
+reporting in app, verify/review and publish a new child preserving latest labels.
+Global atlas fitting probes are private experiments, not production features.
+Actual independent human accuracy remains unverified. Full suite checkpoint
+results recorded in worker PROGRESS when complete. External .claude/launch.json
+edit in app remains untouched/unstaged.
+
+
 ## Complete pitch atlas admin preview DEPLOYED — 25 November 2026
 
 App3e276e3 (includes committed spec670 frame labels), gateway4a878df and native
