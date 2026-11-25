@@ -189,6 +189,8 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     // An unreadable sample (bending over, crossing someone) keeps the nearest decided kit.
     const filled = decided.map((d, i) => {
       if (d) return d;
+      // A split window (a swap inside it): the sample's own reading, when it shows a kit, says who this is.
+      if (matched[i]) return { kit: matched[i]!, share: 0.5 };
       let best: { kit: KitPrototype; share: number } | null = null, gap = Infinity;
       for (let j = 0; j < list.length; j++) {
         const g = Math.abs(list[j].time_s - list[i].time_s);
@@ -221,7 +223,10 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
       // Your label disagrees with the kit here: a tracker swap, unless your label is itself a dark kit
       // and this colour is only a passing minority of the tracklet (someone crossing in front).
       const minority = (counts.get(f.kit) ?? 0) < list.length / 2;
-      return ownKitDecides || !minority || held(i) >= SWAP_S ? assignment(f.kit, "kit", f.share) : { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
+      // "Not a player" on someone in team kit (a substitute by the bags) is said knowingly: it yields only
+      // to a later stretch in another kit, the tracker moving onto a player.
+      const swap = mine.role === "other" ? minority && held(i) >= SWAP_S : ownKitDecides || !minority || held(i) >= SWAP_S;
+      return swap ? assignment(f.kit, "kit", f.share) : { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
     });
     timelines.set(track, { times: list.map(r => r.time_s), values });
     const top = [...counts].sort((a, b) => b[1] - a[1])[0];

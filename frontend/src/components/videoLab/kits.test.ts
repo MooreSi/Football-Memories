@@ -91,6 +91,12 @@ describe("kitTimeline", () => {
     expect(teams.at(22, 12.333)).toMatchObject({ team: "opponent", source: "kit" });
     expect(teams.at(22, 11.667)).toMatchObject({ team: "own", source: "kit" });
   });
+  it("where a swap splits the window evenly, the sample's own colour decides (RCW vs CG 3:34)", () => {
+    const rows = [...labelled, row(23, 9, null), row(23, 10, YELLOW), row(23, 10.333, YELLOW), row(23, 10.667, RED), row(23, 11, RED), row(23, 11.5, RED)];
+    const teams = kitTimeline(rows, learnKits(labelled, labels), labels, none);
+    expect(teams.at(23, 10.333)).toMatchObject({ team: "own" });
+    expect(teams.at(23, 11)).toMatchObject({ team: "opponent" });
+  });
   it("recognises the opposition keeper's pink kit", () => {
     const teams = kitTimeline([...labelled, ...run(22, 10, 12, [118, 190, 131])], kits, labels, none);
     expect(teams.at(22, 11)).toMatchObject({ team: "opponent", role: "goalkeeper", source: "kit" });
@@ -117,6 +123,12 @@ describe("kitTimeline", () => {
     const teams = kitTimeline(rows, kits, [...labels, { track_id: 61, team: null, role: "referee" }], none);
     expect(teams.at(61, 25)).toMatchObject({ role: "referee", source: "you" });
     expect(teams.at(61, 32)).toMatchObject({ team: "own", role: "player", source: "kit" });
+  });
+  it("a substitute in team kit you marked as not a player stays not a player (RCW vs CG 0:19, by the bags)", () => {
+    const withOther = [...labels, { track_id: 70, team: null, role: "other" } as TrackLabel, { track_id: 71, team: null, role: "other" } as TrackLabel];
+    const rows = [...labelled, ...run(71, 0, 30, [34, 126, 123]), ...run(70, 40, 50, YELLOW)];
+    const teams = kitTimeline(rows, learnKits(rows, withOther), withOther, none);
+    expect(teams.at(70, 45)).toMatchObject({ role: "other", source: "you" });
   });
   it("your team label does not follow the tracker onto the referee in black", () => {
     const fallback = new Map<number, Assignment>([[50, { team: null, role: "referee", source: "similar", confidence: 0.7 }]]);

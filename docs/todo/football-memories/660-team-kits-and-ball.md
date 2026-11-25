@@ -110,6 +110,19 @@ Second match unchanged or better: no labels 26 right/1 wrong; one per team 56/8;
 overlapping in one box; 983 at 3:34 is a mid-tracklet swap. Non-players 198/199 are adults at
 the touchline in red and amber coats.
 
+### Follow-up the same morning
+- A split window (swap inside it) now uses the sample's own kit before borrowing a neighbour's
+  (fixed 983 at 3:34). "Not a player" on someone in team kit holds unless the kit is a later
+  minority stretch held 2 s+ (substitutes 198/199 by the bags at 0:19).
+- Assistant wrote labels to the live run once the owner had been idle 5 min: review rev 39 on
+  8389ebf0 (gateway lock, revision check, reviews/39.json kept): 15 more of our keeper's
+  tracklets and 198/199 as not players. Gateway parses all 44 labels and learns 44 examples.
+- Live labels (rev 39), on screen: 184/186 right, 2 wrong, 0 open, 0 non-players given a role.
+  The 2 wrong are one ~0.3 s moment at 3:21 (982 and 989 overlap; each box covers two people
+  and the ring stays with the tracked player). Second match unchanged (27/1, 56/8, 103/2).
+- Deploy slip: e0f0796 was deployed over the other session's 2de8b34 (pitch boundaries) for
+  ~5 minutes; rolled back, merged, and the merge deployed instead.
+
 ## Second match: Racing Club Warwick vs Kidderminster RMC (16 Nov, 18:00-22:00)
 Owner asked for a 4-minute check on another Veo match. Used the saved local 10-minute sample
 (no source-account access); cut 4 minutes, standard analysis + player views (647 tracklets),
