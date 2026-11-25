@@ -35,6 +35,28 @@ describe("trackBall", () => {
     expect(path.every(p => p.x < 1700 / W)).toBe(true);
     expect(path.filter(p => p.time_s < 5)).toHaveLength(15);
   });
+  it("a spare is still a spare after it was out of view for a few seconds (RCW vs CG 0:03-0:15, keeper holding the match ball)", () => {
+    const at = (t: number) => ({ time_s: t, balls: [{ box: ball(120, 750).box, score: 0.85 }] });
+    const samples = [...Array.from({ length: 13 }, (_, i) => at(3 + i / 10)), ...Array.from({ length: 52 }, (_, i) => at(9.8 + i / 10))];
+    expect(trackBall(samples, W, H)).toEqual([]);
+  });
+  it("checked ten times a second, a ball seen in just one or two frames is a stray detection, not a bridge for the ring (RCW vs CG 0:14)", () => {
+    const seen = (t: number, x: number, score = 0.8) => ({ time_s: t, balls: [{ box: ball(x, 600).box, score }] });
+    const samples = Array.from({ length: 50 }, (_, i) => {
+      const t = i / 10;
+      if (t <= 1) return seen(t, 800 + i * 5);
+      if (Math.abs(t - 1.8) < 1e-6) return seen(t, 1250, 0.33);
+      if (t >= 3) return seen(t, 700 - (i - 30) * 5);
+      return { time_s: t, balls: [] };
+    });
+    const path = trackBall(samples, W, H);
+    expect(path.some(p => Math.abs(p.time_s - 1.8) < 1e-6)).toBe(false);
+    expect(ballAt(path, 1.8)).toBeNull();
+  });
+  it("checked three times a second, a single sighting still counts", () => {
+    const samples = [0, 1 / 3, 2 / 3, 1].map((t, i) => ({ time_s: t, balls: i === 1 ? [{ box: ball(900, 500).box, score: 0.8 }] : [] }));
+    expect(trackBall(samples, W, H)).toHaveLength(1);
+  });
   it("ignores a ball cut off at the side of the picture (Veo keeps the match ball inside the frame)", () => {
     const samples = Array.from({ length: 6 }, (_, i) => ({ time_s: i / 3, balls: [{ box: [1895, 590, 1920, 612], score: 0.95 }] }));
     expect(trackBall(samples, W, H)).toEqual([]);

@@ -24,6 +24,14 @@ describe("propagateTeams", () => {
     const result = propagateTeams(people, [{ track_id: 1, team: null, role: "referee" }, { track_id: 2, team: null, role: "other" }], [], []);
     expect(result.get(3)).toMatchObject({ role: "referee", source: "similar" });
   });
+  it("a dark kit takes a keeper's role only from someone who also looks like the keeper (spectators in black coats do not)", () => {
+    // Spec 660, RCW vs CG: our keeper's other tracklets look 0.73+ like his labelled ones; coats at most 0.6.
+    const dark = (track_id: number, v: number[], kit: number[]): AppearanceTrack => ({ ...track(track_id, 0, v), kit, views: [{ v, kit }, { v, kit }] });
+    const people = [dark(1, [1, 0], [17, 126, 125]), dark(2, [0.9, 0.436], [18, 126, 126]), dark(3, [0.5, 0.866], [18, 127, 124])];
+    const result = propagateTeams(people, [{ track_id: 1, team: "own", role: "goalkeeper" }], [], []);
+    expect(result.get(2)).toMatchObject({ team: "own", role: "goalkeeper", source: "similar" });
+    expect(result.get(3)).toMatchObject({ source: "none" });
+  });
   it("a close match to players you labelled outranks a look-alike group label", () => {
     const result = propagateTeams(tracks, [{ track_id: 1, team: "own", role: "player" }], [{ group_id: 2, team: null, role: "other" }], []);
     expect(result.get(4)).toMatchObject({ team: "own", role: "player", source: "similar" });

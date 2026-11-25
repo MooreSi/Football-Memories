@@ -73,6 +73,43 @@ Veo footage (worker docs), so first tried tiles with the existing model (no down
 `--ball-tiles` + app camera-steadied spare filter (`stabilise`): ball shown 92.6% of the clip;
 10-s audit 22/24 right, 1 wrong (0:15 spare by the coach, resting only ~3 s), 1 unseen (2:35).
 
+## Keeper, swaps and ball strays (25 Nov 2026)
+Goal check said our keeper, the "merged" boxes and two ball moments were still wrong.
+- Our keeper: assistant crop check found 18 tracklets of him (16, 136, 265, 270, 302, 317,
+  319, 380, 435, 502, 519, 614, 745, 890, 897, 1078, 1091, 1105; several swap onto a nearby
+  player, which the kit check handles). Their look-alike score to each other is 0.73+, coats and
+  spectators at most 0.66. `teams.ts`: a dark view counts towards a dark labelled person only
+  when they also look alike (cosine 0.58+); dark kits share colour so colour alone matched coats.
+  Swept 0.5-0.65: 0.55-0.6 plateau, 0.5 lets spectators become keeper, 0.65 loses referees.
+- "Merged boxes": on inspection 343 (0:58) and 983 (3:34) are tracker swaps whose reading at
+  that moment is plain. `kits.ts`: a tracklet's first or last sample that is 25+ nearer one kit
+  than any other decides alone (an odd frame mid-tracklet still does not; existing test kept).
+  Tried "plain anywhere": broke the odd-frame test and added wrong on the second match; rejected.
+- Owner's referee label on 200 covers 2.7 s of a yellow player (0:31-0:34) after a swap; it
+  showed that player as referee and, one referee per moment, hid the real referee. A team kit held
+  2 s+ on a dark-kit label is now the tracker on someone else.
+- Ball 0:15: our keeper is holding the match ball (undetectable); the spare by the coach rests in
+  one ground spot 0:03-0:15 with a gap out of view, so the spare look-around grew 8 s to 15 s.
+  At ten checks a second a sighting with no close neighbour within 0.3 s (allowing a picture width
+  a second) is a stray and cannot carry the ring across a gap (one at 0:14.1, score 0.33).
+- Ball 2:35: hidden in a goalmouth scramble ~60 m away. Not found by the YOLO11 tiles nor by the
+  owner's three local football models (best.pt, ddp-latest-football.pt, ddp_ddp-simo.pt; offline
+  probe, no install or download). Interpolating would place the ring ~190 px off, so it stays
+  unshown.
+
+| Labels (RCW vs CG, on screen) | Right | Wrong | Open | Non-players given a role |
+|---|---|---|---|---|
+| owner rev 31, before today | 174/186 | 4 | 8 | 3 referee, 1 red, 1 yellow |
+| owner rev 31, today's code | 175/186 | 3 | 8 | 1 red, 1 yellow |
+| owner rev 34 (adds 200 referee, keeper 16, 502) | 180/186 | 3 | 3 | 1 red, 1 yellow |
+| rev 34 + assistant's 16 keeper tracklets (not written: owner was labelling live) | 182/186 | 3 | 1 | 1 red, 1 yellow |
+
+Second match unchanged or better: no labels 26 right/1 wrong; one per team 56/8; six 103/2
+(was 103/3). Ball 10-s audit: 23/24 right (0:15 correctly shows no ball), 2:35 unseen; shown
+91.4% of the clip (stray removal 92.6 to 91.4). Remaining wrong: 982/989 at 3:21 are two players
+overlapping in one box; 983 at 3:34 is a mid-tracklet swap. Non-players 198/199 are adults at
+the touchline in red and amber coats.
+
 ## Second match: Racing Club Warwick vs Kidderminster RMC (16 Nov, 18:00-22:00)
 Owner asked for a 4-minute check on another Veo match. Used the saved local 10-minute sample
 (no source-account access); cut 4 minutes, standard analysis + player views (647 tracklets),

@@ -30,7 +30,7 @@ const CENTRE = 1.2;      // preference for the middle of the picture (the camera
 const JUMP = 2.0;        // cost per picture width moved between sightings
 const FAST = 4.0, CRUISE = 0.6; // extra cost per picture width per second above a fast shot's pace
 
-const SPARE_S = 6, SPARE_SEEN = 15, SPARE_PX = 12, SPARE_LOOK_S = 8;
+const SPARE_S = 6, SPARE_SEEN = 15, SPARE_PX = 12, SPARE_LOOK_S = 15;
 
 /**
  * Balls resting in one spot for many seconds are spares by the bags or beyond a fence; a match ball
@@ -92,7 +92,29 @@ export function trackBall(input: BallSample[], width: number, height: number, to
   nodes.forEach((node, n) => { if (node.best < lowest) { lowest = node.best; end = n; } });
   const path: BallPoint[] = [];
   for (let n = end; n >= 0; n = nodes[n].back) path.push({ time_s: nodes[n].time_s, x: nodes[n].x, y: nodes[n].y, r: nodes[n].r });
-  return path.reverse();
+  return withoutStrays(path.reverse(), samples, width, height);
+}
+
+const NEAR_S = 0.3, NEAR_W = 0.04, PACE = 1.0, SUPPORT = 1, DENSE_S = 0.2;
+
+/**
+ * Checked about ten times a second (whole-clip refinement), the match ball is detected again in
+ * the frames either side, close by (allowing a picture width a second of travel). A sighting with
+ * no such neighbour is a stray detection (grass, a sock) that would otherwise carry the ring
+ * across a gap (RCW vs CG 0:14).
+ * Three checks a second keeps single sightings.
+ */
+function withoutStrays(path: BallPoint[], samples: BallSample[], width: number, height: number): BallPoint[] {
+  const steps = samples.slice(1).map((s, i) => s.time_s - samples[i].time_s).sort((a, b) => a - b);
+  if (!steps.length || steps[steps.length >> 1] > DENSE_S) return path;
+  return path.filter(p => {
+    let near = 0;
+    for (const s of samples) {
+      if (s.time_s === p.time_s || Math.abs(s.time_s - p.time_s) > NEAR_S) continue;
+      if (s.balls.some(({ box }) => Math.hypot((box[0] + box[2]) / 2 / width - p.x, ((box[1] + box[3]) / 2 / height - p.y) * height / width) <= NEAR_W + PACE * Math.abs(s.time_s - p.time_s))) near++;
+    }
+    return near >= SUPPORT;
+  });
 }
 
 const GLIDE_S = 1.5, HOLD_S = 0.2;

@@ -31,6 +31,14 @@ admin-only (3/32, health 200, anonymous 401). Next: exposure/cast-robust colour 
 Tiled ball run published as 8389ebf0 (refined child of 03964514, 23 labels copied; worker
 bc5d91a `--ball-tiles`). App `4a2b5d0` (camera-steadied spare filter) deployed admin-only the
 same way (3/32, health 200, anonymous 401). Ball audit 22/24 right on that run.
+25 Nov goal check (spec660 "Keeper, swaps and ball strays"): dark kits need a look-alike match
+too (no more coats as keeper/referee); a plain reading decides a tracklet's first/last sample;
+a team kit held 2 s+ on a dark-kit label is a swap (owner's referee label on 200); ball spares
+judged over 15 s; strays with no close neighbour dropped at 10/s. Owner rev 34 labels: 180/186
+right on screen, 3 wrong (two players in one box at 3:21, a swap at 3:34). The owner was labelling
+the live run (8389ebf0 review rev 35 at 08:33 UTC) so the assistant wrote no labels; keeper
+tracklets still unlabelled there: 317 (0:35-0:48) and 897 (2:53-3:01), plus 14 more listed in
+spec660. Ball 23/24 on the 10-s audit; 2:35 is unseen by every local detector.
 
 ## Selected-window progress (spec640, 2026-11-24)
 

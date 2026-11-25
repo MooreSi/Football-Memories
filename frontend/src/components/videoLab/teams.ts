@@ -7,6 +7,10 @@ const NONE: Assignment = { team: null, role: null, source: "none", confidence: 0
 const SIMILAR = 0.45;
 const MARGIN = 0.08;
 const ALONE = 0.6;
+// Dark kits (keeper in black, referee, coats) share colour, so the same person must also look alike.
+const DARK_LOOK = 0.58;
+const isDark = (k?: number[] | null) => !!k && Math.hypot(k[1] - 128, k[2] - 128) < 15;
+const bothDark = (a: AppearanceView, b: AppearanceView) => isDark(a.kit) && isDark(b.kit);
 
 function cosine(a: number[], b: number[]) {
   let dot = 0, na = 0, nb = 0;
@@ -66,7 +70,7 @@ export function propagateTeams(tracks: AppearanceTrack[], trackLabels: TrackLabe
         const byLabel = new Map<string,number>();
         for (const anchor of anchors) {
           const label=own.get(anchor.track_id)!, key=`${label.team}|${label.role}`;
-          for (const sample of anchor.views ?? []) byLabel.set(key,Math.max(byLabel.get(key) ?? -1,similarity(view,sample)));
+          for (const sample of anchor.views ?? []) { if (bothDark(view, sample) && cosine(view.v, sample.v) < DARK_LOOK) continue; byLabel.set(key,Math.max(byLabel.get(key) ?? -1,similarity(view,sample))); }
         }
         const [first,second]=[...byLabel].sort((a,b)=>b[1]-a[1]);
         if(first && first[1]>=0.65 && (!second || first[1]-second[1]>=0.1)) votes.push({key:first[0],score:first[1]});

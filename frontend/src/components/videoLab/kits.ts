@@ -18,7 +18,9 @@ const RADIUS = 20;      // how far a sample may sit from a kit (Lab units, brigh
 const MARGIN = 6;       // and how much nearer it must be than the next kit
 const CHROMA = 15;      // kits less colourful than this (black, grey, white) never decide alone
 const WINDOW_S = 1.05;  // neighbouring samples that vote, either side (about three at 3 per second)
+const PLAIN = 25;       // a reading this much nearer one kit than any other decides alone
 const CARRY_S = 2.0;    // an unreadable sample takes the nearest decided one within this time
+const SWAP_S = 2.0;     // a team colour held this long on your dark-kit label is the tracker on someone else
 const MIN_EXAMPLES = 3;
 
 const keyOf = (team: Team | null, role: Role) => `${team}|${role}`;
@@ -105,6 +107,16 @@ function match(colour: number[] | null | undefined, kits: KitPrototype[]): KitPr
   return d2 - d1 >= MARGIN ? first : null;
 }
 
+/** Kit of a reading so plain that it decides its moment alone (a tracker swap starts exactly here). */
+function plainly(colour: number[] | null | undefined, kits: KitPrototype[]): KitPrototype | null {
+  const first = match(colour, kits);
+  if (!first) return null;
+  const d1 = kitDistance(colour!, first.lab);
+  let d2 = Infinity;
+  for (const kit of kits) if (!sameKit(kit, first)) d2 = Math.min(d2, kitDistance(colour!, kit.lab));
+  return d2 - d1 >= PLAIN ? first : null;
+}
+
 /**
  * Does this colour show a different known kit from `label`'s own? (The tracker moved from a labelled
  * player onto someone else, often the referee in black.) Only a colourful label kit can be contradicted.
@@ -163,6 +175,10 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     const matched = list.map(r => { const m = match(r.colour_lab, decisive); return m && canon.get(keyOf(m.team, m.role))!; });
     // A short window of samples votes, so one odd frame cannot flip a player.
     const decided: ({ kit: KitPrototype; share: number } | null)[] = list.map((r, i) => {
+      // A plain reading decides a tracklet's first or last sample, where the tracker has just moved on
+      // to someone else; in the middle of another kit it is one odd frame and the window votes.
+      const plain = i === 0 || i === list.length - 1 ? plainly(r.colour_lab, decisive) : null;
+      if (plain) return { kit: canon.get(keyOf(plain.team, plain.role))!, share: 1 };
       const votes = new Map<KitPrototype, number>();
       let total = 0, inWindow = 0;
       for (let j = i; j >= 0 && r.time_s - list[j].time_s <= WINDOW_S; j--) { inWindow++; const m = matched[j]; if (m) { votes.set(m, (votes.get(m) ?? 0) + 1); total++; } }
@@ -181,6 +197,13 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
       // ...unless this sample plainly shows another known kit (the tracker moved onto someone else).
       return best && !contradicts(list[i].colour_lab, kits.filter(k => sameKit(k, best!.kit)), kits) ? best : null;
     });
+    // How long the kit at sample i is seen without a break: seconds of it is someone else, not a passer-by.
+    const held = (i: number) => {
+      let from = i, to = i;
+      while (from > 0 && filled[from - 1]?.kit === filled[i]?.kit) from--;
+      while (to < list.length - 1 && filled[to + 1]?.kit === filled[i]?.kit) to++;
+      return list[to].time_s - list[from].time_s;
+    };
     const counts = new Map<KitPrototype, number>();
     for (const f of filled) if (f) counts.set(f.kit, (counts.get(f.kit) ?? 0) + 1);
     const mine = label.get(track);
@@ -196,9 +219,9 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
       if (!mine) return assignment(f.kit, "kit", f.share);
       if (f.kit.team === mine.team && f.kit.role === mine.role) return assignment(f.kit, "you", 1);
       // Your label disagrees with the kit here: a tracker swap, unless your label is itself a dark kit
-      // and this colour is only a passing minority of the tracklet.
+      // and this colour is only a passing minority of the tracklet (someone crossing in front).
       const minority = (counts.get(f.kit) ?? 0) < list.length / 2;
-      return ownKitDecides || !minority ? assignment(f.kit, "kit", f.share) : { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
+      return ownKitDecides || !minority || held(i) >= SWAP_S ? assignment(f.kit, "kit", f.share) : { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
     });
     timelines.set(track, { times: list.map(r => r.time_s), values });
     const top = [...counts].sort((a, b) => b[1] - a[1])[0];

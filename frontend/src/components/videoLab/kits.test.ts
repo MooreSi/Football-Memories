@@ -85,6 +85,12 @@ describe("kitTimeline", () => {
     const teams = kitTimeline(rows, kits, labels, none);
     expect(teams.at(21, 12.333)).toMatchObject({ team: "own" });
   });
+  it("a tracklet's last sample plainly in the other kit is the tracker moving onto someone else (RCW vs CG 0:58)", () => {
+    const rows = [...labelled, ...run(22, 10, 12, YELLOW), row(22, 12.333, RED)];
+    const teams = kitTimeline(rows, learnKits(labelled, labels), labels, none);
+    expect(teams.at(22, 12.333)).toMatchObject({ team: "opponent", source: "kit" });
+    expect(teams.at(22, 11.667)).toMatchObject({ team: "own", source: "kit" });
+  });
   it("recognises the opposition keeper's pink kit", () => {
     const teams = kitTimeline([...labelled, ...run(22, 10, 12, [118, 190, 131])], kits, labels, none);
     expect(teams.at(22, 11)).toMatchObject({ team: "opponent", role: "goalkeeper", source: "kit" });
@@ -100,6 +106,17 @@ describe("kitTimeline", () => {
     const teams = kitTimeline([...labelled, ...run(31, 10, 12, BEIGE)], kits, labels, none);
     expect(teams.at(4, 2)).toMatchObject({ role: "referee", source: "you" });
     expect(teams.at(31, 11)).toBeUndefined();
+  });
+  it("your referee label holds through a moment of team colour (a player passing in front)", () => {
+    const rows = [...labelled, ...run(60, 10, 14, BLACK), ...run(60, 14.333, 15, YELLOW), ...run(60, 15.333, 25, BLACK)];
+    const teams = kitTimeline(rows, kits, [...labels, { track_id: 60, team: null, role: "referee" }], none);
+    expect(teams.at(60, 14.667)).toMatchObject({ role: "referee", source: "you" });
+  });
+  it("your referee label does not follow the tracker onto a player for seconds on end (RCW vs CG 0:31-0:34)", () => {
+    const rows = [...labelled, ...run(61, 20, 30.333, BLACK), ...run(61, 31, 33.667, YELLOW)];
+    const teams = kitTimeline(rows, kits, [...labels, { track_id: 61, team: null, role: "referee" }], none);
+    expect(teams.at(61, 25)).toMatchObject({ role: "referee", source: "you" });
+    expect(teams.at(61, 32)).toMatchObject({ team: "own", role: "player", source: "kit" });
   });
   it("your team label does not follow the tracker onto the referee in black", () => {
     const fallback = new Map<number, Assignment>([[50, { team: null, role: "referee", source: "similar", confidence: 0.7 }]]);

@@ -97,3 +97,7 @@ referee/keeper per team per moment. On RCW vs Kidderminster CG this took same-ma
 audit accuracy from 15% to about 94% of players on screen; merged two-player boxes remain
 wrong. The ball is not in `sample.mp4`: draw it from `detections.jsonl`, choosing one smooth,
 central path (Veo follows play) so spare balls by the bags are ignored.
+Dark kits share colour, so a dark person takes a labelled dark role only when the look-alike
+(ReID cosine) is also 0.58+: on RCW vs CG our keeper's tracklets score 0.73+ to each other and
+coats at most 0.66. A keeper holding the ball is undetectable as a ball; a spare that rests,
+leaves the picture and returns is still a spare (judge resting over 15 s on the ground).
