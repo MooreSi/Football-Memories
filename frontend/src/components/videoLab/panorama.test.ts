@@ -53,3 +53,10 @@ it("composes panorama calibration into metres even when distant corners are behi
  const mapped=positions([{track_id:1,time_s:0,role:"unknown",team_id:null,image_box:[.4,.1,.6,.2]}],camera,[],{length_m:100,width_m:60});
  expect(mapped).toHaveLength(1);expect(mapped[0].x).toBeCloseTo(50);expect(mapped[0].y).toBeCloseTo(40);
 });
+
+it("uses the accepted panorama instead of an older local boundary throughout the video",async()=>{
+ const {buildCamera}=await import("./pitch");const {boundaryAt}=await import("./boundary");
+ const camera={...buildCamera({times:data.times,steps:[[1,0,0,0,1,0,0,0,1],[1,0,0,0,1,0,0,0,1]],cuts:data.cuts}),panorama:bindPanorama(data,review,data.source_sha256)};
+ const old:[number,number][]=[[.8,.8],[.95,.8],[.95,.95],[.8,.95]];
+ expect(boundaryAt(camera,[{time_s:0,points:old}],[],0)?.[0]).toEqual([.2,.2]);
+});

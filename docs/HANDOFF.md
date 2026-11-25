@@ -1,5 +1,17 @@
 # Handoff
 
+## Panorama acceptance precedence — 25 November 2026
+
+Accepted panorama geometry now overrides older local boundaries throughout registered
+views. The local boundary editor is hidden while the panorama is active; Stop using
+panorama restores local corrections. New priority regression observed red then green.
+Frontend release check934 passed (--maxWorkers=4), typecheck/hosted build pass.
+An earlier default-worker run timed out in the unchanged LibraryHosted permission
+test at5s; its four tests passed alone, then all934 passed with four workers. No
+assertions or timeout changed. Other gates remain the spec680 verified checkpoint.
+Unrelated externally changed .claude/launch.json is left untouched and unstaged.
+
+
 ## Stitched pitch review implemented (spec680) — 25 November 2026
 
 App/gateway branch `codex/local-video-analytics`, worker `codex/local-pipeline`.
