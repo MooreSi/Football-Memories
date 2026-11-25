@@ -20,15 +20,17 @@ export function BoundaryPanel({editing,selected,setSelected,onChange,onStart,onS
  </section>;
 }
 
-export function BoundaryLayer({points,onChange,selected,onSelect}:{points:Corners;onChange:(p:Corners)=>void;selected:number;onSelect:(n:number)=>void}) {
+/** `edge` draws each side between handles (curved where the view is not a plane); default straight. */
+export function BoundaryLayer({points,onChange,selected,onSelect,edge}:{points:Corners;onChange:(p:Corners)=>void;selected:number;onSelect:(n:number)=>void;edge?:(a:[number,number],b:[number,number])=>Corners}) {
+ const side=(i:number)=>{const a=points[i],b=points[(i+1)%points.length];return edge?edge(a,b):[a,b];};
  const svg=useRef<SVGSVGElement>(null),dragging=useRef<number|null>(null);
  const span=1/(1-2*PAD),origin=-PAD*span;
  const position=(e:React.PointerEvent|React.MouseEvent):[number,number]=>{const r=svg.current!.getBoundingClientRect();return [Math.max(-2,Math.min(3,origin+(e.clientX-r.left)/r.width*span)),Math.max(-2,Math.min(3,origin+(e.clientY-r.top)/r.height*span))];};
  const move=(i:number,p:[number,number])=>onChange(points.map((v,n)=>n===i?p:v));
  return <svg ref={svg} className="absolute inset-0 h-full w-full touch-none" viewBox={`${origin} ${origin} ${span} ${span}`} preserveAspectRatio="none" aria-label="Edit pitch boundary"
   onPointerMove={e=>{if(dragging.current!==null)move(dragging.current,position(e));}} onPointerUp={()=>{dragging.current=null;}} onPointerCancel={()=>{dragging.current=null;}}>
-  <polygon points={points.map(p=>p.join(",")).join(" ")} fill="#22c55e" fillOpacity={0.08} stroke="#22c55e" strokeWidth={0.003}/>
-  {points.map((p,i)=>{const q=points[(i+1)%points.length];return <line key={`edge${i}`} x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} stroke="transparent" strokeWidth={0.025} className="cursor-copy" onDoubleClick={e=>{if(points.length<32){const next=[...points];next.splice(i+1,0,position(e));onChange(next);onSelect(i+1);}}}/>;})}
+  <polygon points={points.flatMap((_,i)=>side(i).slice(0,-1)).map(p=>p.join(",")).join(" ")} fill="#22c55e" fillOpacity={0.08} stroke="#22c55e" strokeWidth={0.003}/>
+  {points.map((_,i)=><polyline key={`edge${i}`} points={side(i).map(p=>p.join(",")).join(" ")} fill="none" stroke="transparent" strokeWidth={0.025} className="cursor-copy" onDoubleClick={e=>{if(points.length<32){const next=[...points];next.splice(i+1,0,position(e));onChange(next);onSelect(i+1);}}}/>)}
   {points.map(([x,y],i)=><g key={i}>
    <ellipse cx={x} cy={y} rx={selected===i?0.01:0.007} ry={selected===i?0.018:0.012} fill={selected===i?"#38bdf8":"#22c55e"} stroke="white" strokeWidth={1.5} vectorEffect="non-scaling-stroke" role="slider" tabIndex={0} aria-label={`Boundary point ${i+1}`} aria-valuenow={Math.round(x*100)} aria-valuetext={`${Math.round(x*100)}% across, ${Math.round(y*100)}% down`}
     onFocus={()=>onSelect(i)} onPointerDown={e=>{onSelect(i);dragging.current=i;e.currentTarget.setPointerCapture(e.pointerId);}}

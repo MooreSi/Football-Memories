@@ -74,6 +74,25 @@ Release checks and admin deployment still being finished.
 
 # Handoff
 
+## Spec710 pitch homography fix (app) — 25 November 2026
+
+Branch codex/local-video-analytics. Bird's-eye/panorama/live boundary now agree:
+edges are ground-straight (ray-span) in every view, and the bird's-eye uses a
+camera-level ground plane from all registered frames instead of four goal
+contacts (new `frontend/src/components/videoLab/levelGround.ts`). No schema,
+gateway or worker change; existing atlas runs benefit after an app deploy.
+Nine new tests observed red then green (one stub-throw, the live-frame touchline
+and the start-boundary regression red for the geometric reason). Existing
+assertions unchanged. Verified frontend 967/189, typecheck, build; backend 854
+SQLite + 854 PostgreSQL, ruff, format, mypy, alembic. Browser: local read-only
+harness over cached jobs 76bc3c6b and da671289 (no gateway, no sign-in): game 2
+bird's-eye round centre circle/straight lines; bird drags on halfway line and
+touchline land on those lines in the panorama. Live overlay follows lines in the
+far field but near-field ground is ~3% of frame width off: worker per-frame
+registration limit, next step (ground-weighted refinement in the worker).
+Not deployed. External .claude/launch.json edit still untouched/unstaged.
+
+
 ## Spec700 calibration benchmark IN PROGRESS — 25 November2026
 
 Owner approved PnLCalib + camera-aware refinement experiment. App branch

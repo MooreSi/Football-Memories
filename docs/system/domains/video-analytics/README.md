@@ -146,3 +146,23 @@ geometry warning, check provenance, frame image and downloads. Gateway allows
 only the five declared artifacts with existing owner/admin checks. Optional
 models remain outside runtime; base deps and normal inference defaults unchanged.
 Release checks and admin deployment still being finished.
+
+
+Spec710 (pitch homography, 25 November 2026): two separate faults made the boundary
+look skewed. (1) Edges were interpolated in cylindrical atlas pixels in the panorama
+and live overlay but straight on the ground in the bird's-eye view, so long edges
+disagreed. A straight ground line is the positive span of its two end rays: draw
+atlas edges with `groundOutline`, and project only the vertices (homogeneous
+clipping keeps them straight) into a frame. (2) A homography through four goal-post
+contacts is ill-conditioned (two tight clusters, width extrapolated ~5x) and a false
+goal pair collapses it; on 261116 RCW the selected "goals" were mid-pitch. The
+bird's-eye now uses the camera's level horizon: every registered frame's x-axis is
+horizontal (residual 0.001-0.004 on two real games), so the ground normal is their
+smallest scatter eigenvector. Centre circles come out round with no goal input.
+Scale is relative; corners still give metres; goals are a fallback only when the
+camera never pans. The view is turned by the reviewed boundary's minimum-area
+rectangle (never the draft, so it does not spin while dragging). Pixel line-angle
+detection was tried and rejected: shadows and far-field radial streaks swamp it.
+Remaining: per-frame registration fits mostly distant texture, so near-field ground
+in live frames can sit ~3% of frame width off the atlas (two-lens seam parallax at
+bottom-centre). That is a worker registration limit, not the ground model.

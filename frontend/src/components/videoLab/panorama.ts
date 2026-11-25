@@ -52,8 +52,10 @@ export function panoramaBoundaryAt({data,review}:BoundPanorama,at:number):Corner
  const matrix=panoramaMatrixAt(data,at);
  if(!matrix)return null;
  const move=inverse(matrix),front=data.projection?1:Math.sign(matrix[6]*.5+matrix[7]*.7+matrix[8])||1;
- const polygon=data.projection?review.points.flatMap((p,i)=>{const q=review.points[(i+1)%review.points.length];return Array.from({length:8},(_,j)=>[p[0]+(q[0]-p[0])*j/8,p[1]+(q[1]-p[1])*j/8] as [number,number]);}):review.points;
- let vertices=polygon.map(p=>applyRay(move,panoramaRay(data,p)).map(v=>v*front));
+ // Boundary edges are straight on the ground: the positive span of their end rays. The
+ // pose is linear in rays, so edges stay straight here and homogeneous clipping is exact.
+ // Interpolating atlas pixels instead would bend every long edge across the pitch.
+ let vertices=review.points.map(p=>applyRay(move,panoramaRay(data,p)).map(v=>v*front));
  if(!vertices.every(p=>p.every(Number.isFinite)))return null;
  const planes=[(p:number[])=>p[2]-1e-8,(p:number[])=>p[0],(p:number[])=>p[2]-p[0],(p:number[])=>p[1],(p:number[])=>p[2]-p[1]];
  for(const distance of planes){
