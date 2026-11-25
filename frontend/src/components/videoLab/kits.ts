@@ -22,6 +22,13 @@ const PLAIN = 25;       // a reading this much nearer one kit than any other dec
 const CARRY_S = 2.0;    // an unreadable sample takes the nearest decided one within this time
 const SWAP_S = 2.0;     // a team colour held this long on your dark-kit label is the tracker on someone else
 const MIN_EXAMPLES = 3;
+const OVERLAP = 0.25;    // boxes overlapping this much (intersection over union) hold two people
+
+function iou(a: number[], b: number[]) {
+  const w = Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])), h = Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+  const inter = w * h, union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter;
+  return union > 0 ? inter / union : 0;
+}
 
 const keyOf = (team: Team | null, role: Role) => `${team}|${role}`;
 const chroma = (lab: number[]) => Math.hypot(lab[1] - 128, lab[2] - 128);
@@ -165,6 +172,12 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
   const canon = new Map<string, KitPrototype>();
   for (const k of kits) if (!canon.has(keyOf(k.team, k.role))) canon.set(keyOf(k.team, k.role), k);
   const label = new Map(labels.map(l => [l.track_id, l]));
+  // People whose box overlaps someone else's at that moment (two players in one place): the tracker
+  // may be on either, so only the colour seen in the box can say who is in front.
+  const overlapped = new Set<KitObservation>();
+  const atTime = new Map<number, KitObservation[]>();
+  for (const row of rows) { const list = atTime.get(row.time_s) ?? []; list.push(row); atTime.set(row.time_s, list); }
+  for (const list of atTime.values()) for (const a of list) for (const b of list) if (a !== b && a.image_box && b.image_box && iou(a.image_box, b.image_box) >= OVERLAP) overlapped.add(a);
   const byTrack = new Map<number, KitObservation[]>();
   for (const row of rows) { const list = byTrack.get(row.track_id) ?? []; list.push(row); byTrack.set(row.track_id, list); }
   const timelines = new Map<number, { times: number[]; values: (Assignment | undefined)[] }>();
@@ -212,6 +225,8 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     const ownKit = mine ? kits.filter(k => k.team === mine.team && k.role === mine.role) : [];
     const ownKitDecides = ownKit.some(k => chroma(k.lab) >= CHROMA);
     const values = filled.map((f, i) => {
+      const seen = overlapped.has(list[i]) ? matched[i] : null;
+      if (seen && f?.kit !== seen) return mine && seen.team === mine.team && seen.role === mine.role ? { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 } : assignment(seen, "kit", 0.5);
       if (!f) {
         if (!mine) return fallback.get(track);
         if (!contradicts(list[i].colour_lab, ownKit, kits)) return { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
