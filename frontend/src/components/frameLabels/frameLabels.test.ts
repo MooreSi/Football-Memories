@@ -15,6 +15,9 @@ describe("startingBoxes", () => {
   it("starts from the detector's confident boxes; weak ones are left for you to add", () => {
     expect(startingBoxes(frame).map(b => b.box[0])).toEqual([0.1, 0.4]);
   });
+  it("proposals the assistant judged not to be balls (cones, kit) start unticked; you can still draw them", () => {
+    expect(startingBoxes(frame, undefined, { ball: "visible", balls: [2], not_balls: [0], unsure: [] }).map(b => b.box[0])).toEqual([0.4]);
+  });
   it("a frame you already saved starts from what you saved, not the proposals", () => {
     expect(startingBoxes(frame, { status: "confirmed", boxes: [{ kind: "ball", box: [0.6, 0.6, 0.61, 0.62] }] })).toEqual([{ kind: "ball", box: [0.6, 0.6, 0.61, 0.62] }]);
   });

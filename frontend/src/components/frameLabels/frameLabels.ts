@@ -6,7 +6,9 @@ export type Kind = "person" | "ball";
 export type Box = { kind: Kind; box: number[] };
 export type Proposal = Box & { score: number };
 export type Frame = { index: number; time_s: number; image: string; reasons: string[]; proposals: Proposal[] };
-export type LabelSet = { id: string; match_title: string; source_sha256: string; width: number; height: number; frames: Frame[]; presort?: Record<string, { ball: "visible" | "hidden" | "unsure"; note?: string }> };
+export type LabelSet = { id: string; match_title: string; source_sha256: string; width: number; height: number; frames: Frame[]; presort?: Record<string, Presort> };
+/** The assistant's pre-sort of a frame: never a label; it only decides which proposals start ticked. */
+export type Presort = { ball: "visible" | "hidden" | "unsure"; note?: string; balls?: number[]; not_balls?: number[]; unsure?: number[] };
 export type FrameLabel = { status: "confirmed" | "skipped"; boxes: Box[] };
 export type Labels = { revision: number; source_sha256: string; frames: Record<string, FrameLabel> };
 export type SetSummary = { id: string; match_title: string; frames: number; confirmed: number; revision: number };
@@ -14,9 +16,10 @@ export type SetSummary = { id: string; match_title: string; frames: number; conf
 const START = { person: 0.4, ball: 0.4 };
 
 /** Your saved boxes for a frame, or the detector's confident ones to start from. */
-export function startingBoxes(frame: Frame, saved?: FrameLabel): Box[] {
+export function startingBoxes(frame: Frame, saved?: FrameLabel, presort?: Presort): Box[] {
   if (saved) return saved.boxes.map(b => ({ kind: b.kind, box: [...b.box] }));
-  return frame.proposals.filter(p => p.score >= START[p.kind]).map(p => ({ kind: p.kind, box: [...p.box] }));
+  const rejected = new Set(presort?.not_balls ?? []);
+  return frame.proposals.filter((p, i) => p.score >= START[p.kind] && !rejected.has(i)).map(p => ({ kind: p.kind, box: [...p.box] }));
 }
 
 const MIN_PX = 3;

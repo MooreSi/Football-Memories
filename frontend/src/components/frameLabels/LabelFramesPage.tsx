@@ -38,13 +38,13 @@ export default function LabelFramesPage() {
     try {
       const [s, l] = await Promise.all([getJson<LabelSet>(`${BASE}/label-sets/${id}`), getJson<Labels>(`${BASE}/label-sets/${id}/labels`)]);
       const first = Math.max(0, s.frames.findIndex(f => !l.frames[String(f.index)]));
-      setSet(s); setLabels(l); setAt(first); setBoxes(startingBoxes(s.frames[first], l.frames[String(s.frames[first].index)]));
+      setSet(s); setLabels(l); setAt(first); setBoxes(startingBoxes(s.frames[first], l.frames[String(s.frames[first].index)], s.presort?.[String(s.frames[first].index)]));
     } catch (e) { setError(e instanceof Error ? e.message : "Could not load the label set."); }
   };
 
   const go = useCallback((i: number) => {
     if (!set || !labels || i < 0 || i >= set.frames.length) return;
-    setAt(i); setBoxes(startingBoxes(set.frames[i], labels.frames[String(set.frames[i].index)]));
+    setAt(i); setBoxes(startingBoxes(set.frames[i], labels.frames[String(set.frames[i].index)], set.presort?.[String(set.frames[i].index)]));
   }, [set, labels]);
 
   const decide = useCallback(async (status: FrameLabel["status"]) => {
@@ -58,7 +58,7 @@ export default function LabelFramesPage() {
       if (!response.ok) throw new Error(response.status === 409 ? "Labels changed in another window. Reload the page before continuing." : "This frame could not be saved. Try again or reload.");
       const saved = await response.json() as Labels;
       setLabels({ ...saved, frames }); setError("");
-      if (at + 1 < set.frames.length) { setAt(at + 1); setBoxes(startingBoxes(set.frames[at + 1], frames[String(set.frames[at + 1].index)])); }
+      if (at + 1 < set.frames.length) { setAt(at + 1); setBoxes(startingBoxes(set.frames[at + 1], frames[String(set.frames[at + 1].index)], set.presort?.[String(set.frames[at + 1].index)])); }
     } catch (e) { setError(e instanceof Error ? e.message : "This frame could not be saved."); }
     finally { setSaving(false); }
   }, [set, labels, at, boxes, saving]);
