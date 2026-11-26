@@ -1,3 +1,18 @@
+## Analysed video export + Hudl U11 analysis DEPLOYED (admin only) — 26 November 2026
+
+Owner said "Yes, deploy it". App c534421 (contains d5fe1cb and the Hudl session's
+c05ddb7) moved to the admin library only via updates._move; status.json `built` gained
+c534421, `latest` stays e7fee2b. Gateway 4273a01 as image `hudl-4273a01`, only
+fm-gateway-gateway-1 recreated with compose.yaml + public + analytics + image override;
+origin https intact. Before/after inventory: exactly 4 of 48 containers changed (gateway,
+admin web/backend/capture); admin DB and other libraries untouched. Admin was idle
+before the move (only the helper process, no browser/ffmpeg, flat network counters,
+no queued/running Video Lab job). Worker unchanged (Hudl jobs use generic fields).
+Live: public health 200, anonymous POST hudl-jobs 401, admin bundle contains Export
+analysed video / Analyse a Match / U11 2026/27, helper has hudl_browser/_analysis.py,
+admin backend health ok. NOT exercised: a signed-in export, or a real Hudl analysis
+window (owner's real-account acceptance with one short U11 window is still open).
+
 ## Hudl U11 2026/27 games in Video Lab — 26 November 2026
 
 Video Lab's picker is now "Analyse a Match" with a "Match" select: a Veo group and a
