@@ -1,6 +1,6 @@
 # 760: Lighting benchmark and light-balanced kit colour
 
-**Status:** Part A built and baseline scored (owner: "Yes, build Part A", 26 November 2026); Part B not started
+**Status:** Part A built and baseline scored; Part B built and **failed the adoption gate**, kept off (26 November 2026)
 **Sensitive:** no. Worker team-colour stage and Video Lab kit matching only. No account,
 credential, source footage or existing result is touched.
 
@@ -144,9 +144,41 @@ ground at all, so the per-player ground reference must come from the colours act
 the feet (as `teams.turf_mask` learns them), never from a fixed green range. The frozen v1
 `grass_cast` values were taken with the green rule and are missing on racing-ten.
 
+## Part B result (26 November 2026): failed the gate, kept off
+
+Worker d63739e (`ground_lab`, `ground_source`, `colour_lab_balanced`, `ground_reference_lab`);
+app 17119d5 (`decisions.ts` can use balanced colour when asked, default raw). Re-enriched the
+five runs into new outputs; `colour_lab` identical row for row on the four current-format runs.
+Same runs, only the colour space differs:
+
+| Withheld | Raw: precision / coverage | Balanced: precision / coverage |
+|---|---|---|
+| all | 0.78 / 0.67 | 0.65 / 0.66 |
+| overcast | 0.74 / 0.69 | 0.67 / 0.68 |
+| sun and shade (low sun) | 0.93 / 0.60 | 0.59 / 0.60 |
+
+Gate: coverage passes (-1.2 points); precision fails (-12.8; low sun -34.5, overcast -6.8).
+Development did not improve either. Cause, from the changed boxes: in low sun the ground beside
+the feet is not the light on the shirt (sunlit ground near white and shirts clipped, so a
+multiplicative correction fails; feet in shade with the shirt in sun gets over-brightened into
+the other kit). Not tuned further: the development matches have no low sun, and tuning on the
+withheld rows would spoil them.
+
+Deviations from the plan above, decided while building: a player with no ground beside them
+borrows the frame's ground (other players' first, else the lower half of the picture), and a
+row with no ground anywhere keeps its raw colour as `colour_lab_balanced` (not null), so a run
+is never forced back to raw by a few rows. After the gate the app uses raw colour unless a
+caller asks for balanced (the exporter's `--colour balanced`).
+
+Follow-ups this points to (not started): a labelled low-sun development match (veo-3g needs the
+owner's labels), then other team-colour candidates (shadow-aware sampling, learned crop
+embeddings) scored once each against v1; the detector fine-tune can reuse the same audit.
+
 ## Verification (filled in when shipped)
-- [x] Part A: worker 286 pass, ruff/format/project checks; app frontend 1042 pass on the committed state in a clean worktree, typecheck, build (Part B: pending)
-- [~] benchmark report: baseline scored per condition, assistant labels only; raw vs balanced pending Part B; owner labels pending
+- [x] Part A: worker 286 pass, ruff/format/project checks; app frontend 1042 pass on the committed state in a clean worktree, typecheck, build
+- [x] Part B: worker 292 pass, ruff/format/project checks; app 1058 pass on HEAD plus the staged change in a clean worktree, typecheck, build
+- [x] benchmark report: raw vs balanced per condition, development vs withheld, assistant labels only (owner labels pending)
+- [x] adoption gate: not passed (withheld precision 0.78 to 0.65; low sun 0.93 to 0.59); balanced colour stays off
 - [ ] adoption gate: passed / not passed (with numbers)
 - [x] no credential, cookie or token written to the repo, a log or a fixture
 - [x] no source footage or completed result modified (prepare/export only read job folders; checked by test)

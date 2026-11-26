@@ -1748,6 +1748,18 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-26: Spec 760 Part B (balanced kit colour), failed the gate
+
+- Worker d63739e: 6 new tests observed failing (stub, missing fields), then green; `uv run pytest`
+  292 passed; ruff, format, project checks pass.
+- App 17119d5: Part B tests red on the previous decisions.ts (3), then green; one test's data was
+  corrected before it had ever passed (its "shaded" colour was too grey to be a decisive kit).
+  After the gate the default changed to raw: two tests rewritten for that and observed red first.
+  Clean worktree (HEAD plus the staged change): typecheck pass, vitest 1058 passed, build pass.
+- Real data, read-only: five runs re-enriched into new outputs; colour_lab identical on the four
+  current-format runs. Scored enriched-raw and enriched-balanced against frozen v1.
+- Not checked: the page in a browser (default behaviour is unchanged from before Part B).
+
 ### 2026-11-26: Video Lab sideline people off the 2D pitch
 
 - Frontend `npm test` 205 files / 1077 pass, typecheck, build pass. New tests seen red first.

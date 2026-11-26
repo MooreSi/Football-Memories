@@ -298,3 +298,8 @@ colours from the frame. Red kits read orange in direct sun. The lighting benchma
 worker (`lighting-benchmark`, docs/LIGHTING_BENCHMARK.md); Video Lab decisions for scoring are
 exported with `frontend/scripts/export-lab-decisions.mjs`, which calls the same `decisions.ts`
 functions as the page, so a score is of what the lab shows.
+Spec 760 Part B (26 Nov 2026): correcting kit colour by the ground beside the feet made teams
+worse on the withheld benchmark (low sun precision 0.93 to 0.59). In low sun the feet and the
+shirt are often in different light, and sunlit shirts and ground clip near white, so a
+per-channel gain cannot recover the kit. The worker writes `colour_lab_balanced` but Video Lab
+uses raw colour unless asked. Score any new team-colour idea once against the frozen v1 audit.

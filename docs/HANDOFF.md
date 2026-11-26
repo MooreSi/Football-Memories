@@ -1,3 +1,13 @@
+## Spec 760 Part B: balanced kit colour built, failed the gate, kept off, 26 November 2026
+
+Owner: "Start Part B". Worker `codex/lighting-benchmark` d63739e adds `ground_lab`,
+`colour_lab_balanced` and `ground_reference_lab` (colour_lab unchanged; 292 pass). App 17119d5:
+`decisions.ts` can compare kits in balanced colour when asked; the page stays on raw colour
+because on the frozen benchmark balanced lowered withheld precision 0.78 to 0.65 (low sun 0.93
+to 0.59). Default page behaviour is unchanged from before Part B. Details, cause and follow-ups
+in spec 760 and worker docs/LIGHTING_BENCHMARK.md. Nothing deployed. Another session has
+uncommitted edits in this checkout (match stats, Veo picker, HANDOFF); none were committed here.
+
 ## Video Lab: far-touchline bunching on the 2D pitch fixed (sideline people) — 26 November 2026
 
 Owner: "fix the far half bunching on the far touchline". Measured on NL 91f49e12 first: not a
