@@ -1,3 +1,16 @@
+## Veo: use the first readable render; DEPLOYED to admin — 26 November 2026
+
+After f6dedc6 the owner's retry of 260926 Racing Club Warwick vs. NL showed the real cause:
+"The Veo connection only reads Veo's own match videos" (`_client._video`: not a plain MP4
+on c.veocdn.com). `_remember` now keeps the first video passing the new
+`_client.video_problem` (standard still preferred); when none passes, `_read_video` says
+what Veo offered (host name or file type, never the address). Host lock unchanged.
+6 new tests (4 red first, 2 controls); backend 849 + crest file 15 separately, ruff,
+format, mypy pass. Deployed admin only (f6dedc6 -> 195b70a, 3 containers, latest
+untouched). Unknown until the owner retries: whether this match lists a readable render.
+If not, the message now names what Veo offers; supporting it needs an owner decision
+(a new host or format to allow).
+
 ## Veo analysis window error now says what Veo said; DEPLOYED to admin — 26 November 2026
 
 Owner hit "A highlight could not be cut from the saved match; nothing was saved." analysing
