@@ -1,4 +1,4 @@
-## Video Lab: shirt numbers on the 2D pitch, read automatically and correctable (NOT deployed) — 26 November 2026
+## Video Lab: shirt numbers on the 2D pitch, read automatically and correctable; DEPLOYED — 26 November 2026
 
 Owner: "add shirt numbers" then "improve automatic reading and have the ability to correct/update a
 shirt number". Three repos: worker codex/shirt-number-reading f5e55f3 (dense reader + `shirt-numbers`
@@ -13,6 +13,13 @@ harness with the real reader's NL output: numbers in markers, correction 8 -> 18
 Deploy order: gateway, then worker on BOTH Macs (+ jersey.json `detector_sha256` 4a5efbfb... on
 both; rebase onto the deployed worker commit, the branch base carries undeployed camera work), then
 admin app from this branch at or after ab3fb8f.
+DEPLOYED on the owner's "Yes": gateway fm-gateway-gateway:shirt-50bc76e (gateway only, origin and
+analytics mount unchanged, public health 200); worker f5e55f3 on both Macs (digest b3e46b1c...,
+heartbeat ready; mini jersey.json + detector_sha256); admin app ab3fb8f -> 99dfe44 from a clean
+worktree (1102 pass there), FM_BUILD_LATEST=0, `built` updated (latest untouched), exactly 3 admin
+containers changed, capture idle (NetIO flat, no new/.part files), health ok, bundle has the route.
+Deployed job code run end to end on a scratch copy of NL with the real config: 25 numbers, 190 s.
+No Read shirt numbers run was started in the owner's lab.
 
 ## Video Lab: pre-analysis flags an outline that holds few players; DEPLOYED to admin — 26 November 2026
 
