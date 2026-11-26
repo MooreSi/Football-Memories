@@ -312,3 +312,16 @@ Offered only where the heartbeat lists `core-ai`, which needs `--reid-coreai-con
 on the mini and `reid_coreai_config` plus the pinned `reid_coreai_sha256` for the
 MacBook. Deployed 26 November 2026: asset `reid_b64.aimodel` (ffca4ff5...) and
 `reid-coreai.json` on both Macs; default stays Standard.
+
+## Where the analysis stage spends its time (26 November 2026, spec 750)
+
+Profiled on the 4-minute NL clip (720 samples), mini idle: 355 s, of which the final
+`annotated.mp4` re-encode (libx264, 2 threads) 223 s, the temporary mp4v video 52 s,
+detection 50 s, tracking/team colours/camera motion 28 s, decode 5 s. Detection was never the
+bottleneck. Re-encoding the same video: libx264 2 threads 213 s, all threads 99 s,
+`h264_videotoolbox` 31 s.
+
+Built (worker branch `codex/fast-render-shared-detection`, not deployed): one raw-pipe hardware
+encode, and Split shares detection (MacBook 60% of samples). Stage 355 s -> 102 s -> 66 s.
+The two Neural Engines do not return identical boxes for the same frame (IoU median 0.979,
+score diff 0.002); a shared run differs slightly from a mini-only one (tracklets 549 vs 550-555).

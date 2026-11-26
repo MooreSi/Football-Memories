@@ -1,3 +1,17 @@
+## Spec750 hardware render + shared detection built, NOT deployed — 26 November 2026
+
+Owner: "build shared detection across both Macs", then "Build both" after profiling. The
+analysis stage on the 4-minute NL clip spent 223 s of 355 s re-encoding the annotated video
+(libx264, 2 threads) and only 50 s detecting. Worker branch `codex/fast-render-shared-detection`
+(pushed): single raw-pipe encode on `h264_videotoolbox` (libx264 all cores where missing), and in
+Split the MacBook detects the last 60% of sampled frames while the mini does the rest, every
+reply checked against the mini's own decoded times, no fallback. Measured: stage 355 s -> 102 s
+-> 66 s; whole idle Split job roughly 10 min -> 5 min (camera/pitch, ~222 s, is now the longest
+stage). Details and the M3/M4 detection comparison: spec 750 and worker HANDOFF. 293 worker
+tests pass. NOT deployed: needs the owner's yes, both Macs together, worker restart while idle.
+Note: another session committed and deployed 1c55193 (pitch rebuilds on the MacBook) in the
+same worker checkout during this work; this branch contains it.
+
 ## Lighting research done; spec 760 drafted (benchmark + light-balanced kit colour), 26 November 2026
 
 Owner asked whether filtering or colour-correcting the video would help recognition under
