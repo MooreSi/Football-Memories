@@ -233,7 +233,7 @@ Now NL, frost, RCW vs CG and overcast get whole-pitch outlines; 3G frames a dash
 The ground plane (pan axis) stays: a player-height plane was ~1 degree off (oval circle). On a
 low camera the far touchline sits 3-5 degrees below the horizon, so the far half of the plan
 is approximate and smeared; only confirmed corners give metres. Existing runs need "Rebuild
-complete pitch". Not deployed until the owner says so.
+complete pitch". Deployed to both Macs 26 Nov (code digest a69e712e...).
 
 Spec720: lab entitlements are per-account gateway metadata, separate from app builds.
 Only admin can grant/revoke; Video Lab enforces access at every endpoint, retaining

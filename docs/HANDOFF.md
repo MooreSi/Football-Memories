@@ -1,4 +1,4 @@
-## Pitch outline / bird's-eye fixed in the worker; NOT deployed — 26 November 2026
+## Pitch outline / bird's-eye fixed in the worker; DEPLOYED both Macs — 26 November 2026
 
 Owner: the bird's-eye view is poor on every newly analysed match (screenshot: NL 260926).
 Cause: the automatic outline that frames the view, not the app. Worker branch
@@ -7,8 +7,9 @@ both sides, turf-noise threshold) and halfway-first fitting. 3 new worker tests 
 270 pass, ruff/format/project checks pass; no existing test changed. Offline replay of the
 five cached games (NL, frost, 3G, RCW vs CG, overcast): whole-pitch outlines on 4 (was 1),
 3G plausible but unverified. NL's far half stays approximate (grazing angle). App code
-unchanged; app suites not run. Next: deploy worker to the mini and MacBook (owner go-ahead),
-then "Rebuild complete pitch" on each match to get the new outline.
+unchanged; app suites not run. DEPLOYED on the owner's "Yes, deploy": both Macs at code
+digest a69e712e... (MacBook backup src.3cddeb3), worker restarted idle, both ready. Next:
+"Rebuild complete pitch" on each match to get the new outline (owner, in Video Lab).
 
 ## Veo signed links read; NL match analysed; pitch run — 26 November 2026
 
