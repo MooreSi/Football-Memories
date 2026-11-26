@@ -25,7 +25,14 @@ the status can't be read. Admin only: hidden for users with granted access, who 
 call `/_admin/` (the existing LabPermissions test caught this; gated on `VIDEO_LAB_BASE`).
 Tests red first (component 4, page 1). Frontend 1007/198, typecheck, build pass. Browser:
 hosted dev build at 5174 with stubbed fetch, 800 px (wraps under the title) and 1440 px
-(top right); flipped to red on the next poll. NOT deployed to the admin library yet.
+(top right); flipped to red on the next poll.
+DEPLOYED to the admin library only at ~15:47 UTC as b3e0adc (contains live ba9aefa; the
+extra commit is docs only): images built with FM_BUILD_LATEST=0, sha added to status.json
+`built` (`latest` untouched), `_move` via docker exec. Exactly 3 admin containers changed of
+47; health ok; VideoLabPage bundle contains the light. Admin capture was not idle by
+NetIO (~400 MB/min out), but logs showed only an open Safari tab polling /helper/library
+(~5 MB every 2 s) to the web container, with no download in the previous 15 minutes.
+Gateway and worker unchanged.
 
 ## Player matching model DEPLOYED (admin + both Macs) — 26 November 2026
 
