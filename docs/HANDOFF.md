@@ -1,3 +1,12 @@
+## Split now runs pitch rebuilds on the MacBook; DEPLOYED both Macs — 26 November 2026
+
+Owner: "use the MacBook for pitch rebuilds too". Worker 1c55193: with execution Split,
+camera-tracking children ("Rebuild complete pitch") go to the MacBook like player matching;
+Local keeps them on the mini; no fallback if the MacBook is down. Test red first; 272 pass.
+Both Macs at code digest c6ad165d..., worker restarted idle, both ready. Scratch end-to-end
+NL rebuild on the MacBook: 185 s, identical outline to the mini's run 91f49e12. App and
+gateway unchanged (requests already carry execution: split).
+
 ## Pitch outline / bird's-eye fixed in the worker; DEPLOYED both Macs — 26 November 2026
 
 Owner: the bird's-eye view is poor on every newly analysed match (screenshot: NL 260926).

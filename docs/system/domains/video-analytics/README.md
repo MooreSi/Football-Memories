@@ -8,6 +8,8 @@ requests snapshot the selected mode; ordinary users stay local. SSH profiles,
 keys and executable paths stay outside the gateway mount. Source/code/model/hash
 checks precede publication; remote failure does not silently fall back. This is
 stage distribution, not independent video chunks or a claimed speed improvement.
+Split also sends pitch rebuilds (camera-tracking children) of a finished analysis to the
+MacBook as whole jobs, like player matching (owner request, 26 Nov 2026).
 
 [Two Mac performance investigation](two-mac-performance.md) (26 November 2026):
 current native M4 worker is single-consumer; a second host requires job scheduling
