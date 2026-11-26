@@ -245,7 +245,9 @@ c783fdc (deployed): on half-filmed games a clipped off-axis halfway piece was dr
 along a touchline (cached games 1 and 3). Five cached games: 4 and 5 (filmed end to
 end) get correct ends and halfway; 1-3 get none. Game 3 outline still wrong (ambiguous
 overlapping pitches). Worker 227 tests green. The live worker (spec730 checkout) is
-still on c783fdc; moving it to 5a74a19 awaits owner approval.
+moved to 5a74a19 with owner approval (worker restarted idle). Rebuild 6c216d41 (child
+of f2ab96a2, RCW 10 min): right end now at the goal line by the near corner flag, far
+corner just behind the goal; halfway line unchanged; far touchline still estimated.
 
 
 ## Spec710 whole-pitch coverage + halfway line DEPLOYED — 26 November 2026
