@@ -194,6 +194,25 @@ Release checks and admin deployment still being finished.
 
 # Handoff
 
+## Spec710 whole-pitch coverage + halfway line DEPLOYED — 26 November 2026
+
+Owner feedback: the 3 min Racing Club Warwick sample never films the left end, so the
+bird's-eye cannot cover the pitch; a goal at each end is the coverage test. The local
+10 min sample (veo-racing-ten, 18:00-28:00, same match) covers both ends: camera
+tracking child bcdbc765 of 3ebc1a17 (no labels existed), rebuilt as c80ab0d9 with the
+halfway line. No Veo access was needed. Coverage now reports which goal end was not
+filmed (from the line-based outline's unseen ends) and suggests a longer window.
+Halfway line: worker publishes pitch_outline.halfway; app draws it (amber, dashed) in
+panorama, bird's-eye and live match, editable, saved with the accepted calibration;
+gateway PanoramaReview gains optional `halfway` (2 points inside the panorama).
+Deployed: app d5fe1cb (admin only; 3 containers; contains another session's e7fee2b),
+gateway e2a95a1 as image spec710-e2a95a1 (only fm-gateway-gateway-1 recreated, same
+compose files + an image override like spec730's; origin intact), worker c783fdc
+(kickstarted idle; includes another session's 70f44ac). Checks: frontend 983, worker
+224, gateway 501 (+2 skips), all lint/type checks green. Far touchline on RCW still
+estimated. Three reverted far-line heuristics are recorded in the domain doc.
+
+
 ## Spec710 line-based pitch outline DEPLOYED — 25 November 2026
 
 App ae13328 (admin only, same route; 3 admin containers changed, latest untouched,
