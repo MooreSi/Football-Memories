@@ -20,6 +20,9 @@ describe("scanPlan", () => {
   it("keeps the scan inside a short first half", () => {
     expect(scanPlan(3000, [[100, 560], [700, 1200]])).toMatchObject({ start_s: 160, duration_s: 360 });
   });
+  it("skips a fragment Veo lists before the real first half (261116 RCW vs Kidderminster RMC: 0:00-3:47)", () => {
+    expect(scanPlan(4750, [[0, 227], [1116, 2930], [3190, 4722]])).toMatchObject({ start_s: 1176, duration_s: 600 });
+  });
   it("ignores halves that do not fit the match", () => {
     expect(scanPlan(3600, [[4000, 5000]])).toMatchObject({ start_s: 300, duration_s: 600 });
   });

@@ -10,11 +10,13 @@
  * so the scan starts one minute after it, once the line-up has broken up. Without halves (Hudl), minute five.
  */
 export const AFTER_KICK_OFF_S = 60;
+/** A listed half shorter than this is a fragment, not a half (261116 RMC listed 0:00-3:47 first). */
+export const FRAGMENT_S = 300;
 export const SCAN_S = 600, SETTLED_START_S = 300;
 export type ScanPlan = { start_s: number; duration_s: number; reason: string };
 
 export function scanPlan(matchDurationS: number | null | undefined, halves?: number[][] | null): ScanPlan | null {
-  const first = halves?.[0];
+  const first = halves?.find(h => h.length === 2 && h[1] - h[0] >= FRAGMENT_S) ?? halves?.[0];
   if (first && first.length === 2 && first[0] >= 0 && first[1] > first[0] && (!matchDurationS || first[1] <= matchDurationS + 1)) {
     const start = Math.ceil(first[0]) + AFTER_KICK_OFF_S, room = Math.floor(first[1]) - start;
     const duration = room >= SCAN_S ? SCAN_S : Math.floor(room / 60) * 60;
