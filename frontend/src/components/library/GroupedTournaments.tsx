@@ -24,7 +24,7 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
 }){
   const state=useTournamentSelection()!;
   const tournaments=useTournaments();
-  const [view,setView]=useState<"all"|"tournaments">("tournaments");
+  const [view,setView]=useState<"all"|"tournaments">("all"); // owner request 2026-11-26: opens on All matches
   const autoOpened=useRef(false);
   const allowed=new Set(eligibleKeys),byKey=new Map(games.map(g=>[g.key,g]));
   const scoped=games.filter(g=>allowed.has(g.key));
@@ -36,8 +36,8 @@ export function GroupedTournaments({games,eligibleKeys,scores,search="",loading=
     .sort((a,b)=>(dateOf(b)??"").localeCompare(dateOf(a)??"")||a.name.localeCompare(b.name));
   const groupedKeys=new Set((tournaments.data??[]).flatMap(t=>Object.keys(t.entries)));
   useEffect(()=>{
-    if(!autoOpened.current&&tournaments.isSuccess&&!scopeLoading&&groups.length){autoOpened.current=true;state.setTournamentId(groups[0].id);}
-  },[tournaments.data,scopeLoading,eligibleKeys]);
+    if(view==="tournaments"&&!autoOpened.current&&tournaments.isSuccess&&!scopeLoading&&groups.length){autoOpened.current=true;state.setTournamentId(groups[0].id);}
+  },[view,tournaments.data,scopeLoading,eligibleKeys]);
   useEffect(()=>{if(state.tournamentId)setView("tournaments");},[state.tournamentId]);
   function allMatches(){autoOpened.current=true;setView("all");state.setTournamentId("");state.clear();}
   return <div className="grouped-library">

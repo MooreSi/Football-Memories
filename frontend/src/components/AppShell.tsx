@@ -2,7 +2,7 @@ import { PlayerLabLink } from "./PlayerLabAccess";
 import { VideoLabLink } from "./VideoLabAccess";
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
 import { useVeoAutoCheck } from "./veo/useVeoAutoCheck";
-import { Film, FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
+import { FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
 import { Fragment, type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Brand } from "./BrandMark";
@@ -15,10 +15,10 @@ import { HOSTED } from "../api/helperBase";
 import { useHostedPermissions } from "../api/hostedPermissions";
 
 // Only screens that work are listed (brief section 19). Layout follows reference 1:
+// Clips left the top bar (owner request 2026-11-26): its matches are in the Library.
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
 const ALL_NAV = [
   { to: "/", label: "Library", icon: Library, end: true },
-  { to: "/clips", label: "Clips", icon: Film, end: false },
   { to: "/downloaded", label: "Downloaded", icon: HardDriveDownload, end: false, helper: true },
   { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },
