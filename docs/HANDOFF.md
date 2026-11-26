@@ -7,7 +7,7 @@ New `livePitch.sidelineTracks`; PitchMap leaves them off live and heat views unl
 everyone is ticked; owner-labelled people always stay. Tests red first (1 unit, 1 page).
 Frontend 1077 pass (working copy, includes other sessions' tests), typecheck, build pass;
 backend untouched. Browser on the read-only harness: at 1:30 the map went from 36 people with a
-far-line row to 17 with none. NOT yet deployed (admin still runs 386143d).
+far-line row to 17 with none. DEPLOYED to admin only on the owner's "Yes, deploy": 386143d -> bfec4f0, clean worktree (frontend 1054 pass there), FM_BUILD_LATEST=0, added to `built` (latest 8c31cdb untouched), exactly 3 admin containers changed, /api/health ok, served bundle has the change. Capture had the companion's idle headless browser and ~3 MB/s outgoing (library polling from an open tab); inbound flat, no new or .part files, so it was swapped.
 
 ## Spec 760 Part A: lighting benchmark built, baseline scored, 26 November 2026
 
