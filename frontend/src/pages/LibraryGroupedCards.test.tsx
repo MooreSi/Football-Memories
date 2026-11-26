@@ -18,6 +18,8 @@ it("renders original Hudl and Veo thumbnail cards with score pills in each group
     "http://127.0.0.1:8766/veo/account":{configured:true,state:"ready",busy:false},
   });
   renderWithProviders(<LibraryPage/>);
+  // The Library opens on All matches (owner request 2026-11-26); this test starts in Tournaments.
+  fireEvent.click(await screen.findByRole("button",{name:"Tournaments"}));
   const squad=await screen.findByRole("button",{name:"Open squad Blue"});
   expect(squad.querySelector('[data-crest] img')).toHaveAttribute("src","/api/team-logo?name=Riverside");
   const ordinary=screen.getByRole("region",{name:"Other matches"});

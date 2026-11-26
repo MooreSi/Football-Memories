@@ -10,15 +10,19 @@ const games:GroupedLibraryGame[]=[
 ];
 const group={id:"cup",name:"November Cup",entries:{"veo:cup":"Riverside · Squad 1"}};
 afterEach(()=>vi.unstubAllGlobals());
+// The Library opens on All matches (owner request 2026-11-26); these tests start in Tournaments.
 function mount(loading=false){
   stubFetch({"/api/tournaments":[group]});
-  return renderWithProviders(<TournamentProvider compact><GroupedTournaments games={games} eligibleKeys={games.map(g=>g.key)} scores={[]} loading={loading}/></TournamentProvider>);
+  const result=renderWithProviders(<TournamentProvider compact><GroupedTournaments games={games} eligibleKeys={games.map(g=>g.key)} scores={[]} loading={loading}/></TournamentProvider>);
+  fireEvent.click(screen.getByRole("button",{name:"Tournaments"}));
+  return result;
 }
 it("uses the original large card renderer in All matches, Other matches and squad matches",async()=>{
   // The adapter's source card must survive every grouping view, with its score pill.
   const richGames=games.map(g=>({...g,renderCard:()=> <article className="tile"><a href={g.href} aria-label={g.title}><div className="aspect-video">Original thumbnail</div><span role="group" aria-label="Home 4, Rovers 1">4–1</span><h3>{g.title}</h3></a></article>}));
   stubFetch({"/api/tournaments":[group]});
   renderWithProviders(<TournamentProvider compact><GroupedTournaments games={richGames} eligibleKeys={games.map(g=>g.key)} scores={[]}/></TournamentProvider>);
+  fireEvent.click(screen.getByRole("button",{name:"Tournaments"}));
   await screen.findByRole("button",{name:"Open squad Riverside · Squad 1"});
   const ordinary=screen.getByRole("region",{name:"Other matches"});
   expect(within(ordinary).getByText("Original thumbnail")).toBeInTheDocument();

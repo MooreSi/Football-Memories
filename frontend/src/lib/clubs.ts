@@ -102,6 +102,8 @@ const ALIASES: Record<string, string> = {
   barca: "Barcelona", "fc barcelona": "Barcelona",
   juve: "Juventus",
   killie: "Kilmarnock",
+  // Grassroots clubs the owner's titles abbreviate (owner request 2026-11-26).
+  nl: "Norton Lindsey", "norton lindsay": "Norton Lindsey",
 };
 
 /** "Stoke City FC U11" -> "stoke city": drops age groups, "FC", brackets and "the". */

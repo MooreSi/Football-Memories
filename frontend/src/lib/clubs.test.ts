@@ -8,3 +8,10 @@ it("keeps a club written with AFC apart from the professional club of the same t
   expect(resolveClub("AFC Bournemouth")).toBe("AFC Bournemouth");
   expect(resolveClub("Bournemouth")).toBe("AFC Bournemouth");
 });
+
+// Owner request 2026-11-26: "NL" in titles is Norton Lindsey, so its crest is asked for by name.
+it("reads NL as Norton Lindsey", () => {
+  expect(resolveClub("NL")).toBe("Norton Lindsey");
+  expect(resolveClub("NL U11")).toBe("Norton Lindsey");
+  expect(resolveClub("Northgate")).toBe("Northgate"); // negative control
+});

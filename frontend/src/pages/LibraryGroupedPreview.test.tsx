@@ -25,6 +25,8 @@ it("uses scoped event rows in the released grouped presentation",async()=>{
     "http://127.0.0.1:8766/veo/library":[],"http://127.0.0.1:8766/veo/account":{configured:false,state:"idle",busy:false},
   });
   renderWithProviders(<LibraryPage/>);
+  // The Library opens on All matches (owner request 2026-11-26); this test starts in Tournaments.
+  fireEvent.click(await screen.findByRole("button",{name:"Tournaments"}));
   expect(await screen.findByRole("region",{name:"Current U12 Cup"})).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Age group"),{target:{value:"U11"}});
   await waitFor(()=>expect(screen.queryByRole("region",{name:"Current U12 Cup"})).not.toBeInTheDocument());

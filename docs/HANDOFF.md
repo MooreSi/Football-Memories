@@ -1,3 +1,19 @@
+## Library default, Clips nav, NL crest — 26 November 2026
+
+Owner requests: the Library's grouped toggle now opens on All matches (Tournaments
+auto-opens its newest event only once that view is chosen); Clips is gone from the top
+bar (the /clips route still exists, reached from the Library); `resolveClub` reads "NL"
+and "Norton Lindsay" as Norton Lindsey for the crest lookup. New tests red first (3).
+Eight existing Tournaments tests now press "Tournaments" in setup because the default
+changed by request; no assertion changed. Frontend 997/997, typecheck, build green.
+Not checked in a browser and NOT deployed.
+
+Open, owner's call: the "Another family's Hudl or Veo work is running" 409 is the
+gateway CaptureSlot (threat model T21, owner decision 2026-11-19), working as designed
+when two families use Hudl/Veo at once. Options put to the owner: client waits and
+retries automatically (no extra Hudl traffic), separate Hudl and Veo slots, or a
+shorter 60 s grace. Nothing changed in the gateway.
+
 ## Analysed video export + Hudl U11 analysis DEPLOYED (admin only) — 26 November 2026
 
 Owner said "Yes, deploy it". App c534421 (contains d5fe1cb and the Hudl session's

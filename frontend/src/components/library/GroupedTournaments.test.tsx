@@ -11,9 +11,12 @@ const games:GroupedLibraryGame[]=[
   {key:"hudl:ordinary",title:"261121 U11 v City (9v9)",href:"/hudl/ordinary",date:"2026-11-21",source:"Hudl",score:()=>null},
 ];
 afterEach(()=>vi.unstubAllGlobals());
-function renderLibrary(eligibleKeys=games.map(g=>g.key)){
+// The Library opens on All matches (owner request 2026-11-26); these tests start in Tournaments.
+function renderLibrary(eligibleKeys=games.map(g=>g.key),view:"all"|"tournaments"="tournaments"){
   stubFetch({"/api/tournaments":[group],"/api/tournaments/nov/matches/hudl%3Aa":[group]});
-  return renderWithProviders(<TournamentProvider compact><GroupedTournaments games={games} eligibleKeys={eligibleKeys} scores={[{key:"hudl:a",score:{ours:4,theirs:1}}]} /></TournamentProvider>);
+  const result=renderWithProviders(<TournamentProvider compact><GroupedTournaments games={games} eligibleKeys={eligibleKeys} scores={[{key:"hudl:a",score:{ours:4,theirs:1}}]} /></TournamentProvider>);
+  if(view==="tournaments")fireEvent.click(screen.getByRole("button",{name:"Tournaments"}));
+  return result;
 }
 it("opens dated tournament rows into squads and then the selected squad matches",async()=>{
   renderLibrary();
@@ -62,4 +65,14 @@ it("offers the whole-event rename dialog without collapsing squad navigation",as
   fireEvent.change(within(dialog).getByLabelText("New tournament name"),{target:{value:"Winter Festival"}});
   expect(dialog).toBeInTheDocument();
   expect(dialog).toHaveTextContent("Applies to all 2 games and every entered team");
+});
+// Owner request 2026-11-26: the Library opens on All matches, not Tournaments.
+it("opens on All matches and shows tournaments only when asked",async()=>{
+  renderLibrary(undefined,"all");
+  const all=await screen.findByRole("button",{name:"All matches"});
+  expect(all).toHaveAttribute("aria-pressed","true");
+  expect(await screen.findByRole("region",{name:"All cached matches"})).toBeInTheDocument();
+  expect(screen.queryByRole("button",{name:"Open squad Blue"})).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button",{name:"Tournaments"}));
+  expect(await screen.findByRole("button",{name:"Open squad Blue"})).toBeInTheDocument(); // negative control: still reachable
 });
