@@ -1,20 +1,23 @@
 // Spec 760: export the Video Lab's own team and ball decisions for one completed run, for the
 // worker's `lighting-benchmark score`. Read-only: it reads the job folder and writes one new file.
 //
-//   node scripts/export-lab-decisions.mjs <job folder> <output.json> [--no-labels]
+//   node scripts/export-lab-decisions.mjs <job folder> <output.json> [--no-labels] [--colour raw|balanced]
 //
 // The job folder is the worker's runtime/jobs/<id> (result/ plus review.json). Uses the same
 // functions as the page (src/components/videoLab/decisions.ts), loaded through Vite. Kits
 // remembered from other runs are not applied (the page may add them); --no-labels ignores
-// review.json track labels.
+// review.json track labels; --colour balanced asks for the worker's light-balanced shirt colour
+// (spec 760 Part B; off in the page because it failed the adoption gate).
 import { createHash } from "node:crypto";
 import { createReadStream, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createServer } from "vite";
 
-const [jobArg, outArg, flag] = process.argv.slice(2);
-if (!jobArg || !outArg) {
-  console.error("usage: node scripts/export-lab-decisions.mjs <job folder> <output.json> [--no-labels]");
+const [jobArg, outArg, ...flags] = process.argv.slice(2);
+const colourAt = flags.indexOf("--colour");
+const colour = colourAt >= 0 ? flags[colourAt + 1] : undefined;
+if (!jobArg || !outArg || (colourAt >= 0 && !["raw", "balanced"].includes(colour))) {
+  console.error("usage: node scripts/export-lab-decisions.mjs <job folder> <output.json> [--no-labels] [--colour raw|balanced]");
   process.exit(2);
 }
 const job = resolve(jobArg), result = join(job, "result"), out = resolve(outArg);
@@ -32,7 +35,7 @@ const server = await createServer({ server: { middlewareMode: true }, appType: "
 try {
   const { labPredictions } = await server.ssrLoadModule("/src/components/videoLab/decisions.ts");
   const review = existsSync(join(job, "review.json")) ? JSON.parse(readFileSync(join(job, "review.json"), "utf8")) : null;
-  if (review && flag === "--no-labels") review.track_labels = [];
+  if (review && flags.includes("--no-labels")) review.track_labels = [];
   const atlas = existsSync(join(result, "pitch_atlas.json")) && existsSync(join(result, "pitch_atlas.jpg"));
   const summary = json("summary.json");
   const files = {
@@ -43,6 +46,7 @@ try {
     dense: json("dense_tracks.json"),
     motion: json("camera_motion.json"),
     panorama: json(atlas ? "pitch_atlas.json" : "pitch_panorama.json"),
+    colour,
     detections: existsSync(join(result, "detections.jsonl")) ? readFileSync(join(result, "detections.jsonl"), "utf8") : undefined,
   };
   const predictions = labPredictions(files);
@@ -50,7 +54,7 @@ try {
   predictions.source_sha256 = await sha256(join(result, "sample.mp4"));
   predictions.exported = { job: job.split("/").pop(), track_labels: review?.track_labels?.length ?? 0, remembered_kits: 0 };
   writeFileSync(out, JSON.stringify(predictions), { flag: "wx" });
-  console.log(JSON.stringify({ observations: predictions.observations.length, ball: predictions.ball.length, kits: predictions.kits, labels: predictions.exported.track_labels }));
+  console.log(JSON.stringify({ observations: predictions.observations.length, ball: predictions.ball.length, kits: predictions.kits, labels: predictions.exported.track_labels, colour: predictions.colour }));
 } finally {
   await server.close();
 }

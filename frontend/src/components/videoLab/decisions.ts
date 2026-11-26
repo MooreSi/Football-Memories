@@ -46,19 +46,42 @@ export function labOffPitch(i: TeamInputs): Set<number> {
     : new Set<number>();
 }
 
-export function labKits(rows: KitObservation[] | undefined, review: Review | null | undefined, remembered: KitPrototype[]) {
-  return learnKits(rows ?? [], review?.track_labels ?? [], remembered);
+/**
+ * Spec 760 Part B: the worker may add `colour_lab_balanced`, the shirt colour corrected by the
+ * light on the ground beside the player. It did not pass the adoption gate (26 Nov 2026: worse
+ * on the withheld matches, most in low sun), so the lab uses raw colour unless a caller asks
+ * for balanced, and then only when every coloured row has one: never a mix.
+ */
+export type ColourSpace = "raw" | "balanced";
+type Coloured = KitObservation & { colour_lab_balanced?: number[] | null };
+const validLab = (c: number[] | null | undefined): c is number[] => !!c && c.length === 3 && c.every(Number.isFinite);
+
+export function labSpace(rows: KitObservation[] | undefined, asked?: ColourSpace): ColourSpace {
+  if (asked !== "balanced") return "raw";
+  const list = (rows ?? []) as Coloured[];
+  return list.some(r => validLab(r.colour_lab)) && list.every(r => !validLab(r.colour_lab) || validLab(r.colour_lab_balanced)) ? "balanced" : "raw";
+}
+
+function inSpace(rows: KitObservation[], space: ColourSpace): KitObservation[] {
+  return space === "balanced" ? (rows as Coloured[]).map(r => ({ ...r, colour_lab: r.colour_lab_balanced ?? null })) : rows;
+}
+
+/** Kits in the run's colour space. Kits remembered from other runs are raw colours, so they apply only to raw runs. */
+export function labKits(rows: KitObservation[] | undefined, review: Review | null | undefined, remembered: KitPrototype[], space: ColourSpace = labSpace(rows)) {
+  return learnKits(inSpace(rows ?? [], space), review?.track_labels ?? [], space === "raw" ? remembered : []);
 }
 
 /** Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance model settles only what colour cannot. */
-export function labTimeline(i: TeamInputs, rows: KitObservation[] | undefined, kits: KitPrototype[], offPitch: Set<number>): TeamTimeline {
+export function labTimeline(i: TeamInputs, rows: KitObservation[] | undefined, kits: KitPrototype[], offPitch: Set<number>, space: ColourSpace = labSpace(rows)): TeamTimeline {
   const { appearance, review, camera, automaticBoundaries } = i;
   const labels = review?.track_labels ?? [];
+  // The appearance model's view colours are raw, so its anchors are checked against raw kits.
+  const anchorKits = space === "raw" ? kits : learnKits(rows ?? [], labels, i.remembered);
   const marks = review?.pitch_keyframes ?? [], boundaries = review?.pitch_boundaries ?? [];
-  const fallback = propagateTeams(appearance ? cleanAnchors(appearance.tracks, labels, kits) : [], labels, review?.group_labels ?? [], appearance ? [] : rows ?? [], offPitch);
+  const fallback = propagateTeams(appearance ? cleanAnchors(appearance.tracks, labels, anchorKits) : [], labels, review?.group_labels ?? [], appearance ? [] : rows ?? [], offPitch);
   // One referee, on the pitch: suggested referees seen mostly off the marked pitch are sideline people.
   const onPitch = camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal) ? standingOnPitch(t => boundaryAt(camera, boundaries, automaticBoundaries, t) ?? outlineAt(camera, marks, t)) : undefined;
-  return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback, onPitch);
+  return kitTimeline(inSpace((rows ?? []).filter(o => !offPitch.has(o.track_id)), space), kits, labels, fallback, onPitch);
 }
 
 export function labBall(dense: DenseTracks | undefined, detections: string | undefined, assignments: Assignments | undefined, camera: LabCamera | undefined): BallPoint[] {
@@ -71,6 +94,8 @@ export function labBall(dense: DenseTracks | undefined, detections: string | und
 export type RunFiles = {
   sourceSha: string; assignments: Assignments; review: Review | null; appearance?: Appearance; dense?: DenseTracks;
   motion?: CameraMotion; panorama?: Panorama; detections?: string; remembered?: KitPrototype[];
+  /** Ask for balanced colour (benchmark candidates); raw otherwise. */
+  colour?: ColourSpace;
 };
 export type Prediction = { time_s: number; track_id: number; team: Assignment["team"]; role: Assignment["role"]; source: Assignment["source"] | null; shown: boolean };
 
@@ -83,9 +108,10 @@ export function labPredictions(f: RunFiles) {
   const automaticBoundaries = automaticBoundariesFor(f.motion, f.sourceSha);
   const inputs: TeamInputs = { assignments: f.assignments, dense: f.dense, appearance: f.appearance, review: f.review, camera, automaticBoundaries, remembered: f.remembered ?? [] };
   const rows = labRows(f.assignments, f.dense);
-  const kits = labKits(rows, f.review, inputs.remembered);
+  const space = labSpace(rows, f.colour);
+  const kits = labKits(rows, f.review, inputs.remembered, space);
   const offPitch = labOffPitch(inputs);
-  const timeline = labTimeline(inputs, rows, kits, offPitch);
+  const timeline = labTimeline(inputs, rows, kits, offPitch, space);
   const ball = labBall(f.dense, f.detections, f.assignments, camera);
   const w = f.assignments.image_width, h = f.assignments.image_height;
   const index = indexObservations(f.assignments.observations);
@@ -100,5 +126,5 @@ export function labPredictions(f: RunFiles) {
     }
     if (frame.ball) balls.push({ time_s: time, x: frame.ball.x * w, y: frame.ball.y * h });
   }
-  return { source_sha256: f.sourceSha, observations, ball: balls, kits: kits.length };
+  return { source_sha256: f.sourceSha, observations, ball: balls, kits: kits.length, colour: space };
 }
