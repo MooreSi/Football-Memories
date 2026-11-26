@@ -15,8 +15,8 @@ MPS 1157 ms (mini) vs 836 ms (M3 Pro) per 64 crops. 60 s clip, 2 reps: Local 109
 Remote 106/108 s, Split 90/103 s; all outputs/source hashes verified. Containers on
 macOS cannot use the Neural Engine or Metal, so analysis stays native on both Macs.
 No code changed, nothing deployed, no production job/source/result touched. Owner
-asked about containerising the MacBook node; recommendation to stay native is
-pending their answer. Not built: Neural Engine + GPU shared detection, one job per Mac.
+decided: keep the MacBook node native (DECISIONS.md). Not built: Neural
+Engine + GPU shared detection, one job per Mac.
 
 ## Library default, Clips nav, NL crest — 26 November 2026
 

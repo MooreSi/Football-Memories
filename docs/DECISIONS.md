@@ -696,3 +696,12 @@ and poor end coverage. Six assistant checks cannot establish independent accurac
 No measured candidate passed gates; expose evidence read-only rather than replace
 the owner's accepted calibration. Promotion needs new independent checks, verified
 geometry and adequate coverage. Base runtime deps and automatic jobs unchanged.
+
+## Video analysis runs native on both Macs, not in containers (2026-11-26)
+
+Owner decision ("Keep it native"). Docker on macOS runs a Linux VM without CoreML
+(Neural Engine) or PyTorch MPS (Metal GPU); measured CPU-only fallback is about 4x
+slower detection and 1.7-2.6x slower ReID. The mini worker and the MacBook node stay
+native Python venvs, connected by SSH bound to the Thunderbolt bridge. App, gateway
+and helpers stay containerised. Evidence:
+[two-mac-performance](system/domains/video-analytics/two-mac-performance.md).
