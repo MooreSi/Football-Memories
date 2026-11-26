@@ -191,3 +191,30 @@ only pairs within ~0.005 of 0.95 could change grouping. Effect on the whole
 appearance stage (19 s per 60 s clip, which also includes crop decoding) is
 unmeasured. Not integrated: needs a pinned mlpackage hash in the ReID config, an
 `appearance` Core ML path with tests, and a before/after grouping comparison.
+
+### Core ML ReID in the worker (built, not enabled)
+
+`ReidEmbedder` uses a pinned Core ML export when the ReID config has
+`"coreml": {"model", "sha256"}` (tree hash, like the detector), loaded with
+`CPU_AND_NE`, fixed batch with padding dropped. Without that entry the PyTorch path
+is unchanged. The node probe reports `reid_coreml_sha256`; readiness requires it to
+equal the coordinator profile's optional `reid_coreml_sha256` (both absent is
+fine), so the two Macs can never mix backends in Split. Build the export with
+`tools/convert_reid_coreml.py` (refuses an existing output, prints the entry).
+
+Whole `prepare_review` on six cached games (outputs in scratch, bases unchanged):
+
+| Game | Tracks | MPS s | Core ML NE s | Adjusted Rand vs MPS |
+| --- | --- | --- | --- | --- |
+| 03964514 | 1100 | 99.4 | 44.0 | 0.996 |
+| e6e2c61a | 618 | 69.3 | 34.7 | 0.685 |
+| f2bb7aac | 5175 | 239.2 | 91.8 | 0.996 |
+| 09b50973 | 2106 | 241.2 | 140.7 | 0.983 |
+| c880cae0 | 2199 | 187.1 | 87.5 | 0.896 |
+| cbd21303 | 973 | 88.0 | 35.5 | 0.975 |
+
+The stage runs 1.7-2.6x faster. Control: MPS run twice gives identical groups
+(Rand 1.0) on e6e2c61a and c880cae0, so the e6e2c61a (16.5% of tracks relabelled)
+and c880cae0 changes are caused by FP16 Core ML, not run-to-run noise. Which
+grouping is better is unknown (no reviewed truth). Owner decision needed before
+enabling; until then no config carries a `coreml` entry.

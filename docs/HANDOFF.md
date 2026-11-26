@@ -1,3 +1,15 @@
+## Core ML ReID built, NOT enabled — 26 November 2026
+
+Worker: optional pinned `coreml` entry in the ReID config runs SportsReID on the
+Neural Engine (CPU_AND_NE); node probe/readiness pin `reid_coreml_sha256` so both
+Macs match. Converter `tools/convert_reid_coreml.py`. 8 new tests observed red
+(7 behavioural, PyTorch guard control passed) then green; one new-test setup mkdir
+fixed before first green, no assertion changed. 235 tests, ruff, format, project
+checks pass. Appearance stage 1.7-2.6x faster on six cached games, but grouping
+changed on two (adjusted Rand 0.685 and 0.896; PyTorch rerun control = 1.0).
+Owner approved deploying "when done"; held because of that grouping change and
+asked the owner. Nothing installed or restarted; production configs untouched.
+
 ## Library default, Clips nav, NL crest and side-by-side Hudl/Veo DEPLOYED — 26 November 2026
 
 Owner: "Yes, deploy". Families: main `8c31cdb` = e7fee2b + only the UI cherry-pick of
