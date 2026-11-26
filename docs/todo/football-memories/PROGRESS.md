@@ -1,3 +1,20 @@
+## Spec730 execution nodes implementation — 26 November 2026
+
+Admin Advanced selector Local/MacBook/Split, status polling, authenticated save,
+offline refusal and immutable new-job snapshots implemented across app/gateway.
+Worker223 pass/all gates; gateway500 pass/2 existing skips plus4 Docker cases,
+lint/format/mypy. App frontend980 tests/194 files, typecheck and hosted build pass;
+backend854 SQLite +854 PostgreSQL, ruff/format/mypy and no Alembic drift. New API
+and UI missing-behaviour tests observed red before implementation. Worker dispatch
+red on ignored remote policy; split red on explicit stub. Initial archive/transport
+tests followed implementation; later symlink/undeclared-payload guards red/green.
+No existing assertions weakened. Browser1280 and375px isolated synthetic account
+verified save and no phone overflow, reference01 compared. Real SSH synthetic2s
+all modes complete with source/manifest/ZIP checks. MacBook installed separately,
+existing Football Analysis and Docker containers preserved. Cached15s Local/Remote/Split smoke also passed source/hash/ZIP/decode checks.
+Isolated provisioner Docker verification and admin-only deployment still pending.
+No source account access. Unrelated launch.json unchanged.
+
 ## Spec720 DEPLOYED to all eight libraries — 26 November 2026
 
 Owner replied "deploy it" after the explicit full provisioner Docker isolation

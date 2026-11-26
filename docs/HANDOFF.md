@@ -1,3 +1,27 @@
+## Spec730 admin execution settings implemented — 26 November 2026
+
+Branch `codex/local-video-analytics`; worker70f44ac and gatewayee2fe28. Advanced
+offers Local(default), MacBook Pro and Split with readiness and error handling.
+Hidden from non-admin and protected by gateway full-admin/MFA/CSRF; ordinary jobs
+remain local. Split keeps continuous local tracking then overlaps local camera
+and remote appearance. Matching sources/models prepared on M3 Pro/18GB via strict
+SSH with owner-installed dedicated Thunderbolt-restricted public key. No gateway
+SSH credentials/paths, public worker port or silent fallback. See
+[spec730](todo/football-memories/730-video-lab-nodes.md).
+
+Verified frontend980/194 files, typecheck/hosted build; backend854 SQLite+854 PG,
+ruff/format/mypy/Alembic; worker223/all gates; gateway500+4 Docker/lint/format/mypy.
+API7 and UI2 new regressions observed red first; third UI test is a passing access
+negative control. Worker dispatch tests red on wrong execution; split red on stub;
+some archive/transport tests added after implementation, later metadata/link guards
+observed red/green. No existing assertion weakened. Browser isolated synthetic
+admin1280/375px: Split save verified, phone scrollWidth=clientWidth375, reference01
+compared. Actual SSH synthetic2s all three modes hash/source/ZIP verified. Cached15s
+Local/Remote/Split smoke also passed source/hash/ZIP/full-decode checks; isolated
+MacBook Docker check still pending. No production source access,
+old media/results changed or production session fabricated. Deployment pending;
+shared release currently remains spec720. External .claude/launch.json untouched.
+
 ## Spec720 DEPLOYED to all eight libraries — 26 November 2026
 
 Owner replied "deploy it" after the explicit full provisioner Docker isolation

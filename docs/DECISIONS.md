@@ -4,6 +4,19 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-060 (2026-11-26) Admin chooses local, remote or split Video Lab execution
+
+Owner requests a Settings > Advanced selector and preparation of the MacBook.
+Keep Local as default and snapshot the choice into new admin jobs; ordinary users
+remain local. The mini remains the single queue coordinator. Remote uses strict
+authenticated SSH with private operator profiles and matching code/model hashes.
+Split retains continuous local tracking, then overlaps local camera reconstruction
+with remote appearance preparation and verifies the combined artifacts. Never
+silently fall back or promise a speedup; startup/transfer can dominate short clips.
+The owner installed the dedicated Thunderbolt-restricted public key. No source
+account flow or old footage/result storage is changed. See
+[spec730](todo/football-memories/730-video-lab-nodes.md).
+
 ## D-059 (2026-11-26) Separate lab entitlements from shared app releases
 
 Owner requests general app upgrades while keeping labs admin-only by default,

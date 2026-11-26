@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLabAdmin } from "../../api/labAdmin";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
+import { VideoNodeSettings } from "./VideoNodeSettings";
 
 type Account={id:string;display_name:string;email:string;self:boolean;player_lab:boolean;video_lab:boolean};
 const BASE="/_admin/api/labs";
@@ -51,6 +52,7 @@ export function AdvancedSettings(){
       </fieldset>)}
     {save.isPending&&<p role="status" className="text-sm text-fg-muted">Saving lab access…</p>}
     {save.isError&&<p role="alert" className="text-sm text-danger">{save.error.message}</p>}
+    <VideoNodeSettings admin={admin}/>
     <div className="space-y-3 border-t border-line pt-4">
       <h3 className="font-semibold">App updates for everyone</h3>
       <p className="text-sm text-fg-muted">Move running libraries to the latest prepared release. Their app containers restart; matches, settings and lab access are kept. Preview builds are kept until the release includes their work. Choose a time when no one is downloading or rendering.</p>

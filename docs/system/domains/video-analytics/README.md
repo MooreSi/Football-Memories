@@ -1,5 +1,14 @@
 # Video analytics
 
+Spec730 adds an admin-only execution selector in Advanced. Local remains default;
+Remote runs the whole job on the prepared MacBook, and Split overlaps local
+camera reconstruction with remote appearance preparation after local tracking.
+The mini alone consumes the queue. Readiness expires after120s, and new admin
+requests snapshot the selected mode; ordinary users stay local. SSH profiles,
+keys and executable paths stay outside the gateway mount. Source/code/model/hash
+checks precede publication; remote failure does not silently fall back. This is
+stage distribution, not independent video chunks or a claimed speed improvement.
+
 [Two Mac performance investigation](two-mac-performance.md) (26 November 2026):
 current native M4 worker is single-consumer; a second host requires job scheduling
 and result transfer, not just a shared runtime mount. Whole-job offload/batch work
