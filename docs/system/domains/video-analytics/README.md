@@ -191,3 +191,10 @@ change on RCW (the refit converges on the same partial arcs; the halfway line's
 detected extent also stops short). Reverted. Root cause: far-field markings on pale,
 sunlit grass are too faint at this resolution; a better far-line detector (or
 higher-resolution far crops) is the next step, not more fitting heuristics.
+
+Spec720: lab entitlements are per-account gateway metadata, separate from app builds.
+Only admin can grant/revoke; Video Lab enforces access at every endpoint, retaining
+owner checks for jobs/reviews/frame sets/artifacts. Granted users use portal routes
+because the edge keeps the admin console LAN-only. Imported sample metadata now
+records owner_id; users never receive operator samples or other users' sample lists.
+Turning off either lab preserves its saved work. See hosting domain for rollout.

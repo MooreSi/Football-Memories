@@ -4,6 +4,18 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-059 (2026-11-26) Separate lab entitlements from shared app releases
+
+Owner requests general app upgrades while keeping labs admin-only by default,
+with separate switches for the admin and selected accounts. Store effective grants
+in the gateway rather than a build flag or elevated role. Video APIs enforce grants
+and retain source/job ownership. The admin console stays LAN-only; granted users
+use portal lab routes. Revocation preserves saved work. Protect tracked previews
+from manual/automatic/batch downgrade using verified release ancestry. Legacy
+unversioned copies keep their existing update behavior. Batch updates preserve
+individual automatic-update preferences and use the existing restart mechanism;
+operators choose an idle time. No source account/session/media storage changes.
+
 ## D-058 (2026-11-25) Preserve both ends with cylindrical rays and reviewed goal contacts
 
 The planar horizon guard discarded an observed end despite high registration

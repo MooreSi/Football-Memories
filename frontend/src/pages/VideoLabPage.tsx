@@ -205,7 +205,7 @@ export default function VideoLabPage() {
   const durationLabel = duration === 120 ? "two minutes" : `${duration / 60} minutes`;
   return <div className="mx-auto w-full max-w-[1800px] space-y-4 pb-10">
     <header className="flex flex-wrap items-end justify-between gap-4">
-      <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private admin preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
+      <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
         <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
       <Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link>
 

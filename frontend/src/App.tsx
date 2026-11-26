@@ -7,6 +7,7 @@ import { ClipExplorerPage } from "./pages/ClipExplorerPage";
 import { DownloadedPage } from "./pages/DownloadedPage";
 import { ReelStudioPage } from "./pages/ReelStudioPage";
 import { BackupSettings } from "./components/settings/BackupSettings";
+import { AdvancedSettings } from "./components/settings/AdvancedSettings";
 import { PlaybackSettings } from "./components/settings/PlaybackSettings";
 import { StorageSettings } from "./components/settings/StorageSettings";
 import { UpdateSettings } from "./components/settings/UpdateSettings";
@@ -65,6 +66,7 @@ export function App() {
         <Route path="import" element={<ImportPage />} />
         <Route path="settings" element={<SettingsLayout />}>
           <Route index element={<PlaybackSettings />} />
+          <Route path="advanced" element={<AdvancedSettings />} />
           <Route path="storage" element={<StorageSettings />} />
           <Route path="backups" element={<BackupSettings />} />
           <Route path="connections" element={<ConnectionsPage embedded />} />

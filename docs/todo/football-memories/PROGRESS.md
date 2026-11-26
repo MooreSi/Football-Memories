@@ -1,3 +1,38 @@
+## Spec720 lab switches and preview-safe updates — 26 November 2026
+
+Branch `codex/local-video-analytics` in app and gateway repos. Code complete;
+NOT deployed or promoted to shared main/latest. Runtime confirmed admin ae13328
+is ahead of shared6138b56: the old inequality check offers a rollback. Source
+checkout is separate; data volumes are preserved by the existing updater.
+
+Settings > Advanced is admin-only, independent Player Lab/Video Lab switches
+for self and approved users (defaults admin-on, others-off), and Update all users.
+Gateway migration0008 stores grants. APIs enforce Video Lab entitlement per
+request, preserve owner isolation and filter samples. User portal lab routes work
+without opening the LAN-only admin console. Turning off preserves saved work.
+Batch updates preserve auto preferences; use an idle time (existing restart path,
+no new live busy-work guard). Release ancestry prevents preview rollback for
+manual, auto and batch updates. Seed ancestry BEFORE rollout; old metadata keeps
+legacy compatibility. Old user app images need this release before grants appear.
+
+Verified app backend854 SQLite+854 PostgreSQL, ruff/format/mypy/Alembic; frontend977
+in193 files, typecheck and hosted build. Gateway493 tests,2 existing opt-in skips,
+4 Docker cases separately, ruff/format/mypy; fresh isolated migration+drift check.
+Gateway web72/typecheck/build; provisioner88/lint/format/mypy; updater24/lint/format/mypy.
+Provisioner Docker invocation SKIPPED: live gateway exists (88 deselected).
+New behavioral failures observed before implementation for grants, UI gates,
+admin tab, preview wording, manual/auto rollback, batch action, ancestry and portal
+route. Additional own-sample/batch-UI checks added after implementation. Existing
+assertions unchanged. Browser synthetic accounts only: desktop1280 and375px iframe,
+checkbox save verified; reference01 compared, screenshots /tmp/fm720-evidence.
+No production sign-in or source-service/media access. External .claude/launch.json
+left untouched and unstaged.
+
+**Deployment gate:** required provisioner real-Docker integration refuses any live
+gateway. Do not remove production or bypass the guard. Finish in a separate Docker
+environment or obtain the owner's explicit exception before release. See spec720
+for gateway-first migration/ancestry and normal shared-app rollout sequence.
+
 ## Two Mac analysis investigation — 26 November 2026
 
 Docs-only report: [two Mac performance](../../system/domains/video-analytics/two-mac-performance.md).

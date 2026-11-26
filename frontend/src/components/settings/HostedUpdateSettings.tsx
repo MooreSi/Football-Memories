@@ -108,6 +108,8 @@ export function HostedUpdateSettings() {
             </div>
           ) : waitingSince ? (
             <p role="status" className="flex items-center gap-2 text-sm text-fg-muted"><RefreshCw size={14} className="animate-spin" aria-hidden /> Checking GitHub for a newer version… a new version takes a minute or two to prepare.</p>
+          ) : data.current && data.latest && data.current !== data.latest ? (
+            <p className="text-sm text-fg-muted">Preview build kept. The shared release will be offered when it includes this version’s work.</p>
           ) : (
             <p className="flex items-center gap-2 text-sm text-ok"><CheckCircle2 size={16} aria-hidden /> Your library is up to date.</p>
           )}

@@ -81,3 +81,29 @@ Owner authorizes release to every hosted library, the local app and default GitH
 Use normal main/updater/default-image pipeline, then move all provisioned libraries after
 idle source/render checks. Preserve databases/footage and other users' update settings.
 Restore admin auto-update to its pre-preview true once public latest equals the release.
+
+## Lab access and preview-safe updates (spec 720)
+
+Lab access belongs to the gateway account, independently of a hosted app image.
+`lab_access` rows store separate Player Lab / Video Lab switches. Missing rows retain
+admin-on / ordinary-user-off defaults. Only a fully verified admin may change them
+in Settings > Advanced; grants never change a user's role or library ownership.
+`/me` supplies effective switches only after full sign-in. Video Lab APIs enforce the
+switch on every request and continue to bind jobs/labels/artifacts to the caller.
+Legacy operator samples remain admin-only; new imported samples carry owner IDs.
+
+The public edge deliberately blocks `/_admin` outside the home network. Granted
+users therefore call the matching `/_portal/api/video-analytics` routes, with the
+same entitlement/owner/CSRF checks. Admin keeps the existing route. Never open the
+admin console at the edge as a workaround for granting lab access.
+
+The updater records full Git ancestry for its latest release, resolving shallow
+history first; the provisioner passes the validated hashes to the gateway. Manual,
+automatic and admin batch updates protect divergent/ahead previews. Existing
+unversioned libraries retain the earlier update behavior. Legacy status files
+without ancestry retain compatibility: **seed ancestry under the updater lock
+before deploying this gateway/provisioner change**; do not assume inequality proves
+an upgrade. App Update explains a protected build instead of offering a rollback.
+Admin batch updates touch only approved/running libraries and preserve update
+preferences. It uses the existing container-restart mechanism: select an idle time
+(no downloads/renders); there is no new live busy-job admission guard.

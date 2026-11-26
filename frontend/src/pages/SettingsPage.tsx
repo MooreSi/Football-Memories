@@ -1,4 +1,5 @@
 import { ArrowUpCircle, HardDrive, PlugZap, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { useLabAdmin } from "../api/labAdmin";
 import { NavLink, Outlet } from "react-router-dom";
 
 const ALL_TABS = [
@@ -13,6 +14,7 @@ const ALL_TABS = [
 const TABS = ALL_TABS;
 
 export function SettingsLayout() {
+  const admin=useLabAdmin();
   return (
     <div className="space-y-6">
       <header>
@@ -20,7 +22,7 @@ export function SettingsLayout() {
         <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
       </header>
       <nav aria-label="Settings sections" className="inline-flex flex-wrap gap-1 rounded-full border border-line bg-ink-900/70 p-1">
-        {TABS.map(({ to, label, icon: Icon, end }) => (
+        {(admin.data?.admin ? [...TABS,{to:"/settings/advanced",label:"Advanced",icon:SlidersHorizontal,end:false}] : TABS).map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}

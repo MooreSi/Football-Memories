@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import type { Review } from "./labTypes";
 import type { SavedModel } from "./kits";
 
-export const BASE = "/_admin/api/video-analytics";
+export { VIDEO_LAB_BASE as BASE } from "../../api/videoLabEndpoint";
+import { VIDEO_LAB_BASE as BASE } from "../../api/videoLabEndpoint";
 
 /** A fixed-name, manifest-declared artifact of a completed run; absent files are never requested. */
 export function useJobFile<T>(jobId: string, name: string, available: boolean, validate: (value: unknown) => value is T) {
