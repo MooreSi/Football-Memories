@@ -185,3 +185,9 @@ perpendicular marking families (fixed a synthetic 3 degree roll, but on real foo
 locked onto false alignments and collapsed or blew up three outlines). A far-side
 pixel-distance metric is meaningless here: a 3 degree pose error barely moves it,
 because the far field is full of white clutter. Judge far edges visually.
+Third attempt (26 Nov): least-squares refit of the centre circle with its centre on
+the halfway line, plus a far-edge candidate at the halfway line's observed end. No
+change on RCW (the refit converges on the same partial arcs; the halfway line's
+detected extent also stops short). Reverted. Root cause: far-field markings on pale,
+sunlit grass are too faint at this resolution; a better far-line detector (or
+higher-resolution far crops) is the next step, not more fitting heuristics.
