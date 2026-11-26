@@ -15,7 +15,7 @@ TournamentSquadChoice that passes alone and on rerun), typecheck, build pass. Ba
 its suites not run. Browser: hosted build against a local read-only harness serving cached NL run
 91f49e12 (local review, accepted panorama, no corners): map shows 16-36 people moving, ball on the
 map when seen, selection + trail work. The pane browser painted only ~3 frames/s, so smoothness
-was not judged there. Not deployed. Known limit: far-half people bunch near the far line on that
+was not judged there. DEPLOYED to admin only on the owner's "Yes, deploy": ee9532b -> 386143d, built from a clean worktree (frontend 1052 pass there; the working copy's extra test is another session's uncommitted edit), FM_BUILD_LATEST=0, added to `built` (latest 8c31cdb untouched), exactly 3 admin containers changed, capture idle before the swap, /api/health ok, served VideoLabPage bundle carries the new map. Worker and gateway unchanged. Known limit: far-half people bunch near the far line on that
 run (estimated far side of the outline). Branch codex/local-video-analytics. Uncommitted
 VeoAnalysisPicker/launch.json edits and the 750 spec belong to another session and were left alone.
 
