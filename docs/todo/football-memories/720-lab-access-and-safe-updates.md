@@ -1,6 +1,6 @@
 # 720: Lab access independent of app updates
 
-**Status:** Code complete; release gated
+**Status:** Deployed to all eight libraries on 26 November 2026
 **Sensitive:** no credential/session changes; metadata access controls only.
 
 ## What is wrong or missing today
@@ -44,7 +44,8 @@ typecheck/hosted build. Gateway493 with2 existing opt-in skips;4 Docker cases
 separately, lint/format/mypy; isolated fresh migration/no drift. Browser synthetic
 desktop and375px frame; save works; reference01 compared. Screenshots outside repo.
 Additional boundary checks after implementation are identified in HANDOFF.
-No Hudl/Veo access or existing library files changed. Deployment remains gated.
+No source login/refresh/download for verification or existing library writes.
+Deployed with the owner's explicit full Docker isolation exception.
 
 ## Rollout gate
 Code is prepared on codex/local-video-analytics in app and gateway repos. Build
@@ -68,3 +69,40 @@ Code commits app `f604877`, gateway `aaecf42`; gateway CI45778074931 green
 `hosted-f604877cb620fed047e0befacc2dc6c3ac80923e`; gateway/provisioner images
 `spec720-aaecf42`. These builds changed no running container or shared tag/latest.
 Deployment still requires the full Docker isolation check or explicit exception.
+
+## Deployment
+
+Owner replied "deploy it" after the explicit full provisioner Docker isolation
+exception request; this waives that check for this release only. App main/shared
+latest is `e7fee2b84396b20ab5468775cf2f5e867c54a9fa` (runtime code identical to
+verified `f604877`); gateway main `081a353` / code `aaecf42` deployed from prepared
+`spec720-aaecf42` images, gateway CI45778074931 green. Gateway migration0008
+applied, release ancestry seeded before replacement, 12 gateway networks restored.
+Shared default app tags and crest service follow the release. All eight running
+libraries moved through the existing gateway update path and passed health checks.
+
+Live verification: current==latest==e7fee2b, available=false for every account;
+admin's two labs on by default, seven ordinary accounts off, no explicit grants
+created. Advanced settings bundle served by every library. Anonymous public portal
+lab API401; public health200. No production session fabricated and no signed-in
+browser/real toggle mutation exercised. Existing test/UI evidence above still applies.
+
+Audit: exactly27/48 containers replaced (gateway, provisioner, crests and8x3 app
+containers), other21 unchanged; every user's database container and persistent
+mount unchanged. Roles, account status, quotas and automatic-update preferences
+match the pre-deploy snapshot. All1225 existing analysis JSON SHA-256 hashes
+unchanged. Native analytics worker untouched/idle. Private rollback DB/status and
+inventory snapshots in /tmp/fm720-deployment; no secrets printed or committed.
+
+Seven helpers were busy=false/not syncing, no ffmpeg, zero network bytes over12s,
+and no queued/rendering reels before their moves. Admin still had streaming traffic
+while busy=false; repeated checks found no active capture/export/reel/analysis job,
+ffmpeg or open media-file writer. The explicitly requested final app restart ended
+that ephemeral stream. Do not claim admin network counters were flat. Saved source
+connections/volumes retained; no source login, refresh or footage download performed
+for verification, and no existing media or analysis result overwritten.
+
+Refresh the app, then use Settings > Advanced as admin for own/per-user lab switches
+and Update all users. Other users remain denied until deliberately granted. App and
+gateway workspace branches remain codex/local-video-analytics for ongoing work;
+release main references are above. External .claude/launch.json remains untouched.

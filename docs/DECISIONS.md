@@ -16,6 +16,10 @@ unversioned copies keep their existing update behavior. Batch updates preserve
 individual automatic-update preferences and use the existing restart mechanism;
 operators choose an idle time. No source account/session/media storage changes.
 
+Owner approved deployment on26 November by replying "deploy it" after the explicit
+request for a full provisioner Docker isolation exception. Exception is specific to
+this release; all other safety/data/access controls remain. Deployed to all8 libraries.
+
 ## D-058 (2026-11-25) Preserve both ends with cylindrical rays and reviewed goal contacts
 
 The planar horizon guard discarded an observed end despite high registration

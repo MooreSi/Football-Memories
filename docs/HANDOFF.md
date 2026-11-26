@@ -1,3 +1,40 @@
+## Spec720 DEPLOYED to all eight libraries — 26 November 2026
+
+Owner replied "deploy it" after the explicit full provisioner Docker isolation
+exception request; this waives that check for this release only. App main/shared
+latest is `e7fee2b84396b20ab5468775cf2f5e867c54a9fa` (runtime code identical to
+verified `f604877`); gateway main `081a353` / code `aaecf42` deployed from prepared
+`spec720-aaecf42` images, gateway CI45778074931 green. Gateway migration0008
+applied, release ancestry seeded before replacement, 12 gateway networks restored.
+Shared default app tags and crest service follow the release. All eight running
+libraries moved through the existing gateway update path and passed health checks.
+
+Live verification: current==latest==e7fee2b, available=false for every account;
+admin's two labs on by default, seven ordinary accounts off, no explicit grants
+created. Advanced settings bundle served by every library. Anonymous public portal
+lab API401; public health200. No production session fabricated and no signed-in
+browser/real toggle mutation exercised. Existing test/UI evidence above still applies.
+
+Audit: exactly27/48 containers replaced (gateway, provisioner, crests and8x3 app
+containers), other21 unchanged; every user's database container and persistent
+mount unchanged. Roles, account status, quotas and automatic-update preferences
+match the pre-deploy snapshot. All1225 existing analysis JSON SHA-256 hashes
+unchanged. Native analytics worker untouched/idle. Private rollback DB/status and
+inventory snapshots in /tmp/fm720-deployment; no secrets printed or committed.
+
+Seven helpers were busy=false/not syncing, no ffmpeg, zero network bytes over12s,
+and no queued/rendering reels before their moves. Admin still had streaming traffic
+while busy=false; repeated checks found no active capture/export/reel/analysis job,
+ffmpeg or open media-file writer. The explicitly requested final app restart ended
+that ephemeral stream. Do not claim admin network counters were flat. Saved source
+connections/volumes retained; no source login, refresh or footage download performed
+for verification, and no existing media or analysis result overwritten.
+
+Refresh the app, then use Settings > Advanced as admin for own/per-user lab switches
+and Update all users. Other users remain denied until deliberately granted. App and
+gateway workspace branches remain codex/local-video-analytics for ongoing work;
+release main references are above. External .claude/launch.json remains untouched.
+
 ## Spec720 lab switches and preview-safe updates — 26 November 2026
 
 Code commits app `f604877`, gateway `aaecf42`; gateway CI45778074931 green
