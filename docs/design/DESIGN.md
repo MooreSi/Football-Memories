@@ -11,6 +11,7 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 | [01-ai-dashboard.webp](reference/01-ai-dashboard.webp) | **App shell, Library (dashboard)** | pill top nav (active pill labelled + glowing, others round icons), 3 columns: overview tiles + ranked bars left, big hero with carousel arrows/dots centre, "latest match" panel with team discs and a big blue **Watch now** button + list right; floodlit stadium mood |
 | [02-smart-tagging-player.png](reference/02-smart-tagging-player.png) | **Match page / clip player** | left rail: back + title, match card, uppercase tag rows with counts and a solid blue active row; centred match header pill; big video; clip bar (start / tag / end); removable filter chips + blue "n selected" pill; full-match timeline with yellow pins |
 | [03-player-card-profile.webp](reference/03-player-card-profile.webp) | **Player Hub** | player card with photo and key numbers, teams/numbers/roles chips, teammates row, skills radar and per-match bar chart (from tag counts only, labelled as tag counts, not ratings), vertical clip feed |
+| [04-match-stats-key-bars.webp](reference/04-match-stats-key-bars.webp), [05-match-stats-tiles-charts.webp](reference/05-match-stats-tiles-charts.webp), [06-match-stats-network.webp](reference/06-match-stats-network.webp), [07-match-stats-standouts.webp](reference/07-match-stats-standouts.webp) | **Match page: Match stats tab** (owner, 2026-11-26) | "What stood out" card with highlighted figures, headline tiles with big number and recent-form delta, three ruled columns of centre-out comparison bars, ring charts, gradient bar charts; dark rounded cards with small uppercase subtitles. Not taken: passing stats, pass network and player photos (no such data in the app), green/grey team colours (the app's cyan/orange pair stays) |
 
 ## Screen to reference status
 
@@ -27,6 +28,7 @@ names or text, and never show invented data (no fake scores, odds or ratings).
 | Highlight reels (list + builder) | 02 queue/clip bar + 01 panels | done; title cards drawn in the app's palette |
 | Memories Timeline | 03 styling | done (season > month > match > moment; all / favourites / unwatched / by type) |
 | Library "Your player" card | 01 (MVP card slot) | done |
+| Match page: Match stats tab | 04-07 | done 2026-11-26: checked at 1440 and 375 px against a real Veo match |
 
 ## Screen themes (`frontend/src/screens.css`)
 
