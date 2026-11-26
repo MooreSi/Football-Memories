@@ -4,13 +4,22 @@
  *
  * How much to scan: the worker caps one analysis at 600 s, and a follow-cam only reaches both goals
  * when play does. On 260926 NL a 4-minute window never produced a detection of the left goal, while
- * the 10-minute runs reach both ends. So the scan takes the full ten minutes, starting at minute five
- * so warm-ups and the kick-off line-up (players stood still, coaches on the pitch) are behind it.
+ * the 10-minute runs reach both ends. So the scan takes the full ten minutes of first-half play.
+ * Veo recordings start well before kick-off (261122 NL vs Bournville Greens: 10:00; RCW vs CG 9:09;
+ * NL 260926 3:57), and a scan from minute five there was half warm-up. Veo's `halves` give the kick-off,
+ * so the scan starts one minute after it, once the line-up has broken up. Without halves (Hudl), minute five.
  */
+export const AFTER_KICK_OFF_S = 60;
 export const SCAN_S = 600, SETTLED_START_S = 300;
 export type ScanPlan = { start_s: number; duration_s: number; reason: string };
 
-export function scanPlan(matchDurationS: number | null | undefined): ScanPlan | null {
+export function scanPlan(matchDurationS: number | null | undefined, halves?: number[][] | null): ScanPlan | null {
+  const first = halves?.[0];
+  if (first && first.length === 2 && first[0] >= 0 && first[1] > first[0] && (!matchDurationS || first[1] <= matchDurationS + 1)) {
+    const start = Math.ceil(first[0]) + AFTER_KICK_OFF_S, room = Math.floor(first[1]) - start;
+    const duration = room >= SCAN_S ? SCAN_S : Math.floor(room / 60) * 60;
+    if (duration >= 60) return { start_s: start, duration_s: duration, reason: `${duration / 60} minutes of first-half play, starting a minute after Veo's kick-off, enough for the camera to reach both ends.` };
+  }
   const known = typeof matchDurationS === "number" && Number.isFinite(matchDurationS) && matchDurationS > 0;
   if (!known) return { start_s: SETTLED_START_S, duration_s: SCAN_S, reason: "Ten minutes of settled play from minute 5 (match length unknown)." };
   if (matchDurationS < 60) return null;
@@ -23,12 +32,12 @@ export type Status = "ready" | "partial" | "missing";
 export type Check = { key: "panorama" | "outline" | "players" | "ball" | "teams" | "referee"; label: string; status: Status; detail: string };
 type AtlasLike = { projection?: unknown; frame_to_panorama: (unknown[] | null)[]; times: number[]; pitch_outline?: { method: string; unseen_sides?: boolean[]; centre_circle?: boolean; halfway?: unknown } | null };
 type SummaryLike = { sampled_frames: number; person_detections: number; ball_observation_coverage: number };
-export type ReadinessInput = { summary?: SummaryLike; atlas?: AtlasLike; groups: number; labels: { own: boolean; opponent: boolean; referee: boolean } };
+export type ReadinessInput = { summary?: SummaryLike; atlas?: AtlasLike; accepted?: boolean; groups: number; labels: { own: boolean; opponent: boolean; referee: boolean } };
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 /** Provisional thresholds (recorded as an open owner decision): a checklist, never a score of accuracy. */
-export function readiness({ summary, atlas, groups, labels }: ReadinessInput): Check[] {
+export function readiness({ summary, atlas, accepted = false, groups, labels }: ReadinessInput): Check[] {
   const checks: Check[] = [];
   const total = atlas?.times.length ?? 0, solved = atlas?.frame_to_panorama.filter(Boolean).length ?? 0, share = total ? solved / total : 0;
   checks.push(!atlas?.projection || !total
@@ -39,14 +48,15 @@ export function readiness({ summary, atlas, groups, labels }: ReadinessInput): C
   else {
     const unseen = (outline.unseen_sides ?? []).filter(Boolean).length;
     const marks = [outline.halfway ? "halfway line" : null, outline.centre_circle ? "centre circle" : null].filter(Boolean).join(" and ");
-    checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: unseen ? "partial" : "ready",
-      detail: `${unseen ? `${unseen} side${unseen > 1 ? "s" : ""} estimated, not seen` : "All four sides found in the painted lines"}${marks ? `; ${marks} found` : ""}. Automatic: check it before relying on positions.` });
+    // Four sides found is not the right pitch: on a multi-pitch 3G (261122) it framed an empty pitch beside the game.
+    checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: accepted ? "ready" : "partial",
+      detail: accepted ? "You checked and accepted the pitch outline." : `${unseen ? `${unseen} side${unseen > 1 ? "s" : ""} estimated, not seen` : "All four sides found in the painted lines"}${marks ? `; ${marks} found` : ""}. Automatic: check that it frames the pitch the match is played on, then accept it in the stitched pitch review.` });
   }
   const perFrame = summary && summary.sampled_frames ? summary.person_detections / summary.sampled_frames : 0;
   checks.push({ key: "players", label: "People detected", status: perFrame >= 10 ? "ready" : perFrame >= 4 ? "partial" : "missing",
-    detail: summary ? `${perFrame.toFixed(1)} people per sampled frame (includes the sideline until the pitch outline excludes it).` : "No detection summary." });
+    detail: summary ? `${perFrame.toFixed(1)} people per sampled frame, counting the sideline and any game on a neighbouring pitch until the accepted outline excludes them.` : "No detection summary." });
   const ball = summary?.ball_observation_coverage ?? 0;
-  checks.push({ key: "ball", label: "Ball", status: ball >= 0.5 ? "ready" : ball >= 0.25 ? "partial" : "missing", detail: `Ball seen in ${pct(ball)} of sampled frames.` });
+  checks.push({ key: "ball", label: "Ball", status: ball >= 0.5 ? "ready" : ball >= 0.25 ? "partial" : "missing", detail: `A ball seen in ${pct(ball)} of sampled frames (spare balls and other pitches count; the lab follows one smooth path).` });
   const both = labels.own && labels.opponent;
   checks.push({ key: "teams", label: "Teams", status: !groups ? "missing" : both ? "ready" : "partial",
     detail: !groups ? "No player look-alike groups. Prepare player grouping." : both ? "Both kits taught; teams are decided moment by moment from them." : `${groups} look-alike groups ready. Label one player from ${labels.own || labels.opponent ? "the other team" : "each team"} to decide teams.` });

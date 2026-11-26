@@ -13,11 +13,13 @@ Longer scans see more of the pitch and more of each kit, but take longer on the 
 (10 min of footage is about 18 min of processing) and fetch more from Veo/Hudl.
 
 ## Provisional default in use
-- Window: 600 s (the worker's per-analysis cap) from minute 5; starts earlier when the
-  match is shorter than 15 minutes; the whole match (whole minutes) when under 10.
-  Evidence: on 260926 NL a 4-minute window never detected the left goal.
+- Window: 600 s (the worker's per-analysis cap) of first-half play, starting one minute
+  after Veo's kick-off (`halves`), shorter if the first half is. Without halves (Hudl):
+  from minute 5, earlier for short matches, whole match under 10 minutes.
+  Evidence: on 260926 NL a 4-minute window never detected the left goal; on 261122 NL vs
+  Bournville Greens (kick-off 10:00) a scan from minute 5 was half warm-up.
 - Ready thresholds (frontend `components/videoLab/preAnalysis.ts`): panorama >= 90% of
-  views registered (60% partly); outline ready only with all four sides found; people
+  views registered (60% partly); outline ready only once you accept it in the stitched pitch review (an automatic outline is at most "partly": on 261122 it framed an empty pitch beside the game); people
   >= 10 per sampled frame (4 partly); ball >= 50% of frames (25% partly); teams and
   referee ready only once you have labelled both teams / the referee.
 

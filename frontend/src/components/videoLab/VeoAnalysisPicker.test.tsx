@@ -186,3 +186,34 @@ it("pre-analysis is unavailable while another analysis runs",async()=>{
  await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
  expect(screen.getByRole('button',{name:'Pre-analysis'})).toBeDisabled();
 });
+
+it("shows clip preparation on the Pre-analysis button it started from",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-full',title:'Synthetic full match',available:true,duration_s:3000}]);
+  if(url.endsWith('/veo/action'))return Response.json({accepted:true});
+  if(url.endsWith('/veo/account'))return Response.json({busy:true,state:'working',message:'Connecting to the selected footage…',progress:null});
+  throw new Error(`Unexpected request: ${url}`);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
+ await userEvent.click(screen.getByRole('button',{name:'Pre-analysis'}));
+ expect(await screen.findByRole('button',{name:'Pre-analysing 5:00–15:00…'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Analyse selected match'})).toBeDisabled();
+});
+
+it("pre-analysis starts a minute after Veo's kick-off when Veo gives the halves",async()=>{
+ const posts:unknown[]=[];
+ vi.stubGlobal('fetch',vi.fn(async(url:string,init?:RequestInit)=>{
+  if(init?.method==='POST'){posts.push(JSON.parse(init.body as string));return Response.json({accepted:true});}
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-late',title:'Synthetic late kick-off',available:true,duration_s:3904,halves:[[600,2156],[2314,3831]]}]);
+  if(url.endsWith('/veo/account'))return Response.json({busy:true,state:'working',message:'Connecting…',progress:null});
+  return Response.json([]);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-late');
+ expect(screen.getByText(/Pre-analysis scans 11:00–21:00/)).toBeInTheDocument();
+ await userEvent.click(screen.getByRole('button',{name:'Pre-analysis'}));
+ await waitFor(()=>expect(posts).toEqual([{action:'analysis',match_id:'veo-late',start_s:660,duration_s:600}]));
+});

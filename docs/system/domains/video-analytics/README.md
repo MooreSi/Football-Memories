@@ -256,8 +256,8 @@ beside `AnalysedExport.tsx` made `./AnalysedExport` resolve to the `.ts` file (c
 insensitive FS, `.ts` tried first), rendering `undefined`; keep such names distinct.
 
 Pre-analysis (owner request 26 November 2026): a "Pre-analysis" button beside "Analyse selected
-match" runs the normal Veo/Hudl analysis on a planned window (`preAnalysis.scanPlan`: 600 s from
-minute 5, earlier for short matches, whole match under 10 min); a Veo import already builds the
+match" runs the normal Veo/Hudl analysis on a planned window (`preAnalysis.scanPlan`: 600 s from one
+minute after Veo's first-half kick-off in `halves`; without halves 600 s from minute 5); a Veo import already builds the
 atlas, outline, bird's-eye and player views, so no extra job is chained. Every completed run shows a
 "Pre-analysis check" (`readiness`): panorama registration share, outline sides seen, people per
 sampled frame, ball coverage, and teams/referee, which stay "partly" until labelled: look-alike
@@ -303,3 +303,10 @@ worse on the withheld benchmark (low sun precision 0.93 to 0.59). In low sun the
 shirt are often in different light, and sunlit shirts and ground clip near white, so a
 per-channel gain cannot recover the kit. The worker writes `colour_lab_balanced` but Video Lab
 uses raw colour unless asked. Score any new team-colour idea once against the frozen v1 audit.
+First real run (261122 NL vs Bournville Greens, job c8988347, 26 Nov): Veo recordings start long
+before kick-off (here 10:00), so a fixed minute-5 start scanned warm-ups. Stitching was excellent
+(2957/2997 views, all four sides "found"), but the ground has several pitches and the game was on a
+small pitch across the far side: the automatic outline framed the empty near pitch while every
+player's feet projected into a strip along the far fence. "Four sides found" therefore never means
+"right pitch"; only the reviewer's acceptance does. People/ball/look-alike counts include neighbouring
+games (a red-shirted team beside this one). Worker fix needed: pick the outline that contains play.
