@@ -13,10 +13,10 @@ type Section = { id: string; label: string; content: ReactNode | null };
  *  and a summary strip, then the page's panels as tabs with Moments first. A tab with
  *  nothing to show is left out. Inactive panels stay mounted (an edit in Goals and
  *  keepers survives a tab switch) and are hidden with CSS. */
-export function MatchSections({ match, club, rows, flow, ours, theirs, now, onSeek, moments, momentsCount, stats, goals, insights }: {
+export function MatchSections({ match, club, rows, flow, ours, theirs, now, onSeek, moments, momentsCount, stats, matchStats = null, goals, insights }: {
   match: GoalsSource & { id: string }; club: string | null; rows: TeamRow[]; flow: { minutes: Minute[]; halves: number[] };
   ours: string; theirs: string; now: number; onSeek: (time: number) => void;
-  moments: ReactNode | null; momentsCount: number; stats: ReactNode | null; goals: ReactNode; insights: ReactNode | null;
+  moments: ReactNode | null; momentsCount: number; stats: ReactNode | null; matchStats?: ReactNode | null; goals: ReactNode; insights: ReactNode | null;
 }) {
   const entries = useGoalEntries();
   const data = useMemo(() => matchGoals(match, club, entries.data?.[match.id]), [match, club, entries.data]);
@@ -25,6 +25,8 @@ export function MatchSections({ match, club, rows, flow, ours, theirs, now, onSe
   const sections: Section[] = [
     { id: "moments", label: `Moments · ${momentsCount}`, content: moments },
     { id: "stats", label: "Team stats", content: stats },
+    // Owner request 2026-11-26: the match's numbers as charts, next to Team stats.
+    { id: "match-stats", label: "Match stats", content: matchStats },
     { id: "goals", label: `Goals and keepers · ${scored}–${conceded}`, content: goals },
     { id: "players", label: "Player stats", content: <PlayerStatsPanel match={match} club={club} goals={data} onSeek={onSeek} /> },
     { id: "insights", label: "Insights", content: insights },

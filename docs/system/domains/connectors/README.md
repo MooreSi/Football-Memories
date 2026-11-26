@@ -605,6 +605,13 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   `_PATH` and read once with the report; kept as `team_data.totals` (snake_case,
   zero-for-both dropped). `team_data.v = 2`; Refresh re-reads any cached dict
   without `v == 2` once (None is still never asked again).
+- **Gotcha (seen 2026-11-26, 261116 RCW vs Kidderminster RMC):** Veo's events log a
+  goal as a `SHOT` then a `GOAL` about 0.3-1.3 s later, same side, and `total_attempts`
+  / `totals.shot` count it once (18 shots + 5 goals in the events, total_attempts 18).
+  Counting `SHOT` and `GOAL` events separately double-counts goals as attempts.
+  `frontend/src/lib/matchStats.ts veoStatEvents` folds a GOAL into a same-side SHOT
+  within 5 s. `veoTeamSplit.teamSplit`'s event-count fallback (used only when Veo gave
+  no stats) still counts both; not changed.
 - **Club crest:** the report's `teams.<own_side>.crest_url` is a public PNG on
   `assets.app.veo.co` (no query, ~2000 px, 2.4 MB, above the app's 2 MB crest
   limit). `_client.media_crest` reads only that host; `shrink_crest` (ffmpeg) scales

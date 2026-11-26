@@ -180,6 +180,18 @@ it("jumps to a goal or shot from the team timeline", async () => {
   expect(video.currentTime).toBe(1900);
 });
 
+// Owner request 2026-11-26: Match stats beside Team stats, as charts, with recent form.
+it("shows the match's numbers as charts in a Match stats tab, against earlier matches", async () => {
+  const earlierMatch = { ...match, id: "veo-0", title: "261020 RJ vs Eastfield CB", team_data: { stats: { goals: { own: 1, opponent: 0 } }, events: [] } };
+  routes([{ ...match, team_data: teamData }, earlierMatch], ready);
+  renderWithProviders(<App />, "/veo/veo-a");
+  await userEvent.setup().click(await screen.findByRole("tab", { name: "Match stats" }));
+  const panel = screen.getByRole("region", { name: "Match stats" });
+  expect(within(panel).getByLabelText("Attempts: Us 7, Opponent 3")).toBeInTheDocument();
+  expect(within(panel).getByRole("figure", { name: "Goals headline" })).toHaveTextContent(/vs last 1 avg.*\+100%/);
+  expect(within(panel).getByRole("button", { name: "Opponent goal at 31:40" })).toBeInTheDocument();
+});
+
 it("shows no team stats for a match Veo gave none for", async () => {
   routes([{ ...match, team_data: null }], ready);
   renderWithProviders(<App />, "/veo/veo-a");

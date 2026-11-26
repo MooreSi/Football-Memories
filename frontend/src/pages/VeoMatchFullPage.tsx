@@ -17,6 +17,8 @@ import { TeamStatsTable } from "../components/match/TeamStatsTable";
 import { GoalsPanel } from "../components/match/GoalsPanel";
 import { QuickReels } from "../components/match/QuickReels";
 import { MatchSections } from "../components/match/MatchSections";
+import { MatchStatsPanel } from "../components/match/MatchStatsPanel";
+import { earlier, veoStatEvents } from "../lib/matchStats";
 import { recordAgainst } from "../lib/headToHead";
 import { fixtureParts } from "../lib/hudlFixture";
 import { matchLink, veoAsHudl } from "../lib/veoAsHudl";
@@ -352,6 +354,10 @@ export function VeoMatchFull({ id }: { id: string }) {
         ours={team || "Us"} theirs="Opponent" now={now} onSeek={seekTo}
         moments={everything.length > 0 ? <><QuickReels match={match} club={null} />{momentsPanel}</> : null} momentsCount={everything.length}
         stats={teamRows.length ? <VeoTeamStats match={match} onSeek={seekTo} /> : null}
+        matchStats={teamRows.length ? <MatchStatsPanel rows={teamRows} events={veoStatEvents(match.team_data?.events ?? [])} halves={match.halves}
+          duration={match.duration_s ?? 0} ours={team || "Us"} theirs="Opponent" onSeek={seekTo} source="Veo"
+          previous={earlier((library.data ?? []).filter(m => m.id !== id && clubOf(m) === team && teamSplit(m.team_data).length), match.title, m => m.title)
+            .map(m => teamSplit(m.team_data))} /> : null}
         goals={<GoalsPanel match={match} club={null} onSeek={seekTo} />}
         insights={<VeoInsights match={match} onSeek={seekTo} />} />
     </div>

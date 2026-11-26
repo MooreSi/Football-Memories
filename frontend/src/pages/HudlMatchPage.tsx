@@ -3,7 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Activity, Clapperboard, Download, Film, FolderArchive, ListVideo, Play, Route, Share2, SkipBack, SkipForward, Square, StickyNote } from 'lucide-react';
-import { type HudlMoment, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
+import { type HudlMatch, type HudlMoment, hudlAgeGroups, hudlBlocked, hudlRequest, useHudlLibrary, useHudlStatus } from '../api/hudl';
+import { MatchStatsPanel } from '../components/match/MatchStatsPanel';
+import { earlier, hudlStatEvents } from '../lib/matchStats';
+import { cohortOf, inCohort } from '../lib/teams';
 import { StreamPlayer } from '../components/settings/HudlAccount';
 import { Button } from '../components/ui/Button';
 import { MatchScoreBox } from '../components/match/MatchScoreBox';
@@ -256,11 +259,23 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
         ours={club || 'Us'} theirs={theirs} now={now} onSeek={seekTo}
         moments={<><QuickReels match={match} club={club} />{momentsPanel}</>} momentsCount={moments.length}
         stats={teamRows.length ? <HudlTeamStats moments={moments} club={club} /> : null}
+        matchStats={teamRows.length ? <MatchStatsPanel rows={teamRows} events={hudlStatEvents(moments, club)} duration={match.duration_s ?? 0}
+          ours={club || 'Us'} theirs={theirs} previous={earlierRows(library.data, match, club)} onSeek={seekTo} source="Hudl" /> : null}
         goals={<GoalsPanel match={match} club={club} onSeek={seekTo} />}
         insights={<MatchInsights match={match} club={club} onSeek={seekTo} />} />}
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}
   </div>;
+}
+
+/** Owner request 2026-11-26: the team stats of this team's earlier tagged matches, for
+ *  Match stats' recent form. Same cohort as the head-to-head (a team moves up an age
+ *  group each season). */
+function earlierRows(library: HudlMatch[] | undefined, match: HudlMatch, club: string | null) {
+  const team = cohortOf(hudlAgeGroups(match)[0] ?? '', match.season_label);
+  const pool = (library ?? []).filter(m => m.id !== match.id && (team === null || inCohort(m, team)));
+  const rows = pool.map(m => ({ title: m.title, rows: hudlTeamStats(m.moments ?? [], club) })).filter(m => m.rows.length);
+  return earlier(rows, match.title, m => m.title).map(m => m.rows);
 }
 
 /** Owner request 2026-11-15: team stats on a Hudl match, from the tags that name a side. */

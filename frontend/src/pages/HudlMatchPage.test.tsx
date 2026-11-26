@@ -53,3 +53,18 @@ it('shows the team stats from the tags that name a side', async () => {
  expect(within(team).getByRole('row',{name:/Corners/})).toHaveTextContent(/2.*Corners.*1/);
  expect(within(team).getByRole('row',{name:/Goals/})).toHaveTextContent(/1.*Goals.*1/);
 });
+
+// Owner request 2026-11-26: Match stats beside Team stats on a Hudl match too.
+it('shows a Match stats tab from the tags that name a side', async () => {
+ stubFetch({'http://127.0.0.1:8766/library':[{id:'synthetic-a',title:'261108 Riverside v Rovers',age_group:'U10',moments:[
+  {id:'m1',category:'RIVERSIDE CORNER',time_s:10,duration_s:1},{id:'m2',category:'RIVERSIDE CORNER',time_s:20,duration_s:1},
+  {id:'m3',category:'OPPOSITION CORNER',time_s:30,duration_s:1},{id:'m4',category:'RIVERSIDE GOAL',time_s:40,duration_s:1},
+  {id:'m5',category:'OPPOSITION GOAL',time_s:50,duration_s:1}]}],
+  'http://127.0.0.1:8766/account':{configured:true,state:'idle',busy:false},'http://127.0.0.1:8766/account/action':{accepted:true},
+  '/api/settings/home-teams':{hudl:'Riverside',veo:null},'/api/notes':[]});
+ renderWithProviders(<App/>,'/hudl/synthetic-a');
+ await userEvent.setup().click(await screen.findByRole('tab',{name:'Match stats'}));
+ const panel=screen.getByRole('region',{name:'Match stats'});
+ expect(within(panel).getByLabelText('Corners: Riverside 2, Rovers 1')).toBeInTheDocument();
+ expect(within(panel).getByRole('button',{name:'Rovers goal at 0:50'})).toBeInTheDocument();
+});
