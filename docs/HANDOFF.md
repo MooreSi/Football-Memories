@@ -248,6 +248,8 @@ overlapping pitches). Worker 227 tests green. The live worker (spec730 checkout)
 moved to 5a74a19 with owner approval (worker restarted idle). Rebuild 6c216d41 (child
 of f2ab96a2, RCW 10 min): right end now at the goal line by the near corner flag, far
 corner just behind the goal; halfway line unchanged; far touchline still estimated.
+Owner then corrected and accepted the boundary in Video Lab (review revision 2: 28
+points, halfway saved) and confirmed it now looks correct. Spec710 goal closed.
 
 
 ## Spec710 whole-pitch coverage + halfway line DEPLOYED — 26 November 2026
