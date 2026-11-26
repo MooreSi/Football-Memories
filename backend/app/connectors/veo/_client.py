@@ -255,6 +255,23 @@ def _open(request: urllib.request.Request, timeout: float) -> Any:
     return _OPENER.open(request, timeout=timeout)
 
 
+def video_problem(url: str) -> str | None:
+    """Why the app will not read this match video address, in words safe to show (a host
+    name or a file type, never the address), or None when it is Veo's own MP4."""
+    parts = urlsplit(url)
+    if parts.scheme != "https":
+        return "a non-https address"
+    if parts.hostname != CDN or parts.port is not None:
+        return f"a file on {parts.hostname or 'an unnamed host'}"
+    if parts.query or parts.fragment:
+        return "a signed address"
+    if not parts.path.lower().endswith(".mp4"):
+        name = parts.path.rsplit("/", 1)[-1]
+        kind = name.rsplit(".", 1)[-1].lower()[:8] if "." in name else ""
+        return f"a .{kind} stream" if kind.isalnum() else "a file without a type"
+    return None
+
+
 def _video(url: str, suffixes: tuple[str, ...] = (".mp4",), host: str = CDN) -> str:
     parts = urlsplit(url)
     if (

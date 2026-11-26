@@ -119,6 +119,8 @@ class VeoConnection:
         self._folder = folder or (lambda: directory.parent)
         # Spec 260: video addresses and the stream token live in memory only.
         self._videos: dict[str, str] = {}
+        # Why a match's listed videos were refused (a host or file type, never an address).
+        self._video_problems: dict[str, str] = {}
         self._stream: tuple[str, str] | None = None
         self._media_lock = threading.Lock()
         self._downloading = False
@@ -684,11 +686,23 @@ class VeoConnection:
                 Path(temporary).unlink(missing_ok=True)
 
     def _remember(self, identity: str, videos: Any) -> str | None:
-        video = best_video(videos if isinstance(videos, list) else [])
-        url = video.get("url") if video else None
+        """The first video the app can read, standard render preferred (owner report
+        2026-11-26: a match listed a render the app may not read ahead of one it can)."""
+        from ._client import video_problem
+
+        listed = [v for v in videos if isinstance(v, dict)] if isinstance(videos, list) else []
+        readable = [
+            v for v in listed if isinstance(v.get("url"), str) and not video_problem(v["url"])
+        ]
+        video = best_video(readable)
+        if video is not None:
+            self._videos[identity] = str(video["url"])
+            self._video_problems.pop(identity, None)
+            return str(video["url"])
+        refused = best_video(listed)
+        url = refused.get("url") if refused else None
         if isinstance(url, str) and url:
-            self._videos[identity] = url
-            return url
+            self._video_problems[identity] = video_problem(url) or "an unreadable file"
         return None
 
     def _read_video(self, identity: str) -> str:
@@ -705,6 +719,12 @@ class VeoConnection:
                 _, videos = api.get(f"/api/app/matches/{item.get('slug')}/videos/")
         url = self._remember(identity, videos)
         if url is None:
+            problem = self._video_problems.get(identity)
+            if problem is not None:
+                raise CaptureError(
+                    f"Veo offers this match's video only as {problem}; the app reads Veo's"
+                    " own MP4 files. Nothing was fetched."
+                )
             raise CaptureError("Veo has no video for this match.")
         return url
 
