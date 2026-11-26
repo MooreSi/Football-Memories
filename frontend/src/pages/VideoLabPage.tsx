@@ -15,6 +15,7 @@ import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
+import { PreAnalysisCheck } from "../components/videoLab/PreAnalysisCheck";
 import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
@@ -160,6 +161,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           {ball.length > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showBall} onChange={e => setShowBall(e.target.checked)} />Show ball</label>}
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
+        {summary && <PreAnalysisCheck summary={summary} atlas={atlas && panorama.data?.source_sha256===summary.source_sha256 ? panorama.data : undefined} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} />}
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}

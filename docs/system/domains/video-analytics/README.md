@@ -254,3 +254,11 @@ the tab must stay open and visible (hidden tabs throttle frame callbacks). Nothi
 uploaded or stored on the server. Gotcha: on macOS a module named `analysedExport.ts`
 beside `AnalysedExport.tsx` made `./AnalysedExport` resolve to the `.ts` file (case-
 insensitive FS, `.ts` tried first), rendering `undefined`; keep such names distinct.
+
+Pre-analysis (owner request 26 November 2026): a "Pre-analysis" button beside "Analyse selected
+match" runs the normal Veo/Hudl analysis on a planned window (`preAnalysis.scanPlan`: 600 s from
+minute 5, earlier for short matches, whole match under 10 min); a Veo import already builds the
+atlas, outline, bird's-eye and player views, so no extra job is chained. Every completed run shows a
+"Pre-analysis check" (`readiness`): panorama registration share, outline sides seen, people per
+sampled frame, ball coverage, and teams/referee, which stay "partly" until labelled: look-alike
+groups never decide teams on their own. Thresholds are provisional (owner decision 015).

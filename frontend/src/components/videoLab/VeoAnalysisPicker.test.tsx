@@ -154,3 +154,35 @@ it("lists U11 2026/27 Hudl games in their own group and imports a prepared Hudl 
   {url:'/_admin/api/video-analytics/hudl-jobs',body:{ticket:'e'.repeat(32)}}
  ]));
 });
+
+it("pre-analysis scans ten minutes from minute five and says why",async()=>{
+ const posts:{url:string,body:unknown}[]=[];const queued:string[]=[];
+ vi.stubGlobal('fetch',vi.fn(async(url:string,init?:RequestInit)=>{
+  if(init?.method==='POST'){
+   posts.push({url,body:JSON.parse(init.body as string)});
+   return Response.json(url.endsWith('/veo-jobs')?{id:'d'.repeat(32),state:'queued'}:{accepted:true});
+  }
+  if(url.endsWith('/me'))return Response.json({csrf_token:'fake'});
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-full',title:'Synthetic full match',available:true,duration_s:3000}]);
+  if(url.endsWith('/veo/account'))return Response.json({busy:false,state:'done',match_id:'veo-full',analysis_ticket:'9'.repeat(32)});
+  return Response.json([]);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={id=>queued.push(id)}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
+ expect(screen.getByText(/Pre-analysis scans 5:00–15:00/)).toBeInTheDocument();
+ await userEvent.click(screen.getByRole('button',{name:'Pre-analysis'}));
+ await waitFor(()=>expect(posts).toEqual([
+  {url:expect.stringContaining('/veo/action'),body:{action:'analysis',match_id:'veo-full',start_s:300,duration_s:600}},
+  {url:'/_admin/api/video-analytics/veo-jobs',body:{ticket:'9'.repeat(32)}}
+ ]));
+ await waitFor(()=>expect(queued).toEqual(['d'.repeat(32)]));
+});
+
+it("pre-analysis is unavailable while another analysis runs",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>Response.json([{id:'veo-full',title:'Synthetic full match',available:true,duration_s:3000}])));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
+ expect(screen.getByRole('button',{name:'Pre-analysis'})).toBeDisabled();
+});

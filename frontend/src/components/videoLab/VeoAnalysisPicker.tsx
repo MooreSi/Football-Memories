@@ -5,6 +5,7 @@ import { hudlAgeGroups, hudlRequest, useHudlLibrary, type HudlStatus } from "../
 import { Button } from "../ui/Button";
 import { BASE, csrfToken } from "./useLabData";
 import { AnalysisProgress } from "./AnalysisProgress";
+import { scanPlan } from "./preAnalysis";
 
 type Status = (VeoStatus | HudlStatus) & { analysis_ticket?: string | null; progress?: { fraction?: number } | null };
 type Source = "veo" | "hudl";
@@ -34,8 +35,10 @@ export function VeoAnalysisPicker({busy,onQueued}:{busy:boolean;onQueued:(id:str
     : chosen?.available && !valid ? (chosen.duration_s && offset+duration>chosen.duration_s+0.1
       ? "The selected window ends after this match. Choose an earlier start or fewer minutes."
       : "Choose a start of zero or later and 1–10 whole minutes to analyse.") : "";
-  const begin=useMutation({mutationFn:()=>{
-    const body={action:"analysis",match_id:match,start_s:offset,duration_s:duration};
+  const plan=chosen?.available ? scanPlan(chosen.duration_s) : null;
+  const clock=(s:number)=>`${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
+  const begin=useMutation({mutationFn:(window:{start_s:number;duration_s:number})=>{
+    const body={action:"analysis",match_id:match,...window};
     return source==="hudl"?hudlRequest("/account/action",body):veoRequest("/action",body);
   },onSuccess:()=>{ importing.current=false;setPending({match,source,serial:Date.now()});setError(""); },onError:e=>setError(e.message)});
   useEffect(()=>{
@@ -65,9 +68,11 @@ export function VeoAnalysisPicker({busy,onQueued}:{busy:boolean;onQueued:(id:str
       </select>}</label>
       <label className="text-sm">Start minute<input type="number" min={0} step={1} value={start} onChange={e=>setStart(e.target.value)} disabled={!!pending} className="mt-1 block w-24 rounded-lg border border-line bg-ink-900 p-2"/></label>
       <label className="text-sm">Minutes to analyse<input type="number" min={1} max={10} step={1} value={minutes} onChange={e=>setMinutes(e.target.value)} disabled={!!pending} className="mt-1 block w-24 rounded-lg border border-line bg-ink-900 p-2"/></label>
-      <Button variant="primary" aria-describedby={blockedReason ? "veo-analysis-blocked" : undefined} disabled={!valid||busy||!!pending||begin.isPending} onClick={()=>begin.mutate()}>{pending?"Preparing clip…":begin.isPending?"Starting…":"Analyse selected match"}</Button>
+      <Button variant="primary" aria-describedby={blockedReason ? "veo-analysis-blocked" : undefined} disabled={!valid||busy||!!pending||begin.isPending} onClick={()=>begin.mutate({start_s:offset,duration_s:duration})}>{pending?"Preparing clip…":begin.isPending?"Starting…":"Analyse selected match"}</Button>
+      <Button aria-describedby="pre-analysis-plan" disabled={!plan||busy||!!pending||begin.isPending} onClick={()=>plan && begin.mutate({start_s:plan.start_s,duration_s:plan.duration_s})}>Pre-analysis</Button>
     </div>
     <p className="text-xs text-fg-muted">Choose 1–10 minutes anywhere in the match. Only the selected footage is fetched, plus the video index and a small seeking buffer; an existing saved match is reused. The lab prepares camera tracking and multiple player views.</p>
+    {plan && <p id="pre-analysis-plan" className="text-xs text-fg-muted">Pre-analysis scans {clock(plan.start_s)}–{clock(plan.start_s+plan.duration_s)}: {plan.reason} It builds the stitched pitch, outline and bird's-eye, and finds people, the ball and look-alike groups; the run then shows a pre-analysis check.</p>}
     {blockedReason && <p id="veo-analysis-blocked" role="status" className="text-sm text-fg-muted">{blockedReason}</p>}
     {library.isError && <p className="text-sm text-warn">Veo library unavailable. Check Connections and refresh your Veo matches.</p>}
     {source==="hudl" && !!match && <p className="text-xs text-fg-muted">Hudl games open the match stream in the helper and fetch only the segments covering this window; nothing is saved to your downloads.</p>}
