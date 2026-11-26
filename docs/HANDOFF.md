@@ -236,6 +236,18 @@ Release checks and admin deployment still being finished.
 
 # Handoff
 
+## Spec710 goal-anchored ends + halfway gating (worker 5a74a19, not yet running) — 26 Nov 2026
+
+Outline ends move out to goals detected just beyond both ends (symmetric; one-sided
+or unequal extensions ignored). Halfway proposed only when both goal ends were filmed,
+fully inside the atlas and within 25 deg of the camera's direction. Fixes a bug in
+c783fdc (deployed): on half-filmed games a clipped off-axis halfway piece was drawn
+along a touchline (cached games 1 and 3). Five cached games: 4 and 5 (filmed end to
+end) get correct ends and halfway; 1-3 get none. Game 3 outline still wrong (ambiguous
+overlapping pitches). Worker 227 tests green. The live worker (spec730 checkout) is
+still on c783fdc; moving it to 5a74a19 awaits owner approval.
+
+
 ## Spec710 whole-pitch coverage + halfway line DEPLOYED — 26 November 2026
 
 Owner feedback: the 3 min Racing Club Warwick sample never films the left end, so the
