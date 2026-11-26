@@ -1,3 +1,29 @@
+## Video Lab Pre-analysis; first real scan run and checked; DEPLOYED to admin — 26 November 2026
+
+Owner: add a "Pre-analysis" button that decides how much of a match to scan for a proper
+panorama/bird's-eye and player, referee, ball, team and pitch identification; run it on a game,
+monitor it and check the output. App only (`components/videoLab/preAnalysis.ts`,
+`PreAnalysisCheck.tsx`, picker button). Scan: 600 s (worker cap) from one minute after Veo's
+first-half kick-off (`halves`), else from minute 5. Every completed run shows a Pre-analysis
+check (panorama, outline, people, ball, teams, referee). Thresholds provisional: owner decision 015.
+Tests red first (plan, readiness, picker, panel; the halves wiring test was written after and
+shown red by removing the wiring). Clean worktree frontend 1064 pass, typecheck, build; backend
+untouched. Deployed admin only: bd67d0d -> ee9532b, then (after another session's bfec4f0, an
+ancestor) -> d94271e; 3 admin containers each time, latest untouched.
+Ran it: 261122 NL vs Bournville Greens (old plan 5:00-15:00), Veo read ~25 min for 10 min of
+footage, job c8988347 (Split) 19 min. Stitching excellent (2957/2997 views). Problems found:
+(1) Veo kicked off at 10:00, so half the scan was warm-up -> plan now uses `halves`.
+(2) Multi-pitch 3G: the game runs along the far fence; the automatic outline framed the empty near
+pitch ("four sides found") -> outline is never Ready until accepted. (3) The outline the owner
+then accepted (4 points) also frames the big pitch: only 18% of detected feet fall inside it
+(projected with frame_to_world on the atlas), so most of the game will be treated as off pitch.
+Owner's review left untouched. People (50/frame), ball (100%) and look-alike groups include a
+neighbouring game. Worker `pitch_birds_eye.jpg` is still a smear (goal-mouth rectification).
+Next: worker outline should pick the marked pitch that contains play (feet occupancy), not the
+largest four-sided one; and the app check should flag an accepted outline that excludes most feet
+(needs calibrating on single-pitch games; the atlas-row and stored-ground-plane measures tried here
+did not separate good from bad outlines).
+
 ## Spec 760 Part B: balanced kit colour built, failed the gate, kept off, 26 November 2026
 
 Owner: "Start Part B". Worker `codex/lighting-benchmark` d63739e adds `ground_lab`,
