@@ -1,3 +1,20 @@
+## Lighting research done; spec 760 drafted (benchmark + light-balanced kit colour), 26 November 2026
+
+Owner asked whether filtering or colour-correcting the video would help recognition under
+varying light. Research: the field does not pre-filter video for detectors (helps only in
+genuinely dark scenes, otherwise often hurts); robustness comes from fine-tuning with
+photometric augmentation, and team assignment from light-tolerant features. Read-only probe
+over six cached runs: grass lightness varies 22-60 (0-255) across one frame; torso lightness
+follows local grass lightness on f2ab96a2 (r 0.52) but not on others (confounded by team
+positions; a/b cast not yet measured). Owner: "Yes, start spec". Draft
+`docs/todo/football-memories/760-lighting-benchmark-and-balanced-kit-colour.md`: frozen
+per-lighting audit split by match, then additive worker `ground_lab` + `colour_lab_balanced`
+(von Kries gain from the grass beside the player) used by `kits.ts` only when a whole run has
+it, behind an adoption gate. Docs only: no code, no tests run, nothing deployed. Branch
+codex/local-video-analytics. Next: answer or accept the spec's open questions, then build
+Part A (benchmark) in the worker. Untracked 750 spec in this checkout belongs to another
+session and was left alone.
+
 ## Split now runs pitch rebuilds on the MacBook; DEPLOYED both Macs — 26 November 2026
 
 Owner: "use the MacBook for pitch rebuilds too". Worker 1c55193: with execution Split,

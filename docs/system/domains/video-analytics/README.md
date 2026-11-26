@@ -262,3 +262,12 @@ atlas, outline, bird's-eye and player views, so no extra job is chained. Every c
 "Pre-analysis check" (`readiness`): panorama registration share, outline sides seen, people per
 sampled frame, ball coverage, and teams/referee, which stay "partly" until labelled: look-alike
 groups never decide teams on their own. Thresholds are provisional (owner decision 015).
+
+Lighting (spec 760, 26 November 2026): do not filter or grade video fed to the detector;
+published studies find enhancement helps only in genuinely dark scenes and often lowers
+detection otherwise. Light robustness belongs in training (brightness/saturation, little
+or no hue augmentation) and in light-tolerant team features. Grass lightness varies 22-60
+(0-255 OpenCV L) across a single frame on cached runs, and torso lightness tracked local
+grass on f2ab96a2 (r 0.52). `kitDistance` already weights lightness 0.25 for colourful kits,
+so the exposure is greatest for white/grey/dark kits and for the bluer cast of shade on a/b.
+The grass under a player's feet is in the same light and is the reference spec 760 uses.

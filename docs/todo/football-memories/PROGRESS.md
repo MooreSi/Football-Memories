@@ -1734,6 +1734,13 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-26: Lighting research, spec 760 drafted (docs only)
+
+- No code changed; no suites run (docs-only change). Read-only probe over six cached
+  worker runs (script kept in the session scratchpad, not the repo): grass lightness
+  spread and torso vs local grass lightness correlation, figures in spec 760.
+- Not checked: the a/b colour cast of shade; any labelled accuracy. Both are Part A.
+
 ### 2026-11-22 — Incremental Veo checks (spec 460)
 
 - New Connect regression observed red: four requests for an already saved match,
