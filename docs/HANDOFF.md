@@ -14,7 +14,12 @@ The stitched atlas is good; the automatic bird's-eye is not (see worker HANDOFF:
 watermark, left goal unseen). Needs the owner's Stitched pitch review to calibrate.
 Postgres check still not runnable (port 55432 unpublished).
 
-## Video Lab: one referee on the pitch; pitch overlay from 0:00 — 26 November 2026
+## Video Lab: one referee on the pitch; pitch overlay from 0:00; DEPLOYED to admin — 26 November 2026
+
+Deployed admin only: ce747d2 -> bd67d0d (contains d4d1231; later commits docs only), built with
+FM_BUILD_LATEST=0, added to `built` (latest 8c31cdb untouched), exactly 3 admin containers changed,
+/api/health ok, served bundle carries the new pose-bridging code. A Safari tab was polling
+/helper/library during the move (GETs only, no transfer). Not yet seen by the owner on f2ab96a2.
 
 Owner, on f2ab96a2 (labels live on its refinement 6c216d41): sideline people tagged as referees
 after tagging the referee; overlay only from 0:20 although calibration is right.
@@ -31,8 +36,7 @@ so overlay, halfway, metres and the off-pitch test all gain those seconds. Real 
 0:00, no gaps (was 29.3 s missing); a 20 s carry matched real poses within 0.15% of the frame.
 Tests red first (kits 3 of 6, panorama 2); pitch.standingOnPitch tests written after it (pass).
 Frontend 1024/199, typecheck, build pass; backend untouched, its suites not run. NOT checked in
-the browser: the lab needs the gateway admin sign-in. NOT deployed (frontend rebuild + admin
-preview route). Worker root cause (unsolved opening views) left: a worker fix would also add
+the browser: the lab needs the gateway admin sign-in. Worker root cause (unsolved opening views) left: a worker fix would also add
 those views to the atlas image.
 
 ## Reel card themes: 5 broadcast + GTA 6 style; DEPLOYED to admin — 26 November 2026

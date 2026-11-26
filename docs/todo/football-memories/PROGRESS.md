@@ -2,7 +2,7 @@
 
 Suggested referees seen mostly off the marked pitch are unassigned (your label always holds);
 missing atlas poses are carried with the camera motion so the pitch overlay shows from the start.
-Frontend only; not deployed.
+Frontend only; deployed to admin (bd67d0d).
 
 ## Reel card themes — 26 November 2026
 
