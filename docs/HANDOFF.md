@@ -1,3 +1,18 @@
+## Library default, Clips nav, NL crest and side-by-side Hudl/Veo DEPLOYED — 26 November 2026
+
+Owner: "Yes, deploy". Families: main `8c31cdb` = e7fee2b + only the UI cherry-pick of
+b2598ae (no lab work); updater kickstarted, built it as `latest` (ancestors start
+8c31cdb, e7fee2b), and the gateway auto round moved all seven (all auto-update, all
+helpers busy=false beforehand). Admin: branch `fc1a36b` (contains c534421; docs-only past
+f245075) built with FM_BUILD_LATEST=0, added to `built`, moved via updates._move after
+busy=false/no ffmpeg/flat network. Gateway `dce0ed3` image `slot-dce0ed3`, only the
+gateway container recreated with its four running compose files.
+
+Live: 8/8 libraries health 200; admin assets contain Norton Lindsey and Export analysed
+video; live forward.py has no CaptureSlot; FM_GW_ORIGIN correct, public health 200.
+Inventory: 26 of 48 containers changed (gateway, crests, 8x3 app), no db container.
+No real Hudl/Veo concurrency exercised. Owner's local 8765 app not rebuilt.
+
 ## ReID Core ML / Neural Engine benchmark — 26 November 2026
 
 Owner asked to benchmark it. Scratch conversion of pinned SportsReID ViT-B/16 to
