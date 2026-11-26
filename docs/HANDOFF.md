@@ -1,3 +1,15 @@
+## Pitch outline / bird's-eye fixed in the worker; NOT deployed — 26 November 2026
+
+Owner: the bird's-eye view is poor on every newly analysed match (screenshot: NL 260926).
+Cause: the automatic outline that frames the view, not the app. Worker branch
+`codex/robust-pitch-outline` (ed4f18d, pushed): new line detector (whiteness, contrast on
+both sides, turf-noise threshold) and halfway-first fitting. 3 new worker tests red first;
+270 pass, ruff/format/project checks pass; no existing test changed. Offline replay of the
+five cached games (NL, frost, 3G, RCW vs CG, overcast): whole-pitch outlines on 4 (was 1),
+3G plausible but unverified. NL's far half stays approximate (grazing angle). App code
+unchanged; app suites not run. Next: deploy worker to the mini and MacBook (owner go-ahead),
+then "Rebuild complete pitch" on each match to get the new outline.
+
 ## Veo signed links read; NL match analysed; pitch run — 26 November 2026
 
 Owner goal: analyse 260926 Racing Club Warwick vs. NL from minute 5 for 4 minutes, then a

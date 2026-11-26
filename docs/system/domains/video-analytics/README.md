@@ -223,6 +223,17 @@ change on RCW (the refit converges on the same partial arcs; the halfway line's
 detected extent also stops short). Reverted. Root cause: far-field markings on pale,
 sunlit grass are too faint at this resolution; a better far-line detector (or
 higher-resolution far crops) is the next step, not more fitting heuristics.
+Fourth pass (26 Nov, worker `codex/robust-pitch-outline` ed4f18d): the poor bird's-eye on
+new matches (NL 260926, run 48e74eab) came from the outline, which frames the view. Replayed
+offline on five cached games, only RCW vs CG was right. The detector missed worn/thick near
+lines (threshold set by trees and people) and took tree-shadow edges as lines; the fitter let
+false circles on short fragments outrank the halfway line. Fixed in the worker: whiteness with
+contrast on both sides of a line, turf-noise threshold, halfway candidates beside the camera.
+Now NL, frost, RCW vs CG and overcast get whole-pitch outlines; 3G frames a dashed small pitch.
+The ground plane (pan axis) stays: a player-height plane was ~1 degree off (oval circle). On a
+low camera the far touchline sits 3-5 degrees below the horizon, so the far half of the plan
+is approximate and smeared; only confirmed corners give metres. Existing runs need "Rebuild
+complete pitch". Not deployed until the owner says so.
 
 Spec720: lab entitlements are per-account gateway metadata, separate from app builds.
 Only admin can grant/revoke; Video Lab enforces access at every endpoint, retaining
