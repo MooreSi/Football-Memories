@@ -15,6 +15,7 @@ import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
+import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
 import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, type Corners } from "../components/videoLab/pitch";
@@ -214,7 +215,7 @@ export default function VideoLabPage() {
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
         <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
-      <Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link>
+      <div className="flex flex-wrap items-center gap-2 self-start"><MacStatusLight /><Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link></div>
 
     </header>
     <VeoAnalysisPicker busy={!!running || !!jobs.data?.some(j=>["queued","running"].includes(j.state))} onQueued={queued} />

@@ -1,3 +1,16 @@
+## MacBook status light on the Video Lab page — 26 November 2026
+
+Owner: "on the video lab page top right of the page show a green/red light to show the
+status of the connected mac". App only: `components/videoLab/MacStatusLight.tsx` in the
+Video Lab header (top right, next to "Label frames"). Polls the existing
+`/_admin/api/video-nodes` every 15 s; green only when `remote_ready === true` (the gateway
+already returns false if the worker heartbeat is over 120 s old), red when not ready or
+the status can't be read. Admin only: hidden for users with granted access, who must never
+call `/_admin/` (the existing LabPermissions test caught this; gated on `VIDEO_LAB_BASE`).
+Tests red first (component 4, page 1). Frontend 1007/198, typecheck, build pass. Browser:
+hosted dev build at 5174 with stubbed fetch, 800 px (wraps under the title) and 1440 px
+(top right); flipped to red on the next poll. NOT deployed to the admin library yet.
+
 ## Player matching model DEPLOYED (admin + both Macs) — 26 November 2026
 
 Owner said "deploy it to both macs" and later "Move it now". Worker ee0b987 on the

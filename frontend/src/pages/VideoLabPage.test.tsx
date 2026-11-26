@@ -47,3 +47,9 @@ it("labels jersey-tagging runs with the run they were tagged from",async()=>{
  expect(await screen.findByRole("button",{name:"cccccccc · complete · jersey tagging of bbbbbbbb"})).toBeInTheDocument();
  expect(screen.getByRole("button",{name:"bbbbbbbb · complete"})).toBeInTheDocument();
 });
+it("shows the connected Mac's status light in the page header",async()=>{
+ vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/video-nodes")?Response.json({mode:"local",local_ready:true,remote_ready:true}):Response.json([])));
+ renderWithProviders(<VideoLabPage/>);
+ const light=await screen.findByRole("status",{name:"MacBook Pro connected"});
+ expect(light.closest("header")).not.toBeNull();
+});
