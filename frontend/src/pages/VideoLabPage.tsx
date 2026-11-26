@@ -1,6 +1,6 @@
 import {CalibrationBenchmarkPanel,isCalibrationBenchmark} from "../components/videoLab/CalibrationBenchmark";
 import {PanoramaPanel} from "../components/videoLab/PanoramaPanel";
-import {bindPanorama,bridgePoses,isPanorama,panoramaBoundaryAt,pitchProposal} from "../components/videoLab/panorama";
+import {isPanorama,panoramaBoundaryAt} from "../components/videoLab/panorama";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
@@ -19,15 +19,14 @@ import { PreAnalysisCheck } from "../components/videoLab/PreAnalysisCheck";
 import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
-import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, standingOnPitch, type Corners } from "../components/videoLab/pitch";
+import { isCameraMotion, outlineAt, type Corners } from "../components/videoLab/pitch";
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
-import { propagateTeams } from "../components/videoLab/teams";
-import { cleanAnchors, kitTimeline, learnKits, rememberKits, type KitObservation } from "../components/videoLab/kits";
-import { denseBalls, parseBalls, trackBall } from "../components/videoLab/ball";
+import { rememberKits } from "../components/videoLab/kits";
+import { automaticBoundariesFor, labBall, labCamera, labKits, labOffPitch, labRows, labTimeline } from "../components/videoLab/decisions";
 import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } from "../components/videoLab/useLabData";
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
@@ -75,39 +74,29 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const panorama=useJobFile(job.id,atlas?"pitch_atlas.json":"pitch_panorama.json",atlas||(has("pitch_panorama.json")&&has("pitch_panorama.jpg")),isPanorama);
   const { review, update, state, error } = useReview(job.id);
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
-  const camera = useMemo(() => { if (!motion.data) return undefined; const base = buildCamera(motion.data), poses = panorama.data && bridgePoses(panorama.data, base); return {...base,panorama:bindPanorama(poses,review?.pitch_panorama,job.summary?.source_sha256),proposal:pitchProposal(poses,job.summary?.source_sha256)}; }, [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
+  const camera = useMemo(() => labCamera(motion.data, panorama.data, review, job.summary?.source_sha256), [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
   const boundaries=useMemo(()=>review?.pitch_boundaries ?? [],[review?.pitch_boundaries]);
-  const automaticBoundaries=useMemo(()=>job.summary?.source_sha256 && motion.data?.source_sha256===job.summary.source_sha256 ? motion.data?.pitch_boundaries ?? []:[],[motion.data,job.summary?.source_sha256]);
+  const automaticBoundaries=useMemo(()=>automaticBoundariesFor(motion.data,job.summary?.source_sha256),[motion.data,job.summary?.source_sha256]);
   const currentBoundary=camera ? boundaryAt(camera,boundaries,automaticBoundaries,at):null;
-  // A whole-clip refinement (it carries balls) adds the ball only: its people are each linked to one
-  // sampled tracklet across the whole clip, which moved labels onto the wrong people on a real run.
+  // A whole-clip refinement (it carries balls) adds the ball only (see labRows).
   const peopleDense = dense.data?.balls ? undefined : dense.data;
   const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], peopleDense), [assignments.data, peopleDense]);
-  const offPitch = useMemo(() => camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal) ? offPitchTracks(assignments.data?.observations ?? [], camera, marks,t=>boundaryAt(camera,boundaries,automaticBoundaries,t) ?? outlineAt(camera,marks,t)) : new Set<number>(), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
+  // Spec 760: the team and ball decisions live in decisions.ts, so a benchmark exporter scores exactly what this page shows.
+  const teamInputs = useMemo(() => ({ assignments: assignments.data, dense: dense.data, appearance: appearance.data, review, camera, automaticBoundaries, remembered: [] }), [assignments.data, dense.data, appearance.data, review, camera, automaticBoundaries]);
+  const offPitch = useMemo(() => labOffPitch(teamInputs), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
   // Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance
   // model settles only what colour cannot (dark kits). Kits you taught in related runs are reused.
   const saved = useSavedModels(others.filter(o => o.id !== job.id && o.state === "complete"));
   const remembered = useMemo(() => rememberKits(saved.data ?? [], job.match_title ?? ""), [saved.data, job.match_title]);
   // With whole-clip refinement the denser rows (about ten a second, with shirt colours) replace the sampled ones.
-  const rows = (assignments.data ? allRows : undefined) as KitObservation[] | undefined;
-  const kits = useMemo(() => learnKits(rows ?? [], review?.track_labels ?? [], remembered), [rows, review?.track_labels, remembered]);
-  const timeline = useMemo(() => {
-    const labels = review?.track_labels ?? [];
-    const fallback = propagateTeams(appearance.data ? cleanAnchors(appearance.data.tracks, labels, kits) : [], labels, review?.group_labels ?? [], appearance.data ? [] : rows ?? [], offPitch);
-    // One referee, on the pitch: suggested referees seen mostly off the marked pitch are sideline people.
-    const onPitch = camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal) ? standingOnPitch(t => boundaryAt(camera, boundaries, automaticBoundaries, t) ?? outlineAt(camera, marks, t)) : undefined;
-    return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback, onPitch);
-  }, [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch, camera, marks, boundaries, automaticBoundaries]);
+  const rows = useMemo(() => labRows(assignments.data, dense.data), [assignments.data, dense.data]);
+  const kits = useMemo(() => labKits(rows, review, remembered), [rows, review?.track_labels, remembered]);
+  const timeline = useMemo(() => labTimeline(teamInputs, rows, kits, offPitch), [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch, camera, marks, boundaries, automaticBoundaries]);
   const teams = timeline.tracks;
   const denseHasBalls = !!dense.data?.balls?.length;
   const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);
-  const ball = useMemo(() => {
-    const w = assignments.data?.image_width ?? 1920, h = assignments.data?.image_height ?? 1080;
-    const toPitch = camera ? (t: number, x: number, y: number) => stabilise(camera, t, x, y) : undefined;
-    if (dense.data?.balls?.length) return trackBall(denseBalls(dense.data, w, h), w, h, toPitch);
-    return detections.data ? trackBall(parseBalls(detections.data), w, h, toPitch) : [];
-  }, [dense.data, detections.data, assignments.data, camera]);
+  const ball = useMemo(() => labBall(dense.data, detections.data, assignments.data, camera), [dense.data, detections.data, assignments.data, camera]);
   const [showBall, setShowBall] = useState(true);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
@@ -161,6 +150,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           {ball.length > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showBall} onChange={e => setShowBall(e.target.checked)} />Show ball</label>}
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
+        {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
+        {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {summary && <PreAnalysisCheck summary={summary} atlas={atlas && panorama.data?.source_sha256===summary.source_sha256 ? panorama.data : undefined} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} />}
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
@@ -176,7 +167,6 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
-        {camera && (marks.length > 0 || !!camera.panorama?.review.corners) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} selected={track} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} kits={kits} remembered={remembered} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
