@@ -1,6 +1,6 @@
 import {panoramaRay,applyRay} from "./atlasGeometry";
 import { inverse } from "./landmarks";
-import type { Corners } from "./pitch";
+import type { Camera, Corners } from "./pitch";
 export type GoalCandidate={id:string;posts:Corners;tops:Corners;time_s:number;support:number;score:number;requires_review:true};
 export type CylinderProjection={kind:"cylindrical";origin:[number,number];span:[number,number]};
 export type PitchOutline={method:string;unseen_sides?:boolean[];centre_circle?:boolean;halfway?:Corners|null};
@@ -16,6 +16,34 @@ export function pitchProposal(data:Panorama|undefined,hash:string|undefined):Bou
 export function bindPanorama(data:Panorama|undefined,review:PanoramaReview|null|undefined,hash:string|undefined):BoundPanorama|undefined {
  return data&&hash&&data.source_sha256===hash&&review?.accepted&&review.panorama_id===data.panorama_id?{data,review}:undefined;
 }
+const BRIDGE_S=30; // carry a registered pose with the camera motion at most this far
+
+/**
+ * Views the registration could not solve (f2ab96a2: the first 20 seconds) take the nearest solved
+ * pose in the same camera shot, carried with the frame-to-frame camera motion, so the pitch overlay
+ * shows from the start. Never across a cut, and only where both share the same sample times.
+ */
+export function bridgePoses(data:Panorama,camera:Camera):Panorama {
+ const n=data.times.length;
+ if(camera.times.length!==n || !data.times.every((t,i)=>Math.abs(t-camera.times[i])<=1e-3)) return data;
+ const mul=(a:number[],b:number[])=>[0,1,2].flatMap(r=>[0,1,2].map(c=>a[r*3]*b[c]+a[r*3+1]*b[3+c]+a[r*3+2]*b[6+c]));
+ const fill=(frames:(number[]|null)[]|undefined)=>{
+  if(!frames || frames.length!==n || !frames.some(m=>m===null)) return frames;
+  return frames.map((m,i)=>{
+   if(m) return m;
+   let k=-1;
+   for(let j=0;j<n;j++) if(frames[j] && camera.segment[j]===camera.segment[i] && Math.abs(data.times[j]-data.times[i])<=BRIDGE_S && (k<0 || Math.abs(data.times[j]-data.times[i])<Math.abs(data.times[k]-data.times[i]))) k=j;
+   if(k<0) return null;
+   // Picture at i -> picture at k, then k's registered pose.
+   const move=mul(camera.total[k],camera.inverse[i]);
+   if(!Number.isFinite(move[8]) || move[8]<=1e-9) return null;
+   const out=mul(frames[k]!,move.map(v=>v/move[8]));
+   return out.every(Number.isFinite)?out:null;
+  });
+ };
+ return {...data,frame_to_panorama:fill(data.frame_to_panorama)!,...(data.frame_to_world?{frame_to_world:fill(data.frame_to_world)}:{})};
+}
+
 /** A registered image-to-panorama pose; never interpolate through a cut or unknown view. */
 export function panoramaMatrixAt(data:Panorama,at:number):number[]|null {
  if(!data.times.length || at<data.times[0] || at>data.times[data.times.length-1]+0.25) return null;

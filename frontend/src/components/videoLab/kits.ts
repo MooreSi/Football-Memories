@@ -168,7 +168,7 @@ const assignment = (kit: KitPrototype, source: Assignment["source"], confidence:
  * yields to the kit only where the kit belongs to a different labelled team or role than yours, or
  * where your label is a dark kit (referee, keeper in black) and the tracklet mostly shows a team kit.
  */
-export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels: TrackLabel[], fallback: Map<number, Assignment>): TeamTimeline {
+export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels: TrackLabel[], fallback: Map<number, Assignment>, onPitch?: (row: KitObservation) => boolean | null): TeamTimeline {
   const decisive = kits.filter(k => chroma(k.lab) >= CHROMA);
   const canon = new Map<string, KitPrototype>();
   for (const k of kits) if (!canon.has(keyOf(k.team, k.role))) canon.set(keyOf(k.team, k.role), k);
@@ -251,6 +251,19 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     tracks.set(track, mine ? { team: mine.team, role: mine.role, source: "you", confidence: 1 }
       : top && top[1] >= list.length / 2 ? assignment(top[0], "kit", top[1] / list.length)
       : fallback.get(track) ?? { team: null, role: null, source: "none", confidence: 0 });
+  }
+  // There is one referee and they work on the pitch. A suggested referee (by kit or look) seen mostly
+  // off the marked pitch is a coat or shirt of the same colour on the sideline, so stays unassigned.
+  // Your own referee label always holds; without a known outline nobody is ruled out.
+  if (onPitch) for (const [track, list] of byTrack) {
+    const line = timelines.get(track)!;
+    const suggested = (a?: Assignment) => a?.role === "referee" && a.source !== "you";
+    if (!line.values.some(suggested) && !suggested(tracks.get(track))) continue;
+    let on = 0, known = 0;
+    for (const row of list) { const inside = onPitch(row); if (inside === null) continue; known++; if (inside) on++; }
+    if (!known || on / known >= 0.5) continue;
+    line.values.forEach((a, i) => { if (suggested(a)) line.values[i] = undefined; });
+    if (suggested(tracks.get(track))) tracks.set(track, { team: null, role: null, source: "none", confidence: 0 });
   }
   // One referee and one keeper per team on the pitch: at each moment your label wins, then a kit
   // match, then the strongest look-alike; other people suggested for that role stay unassigned.

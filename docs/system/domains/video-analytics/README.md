@@ -133,6 +133,13 @@ Dark kits share colour, so a dark person takes a labelled dark role only when th
 (ReID cosine) is also 0.58+: on RCW vs CG our keeper's tracklets score 0.73+ to each other and
 coats at most 0.66. A keeper holding the ball is undetectable as a ball; a spare that rests,
 leaves the picture and returns is still a spare (judge resting over 15 s on the ground).
+There is one referee and they work on the pitch (f2ab96a2/6c216d41, 26 Nov 2026): that referee
+wore a colourful kit, so shirt colour matched coats and shirts along the far touchline, and the
+per-moment "one referee" rule often kept a sideline person instead. A suggested referee (kit or
+look-alike, never your label) seen mostly off the marked pitch is now unassigned. "On the pitch"
+for this test means feet inside the outline by a tenth of the person's height: the sideline people
+stood about 0.5% of the frame height beyond the far touchline, inside the looser half-height margin
+used for team suggestions. Off-pitch referee rings on that run: 514 to 37; referee tracks 69 to 13.
 
 Spec680: prepare a perspective panorama and register revisited camera views to it.
 Rendering the whole frame needs stricter bounds than projecting observed ground;
@@ -142,6 +149,12 @@ because distant vertices cross the horizon discards known visible ground. Green
 union envelopes are suggestions, not physical touchlines. Exact panorama/source
 IDs bind acceptance; unknown poses abstain, never inherit by match title. Old local
 corrections remain. The analysis window cap is unchanged.
+Registration can leave whole stretches unsolved: on f2ab96a2 the atlas had no pose for the first
+20.6 s (the legacy panorama never registered them), so the overlay appeared at 0:20. The app now
+carries the nearest solved pose in the same shot with `camera_motion.json` (`bridgePoses`, up to
+30 s, never across a cut, only when both files share sample times). Hiding the real poses for
+20.6-41 s and carrying from 41 s matched them within 0.15% of the frame. The worker still leaves
+those poses empty; a worker fix would also give the atlas image those views.
 
 Spec690: a matched-camera percentage does not prove goal-end coverage. Wide pans
 need a reversible cylindrical ray atlas: a planar horizon guard can silently drop

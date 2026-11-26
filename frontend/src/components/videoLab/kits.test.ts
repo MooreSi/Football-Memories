@@ -231,3 +231,48 @@ describe("kitColour", () => {
     expect(r).toBeGreaterThan(2 * g); expect(r).toBeGreaterThan(2 * b);
   });
 });
+
+describe("one referee, on the pitch (f2ab96a2: sideline people in the referee's colour were suggested as referees)", () => {
+  // A colourful referee kit, so shirt colour alone matches people on the sideline too.
+  const GREEN = [120, 90, 170];
+  const refLabels: TrackLabel[] = [labels[0], labels[1], { track_id: 4, team: null, role: "referee" }];
+  const refRows = [...run(1, 0, 4, YELLOW), ...run(2, 0, 4, RED), ...run(4, 0, 4, GREEN)];
+  const refKits = learnKits(refRows, refLabels);
+  const sideline = new Set([20]);
+  const onPitch = (o: KitObservation) => !sideline.has(o.track_id);
+  it("someone in the referee's colour standing off the pitch is not suggested as the referee; the one on the pitch is", () => {
+    const rows = [...refRows, ...run(20, 10, 14, GREEN), ...run(21, 10, 14, GREEN)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, onPitch);
+    expect(teams.at(21, 12)).toMatchObject({ role: "referee", source: "kit" });
+    expect(teams.at(20, 12)?.role).not.toBe("referee");
+    expect(teams.tracks.get(20)?.role).not.toBe("referee");
+    expect(teams.tracks.get(21)).toMatchObject({ role: "referee", source: "kit" });
+  });
+  it("an off-pitch referee look-alike stays unassigned even when nobody else is the referee at that moment", () => {
+    const rows = [...refRows, ...run(20, 10, 14, GREEN)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, onPitch);
+    expect(teams.at(20, 12)).toBeUndefined();
+    expect(teams.tracks.get(20)).toMatchObject({ role: null, source: "none" });
+  });
+  it("an appearance-model referee suggestion off the pitch is dropped as well", () => {
+    const fallback = new Map<number, Assignment>([[20, { team: null, role: "referee", source: "similar", confidence: 0.8 }]]);
+    const teams = kitTimeline([...refRows, ...run(20, 10, 14, BLACK)], refKits, refLabels, fallback, onPitch);
+    expect(teams.at(20, 12)).toBeUndefined();
+    expect(teams.tracks.get(20)?.role).not.toBe("referee");
+  });
+  it("your own referee label holds wherever the person stands", () => {
+    const teams = kitTimeline(refRows, refKits, refLabels, none, () => false);
+    expect(teams.at(4, 2)).toMatchObject({ role: "referee", source: "you" });
+    expect(teams.tracks.get(4)).toMatchObject({ role: "referee", source: "you" });
+  });
+  it("without a known pitch outline nobody is ruled out", () => {
+    const rows = [...refRows, ...run(20, 10, 14, GREEN)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, () => null);
+    expect(teams.at(20, 12)).toMatchObject({ role: "referee", source: "kit" });
+  });
+  it("team players off the pitch keep their kit match (substitutes warming up are still a team)", () => {
+    const rows = [...refRows, ...run(20, 10, 14, YELLOW)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, onPitch);
+    expect(teams.at(20, 12)).toMatchObject({ team: "own", source: "kit" });
+  });
+});

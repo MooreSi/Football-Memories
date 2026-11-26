@@ -1,3 +1,24 @@
+## Video Lab: one referee on the pitch; pitch overlay from 0:00 — 26 November 2026
+
+Owner, on f2ab96a2 (labels live on its refinement 6c216d41): sideline people tagged as referees
+after tagging the referee; overlay only from 0:20 although calibration is right.
+Referee: that referee's kit is colourful, so kit matching caught coats and shirts on the far
+touchline (69 tracks shown as referee at some point) and the per-moment "one referee" rule often
+kept the sideline one. `kitTimeline` takes an optional `onPitch`; a suggested referee (kit or
+look-alike) on the pitch for under half its known moments is unassigned. New
+`pitch.standingOnPitch`: feet inside the outline by 0.1 x person height. Replayed on the real run:
+off-pitch referee rings 514 -> 37, referee tracks 69 -> 13; your referee label is never dropped.
+Overlay: the atlas has no pose for 0-20.6 s (worker left them null; also 175.8 s, 224.8 s,
+231.8-236.6 s). New `panorama.bridgePoses` carries the nearest solved pose with
+`camera_motion.json` (<=30 s, same shot, same sample times); the page applies it before binding,
+so overlay, halfway, metres and the off-pitch test all gain those seconds. Real run: overlay from
+0:00, no gaps (was 29.3 s missing); a 20 s carry matched real poses within 0.15% of the frame.
+Tests red first (kits 3 of 6, panorama 2); pitch.standingOnPitch tests written after it (pass).
+Frontend 1024/199, typecheck, build pass; backend untouched, its suites not run. NOT checked in
+the browser: the lab needs the gateway admin sign-in. NOT deployed (frontend rebuild + admin
+preview route). Worker root cause (unsolved opening views) left: a worker fix would also add
+those views to the atlas image.
+
 ## Reel card themes: 5 broadcast + GTA 6 style; DEPLOYED to admin — 26 November 2026
 
 Owner: "add in additional themes, make them professional, broadcast quality, also add

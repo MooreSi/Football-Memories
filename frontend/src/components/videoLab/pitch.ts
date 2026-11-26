@@ -111,6 +111,20 @@ export function insidePitch(point: [number, number], corners: Corners, margin: n
 export const feet = (o: Observation): [number, number] => [(o.image_box![0] + o.image_box![2]) / 2, o.image_box![3]];
 export const footMargin = (o: Observation) => (o.image_box![3] - o.image_box![1]) * 0.5;
 
+/** Is this person standing on the marked pitch at that moment, clearly inside the lines rather than
+ * at the touchline where coaches and spectators stand? null where no outline is known. */
+export function standingOnPitch(resolve:(t:number)=>Corners|null):(o:Observation)=>boolean|null {
+  const outlines=new Map<number,Corners|null>();
+  return o=>{
+    if(!o.image_box) return null;
+    if(!outlines.has(o.time_s)) outlines.set(o.time_s,resolve(o.time_s));
+    const outline=outlines.get(o.time_s);
+    if(!outline) return null;
+    const point=feet(o),inset=(o.image_box[3]-o.image_box[1])*0.1;
+    return insidePitch(point,outline,0) && !outline.some((c,n)=>edgeDistance(point,c,outline[(n+1)%outline.length])<inset);
+  };
+}
+
 /** Tracks seen mostly off the marked pitch (where an outline is known). */
 export function offPitchTracks(observations: Observation[], camera: Camera, keyframes: PitchKeyframe[], resolve?: (t:number)=>Corners|null): Set<number> {
   const outlines = new Map<number, Corners | null>();

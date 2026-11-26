@@ -1,6 +1,6 @@
 import {CalibrationBenchmarkPanel,isCalibrationBenchmark} from "../components/videoLab/CalibrationBenchmark";
 import {PanoramaPanel} from "../components/videoLab/PanoramaPanel";
-import {bindPanorama,isPanorama,panoramaBoundaryAt,pitchProposal} from "../components/videoLab/panorama";
+import {bindPanorama,bridgePoses,isPanorama,panoramaBoundaryAt,pitchProposal} from "../components/videoLab/panorama";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
@@ -18,7 +18,7 @@ import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
-import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, type Corners } from "../components/videoLab/pitch";
+import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, standingOnPitch, type Corners } from "../components/videoLab/pitch";
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
@@ -73,7 +73,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const atlas=has("pitch_atlas.json")&&has("pitch_atlas.jpg");
   const panorama=useJobFile(job.id,atlas?"pitch_atlas.json":"pitch_panorama.json",atlas||(has("pitch_panorama.json")&&has("pitch_panorama.jpg")),isPanorama);
   const { review, update, state, error } = useReview(job.id);
-  const camera = useMemo(() => motion.data ? {...buildCamera(motion.data),panorama:bindPanorama(panorama.data,review?.pitch_panorama,job.summary?.source_sha256),proposal:pitchProposal(panorama.data,job.summary?.source_sha256)} : undefined, [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
+  // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
+  const camera = useMemo(() => { if (!motion.data) return undefined; const base = buildCamera(motion.data), poses = panorama.data && bridgePoses(panorama.data, base); return {...base,panorama:bindPanorama(poses,review?.pitch_panorama,job.summary?.source_sha256),proposal:pitchProposal(poses,job.summary?.source_sha256)}; }, [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
   const boundaries=useMemo(()=>review?.pitch_boundaries ?? [],[review?.pitch_boundaries]);
   const automaticBoundaries=useMemo(()=>job.summary?.source_sha256 && motion.data?.source_sha256===job.summary.source_sha256 ? motion.data?.pitch_boundaries ?? []:[],[motion.data,job.summary?.source_sha256]);
@@ -93,8 +94,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const timeline = useMemo(() => {
     const labels = review?.track_labels ?? [];
     const fallback = propagateTeams(appearance.data ? cleanAnchors(appearance.data.tracks, labels, kits) : [], labels, review?.group_labels ?? [], appearance.data ? [] : rows ?? [], offPitch);
-    return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback);
-  }, [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch]);
+    // One referee, on the pitch: suggested referees seen mostly off the marked pitch are sideline people.
+    const onPitch = camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal) ? standingOnPitch(t => boundaryAt(camera, boundaries, automaticBoundaries, t) ?? outlineAt(camera, marks, t)) : undefined;
+    return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback, onPitch);
+  }, [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch, camera, marks, boundaries, automaticBoundaries]);
   const teams = timeline.tracks;
   const denseHasBalls = !!dense.data?.balls?.length;
   const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);

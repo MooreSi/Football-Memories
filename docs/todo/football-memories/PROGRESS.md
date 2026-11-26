@@ -1,3 +1,9 @@
+## Video Lab: one referee on the pitch; overlay from 0:00 — 26 November 2026
+
+Suggested referees seen mostly off the marked pitch are unassigned (your label always holds);
+missing atlas poses are carried with the camera motion so the pitch overlay shows from the start.
+Frontend only; not deployed.
+
 ## Reel card themes — 26 November 2026
 
 Five broadcast themes and a GTA 6 style theme for title cards (reelThemes.ts). Frontend only; not deployed.
