@@ -1,3 +1,14 @@
+## Two Mac analysis investigation — 26 November 2026
+
+Docs-only on `codex/local-video-analytics`. See
+[report](system/domains/video-analytics/two-mac-performance.md). Current worker
+already runs natively on this M4 mini (24 GB). Thunderbolt Bridge inactive at
+inspection; second Mac specification/performance unconfirmed. Prefer benchmarking
+whole-job offload, then independent-job scheduling; current worker lock and gateway
+admission prohibit simply running two consumers. No deployment, media writes or
+new benchmarks. Unrelated existing app edits left untouched. Next: confirm second
+host and cable, then time identical cached clips in separate scratch directories.
+
 ## Spec700 calibration benchmark COMPLETE; admin preview deployed — 25 November2026
 
 App eae7898, gateway bbbdf20 and native worker1af9782 deployed, gateway first.

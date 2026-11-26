@@ -1,3 +1,14 @@
+## Two Mac analysis investigation — 26 November 2026
+
+Docs-only report: [two Mac performance](../../system/domains/video-analytics/two-mac-performance.md).
+Read worker code, historical detector/atlas trials and gateway admission; inspected
+local hardware/network and LaunchAgent profile flags. M4 mini/24 GB confirmed;
+Thunderbolt Bridge inactive. Strict SSH probe stopped at unknown host key, before
+remote execution. Second host and performance remain unconfirmed. No code/runtime,
+account, source/result or deployment changes. Docs links and whitespace checked;
+runtime suites not run for this docs-only checkpoint. Existing unrelated app edits
+preserved. Recommendation: benchmark whole-job offload before distributed processing.
+
 ## Spec700 calibration benchmark COMPLETE; admin preview deployed — 25 November2026
 
 App eae7898, gateway bbbdf20 and native worker1af9782 deployed, gateway first.
