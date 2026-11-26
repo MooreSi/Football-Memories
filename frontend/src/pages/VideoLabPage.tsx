@@ -16,6 +16,7 @@ import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { PreAnalysisCheck } from "../components/videoLab/PreAnalysisCheck";
+import { playShare } from "../components/videoLab/playShare";
 import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
@@ -126,6 +127,11 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
     return () => window.removeEventListener("keydown", key);
   }, [visible, cursor, current, playAt, update]);
   const summary = job.summary;
+  // Pre-analysis: does the outline in use hold the players? Judged on the level ground, never by atlas rows.
+  const atlasData = atlas && panorama.data?.source_sha256 === summary?.source_sha256 ? panorama.data : undefined;
+  const outlineAccepted = !!camera?.panorama && review?.pitch_panorama?.accepted === true && review.pitch_panorama.panorama_id === atlasData?.panorama_id;
+  const acceptedPoints = outlineAccepted ? review?.pitch_panorama?.points : undefined;
+  const play = useMemo(() => atlasData && assignments.data ? playShare(atlasData, acceptedPoints ?? atlasData.suggested_boundary, assignments.data.observations) : null, [atlasData, assignments.data, acceptedPoints]);
   // The clean sample sits under the clickable overlay; annotated.mp4 has boxes burned in.
   const clip = has("sample.mp4") ? "sample.mp4" : has("annotated.mp4") ? "annotated.mp4" : null;
   // The analysed video export paints the same frame as the player, with its current toggles.
@@ -152,7 +158,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
         </div>
         {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
         {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
-        {summary && <PreAnalysisCheck summary={summary} atlas={atlas && panorama.data?.source_sha256===summary.source_sha256 ? panorama.data : undefined} accepted={!!camera?.panorama && review?.pitch_panorama?.accepted===true && review.pitch_panorama.panorama_id===panorama.data?.panorama_id} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} />}
+        {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} />}
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}

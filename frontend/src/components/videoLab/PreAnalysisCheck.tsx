@@ -4,9 +4,9 @@ import type { GroupLabel, TrackLabel } from "./labTypes";
 const BADGE: Record<Status, [string, string]> = { ready: ["Ready", "text-emerald-400"], partial: ["Partly", "text-amber-300"], missing: ["Missing", "text-warn"] };
 
 /** What the pre-analysis gave this run: enough to show the pitch and tell people apart, or what is still needed. */
-export function PreAnalysisCheck({ summary, atlas, accepted, groups, trackLabels, groupLabels }: Omit<ReadinessInput, "labels"> & { trackLabels: TrackLabel[]; groupLabels: GroupLabel[] }) {
+export function PreAnalysisCheck({ summary, atlas, accepted, play, groups, trackLabels, groupLabels }: Omit<ReadinessInput, "labels"> & { trackLabels: TrackLabel[]; groupLabels: GroupLabel[] }) {
   const labels = [...trackLabels, ...groupLabels];
-  const checks = readiness({ summary, atlas, accepted, groups, labels: { own: labels.some(l => l.team === "own"), opponent: labels.some(l => l.team === "opponent"), referee: labels.some(l => l.role === "referee") } });
+  const checks = readiness({ summary, atlas, accepted, play, groups, labels: { own: labels.some(l => l.team === "own"), opponent: labels.some(l => l.team === "opponent"), referee: labels.some(l => l.role === "referee") } });
   const ready = checks.filter(c => c.status === "ready").length;
   return <section className="panel space-y-2 p-4" aria-label="Pre-analysis check">
     <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Pre-analysis check</h2><span className="text-sm text-fg-muted">{ready} of {checks.length} ready</span></div>

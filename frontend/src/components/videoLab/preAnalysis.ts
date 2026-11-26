@@ -32,25 +32,30 @@ export type Status = "ready" | "partial" | "missing";
 export type Check = { key: "panorama" | "outline" | "players" | "ball" | "teams" | "referee"; label: string; status: Status; detail: string };
 type AtlasLike = { projection?: unknown; frame_to_panorama: (unknown[] | null)[]; times: number[]; pitch_outline?: { method: string; unseen_sides?: boolean[]; centre_circle?: boolean; halfway?: unknown } | null };
 type SummaryLike = { sampled_frames: number; person_detections: number; ball_observation_coverage: number };
-export type ReadinessInput = { summary?: SummaryLike; atlas?: AtlasLike; accepted?: boolean; groups: number; labels: { own: boolean; opponent: boolean; referee: boolean } };
+/** Below this share of players' positions inside, an outline misses the game (right outlines held 92-98%, short ones 23-37%). */
+export const PLAY_HELD = 0.7;
+export type ReadinessInput = { summary?: SummaryLike; atlas?: AtlasLike; accepted?: boolean; play?: number | null; groups: number; labels: { own: boolean; opponent: boolean; referee: boolean } };
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 /** Provisional thresholds (recorded as an open owner decision): a checklist, never a score of accuracy. */
-export function readiness({ summary, atlas, accepted = false, groups, labels }: ReadinessInput): Check[] {
+export function readiness({ summary, atlas, accepted = false, play = null, groups, labels }: ReadinessInput): Check[] {
   const checks: Check[] = [];
   const total = atlas?.times.length ?? 0, solved = atlas?.frame_to_panorama.filter(Boolean).length ?? 0, share = total ? solved / total : 0;
   checks.push(!atlas?.projection || !total
     ? { key: "panorama", label: "Whole-pitch panorama", status: "missing", detail: "No stitched pitch in this run. Build the stitched pitch." }
     : { key: "panorama", label: "Whole-pitch panorama", status: share >= 0.9 ? "ready" : share >= 0.6 ? "partial" : "missing", detail: `${solved} of ${total} camera views placed on the panorama (${pct(share)}).` });
   const outline = atlas?.pitch_outline;
-  if (!outline || outline.method !== "painted_lines") checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: "missing", detail: "No painted-line outline was found. Mark the pitch in the stitched pitch review." });
+  const few = typeof play === "number" && play < PLAY_HELD;
+  const held = (which: string) => few ? ` Only ${pct(play!)} of players' positions fall inside the ${which} outline: move its edges out to where the game is played.` : typeof play === "number" ? ` It holds ${pct(play)} of players' positions.` : "";
+  if (accepted) checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: few ? "partial" : "ready", detail: `You accepted the pitch outline.${held("accepted")}` });
+  else if (!outline || outline.method !== "painted_lines") checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: "missing", detail: "No painted-line outline was found. Mark the pitch in the stitched pitch review." });
   else {
     const unseen = (outline.unseen_sides ?? []).filter(Boolean).length;
     const marks = [outline.halfway ? "halfway line" : null, outline.centre_circle ? "centre circle" : null].filter(Boolean).join(" and ");
-    // Four sides found is not the right pitch: on a multi-pitch 3G (261122) it framed an empty pitch beside the game.
-    checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: accepted ? "ready" : "partial",
-      detail: accepted ? "You checked and accepted the pitch outline." : `${unseen ? `${unseen} side${unseen > 1 ? "s" : ""} estimated, not seen` : "All four sides found in the painted lines"}${marks ? `; ${marks} found` : ""}. Automatic: check that it frames the pitch the match is played on, then accept it in the stitched pitch review.` });
+    // Four sides found is not proof of the right pitch; only an outline that holds the play and that you checked is ready.
+    checks.push({ key: "outline", label: "Pitch outline and bird's-eye", status: "partial",
+      detail: `${unseen ? `${unseen} side${unseen > 1 ? "s" : ""} estimated, not seen` : "All four sides found in the painted lines"}${marks ? `; ${marks} found` : ""}.${held("automatic")} Automatic: check that it frames the pitch the match is played on, then accept it in the stitched pitch review.` });
   }
   const perFrame = summary && summary.sampled_frames ? summary.person_detections / summary.sampled_frames : 0;
   checks.push({ key: "players", label: "People detected", status: perFrame >= 10 ? "ready" : perFrame >= 4 ? "partial" : "missing",

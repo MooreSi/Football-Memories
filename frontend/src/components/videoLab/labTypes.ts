@@ -36,7 +36,7 @@ export type Review = {
 };
 
 export type Assignment = { team: Team | null; role: Role | null; source: "you" | "kit" | "group" | "similar" | "model" | "none"; confidence: number };
-export type Observation = { track_id: number; time_s: number; team_id: string | null; role: string; image_box?: number[] };
+export type Observation = { track_id: number; time_s: number; team_id: string | null; role: string; image_box?: number[]; central?: boolean };
 export type Assignments = { image_width: number; image_height: number; observations: Observation[] };
 
 export const teamName = (team: Team | null | undefined) => team === "own" ? "Our team" : team === "opponent" ? "Opponent" : "Unassigned";

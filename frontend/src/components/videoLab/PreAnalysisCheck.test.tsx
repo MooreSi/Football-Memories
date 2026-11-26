@@ -16,3 +16,10 @@ it("lists each pre-analysis check with its status and counts ready ones", () => 
   expect(row("Teams")).toHaveTextContent("Label one player from the other team");
   expect(row("Referee")).toHaveTextContent("Ready");
 });
+
+it("flags an accepted outline that holds few of the players", () => {
+  render(<PreAnalysisCheck summary={summary} atlas={atlas} accepted play={0.18} groups={6} trackLabels={[]} groupLabels={[]} />);
+  const row = within(screen.getByRole("region", { name: "Pre-analysis check" })).getByText("Pitch outline and bird's-eye").closest("li")!;
+  expect(row).toHaveTextContent("Partly");
+  expect(row).toHaveTextContent("Only 18% of players' positions fall inside the accepted outline");
+});

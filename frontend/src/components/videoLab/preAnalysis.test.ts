@@ -39,10 +39,21 @@ describe("readiness", () => {
     const items = readiness({ summary, atlas: atlas([false, false, false, false]), accepted: true, groups: 6, labels: { own: true, opponent: true, referee: true } });
     expect(status(items)).toEqual({ panorama: "ready", outline: "ready", players: "ready", ball: "ready", teams: "ready", referee: "ready" });
   });
-  it("never calls an unchecked automatic outline ready (261122 Bournville: four sides found on the wrong, empty pitch)", () => {
+  it("never calls an unchecked automatic outline ready (four sides found is not proof of the right pitch)", () => {
     const outline = readiness({ summary, atlas: atlas([false, false, false, false]), groups: 6, labels: { own: true, opponent: true, referee: true } }).find(i => i.key === "outline")!;
     expect(outline.status).toBe("partial");
     expect(outline.detail).toMatch(/check that it frames the pitch the match is played on/);
+  });
+  it("does not call an accepted outline ready when it holds few of the players (261122: 18%)", () => {
+    const outline = readiness({ summary, atlas: atlas([false, false, false, false]), accepted: true, play: 0.18, groups: 6, labels: { own: true, opponent: true, referee: true } }).find(i => i.key === "outline")!;
+    expect(outline.status).toBe("partial");
+    expect(outline.detail).toMatch(/Only 18% of players' positions fall inside the accepted outline/);
+  });
+  it("keeps an accepted outline ready when it holds the play", () => {
+    expect(readiness({ summary, atlas: atlas([false, false, false, false]), accepted: true, play: 0.96, groups: 6, labels: { own: true, opponent: true, referee: true } }).find(i => i.key === "outline")!.status).toBe("ready");
+  });
+  it("says how much of the play an automatic outline holds", () => {
+    expect(readiness({ summary, atlas: atlas([false, false, false, false]), play: 0.3, groups: 6, labels: { own: true, opponent: true, referee: true } }).find(i => i.key === "outline")!.detail).toMatch(/Only 30% of players' positions fall inside the automatic outline/);
   });
   it("marks the outline partial and names how many sides were estimated", () => {
     const outline = readiness({ summary, atlas: atlas([false, true, false, false]), groups: 6, labels: { own: false, opponent: false, referee: false } }).find(i => i.key === "outline")!;

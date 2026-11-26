@@ -312,5 +312,10 @@ owner accepted holds 18% and a fifth of the area, its far edge cutting through m
 cylindrical atlas a low camera squeezes the far 20+ m into a thin strip and stretches the near few
 metres over most of the image, so "players only in a far strip" is perspective, not a wrong pitch.
 Judge outlines on the ground plane or on frames, never by atlas rows. Acceptance is not correctness
-either: an app check that flags an accepted outline holding few feet (ground plane) is the next step.
+either. `playShare` now measures it: the share of `central` feet (middle of the view; Veo follows
+play, spectators line the far fence) inside the outline in use, on `levelGround`. Judged outlines:
+right 92-98% (Bournville automatic, NL 91f49e12), short 23-37% (RMC 6c216d41/bcdbc765 stop before
+the right goal; f6d0bcb2 far edge short), broken 1% (old NL 48e74eab). Below 70% the check says
+how much play the outline holds and is never Ready, accepted or not. Five outlines, my visual
+verdicts: not a held-out accuracy claim. Frame-centre aim points were too weak (inside almost all).
 People/ball/look-alike counts do include a neighbouring game (a red-shirted team beside this one).

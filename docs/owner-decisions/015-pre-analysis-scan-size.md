@@ -19,7 +19,7 @@ Longer scans see more of the pitch and more of each kit, but take longer on the 
   Evidence: on 260926 NL a 4-minute window never detected the left goal; on 261122 NL vs
   Bournville Greens (kick-off 10:00) a scan from minute 5 was half warm-up.
 - Ready thresholds (frontend `components/videoLab/preAnalysis.ts`): panorama >= 90% of
-  views registered (60% partly); outline ready only once you accept it in the stitched pitch review (an automatic outline is at most "partly"; acceptance is not proof either: on 261122 the automatic outline held 96% of feet and the accepted one 18%); people
+  views registered (60% partly); outline ready only once you accept it in the stitched pitch review (an automatic outline is at most "partly"; acceptance is not proof either: on 261122 the automatic outline held 96% of feet and the accepted one 18%); any outline holding under 70% of central players' feet on the level ground is "partly"; people
   >= 10 per sampled frame (4 partly); ball >= 50% of frames (25% partly); teams and
   referee ready only once you have labelled both teams / the referee.
 
