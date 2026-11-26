@@ -1,3 +1,19 @@
+## Video Lab: pre-analysis flags an outline that holds few players; DEPLOYED to admin — 26 November 2026
+
+Owner: "Yes" to an app warning when a pitch outline misses the game. New `playShare`
+(`components/videoLab/playShare.ts`): share of `central` people's feet (middle of the view) inside
+the outline in use (accepted points, else the automatic one), measured on `levelGround`, abstaining
+under 200 feet or without a level ground. Below 70% the Pre-analysis check says how much play the
+outline holds and is never Ready, accepted or not. Judged outlines: right 92-98%, short 23-37%,
+broken 1% (domain README); five outlines, my visual verdicts, not held-out. Tests red first
+(playShare 4, readiness 2 of 3, panel 1); one older test's title corrected (it repeated my wrong
+"empty pitch" claim), its assertion unchanged. Clean worktree frontend 1072 pass, typecheck, build.
+Deploy 0843f40 raced another session's ab3fb8f (Match stats, contains 0843f40): briefly web on mine,
+backend/capture on theirs; settled within a minute with all three on ab3fb8f, health ok, bundle has
+the check. Live on Bournville (c8988347): accepted outline "Partly, only 22%". The owner's outline
+is unchanged; re-accepting the automatic one (98%) is the owner's call.
+"Yes, fix the worker" earlier: replay showed the worker outline was right; no worker change made.
+
 ## Spec770 camera and pitch stage 2.2x faster, outputs identical; NOT deployed — 26 November 2026
 
 Owner: "speed up the camera and pitch stage too". The stage (camera motion, panorama, cylindrical
