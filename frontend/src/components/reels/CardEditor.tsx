@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { H, THEMES, type ThemeId, W, drawCard } from "../../lib/reelCards";
+import { H, THEME_GROUPS, THEMES, type ThemeId, W, drawCard } from "../../lib/reelCards";
 
 /** Still title card for imported-clip reels: the chosen theme's fully revealed frame.
  *  The same canvas is uploaded when rendering. Spec 190 themes, shared with Hudl reels. */
@@ -36,7 +36,7 @@ export function CardEditor({ kind, enabled, onEnabled, title, subtitle, onTitle,
       )}
       <label className="block text-xs text-fg-muted">Style
         <select className="field mt-1" disabled={!enabled} value={theme} onChange={(e) => onTheme(e.target.value as ThemeId)} aria-label={`${label} style`}>
-          {THEMES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+          {THEME_GROUPS.map((g) => <optgroup key={g.id} label={g.label}>{THEMES.filter((t) => t.group === g.id).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</optgroup>)}
         </select>
       </label>
     </div>

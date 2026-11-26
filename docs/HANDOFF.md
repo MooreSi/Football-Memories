@@ -1,3 +1,18 @@
+## Reel card themes: 5 broadcast + GTA 6 style — 26 November 2026
+
+Owner: "add in additional themes, make them professional, broadcast quality, also add
+in a gta 6 theme". New `frontend/src/lib/reelThemes.ts`: Prime Time (glass panels,
+light-wipe title, HIGHLIGHTS bug), Studio (red slab wipe, REPLAY bug, scrolling
+ticker), Star Night (starfield, ring of stars, silver foil title), Cinematic (2.39
+letterbox, anamorphic flare, grain), Stadium LED (pixel mask, racing chevrons) and
+Sunset Heist (GTA 6 style: striped sunset, palms, skyline, poster type; original art,
+no Rockstar logo, name or font). Shared helpers moved to `reelDraw.ts`; Palette gained
+optional `headline`, `overlay` and `shadow`. Pickers (Reel Studio swatches, Reel Builder
+select) are grouped Broadcast / Classic / Game style. Tests red first (theme list),
+plus a fake-context test drawing every theme x card kind x 6 frames. Frontend 1014/199,
+typecheck, build pass; backend untouched, its suites not run. Checked rendered frames
+in the browser (opening, match, stats). NOT deployed: needs a frontend rebuild.
+
 ## Veo: use the first readable render; DEPLOYED to admin — 26 November 2026
 
 After f6dedc6 the owner's retry of 260926 Racing Club Warwick vs. NL showed the real cause:

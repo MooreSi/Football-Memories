@@ -1,3 +1,7 @@
+## Reel card themes — 26 November 2026
+
+Five broadcast themes and a GTA 6 style theme for title cards (reelThemes.ts). Frontend only; not deployed.
+
 ## Hudl U11 2026/27 games in Video Lab — 26 November 2026
 
 Video Lab's picker is now "Analyse a Match" with a "Match" select: a Veo group and a

@@ -9,7 +9,7 @@ import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { fixtureLabel } from "../lib/hudlFixture";
 import {
-  CARD_SECONDS, type CardSpec, type Crests, H, STATS_SECONDS, THEMES, type ThemeId, W,
+  CARD_SECONDS, type CardSpec, type Crests, H, STATS_SECONDS, THEME_GROUPS, THEMES, type ThemeId, W,
   blobToBase64, drawCard, loadCrest, matchCard, recordCard, statsCard,
 } from "../lib/reelCards";
 import { hudlTeamStats } from "../lib/hudlTeamStats";
@@ -56,15 +56,20 @@ function ThemePicker({ label, value, onChange }: { label: string; value: ThemeId
   return (
     <fieldset>
       <legend className="mb-2 text-xs text-fg-muted">{label}</legend>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {THEMES.map((t) => (
-          <label key={t.id} title={t.blurb} className={`theme-swatch theme-${t.id} cursor-pointer rounded-xl border p-2.5 text-xs ${value === t.id ? "border-accent ring-1 ring-accent/60" : "border-white/10 hover:border-white/30"}`}>
-            <input type="radio" name={label} className="sr-only" checked={value === t.id} onChange={() => onChange(t.id)} aria-label={t.label} />
-            <span className="block font-semibold text-white">{t.label}</span>
-            <span className="block text-[11px] text-white/70">{t.blurb}</span>
-          </label>
-        ))}
-      </div>
+      {THEME_GROUPS.map((g) => (
+        <div key={g.id} className="mb-2">
+          <p className="mb-1 text-[11px] uppercase tracking-wider text-fg-muted">{g.label}</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {THEMES.filter((t) => t.group === g.id).map((t) => (
+              <label key={t.id} title={t.blurb} className={`theme-swatch theme-${t.id} cursor-pointer rounded-xl border p-2.5 text-xs ${value === t.id ? "border-accent ring-1 ring-accent/60" : "border-white/10 hover:border-white/30"}`}>
+                <input type="radio" name={label} className="sr-only" checked={value === t.id} onChange={() => onChange(t.id)} aria-label={t.label} />
+                <span className="block font-semibold text-white">{t.label}</span>
+                <span className="block text-[11px] text-white/70">{t.blurb}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ))}
     </fieldset>
   );
 }
