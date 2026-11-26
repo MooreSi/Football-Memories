@@ -1,3 +1,13 @@
+## Other users' lab switches moved to the admin console — 26 November 2026 (NOT deployed)
+
+Owner: under Advanced, keep only the admin account; other users go under their Manage
+section in the admin console. App: `AdvancedSettings` now lists only `self` and links to
+/_portal/admin. Gateway (same branch name): `admin/LabSwitches.tsx` in `UserDetail` for
+approved users, using the existing GET/PATCH /_admin/api/labs (no backend change). The old
+app test that toggled another user's switch now uses the admin's own row (requirement
+changed); new tests red first in both repos. App 998 and gateway web 74 tests, typecheck,
+build pass; backend untouched so pytest not rerun. No browser check yet: needs the deploy.
+
 ## Core ML ReID built, NOT enabled — 26 November 2026
 
 Worker: optional pinned `coreml` entry in the ReID config runs SportsReID on the

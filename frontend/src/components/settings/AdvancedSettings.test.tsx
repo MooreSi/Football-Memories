@@ -6,7 +6,7 @@ import { AdvancedSettings } from "./AdvancedSettings";
 vi.mock("../../api/hostedFlag",()=>({HOSTED:true}));
 afterEach(()=>vi.unstubAllGlobals());
 it("saves an individual lab switch without changing the other lab",async()=>{
- const person={id:"user-1",display_name:"Pat Example",email:"parent@example.test",self:false,player_lab:false,video_lab:false};
+ const person={id:"user-1",display_name:"Pat Example",email:"parent@example.test",self:true,player_lab:false,video_lab:false};
  const writes:unknown[]=[];
  vi.stubGlobal("fetch",vi.fn(async(url:RequestInfo|URL,init?:RequestInit)=>{
   if(String(url).endsWith("/me"))return Response.json({role:"admin",stage:"full",csrf_token:"test-csrf"});
@@ -23,6 +23,20 @@ it("saves an individual lab switch without changing the other lab",async()=>{
  await waitFor(()=>expect(video).toBeChecked());
  expect(screen.getByRole("checkbox",{name:"Player Lab for parent@example.test"})).not.toBeChecked();
  expect(writes).toEqual([{body:{video_lab:true},headers:{"Content-Type":"application/json","X-CSRF-Token":"test-csrf"}}]);
+});
+it("lists only the admin's own account and points to the admin console for everyone else",async()=>{
+ vi.stubGlobal("fetch",vi.fn(async(url:RequestInfo|URL)=>{
+  if(String(url).endsWith("/me"))return Response.json({role:"admin",stage:"full",csrf_token:"test-csrf"});
+  return Response.json([
+   {id:"admin-1",display_name:"Admin",email:"admin@example.test",self:true,player_lab:true,video_lab:true},
+   {id:"user-2",display_name:"Pat Example",email:"parent@example.test",self:false,player_lab:false,video_lab:false},
+  ]);
+ }));
+ renderWithProviders(<AdvancedSettings/>);
+ expect(await screen.findByRole("checkbox",{name:"Video Lab for admin@example.test"})).toBeChecked();
+ expect(screen.queryByText("parent@example.test")).toBeNull();
+ expect(screen.queryByRole("checkbox",{name:/parent@example.test/})).toBeNull();
+ expect(screen.getByRole("link",{name:"Admin console"})).toHaveAttribute("href","/_portal/admin");
 });
 it("direct navigation by an ordinary user does not fetch the account list",async()=>{
  const fetcher=vi.fn(async()=>Response.json({role:"user",stage:"full"}));vi.stubGlobal("fetch",fetcher);

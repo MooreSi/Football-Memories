@@ -38,9 +38,10 @@ export function AdvancedSettings(){
   if(admin.isPending)return <Spinner label="Checking admin access"/>;
   if(!admin.data?.admin)return <p className="text-sm text-fg-muted">Advanced settings are only available to the signed-in admin.</p>;
   return <section className="panel max-w-3xl space-y-5 p-5" aria-label="Advanced settings">
-    <div><h2 className="text-lg font-semibold">Advanced</h2><p className="mt-2 text-sm text-fg-muted">Choose who can use Player Lab and Video Lab. App updates are shared independently of these switches. Other users have no access until you enable it here.</p></div>
+    <div><h2 className="text-lg font-semibold">Advanced</h2><p className="mt-2 text-sm text-fg-muted">Choose whether your account uses Player Lab and Video Lab. App updates are shared independently of these switches. Other users' lab access is under their Manage panel in the <a className="underline" href="/_portal/admin">Admin console</a>.</p></div>
     {users.isPending?<Spinner label="Loading lab access"/>:users.isError?<p role="alert">{users.error.message}</p>:
-      [...(users.data??[])].sort((a,b)=>Number(b.self)-Number(a.self)).map(user=><fieldset key={user.id} className="min-w-0 space-y-3 rounded-xl border border-line p-4" disabled={save.isPending}>
+      // Owner request 2026-11-26: other users are managed in the gateway admin console.
+      (users.data??[]).filter(user=>user.self).map(user=><fieldset key={user.id} className="min-w-0 space-y-3 rounded-xl border border-line p-4" disabled={save.isPending}>
         <legend className="max-w-full break-words px-1 text-sm font-semibold">{user.self?"Your admin account":user.display_name}</legend>
         <p className="break-all text-xs text-fg-muted">{user.email}</p>
         <div className="flex flex-wrap gap-x-8 gap-y-3">{(["player_lab","video_lab"] as const).map(feature=><label key={feature} className="flex items-center gap-3 text-sm">
