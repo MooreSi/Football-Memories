@@ -1,3 +1,19 @@
+## Veo signed links read; NL match analysed; pitch run — 26 November 2026
+
+Owner goal: analyse 260926 Racing Club Warwick vs. NL from minute 5 for 4 minutes, then a
+pitch analysis. App 1f01047 (admin only, 3 containers, latest untouched): match-video reads
+accept a query string on c.veocdn.com only (thumbnails/crests still refuse one); signed links
+re-read after 10 min. Owner request changed one existing host-lock assertion (the
+`?token=x` c.veocdn.com URL) into a new "reads a signed link" test; every other refusal kept;
+3 new tests red first; 852 + crest 15 pass, ruff/format/mypy clean. Images built from a clean
+worktree because another session has uncommitted frontend edits in this checkout.
+Ran it: helper analysis window (ticket 8ad018c6, ~150 MB read via the signed link) -> gateway
+import as admin -> Video Lab job b4f5d244 complete (Split; panorama 1194/1199 frames, atlas
+ready, both ends) -> camera-tracking 7b7adeb8 and, after the worker watermark fix, 48e74eab.
+The stitched atlas is good; the automatic bird's-eye is not (see worker HANDOFF: Veo
+watermark, left goal unseen). Needs the owner's Stitched pitch review to calibrate.
+Postgres check still not runnable (port 55432 unpublished).
+
 ## Video Lab: one referee on the pitch; pitch overlay from 0:00 — 26 November 2026
 
 Owner, on f2ab96a2 (labels live on its refinement 6c216d41): sideline people tagged as referees
