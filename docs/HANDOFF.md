@@ -1,3 +1,10 @@
+## Core AI player matching DEPLOYED (admin + both Macs) — 26 November 2026
+
+Owner: "Yes, deploy it". Worker 62a61b0 on the mini (coordinator checkout, `uv sync --frozen` added coreai-core) and the MacBook node (src synced, backup `src.ee0b987` + pyproject/uv.lock `.ee0b987`; coreai-core 1.0.0, ml-dtypes 0.6.0, yuvio 1.6, psutil 7.2.2 installed into the node venv with the lock versions, `pip check` clean). Code digest c563ff56... on both. Core AI asset `models/reid_b64.aimodel` (tree sha256 ffca4ff5...) built with tools/convert_reid_coreai.py on the mini and copied to the MacBook (digest re-verified there); `reid-coreai.json` on both; MacBook `node.json` gains `reid_coreai_config` (backup node.json.before-coreai); mini `remote-node.json` pins `reid_coreai_sha256` (backup .before-coreai); LaunchAgent adds `--reid-coreai-config` (backup runtime/launchagent-before-coreai.plist), reloaded with bootout/bootstrap while the queue was idle. Heartbeat: pytorch, neural-engine, core-ai on both Macs, remote_ready true.
+Gateway `fm-gateway-gateway:core-ai-f7def11` (live was labs-reid-db6e866, an ancestor), only the gateway container changed; origin correct, public health 200, anonymous /_admin/api/video-nodes 401; live `view()` lists core-ai locally and remotely.
+Admin app moved b3e0adc -> 0891bb7 (contains it): built with FM_BUILD_LATEST=0, added to `built` (latest 8c31cdb untouched), exactly 3 admin containers changed, bundle contains the Core AI text. Owner had a Safari tab polling (GETs only, no transfer) during the move.
+Saved choice left as Standard (mode split): no job uses Core AI until the admin selects it. Not yet exercised: a real Core AI job through the UI.
+
 ## Core AI player-matching option built, NOT deployed — 26 November 2026
 
 Owner: "Yes, add it". Spec 740. App: third radio "Core AI" in Settings > Advanced >

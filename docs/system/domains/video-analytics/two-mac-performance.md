@@ -310,4 +310,5 @@ Core AI. Job requests carry `"reid_backend": "core-ai"`; the worker runs a ReID 
 with a pinned `coreai` asset through the OS Core AI runtime and never falls back.
 Offered only where the heartbeat lists `core-ai`, which needs `--reid-coreai-config`
 on the mini and `reid_coreai_config` plus the pinned `reid_coreai_sha256` for the
-MacBook. Not installed on either Mac yet; enable steps in the worker's NODE_EXECUTION.md.
+MacBook. Deployed 26 November 2026: asset `reid_b64.aimodel` (ffca4ff5...) and
+`reid-coreai.json` on both Macs; default stays Standard.

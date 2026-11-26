@@ -1,6 +1,6 @@
 # 740: Core AI player-matching model
 
-**Status:** Built, not deployed (owner: "Yes, add it", 26 November 2026)
+**Status:** Deployed to admin and both Macs 26 November 2026 (owner: "Yes, add it", 26 November 2026)
 **Sensitive:** no. Touches the MacBook node profile only when deployed (not part of this change).
 
 ## What is wrong or missing today
@@ -69,4 +69,4 @@ None needed (no Hudl/Veo surface).
 - [x] no credential, cookie or token written to the repo, a log or a fixture
 - [x] nothing on Hudl modified; no existing library file deleted or overwritten
 - [x] real-account check: not needed
-- [ ] deployed: not yet (needs the Core AI asset installed on both Macs first)
+- [x] deployed: worker 62a61b0 both Macs, gateway core-ai-f7def11, admin app 0891bb7; default stays Standard
