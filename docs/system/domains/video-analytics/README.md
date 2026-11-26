@@ -170,3 +170,13 @@ A ground-band ECC refit of each 3x3 pose only traded near for far error. The wor
 re-solves every view as one rotating, zooming camera (spec710 `camera_bundle`): cached
 games went from 25-60 px to <1 px near-field frame-to-atlas error and atlas seams went
 away. Existing runs need "Rebuild complete pitch" (a new child) to get refined poses.
+
+Spec710 follow-up (26 November 2026): on 261116 Racing Club Warwick the automatic outline's
+far touchline sits short (through midfield) and is flagged unseen; the real far line
+borders a fence/apron and is pale. Tried and reverted, because each regressed another
+cached game: (1) a thin-line top-hat plus "grass just below" test (fixed a synthetic
+fence case, broke the 600 s 3G game); (2) refining the ground-plane tilt to maximise
+perpendicular marking families (fixed a synthetic 3 degree roll, but on real footage it
+locked onto false alignments and collapsed or blew up three outlines). A far-side
+pixel-distance metric is meaningless here: a 3 degree pose error barely moves it,
+because the far field is full of white clutter. Judge far edges visually.
