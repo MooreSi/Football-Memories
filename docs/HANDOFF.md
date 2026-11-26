@@ -28,11 +28,8 @@ Eight existing Tournaments tests now press "Tournaments" in setup because the de
 changed by request; no assertion changed. Frontend 997/997, typecheck, build green.
 Not checked in a browser and NOT deployed.
 
-Open, owner's call: the "Another family's Hudl or Veo work is running" 409 is the
-gateway CaptureSlot (threat model T21, owner decision 2026-11-19), working as designed
-when two families use Hudl/Veo at once. Options put to the owner: client waits and
-retries automatically (no extra Hudl traffic), separate Hudl and Veo slots, or a
-shorter 60 s grace. Nothing changed in the gateway.
+Owner then said "remove the restriction": the gateway CaptureSlot is removed (gateway
+commit on codex/local-video-analytics, owner-decisions/014, T21 updated). Not deployed.
 
 ## Analysed video export + Hudl U11 analysis DEPLOYED (admin only) — 26 November 2026
 
