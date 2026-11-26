@@ -97,7 +97,18 @@ Frontend 1075 pass, typecheck and build pass, excluding another session's untrac
 `frontend/src/__probe/far.test.ts` (fails tests and typecheck; left alone). Backend
 untouched, its suites not run. Browser: Veo match 261116 RCW vs Kidderminster RMC via the
 other session's 5173 dev server, 1440 and 375 px, no horizontal overflow. Hudl page not
-seen in a browser (tests only). NOT deployed: the 8765 owner app needs a frontend rebuild.
+seen in a browser (tests only). DEPLOYED on the owner's "deploy it to live" and "deploy to
+all families too": admin ab3fb8f (clean worktree, 1094 pass; FM_BUILD_LATEST=0, added to
+`built`). Admin move raced another session's move to 0843f40 at 22:08 UTC (mine 502, theirs
+200, leaving web on 0843f40 and backend and capture on ab3fb8f). Moved again to ab3fb8f
+(contains 0843f40); health ok, bundle has Match stats; that session was told. All families:
+cherry-picked onto main as a0befe8 (only the HANDOFF conflicted; frontend 1002 pass,
+typecheck, build), pushed, gateway-updater built it as latest, auto round moved all seven
+families (helpers idle, no ffmpeg, flat traffic beforehand), each healthy and serving the
+tab. Local 8765 Docker app not rebuilt. Backend suite could not be run to the end:
+test_jgh_crests' fake clock leaks into team_logos._LAST_REQUEST, and test_shared_crests'
+next lookup then sleeps without end (existing bug, backend untouched here); ruff, format
+and mypy clean.
 Period labels follow the page header, so a 3-period Veo recording shows "Extra time 1".
 
 ## Spec 760 Part A: lighting benchmark built, baseline scored, 26 November 2026
