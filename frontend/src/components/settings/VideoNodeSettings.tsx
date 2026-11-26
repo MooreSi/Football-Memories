@@ -3,9 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLabAdmin } from "../../api/labAdmin";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
+import { VideoReidSettings, type ReidNodes } from "./VideoReidSettings";
 
 type Mode = "local" | "remote" | "split";
-type Nodes = { mode: Mode; local_ready: boolean; remote_ready: boolean };
+type Nodes = ReidNodes & { mode: Mode; local_ready: boolean; remote_ready: boolean };
 const URL = "/_admin/api/video-nodes";
 const KEY = ["video-nodes"];
 const choices: [Mode, string, string][] = [
@@ -56,6 +57,7 @@ export function VideoNodeSettings({ admin }: { admin: ReturnType<typeof useLabAd
       <Button disabled={save.isPending || selected === nodes.data.mode || !selected || (selected !== "local" && !nodes.data.remote_ready)}
         onClick={() => selected && save.mutate(selected)}>{save.isPending ? "Saving…" : "Save analysis location"}</Button>
       {save.isSuccess && <p role="status" className="text-sm">Analysis location saved for new jobs.</p>}
+      <VideoReidSettings admin={admin} nodes={nodes.data} queryKey={KEY} />
     </>}
     {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
   </div>;

@@ -218,3 +218,15 @@ The stage runs 1.7-2.6x faster. Control: MPS run twice gives identical groups
 and c880cae0 changes are caused by FP16 Core ML, not run-to-run noise. Which
 grouping is better is unknown (no reviewed truth). Owner decision needed before
 enabling; until then no config carries a `coreml` entry.
+
+### Selectable per job (Settings > Advanced)
+
+Admin chooses "Standard model" (PyTorch MPS, default) or "Neural Engine" under
+Player matching model. The gateway stores it beside the execution mode and copies
+`"reid_backend": "neural-engine"` into new admin jobs only; standard jobs carry no
+field, exactly as before. A location-only save keeps the saved model. The worker
+runs a Neural Engine job with `--reid-coreml-config` (a ReID config holding the
+`coreml` entry) and never falls back. Split/remote review tasks name the backend
+only when it is not standard; the MacBook node needs `reid_coreml_config` in its
+profile. `node-status.json` lists `reid_backends` / `remote_reid_backends`; the
+gateway offers the Neural Engine only where the job would run.

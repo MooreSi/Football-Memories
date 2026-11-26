@@ -1,3 +1,20 @@
+## Player matching model selectable in Settings > Advanced — 26 November 2026
+
+Owner asked for the Core ML ReID to be a selectable option. App: new "Player
+matching model" panel (Standard default / Neural Engine) under the analysis location
+in Settings > Advanced, admin only. Gateway: `/_admin/api/video-nodes` gains optional
+`reid_backend`, offered only where the heartbeat lists it, snapshotted into new admin
+jobs (submit, derived runs, Veo/Hudl imports); location-only saves keep it. Worker:
+`reid_backend` request field, `--reid-coreml-config`, no fallback; node status lists
+backends. Tests observed red first (worker 10, gateway 8 + 1 preserve-model; frontend 3);
+gateway's invalid-value and ordinary-user tests passed before as negative controls.
+One assertion in a NEW, uncommitted gateway test changed from "location save resets
+model" to "keeps model" after the existing UI test showed location saves send only
+the mode; resetting would have silently dropped the choice. No existing test changed.
+Worker 245, gateway 513 + 4 Docker, frontend 1001/197 files, typecheck, build, lints
+pass. Browser: synthetic harness over hosted build, save + reload persist, 375 px no
+overflow, matches the location panel (reference 01 styling).
+
 ## Other users' lab switches moved to the admin console — 26 November 2026 (NOT deployed)
 
 Owner: under Advanced, keep only the admin account; other users go under their Manage
