@@ -253,10 +253,11 @@ compose files + an image override like spec730's; origin intact), worker c783fdc
 (kickstarted idle; includes another session's 70f44ac). Checks: frontend 983, worker
 224, gateway 501 (+2 skips), all lint/type checks green. Far touchline on RCW still
 estimated. Three reverted far-line heuristics are recorded in the domain doc.
-OPEN: the LaunchAgent now runs another session's checkout
-/Users/simon/Football-Video-Coordinator-730 (detached at 70f44ac, spec730), so the
-worker does not include c783fdc: rebuild c80ab0d9 has no halfway line. Owner to decide
-whether to fast-forward that checkout to c783fdc and restart the idle worker.
+Owner approved: the LaunchAgent's checkout /Users/simon/Football-Video-Coordinator-730
+(spec730, was detached at 70f44ac) fast-forwarded to c783fdc and the idle worker
+restarted. Rebuild f2ab96a2 (child of c80ab0d9) has the halfway line: bird's-eye shows
+it through the centre circle; live frame near touchline on paint, right end short of
+the goal line (owner drags it; whole pitch is now in the image).
 
 
 ## Spec710 line-based pitch outline DEPLOYED — 25 November 2026
