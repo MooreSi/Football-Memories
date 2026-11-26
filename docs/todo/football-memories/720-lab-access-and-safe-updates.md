@@ -60,3 +60,12 @@ libraries while idle. New app image must reach granted users too; old clients st
 have hardcoded admin presentation gates. Preserve all data volumes, user update
 preferences and ordinary default-denied lab access. Do not enable grants for real
 users on the owner's behalf. Never change shared latest to an admin-only preview.
+
+## Prepared artifacts
+
+Code commits app `f604877`, gateway `aaecf42`; gateway CI45778074931 green
+(all three jobs). App has no CI workflow. Prepared app images are tagged
+`hosted-f604877cb620fed047e0befacc2dc6c3ac80923e`; gateway/provisioner images
+`spec720-aaecf42`. These builds changed no running container or shared tag/latest.
+Deployment still requires the full Docker isolation check or explicit exception.
+

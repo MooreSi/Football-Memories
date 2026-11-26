@@ -1,5 +1,11 @@
 ## Spec720 lab switches and preview-safe updates — 26 November 2026
 
+Code commits app `f604877`, gateway `aaecf42`; gateway CI45778074931 green
+(all three jobs). App has no CI workflow. Prepared app images are tagged
+`hosted-f604877cb620fed047e0befacc2dc6c3ac80923e`; gateway/provisioner images
+`spec720-aaecf42`. These builds changed no running container or shared tag/latest.
+Deployment still requires the full Docker isolation check or explicit exception.
+
 Branch `codex/local-video-analytics` in app and gateway repos. Code complete;
 NOT deployed or promoted to shared main/latest. Runtime confirmed admin ae13328
 is ahead of shared6138b56: the old inequality check offers a rollback. Source
