@@ -1,3 +1,23 @@
+## Two-Mac analysis: remote restored and measured — 26 November 2026
+
+Remote/Split had been silently unavailable: MacBook node still ran worker 70f44ac
+after the mini moved to 5a74a19, so the code-digest check failed closed. Synced the
+two changed source files over the Thunderbolt-bound SSH key (no dependency change;
+old tree kept as `src.70f44ac` on the MacBook). node-status now remote_ready=true
+and the gateway sees it. Deploy worker code to BOTH hosts together.
+
+spec730 was already live: admin app c534421 and gateway hudl-4273a01 contain it.
+The isolated Docker gate does not apply (provisioner/updater unchanged since aaecf42).
+
+Measured (details in docs/system/domains/video-analytics/two-mac-performance.md):
+detector on Neural Engine ~71 ms/frame on both Macs (`ALL` already picks it); ReID
+MPS 1157 ms (mini) vs 836 ms (M3 Pro) per 64 crops. 60 s clip, 2 reps: Local 109/112 s,
+Remote 106/108 s, Split 90/103 s; all outputs/source hashes verified. Containers on
+macOS cannot use the Neural Engine or Metal, so analysis stays native on both Macs.
+No code changed, nothing deployed, no production job/source/result touched. Owner
+asked about containerising the MacBook node; recommendation to stay native is
+pending their answer. Not built: Neural Engine + GPU shared detection, one job per Mac.
+
 ## Library default, Clips nav, NL crest — 26 November 2026
 
 Owner requests: the Library's grouped toggle now opens on All matches (Tournaments

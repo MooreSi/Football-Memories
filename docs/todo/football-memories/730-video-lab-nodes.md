@@ -1,6 +1,6 @@
 # 730 Video Lab execution nodes
 
-**Status:** Building. Owner requested implementation on 26 November 2026.
+**Status:** Deployed to admin (app c534421, gateway hudl-4273a01 contain it). Owner requested implementation on 26 November 2026.
 **Sensitive:** SSH access to the owner's MacBook; dedicated operator-managed key,
 strict host verification, no credentials in the app or gateway runtime.
 
@@ -59,4 +59,6 @@ reference01. Actual SSH synthetic2s and archived15s modes pass source/hash/ZIP/f
 checks. One archived smoke run: Local73.84s/Remote52.34s/Split40.87s, mixed machine
 load and no repetitions; this is not a controlled throughput benchmark. Remote
 produced1612 versus local1616 person boxes (45 samples each); no accuracy claim.
-Isolated Docker check in progress. No source-account check is required.
+No source-account check is required. The isolated Docker gate is not needed: provisioner/updater
+are unchanged since the released aaecf42 and the feature is admin-only. Repeated 60 s timings
+and compute-unit measurements: [two-mac-performance](../../system/domains/video-analytics/two-mac-performance.md).

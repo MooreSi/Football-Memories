@@ -111,3 +111,51 @@ about 1 second. These are arithmetic examples, not observed link speeds.
 No new analysis, bulk transfer benchmark, software installation, deployment, account
 access or footage modification was performed for this investigation. A numeric
 speedup for the second Mac remains unmeasured.
+## Measured on 26 November 2026 (evening)
+
+Both hosts idle at start, same code (worker 5a74a19, code digest matched) and
+same pinned detector/ReID hashes. Read-only scripts in a private scratch runtime;
+no production queue, source or result touched.
+
+**Compute units, one 1920x1080 frame / 64 player crops (median):**
+
+| Stage | M4 mini | M3 Pro (5P+6E, 18 GB, macOS 26.6.2) |
+| --- | --- | --- |
+| Detector CoreML `ALL` | 75 ms | 72 ms |
+| Detector `CPU_AND_NE` | 70 ms | 72 ms |
+| Detector `CPU_AND_GPU` | 155 ms | 114 ms |
+| Detector `CPU_ONLY` | 277 ms | 297 ms |
+| ReID ViT-B/16 MPS | 1157 ms | 836 ms |
+| ReID CPU | 1977 ms | 2168 ms |
+
+`ALL` already lands on the Neural Engine on both hosts; ReID's MPS default is
+right on both. The M3 Pro GPU is 1.39x faster for ReID; the two Neural Engines
+detect at the same speed. No compute-unit setting change is justified.
+
+**Containers:** Docker on macOS runs a Linux VM with no CoreML/Neural Engine or
+PyTorch MPS. A containerised worker would run near the CPU-only rows (about 4x
+slower detection, 1.7-2.6x slower ReID). Analysis stays native on both Macs; the
+app and gateway remain containerised. The MacBook node is a native venv reached
+over SSH bound to the Thunderbolt bridge (route verified via `bridge0`).
+
+**End to end, 60 s cached clip, prepare_lab, two repetitions each:**
+
+| Mode | Wall time | Stages |
+| --- | --- | --- |
+| Local | 108.9 s, 112.2 s | detect/track/render 51 s, camera/pitch 38-40 s, appearance 19 s |
+| Remote (whole job on M3 Pro) | 106.0 s, 107.7 s | includes transfer both ways |
+| Split | 89.7 s, 102.5 s | local detect 53/67 s, then local camera 35-36 s overlapped with remote appearance 18-19 s |
+
+All six completed with 21 files, matching source hash, source unchanged. Split
+was fastest in both reps (8-18%); rep 2's slower local detection was unexplained
+machine load. Remote is roughly equal to Local because detection dominates and
+both Neural Engines match. Two reps on one clip: indicative, not a throughput
+benchmark. The biggest remaining lever is the sequential detection stage (Neural
+Engine and GPU are separate units that could share frames) or one whole job per
+Mac for a backlog; neither is built.
+
+**Incident found:** remote had been silently unavailable because the MacBook
+still ran 70f44ac after the mini moved to 5a74a19; the digest check failed closed
+as designed. Fixed by syncing the two changed source files (no dependency
+change); prior tree kept as `src.70f44ac` on the MacBook. Deploy worker code to
+both hosts together.
