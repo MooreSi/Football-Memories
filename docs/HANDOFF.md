@@ -1,3 +1,27 @@
+## Player matching model DEPLOYED (admin + both Macs) — 26 November 2026
+
+Owner said "deploy it to both macs" and later "Move it now". Worker ee0b987 on the
+mini (coordinator checkout) and MacBook node; Core ML ReID `reid_b16.mlpackage`
+(tree sha256 f27873dd...) installed on both with `reid-neural.json`; MacBook
+`node.json` gains `reid_coreml_config` (backup node.json.before-neural, old src kept
+as src.5a74a19); mini `remote-node.json` pins `reid_coreml_sha256` (backup
+.before-neural); LaunchAgent adds `--reid-coreml-config` (backup
+runtime/launchagent-before-neural.plist). Heartbeat: both backends on both Macs.
+
+Gateway now `fm-gateway-gateway:labs-reid-db6e866` (branch tip: another session's
+f0921fd lab switches + db6e866). MISTAKE: an intermediate image reid-0c05abb
+(dce0ed3 + mine) briefly replaced that session's just-deployed labs-f0921fd for
+about a minute (~13:14 UTC); fixed by redeploying the tip. Always re-read the live
+image immediately before `up`. Origin unchanged, public health 200, admin APIs 403
+anonymously, lab-switch bundle served.
+
+Admin app moved fc1a36b -> ba9aefa (contains 037582f) at ~14:20 UTC after the
+macOS 27.2.1 reboot, on the owner's "Move it now" despite capture streaming
+~350 MB/min for 25+ min earlier. Exactly 3 admin containers changed, db and others
+unchanged; health 200; bundle has "Save player matching". `latest` untouched.
+Default stays Standard: no job uses the Neural Engine until the admin selects it.
+Not yet exercised: a real Neural Engine job through the UI.
+
 ## Expired Veo matches hidden; Opponents in the Library title bar — 26 November 2026
 
 Owner: "for veo don't show expired matches" and "on the main library page move
