@@ -1,3 +1,14 @@
+## Core AI player-matching option built, NOT deployed — 26 November 2026
+
+Owner: "Yes, add it". Spec 740. App: third radio "Core AI" in Settings > Advanced >
+Player matching model; unavailable notes and 409 message name the model. Worker
+(`codex/core-ai-player-matching` 62a61b0) and gateway (same branch f7def11) carry the
+backend; see their handoffs. 5 new app tests red first; app 1012/199 files, typecheck,
+build pass; backend untouched. Browser: synthetic harness over the hosted build, save +
+reload, MacBook-missing note, 375 px no overflow. Nothing deployed or installed: to
+enable, install the Core AI asset and flags on both Macs (worker NODE_EXECUTION.md),
+then deploy gateway and admin app.
+
 ## Apple Core AI benchmarked on both Macs, NOT adopted — 26 November 2026
 
 Owner: macOS updated, "install the dependencies and run performance, accuracy and other

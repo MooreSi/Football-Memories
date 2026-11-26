@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLabAdmin } from "../../api/labAdmin";
 import { Button } from "../ui/Button";
 
-export type ReidBackend = "pytorch" | "neural-engine";
+export type ReidBackend = "pytorch" | "neural-engine" | "core-ai";
 export type ReidNodes = {
   mode: "local" | "remote" | "split";
   reid_backend?: ReidBackend;
@@ -14,7 +14,9 @@ const URL = "/_admin/api/video-nodes";
 const choices: [ReidBackend, string, string][] = [
   ["pytorch", "Standard model", "Player matching on the GPU, as before. Results match earlier runs."],
   ["neural-engine", "Neural Engine", "About twice as fast for the player appearance stage. Its lower-precision maths can group a few players differently from the standard model; neither has been checked as more accurate."],
+  ["core-ai", "Core AI", "About 1.4 times as fast as the standard model, using Apple Core AI (macOS 27). It groups players almost exactly like the standard model: identically on 4 of 6 test games."],
 ];
+const label = (b: ReidBackend) => choices.find(([backend]) => backend === b)?.[1] ?? b;
 
 /** Mounted inside VideoNodeSettings after full admin access is verified. Reference 01 panels. */
 export function VideoReidSettings({ admin, nodes, queryKey }: {
@@ -34,11 +36,11 @@ export function VideoReidSettings({ admin, nodes, queryKey }: {
       headers: { "Content-Type": "application/json", "X-CSRF-Token": me.data.csrf },
       body: JSON.stringify({ mode: nodes.mode, reid_backend }),
     });
-    if (!r.ok) throw new Error(r.status === 409 ? "The Neural Engine model is not installed where these jobs run." : "Player matching could not be saved.");
+    if (!r.ok) throw new Error(r.status === 409 ? `The ${label(reid_backend)} model is not installed where these jobs run.` : "Player matching could not be saved.");
     return r.json() as Promise<ReidNodes>;
   }, onSuccess: (data) => { client.setQueryData(queryKey, data); setDraft(undefined); } });
   const selected = draft ?? current;
-  const neuralMissing = !available("neural-engine");
+  const missing = choices.map(([b]) => b).filter((b) => !available(b));
   return <div className="space-y-3 border-t border-line pt-4">
     <h3 className="font-semibold">Player matching model</h3>
     <p className="text-sm text-fg-muted">Used to group players by appearance in new analysis jobs. Existing results are not changed.</p>
@@ -51,9 +53,9 @@ export function VideoReidSettings({ admin, nodes, queryKey }: {
         <span className="min-w-0"><span className="font-medium">{label}</span><span className="mt-1 block text-xs text-fg-muted">{description}</span></span>
       </label>)}
     </fieldset>
-    {neuralMissing && <p className="text-xs text-fg-muted">{local.includes("neural-engine")
-      ? "The Neural Engine model is not installed on the MacBook Pro. Choose Local, or use the standard model."
-      : "The Neural Engine model is not installed on this Mac."}</p>}
+    {missing.map((b) => <p key={b} className="text-xs text-fg-muted">{local.includes(b)
+      ? `The ${label(b)} model is not installed on the MacBook Pro. Choose Local, or use another model.`
+      : `The ${label(b)} model is not installed on this Mac.`}</p>)}
     <Button disabled={save.isPending || selected === current || !available(selected)}
       onClick={() => save.mutate(selected)}>{save.isPending ? "Saving…" : "Save player matching"}</Button>
     {save.isSuccess && <p role="status" className="text-sm">Player matching saved for new jobs.</p>}

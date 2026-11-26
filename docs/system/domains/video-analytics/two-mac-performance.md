@@ -302,3 +302,12 @@ boxes). No ground truth; these are agreement figures.
 Engine for both models on both Macs. Its one advantage is ReID fidelity: as a
 GPU-only option it would be a 1.4x faster Standard that groups almost identically.
 Owner decision recorded in the handoff. Worker suite (245) and ruff pass on 27.2.1.
+
+### Core AI as a third choice (built 26 November 2026, spec 740)
+
+Settings > Advanced > Player matching model now lists Standard, Neural Engine and
+Core AI. Job requests carry `"reid_backend": "core-ai"`; the worker runs a ReID config
+with a pinned `coreai` asset through the OS Core AI runtime and never falls back.
+Offered only where the heartbeat lists `core-ai`, which needs `--reid-coreai-config`
+on the mini and `reid_coreai_config` plus the pinned `reid_coreai_sha256` for the
+MacBook. Not installed on either Mac yet; enable steps in the worker's NODE_EXECUTION.md.
