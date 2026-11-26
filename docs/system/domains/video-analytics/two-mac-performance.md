@@ -159,3 +159,35 @@ still ran 70f44ac after the mini moved to 5a74a19; the digest check failed close
 as designed. Fixed by syncing the two changed source files (no dependency
 change); prior tree kept as `src.70f44ac` on the MacBook. Deploy worker code to
 both hosts together.
+
+## ReID on the Neural Engine via Core ML (measured 26 November 2026)
+
+Scratch-only conversion of the pinned SportsReID ViT-B/16 (sha256 a78d265b...) with
+coremltools 9.0 via `torch.export` (the `jit.trace` path fails on torchvision ViT
+shape casts with torch 2.11), FP16 ML program, fixed batch 1/16/64. Nothing in the
+repos, models folder or production worker changed. 128 real person crops from 8
+frames of a cached clip; reference is FP32 PyTorch on CPU. Time per 64 crops,
+model only (identical preprocessing excluded), median:
+
+| Backend | M4 mini | M3 Pro |
+| --- | --- | --- |
+| PyTorch MPS (current) | 1152 ms | 817 ms |
+| PyTorch CPU | 2291 ms | 2161 ms |
+| Core ML batch 1, `CPU_AND_NE` | 573 ms | 533 ms |
+| Core ML batch 16, `CPU_AND_NE` | 387 ms | 365 ms |
+| Core ML batch 16, `ALL` | 380 ms | 548 ms |
+| Core ML batch 64, `CPU_AND_NE` | 480 ms | 359 ms |
+| Core ML batch 64, `CPU_AND_GPU` | 764 ms | 560 ms |
+
+Batch 16 on `CPU_AND_NE` is about 3.0x (mini) and 2.2x (M3 Pro) faster than the
+current MPS path. Ask for `CPU_AND_NE` explicitly: on the M3 Pro `ALL` sometimes
+scheduled batch 16 off the Neural Engine. Neural Engine first load compiles the
+model (8-10 s at batch 16, 25-27 s at batch 64) once per process.
+
+Accuracy: per-crop cosine to the FP32 reference min 0.99989, mean 0.99997; pairwise
+similarity differs by at most 0.005. No pair in this crop set reached the 0.95
+merge threshold in the reference, so "zero decision flips" here is weak evidence:
+only pairs within ~0.005 of 0.95 could change grouping. Effect on the whole
+appearance stage (19 s per 60 s clip, which also includes crop decoding) is
+unmeasured. Not integrated: needs a pinned mlpackage hash in the ReID config, an
+`appearance` Core ML path with tests, and a before/after grouping comparison.

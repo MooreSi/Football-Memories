@@ -1,3 +1,12 @@
+## ReID Core ML / Neural Engine benchmark — 26 November 2026
+
+Owner asked to benchmark it. Scratch conversion of pinned SportsReID ViT-B/16 to
+Core ML FP16 (torch.export path). Batch 16 on CPU_AND_NE: 387 ms (mini) / 365 ms
+(M3 Pro) per 64 crops vs current MPS 1152 / 817 ms, about 3.0x / 2.2x. Cosine to FP32
+>= 0.99989, pairwise similarity diff <= 0.005. Weak threshold evidence (no reference
+pair >= 0.95). Not integrated, nothing deployed; whole-stage gain unmeasured.
+Details: video-analytics/two-mac-performance.md (app) and NODE_EXECUTION.md (worker).
+
 ## Two-Mac analysis: remote restored and measured — 26 November 2026
 
 Remote/Split had been silently unavailable: MacBook node still ran worker 70f44ac
