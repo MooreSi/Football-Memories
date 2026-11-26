@@ -1,6 +1,6 @@
 # 770: Faster camera and pitch stage
 
-**Status:** Built, NOT deployed (owner: "speed up the camera and pitch stage too", 26 November 2026).
+**Status:** Deployed to both Macs 26 November 2026 (owner: "speed up the camera and pitch stage too", 26 November 2026).
 Worker branch `codex/faster-camera-pitch`.
 **Sensitive:** no. Worker only. No account, source footage or existing result touched.
 
@@ -71,5 +71,5 @@ None needed.
 - [x] worker suite 299 pass, ruff, format, project checks green; new tests red first
 - [x] NL base: 312.7 s (deployed 984da7a) -> 142.5 s; camera_motion, panorama json/jpg, atlas
   json/jpg, goal_posts and bird's-eye byte-identical
-- [ ] deployed to both Macs (needs the owner's yes)
-- [ ] nothing on Hudl modified; no existing library file deleted or overwritten
+- [x] deployed to both Macs at b45b74e, code digest 98c3c217... on both, heartbeat ready
+- [x] nothing on Hudl modified; no existing library file deleted or overwritten

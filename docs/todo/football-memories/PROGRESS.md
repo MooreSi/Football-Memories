@@ -1,11 +1,13 @@
-## Spec770 camera and pitch stage 2.2x faster, outputs identical; NOT deployed — 26 November 2026
+## Spec770 camera and pitch stage 2.2x faster, outputs identical; DEPLOYED both Macs — 26 November 2026
 
 Owner: "speed up the camera and pitch stage too". The stage (camera motion, panorama, cylindrical
 pitch atlas with goal posts, pitch lines and bird's-eye) took 313 s on the NL base. Worker branch
 `codex/faster-camera-pitch` (pushed): the atlas decodes forward once instead of 336 seeks (Veo
 keyframes 8.3 s apart), camera steps and per-view atlas analysis run on a 6-thread ordered pool,
 refinement decoding overlaps SIFT. Measured 312.7 s -> 142.5 s with every camera/pitch output
-byte-identical. 299 worker tests pass. NOT deployed: owner's yes, both Macs together, idle restart.
+byte-identical. 299 worker tests pass.
+DEPLOYED on the owner's "Yes" while idle: MacBook backup `src.984da7a`; mini coordinator b45b74e,
+worker restarted; code digest 98c3c217... both; heartbeat local and remote ready. Not yet exercised: a real job.
 
 ## Spec750 hardware render + shared detection DEPLOYED both Macs — 26 November 2026
 
