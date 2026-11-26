@@ -33,7 +33,7 @@ from app.connectors.hudl_index import DownloadIndex
 from app.connectors.hudl_media import MediaLibrary, sync_downloads
 from app.connectors.hudl_metadata import MatchCache, capture_key, optional_moments
 
-from . import _batch, _tags
+from . import _analysis, _batch, _tags
 from ._capture import (
     LOGIN_URL,
     UNAVAILABLE_RETRY_S,
@@ -139,6 +139,7 @@ class BrowserConnection:
         *,
         combined: bool = False,
         age_group: str | None = None,
+        window: dict[str, Any] | None = None,
     ) -> None:
         with self._lock:
             # A background tag sync yields to one user action; nothing else queues.
@@ -165,17 +166,20 @@ class BrowserConnection:
                 else None
             )
             # A moment export of the match being watched keeps its stream playing.
-            keep = action == "clips" and self._state.get("match_id") == identity
+            keep = action in {"clips", "analysis"} and self._state.get("match_id") == identity
             self._state.update(
                 state="working",
-                message="Preparing moments…" if action == "clips" else "Opening Hudl…",
+                message={"clips": "Preparing moments…", "analysis": "Preparing analysis clip…"}.get(
+                    action, "Opening Hudl…"
+                ),
+                analysis_ticket=None,
                 stream_url=self._state.get("stream_url") if keep else None,
                 filename=completed,
                 download_name=self._state.get("download_name") if completed else None,
                 download_kind=self._state.get("download_kind") if completed else None,
                 match_id=identity,
             )
-        self._executor.submit(self._perform, action, identity, moment_ids, combined)
+        self._executor.submit(self._perform, action, identity, moment_ids, combined, window)
 
     # Batch exports and reels live in _batch.py, the paced sweep in _tags.py (split at
     # the 800-line ceiling, rule 70). These stay as methods so callers, the worker and
@@ -785,6 +789,7 @@ class BrowserConnection:
         identity: str | None,
         moment_ids: list[str] | None = None,
         combined: bool = False,
+        window: dict[str, Any] | None = None,
     ) -> None:
         if action in {"clips", "download"}:
             with self._lock:
@@ -821,6 +826,16 @@ class BrowserConnection:
                     daemon=True,
                 )
                 worker.start()
+                handed_off = True
+            elif action == "analysis" and identity:
+                start, duration = _analysis.check_window(window)
+                if self._stream_match != identity or not self._stream_id:
+                    self._prepare_stream(identity)
+                threading.Thread(  # see clips: fetches queue on this one worker
+                    target=_analysis.export_window,
+                    args=(self, self._stream_id, self._stream_playlist, start, duration),
+                    daemon=True,
+                ).start()
                 handed_off = True
             elif action == "download" and identity:
                 self._download(identity)

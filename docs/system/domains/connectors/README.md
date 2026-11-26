@@ -876,3 +876,15 @@ The full match and download index are unchanged. No remote media URL or account
 state is exposed. The gateway imports only the signed-in admin's own helper clip,
 with permission/CSRF checks and streamed byte/hash validation, then queues the
 native worker. Source credentials/login/pacing remain unchanged.
+
+### Video Lab analysis windows (2026-11-26)
+
+- Account action `analysis` (match_id, start_s, duration_s <= 600.1) is checked
+  before any Hudl request, reuses the open stream for that match or prepares one
+  like Stream/clips, then hands off to `_analysis.export_window` on its own thread
+  (segment fetches queue on the single account worker; it decrements `_pending`).
+- Only covering segments are fetched. Output goes to the helper cache
+  `.hudl-account/analysis/<32-hex ticket>/` (sample.mp4 + info.json), never the
+  download folder or index. `/analysis/<ticket>/info|video` serve only that.
+- Start of every account action resets `analysis_ticket`, so a stale ticket is
+  never imported for a new window.

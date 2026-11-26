@@ -1,3 +1,18 @@
+## Hudl U11 2026/27 games in Video Lab — 26 November 2026
+
+Video Lab's picker is now "Analyse a Match" with a "Match" select: a Veo group and a
+"Hudl · U11 2026/27" group (Hudl library filtered by season_label and age group).
+Hudl uses new helper action `analysis` (start_s, duration_s <=600.1): it reuses the
+open player stream (or prepares one exactly as Stream/clips do), fetches only the
+segments covering the window, encodes with output-side `-ss` and publishes a
+verified clip under `.hudl-account/analysis/<ticket>/` (nothing in downloads).
+Gateway POST /hudl-jobs (generalised from /veo-jobs) needs CSRF plus the Hudl
+permission and imports by 32-hex ticket only; sample `hudl-<id>`, `hudl_match_id`.
+Hudl clips carry no tags: the worker imports sample tags as Veo teacher records.
+Tests red first (helper3, gateway2, UI1); existing picker tests changed only for the
+requested rename. NOT verified against real Hudl (owner: one short U11 window) and
+NOT deployed. `hudl_browser/_account.py` is 866 lines (was 851): split is pending.
+
 ## Spec730 execution nodes implementation — 26 November 2026
 
 Admin Advanced selector Local/MacBook/Split, status polling, authenticated save,

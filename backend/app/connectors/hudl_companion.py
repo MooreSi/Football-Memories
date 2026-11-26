@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import threading
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import quote
 
 import uvicorn
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -63,8 +64,13 @@ class AccountCredentials(BaseModel):
 
 class AccountAction(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    action: Literal["test", "refresh", "stream", "download", "disconnect", "clips", "sync_tags"]
+    action: Literal[
+        "test", "refresh", "stream", "download", "disconnect", "clips", "sync_tags", "analysis"
+    ]
     match_id: str | None = Field(default=None, max_length=300)
+    # Video Lab analysis window, the same bounds as Veo's (worker cap 600.1 s).
+    start_s: float = Field(default=0, ge=0, le=86400, allow_inf_nan=False)
+    duration_s: float = Field(default=600, gt=0, le=600.1, allow_inf_nan=False)
     moment_ids: list[str] = Field(default_factory=list, max_length=2000)
     combined: bool = False
     age_group: str | None = Field(default=None, pattern=r"^(?:U[0-9]{1,2})?$", max_length=3)
@@ -625,13 +631,19 @@ def create_companion(output: Path) -> FastAPI:
         with request.app.state.hudl_gate:
             if request.app.state.capture.status()["state"] not in {"idle", "done", "error"}:
                 raise CaptureError("A URL capture is already running. Wait for it to finish.")
-            if body.action in {"stream", "download", "clips"}:
+            if body.action in {"stream", "download", "clips", "analysis"}:
                 if not body.match_id:
                     raise CaptureError("Select a cached match first.")
                 request.app.state.catalogue.find(body.match_id)
             if body.action == "clips":
                 request.app.state.account.start(
                     body.action, body.match_id, body.moment_ids, combined=body.combined
+                )
+            elif body.action == "analysis":
+                request.app.state.account.start(
+                    body.action,
+                    body.match_id,
+                    window={"start_s": body.start_s, "duration_s": body.duration_s},
                 )
             else:
                 request.app.state.account.start(
@@ -644,6 +656,32 @@ def create_companion(output: Path) -> FastAPI:
                     ),
                 )
         return {"accepted": True}
+
+    def _analysis_file(request: Request, ticket: str, name: str) -> Path:
+        """A verified Video Lab clip by its random ticket; never a path or URL."""
+        import re
+
+        base = cache / "analysis"
+        folder = base / ticket
+        path = folder / name
+        if (
+            not re.fullmatch(r"[a-f0-9]{32}", ticket)
+            or base.is_symlink()
+            or folder.is_symlink()
+            or not (folder / "info.json").is_file()
+            or path.is_symlink()
+            or not path.is_file()
+        ):
+            raise HTTPException(404, "Analysis clip unavailable.")
+        return path
+
+    @app.get("/analysis/{ticket}/info")
+    def analysis_info(ticket: str, request: Request) -> Any:
+        return json.loads(_analysis_file(request, ticket, "info.json").read_text())
+
+    @app.get("/analysis/{ticket}/video")
+    def analysis_video(ticket: str, request: Request) -> FileResponse:
+        return FileResponse(_analysis_file(request, ticket, "sample.mp4"), media_type="video/mp4")
 
     @app.post("/reel/cards")
     def upload_card(body: CardUpload, request: Request) -> dict[str, str]:

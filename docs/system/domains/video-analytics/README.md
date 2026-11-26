@@ -93,6 +93,13 @@ including when a different completed run is selected. A one-shot list leaves the
 Veo picker disabled after the worker finishes because its busy guard reads stale
 rows. Keep admission enforced and show the busy/range reason beside the picker.
 
+Hudl analysis (26 November 2026): the picker adds this season's U11 Hudl games in
+their own group. The helper cuts the window from the open stream's segments with
+output-side `-ss`: input-side seeking on a mini playlist that starts mid-match came
+out short (synthetic 2 s window encoded as 1.4 s). Hudl clips are imported with no
+tags because the worker would label them Veo teacher highlights; proper Hudl tag
+provenance in the worker is a follow-up. Real-account acceptance is owner-only.
+
 Analysis source selection reuses an archived match or the existing private range
 relay; input-side `-ss` and output `-t` bound the chosen footage. Range reads also
 need the MP4 index, preceding keyframe and bounded read-ahead, so fetched bytes
