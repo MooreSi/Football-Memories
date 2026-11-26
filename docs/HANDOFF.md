@@ -1,3 +1,24 @@
+## Video Lab: live 2D pitch under the video, built from the automatic outline — 26 November 2026
+
+Owner asked for a 2D pitch with players moving on it during playback (reference: tactical-cam
+style dots). Upgraded the existing Pitch map instead of adding a second one, and moved it from
+below the setup panels to directly under the video. New `livePitch.ts`: exact source from marks /
+confirmed corners, else the camera-level plan framed by the automatic or accepted outline (so a
+freshly analysed run gets a map with no marking); glide between detections, sprint filter, light
+smoothing, 3 s trail for the selected player, ball ground contact. Map: striped pitch with full
+markings, our team circles, opponent triangles, referee diamond, GK/R labels, click a dot to
+select (drives the Inspector), heat maps from the same paths, frame-synced via `useFrameTime`
+(now exported from LabVideo). Distance/speed remain exact-only. Tests red first: 7 unit + 3 page;
+one of my own new unit fixtures assumed ball pixels; real data is normalised, fixture corrected,
+seen red, then fixed. Frontend 1053 pass (one full run had a timing failure in
+TournamentSquadChoice that passes alone and on rerun), typecheck, build pass. Backend untouched,
+its suites not run. Browser: hosted build against a local read-only harness serving cached NL run
+91f49e12 (local review, accepted panorama, no corners): map shows 16-36 people moving, ball on the
+map when seen, selection + trail work. The pane browser painted only ~3 frames/s, so smoothness
+was not judged there. Not deployed. Known limit: far-half people bunch near the far line on that
+run (estimated far side of the outline). Branch codex/local-video-analytics. Uncommitted
+VeoAnalysisPicker/launch.json edits and the 750 spec belong to another session and were left alone.
+
 ## Spec750 hardware render + shared detection built, NOT deployed — 26 November 2026
 
 Owner: "build shared detection across both Macs", then "Build both" after profiling. The

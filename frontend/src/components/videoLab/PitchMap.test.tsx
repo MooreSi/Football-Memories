@@ -64,3 +64,27 @@ it("switches to a heat map of where your team played", async () => {
   await userEvent.click(within(map).getByRole("button", { name: "Our team heat map" }));
   expect(within(map).getAllByLabelText(/^Our team spent/).length).toBeGreaterThan(0);
 });
+
+it("glides players between detections as the video plays", async () => {
+  serve({ length_m: 100, width_m: 60 }); renderWithProviders(<VideoLabPage />);
+  const map = await screen.findByRole("region", { name: "Pitch map" });
+  await within(map).findByLabelText("Our team player at 40 m along, 30 m in");
+  const video = screen.getByLabelText("Match video") as HTMLVideoElement;
+  // Halfway between the 0 s (40 m) and 1 s (45 m) detections.
+  video.currentTime = 0.5; fireEvent.timeUpdate(video);
+  expect(await within(map).findByLabelText("Our team player at 43 m along, 30 m in")).toBeInTheDocument();
+});
+
+it("draws the live pitch straight away, before a pitch size is chosen", async () => {
+  serve(); renderWithProviders(<VideoLabPage />);
+  const map = await screen.findByRole("region", { name: "Pitch map" });
+  expect(await within(map).findByRole("button", { name: /^Our team player/ })).toBeInTheDocument();
+  expect(within(map).getByText(/size not set/i)).toBeInTheDocument();
+});
+
+it("selects a player by clicking their dot on the pitch", async () => {
+  serve({ length_m: 100, width_m: 60 }); renderWithProviders(<VideoLabPage />);
+  const map = await screen.findByRole("region", { name: "Pitch map" });
+  await userEvent.click(await within(map).findByRole("button", { name: /^Our team player/ }));
+  expect(await within(map).findByText(/20 m covered/)).toBeInTheDocument();
+});

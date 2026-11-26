@@ -92,7 +92,7 @@ export function overlayAt({ w, h, index, teams, teamAt, selected, showBoxes, eve
 }
 
 /** Playhead time for every painted video frame while playing (timeupdate fires only about four times a second). */
-function useFrameTime(videoRef: RefObject<HTMLVideoElement | null>, at: number) {
+export function useFrameTime(videoRef: RefObject<HTMLVideoElement | null>, at: number) {
   const [frame, setFrame] = useState<number | null>(null);
   useEffect(() => {
     const video = videoRef.current;

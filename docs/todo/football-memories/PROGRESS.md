@@ -1748,6 +1748,14 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-26: Video Lab live 2D pitch
+
+- Frontend: `npm test` 203 files / 1053 tests pass on the second and third full runs; the first full run
+  had 1 failure in `TournamentSquadChoice.test.tsx` (unrelated; passes alone and on rerun).
+  `npm run typecheck`, `npm run build` pass. New tests seen red first (livePitch 7, PitchMap 3).
+- Backend unchanged; its suites not run.
+- Browser: local read-only harness on cached run 91f49e12; nothing written back, not deployed.
+
 ### 2026-11-26: Lighting research, spec 760 drafted (docs only)
 
 - No code changed; no suites run (docs-only change). Read-only probe over six cached

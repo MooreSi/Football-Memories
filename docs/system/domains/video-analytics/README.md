@@ -271,3 +271,19 @@ or no hue augmentation) and in light-tolerant team features. Grass lightness var
 grass on f2ab96a2 (r 0.52). `kitDistance` already weights lightness 0.25 for colourful kits,
 so the exposure is greatest for white/grey/dark kits and for the bluer cast of shade on a/b.
 The grass under a player's feet is in the same light and is the reference spec 760 uses.
+
+
+Live 2D pitch (owner request 26 November 2026): the Pitch map now sits directly under the video
+and plays with it (`livePitch.ts`, `PitchMap.tsx`). It appears on every analysed run with an
+automatic painted-lines outline or an accepted panorama, not only after marking. Exact metres still
+need marked keyframes or confirmed corners; otherwise `pitchSource` uses the camera-level ground
+plan (`levelCalibration`) framed by the outline's bounding rectangle in plan view, stretched onto the
+pitch size: true shape up to scale, labelled approximate, far half least reliable. Until a size is
+chosen it draws a 9v9 (73 x 46 m) shape and says so. Positions glide between detections (1.5 s
+max gap, 0.5 s hold), steps over 12 m/s are dropped as swapped boxes, close neighbours get a
+[1,2,1] average. Distance and top speed stay exact-only (`trackMovement`). Gotcha: tracked ball
+points (`ball.ts`) are fractions of the frame and the radius is a fraction of the frame WIDTH, so
+the ground contact is `y + r * width / height`. On NL 91f49e12 (accepted panorama, no corners)
+people in the far half bunch near the far touchline because that side of the outline is
+estimated; a better far line fixes it, not the map. No shirt numbers exist in the data, so
+markers carry shape (our team circle, opponent triangle, referee diamond) and GK/R only.
