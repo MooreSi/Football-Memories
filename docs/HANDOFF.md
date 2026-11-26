@@ -1,4 +1,4 @@
-## Reel card themes: 5 broadcast + GTA 6 style — 26 November 2026
+## Reel card themes: 5 broadcast + GTA 6 style; DEPLOYED to admin — 26 November 2026
 
 Owner: "add in additional themes, make them professional, broadcast quality, also add
 in a gta 6 theme". New `frontend/src/lib/reelThemes.ts`: Prime Time (glass panels,
@@ -11,7 +11,10 @@ optional `headline`, `overlay` and `shadow`. Pickers (Reel Studio swatches, Reel
 select) are grouped Broadcast / Classic / Game style. Tests red first (theme list),
 plus a fake-context test drawing every theme x card kind x 6 frames. Frontend 1014/199,
 typecheck, build pass; backend untouched, its suites not run. Checked rendered frames
-in the browser (opening, match, stats). NOT deployed: needs a frontend rebuild.
+in the browser (opening, match, stats). Owner: "Yes, deploy". Admin moved 1f01047 -> ce747d2
+(ancestor checked, FM_BUILD_LATEST=0, added to `built`, `latest` 8c31cdb untouched); exactly
+3 admin containers changed, served bundle contains all new theme names, /api/health ok.
+The local 8765 compose app was not rebuilt. Not yet exercised: recording a real reel.
 
 ## Veo: use the first readable render; DEPLOYED to admin — 26 November 2026
 
