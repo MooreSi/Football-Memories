@@ -3,7 +3,7 @@ import type { Assignment, Assignments, Observation } from "./labTypes";
 import { inPlay, mergeDense, type DenseTracks } from "./playArea";
 import { feet, footMargin, insidePitch, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
 import type { Landmark } from "./landmarks";
-import { boundaryAt, type Boundary } from "./boundary";
+import { boundaryAt, halfwayAt, type Boundary } from "./boundary";
 import { BoundaryLayer } from "./BoundaryEditor";
 import { MarkLayer, PAD } from "./MarkLayer";
 import { ballAt, type BallPoint } from "./ball";
@@ -111,6 +111,7 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
   const ballNow = showBall && ball?.length ? ballAt(ball, now) : null;
   // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
   const outline = camera ? boundaryAt(camera,boundaries,automaticBoundaries,now) ?? outlineAt(camera, marks, now) : null;
+  const halfway = camera ? halfwayAt(camera, now) : null;
   const visible = everyone ? here : outline
     ? here.filter(o => o.track_id === selected || insidePitch(feet(o), outline, footMargin(o)))
     : inPlay(here, frameTeams, selected);
@@ -125,6 +126,7 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
         <stop offset="0" stopColor={colour} stopOpacity="0" /><stop offset="0.55" stopColor={colour} stopOpacity="0.22" /><stop offset="1" stopColor={colour} stopOpacity="0.55" />
       </linearGradient>)}</defs>
       {outline && showOutline && !marking && !boundaryEditing && <polygon points={outline.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="#22c55e" fillOpacity={0.05} stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Pitch outline" />}
+      {halfway && showOutline && !marking && !boundaryEditing && <polyline points={halfway.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="none" stroke="#f59e0b" strokeOpacity={0.85} strokeWidth={h / 350} strokeDasharray={`${h / 50} ${h / 80}`} aria-label="Halfway line" />}
       {ordered.map(row => {
         const [x1, y1, x2, y2] = row.image_box!;
         const info = frameTeams.get(row.track_id);

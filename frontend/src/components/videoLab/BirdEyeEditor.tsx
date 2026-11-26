@@ -6,7 +6,7 @@ import type {Panorama} from "./panorama";
 import type {Corners} from "./pitch";
 
 /** Samples real atlas pixels through the shared ground calibration. Empty coverage stays black. */
-export function BirdEyeEditor({data,src,calibration:baseCalibration,wide,points,editing,onChange}:{data:Panorama;src:string;calibration:GroundCalibration|null;wide?:GroundCalibration|null;points:Corners;editing:boolean;onChange:(p:Corners)=>void}){
+export function BirdEyeEditor({data,src,calibration:baseCalibration,wide,halfway,points,editing,onChange}:{data:Panorama;src:string;calibration:GroundCalibration|null;wide?:GroundCalibration|null;halfway?:Corners|null;points:Corners;editing:boolean;onChange:(p:Corners)=>void}){
  const [fit,setFit]=useState(false);
  const camera=baseCalibration?.kind==="camera";
  const calibration=useMemo(()=>!baseCalibration||!fit?baseCalibration:camera?wide??baseCalibration:fitBirdBoundary(data,baseCalibration,data.suggested_boundary),[baseCalibration,wide,camera,fit,data]);
@@ -29,12 +29,14 @@ export function BirdEyeEditor({data,src,calibration:baseCalibration,wide,points,
   },70);return()=>clearTimeout(timer);
  },[pixels,calibration,data]);
  const bird=calibration?toBird(data,calibration,points):[];
+ const half=calibration&&halfway?.length===2?toBird(data,calibration,halfway):null;
  return <section className="min-w-0 space-y-2" aria-label="Bird’s-eye boundary editor">
   <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold">Bird’s-eye view</h3><span className="text-xs text-fg-muted">{calibration?.kind==="corners"?"Corner-calibrated":camera?"Camera-level plan · relative scale":"Goal-based estimate · check ground contacts"}</span></div>
   <button className="text-xs underline" onClick={()=>setFit(!fit)}>{camera?(fit?"Fit boundary":"Show all observed ground"):fit?"Focus on goal area":"Fit whole boundary"}</button>
   <div className="relative overflow-hidden rounded-lg bg-black" style={{aspectRatio:"8/5"}}>
    <canvas ref={canvas} width={720} height={450} role="img" aria-label="Bird’s-eye pitch" className="block h-full w-full" style={editing?{transform:`scale(${1-2*PAD})`}:undefined}/>
    {calibration&&bird.every(p=>p.every(Number.isFinite))&&(editing?<BoundaryLayer points={bird} selected={selected} onSelect={setSelected} onChange={p=>onChange(applyBirdEdit(data,calibration,points,p))}/>:<svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1 1" preserveAspectRatio="none" aria-label="Top-down boundary"><polygon points={bird.map(p=>p.join(",")).join(" ")} fill="#22c55e" fillOpacity={.1} stroke="#22c55e" strokeWidth={.004}/></svg>)}
+   {half&&half.every(p=>p.every(Number.isFinite))&&<svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1 1" preserveAspectRatio="none" style={editing?{transform:`scale(${1-2*PAD})`}:undefined}><line x1={half[0][0]} y1={half[0][1]} x2={half[1][0]} y2={half[1][1]} stroke="#f59e0b" strokeWidth={.004} strokeDasharray=".015 .008" aria-label="Halfway line"/></svg>}
   </div>
   {calibration&&points.length>=3&&!bird.every(p=>p.every(Number.isFinite))&&<p role="status" className="text-xs text-warn">A boundary point is above the horizon, so it has no ground position. Move it down onto the pitch in the panorama.</p>}
   {!calibration&&<p className="text-xs text-warn">Locate both goals or mark four physical pitch corners to build this view.</p>}
