@@ -15,7 +15,7 @@ Worker 245, gateway 513 + 4 Docker, frontend 1001/197 files, typecheck, build, l
 pass. Browser: synthetic harness over hosted build, save + reload persist, 375 px no
 overflow, matches the location panel (reference 01 styling).
 
-## Other users' lab switches moved to the admin console — 26 November 2026 (NOT deployed)
+## Other users' lab switches moved to the admin console — 26 November 2026 (gateway deployed)
 
 Owner: under Advanced, keep only the admin account; other users go under their Manage
 section in the admin console. App: `AdvancedSettings` now lists only `self` and links to
@@ -23,7 +23,11 @@ section in the admin console. App: `AdvancedSettings` now lists only `self` and 
 approved users, using the existing GET/PATCH /_admin/api/labs (no backend change). The old
 app test that toggled another user's switch now uses the admin's own row (requirement
 changed); new tests red first in both repos. App 998 and gateway web 74 tests, typecheck,
-build pass; backend untouched so pytest not rerun. No browser check yet: needs the deploy.
+build pass; backend untouched so pytest not rerun. Owner: "Yes, deploy". Gateway deployed
+(see gateway HANDOFF). App images hosted-037582f built (FM_BUILD_LATEST=0) and added to
+`built`, but admin was mid-Hudl transfer, so admin was NOT moved. The analytics session
+(ba9aefa, contains 037582f) agreed to do one admin move to ba9aefa once idle. Browser
+check still pending (needs the owner signed in to the browser pane).
 
 ## Core ML ReID built, NOT enabled — 26 November 2026
 
