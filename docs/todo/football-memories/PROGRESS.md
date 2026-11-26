@@ -1748,6 +1748,16 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-26: Spec 760 Part A (lighting benchmark)
+
+- Worker `codex/lighting-benchmark`: `uv run pytest` 286 passed; ruff, format, project checks pass.
+  14 new tests observed failing first (stubs; low-sun grass case on the old code).
+- App: `decisions.test.ts` 4 tests, made to fail by breaking the function (2 failed), restored.
+  Committed state checked in a clean worktree: `npm run typecheck` pass, `vitest run` 1042 passed.
+  `npm run build` pass (in the shared checkout). Backend not touched, its suites not run.
+- Real data, read-only: 5 cached runs exported and scored; frozen v1 audit, assistant labels only.
+- Not checked: the refactored page in a browser (needs the gateway admin sign-in); owner labels.
+
 ### 2026-11-26: Video Lab live 2D pitch
 
 - Frontend: `npm test` 203 files / 1053 tests pass on the second and third full runs; the first full run

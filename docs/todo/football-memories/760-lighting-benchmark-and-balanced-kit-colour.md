@@ -1,6 +1,6 @@
 # 760: Lighting benchmark and light-balanced kit colour
 
-**Status:** Draft (owner: "Yes, start spec", 26 November 2026)
+**Status:** Part A built and baseline scored (owner: "Yes, build Part A", 26 November 2026); Part B not started
 **Sensitive:** no. Worker team-colour stage and Video Lab kit matching only. No account,
 credential, source footage or existing result is touched.
 
@@ -127,10 +127,27 @@ Every new test is watched failing first.
 None needed. All evidence comes from cached runs already on the mini; nothing is read from
 Veo or Hudl.
 
+## Part A result (26 November 2026)
+
+Worker branch `codex/lighting-benchmark` (84c9def); app `decisions.ts` + `frontend/scripts/
+export-lab-decisions.mjs` export exactly what Video Lab shows. Full record, table and caveats:
+worker `docs/LIGHTING_BENCHMARK.md`. v1 is frozen with assistant labels only: 5 matches x 6
+moments (dev rcw-cg, nl; withheld racing-ten, veo-trial, villa-stoke-outdoor). veo-3g was
+excluded (washed-out kits, no owner labels); veo-trial's outfield side is an assistant
+assumption for the owner to confirm. Baseline (current lab, withheld): precision 0.74 overcast /
+0.93 low sun, coverage 0.69 / 0.60; matches and conditions are confounded (one or two matches
+each), so this is not yet evidence about lighting itself.
+
+Finding that changes Part B: in low sun the shaded grass is blue to the camera (OpenCV HSV
+about 105/180/65) and the sunlit grass washes out (about 38/21/181). A green-hue rule finds no
+ground at all, so the per-player ground reference must come from the colours actually under
+the feet (as `teams.turf_mask` learns them), never from a fixed green range. The frozen v1
+`grass_cast` values were taken with the green rule and are missing on racing-ten.
+
 ## Verification (filled in when shipped)
-- [ ] worker suite green: <numbers>; app frontend suite, typecheck, build: <numbers>
-- [ ] benchmark report: per-condition precision and coverage, raw vs balanced, owner vs assistant labels, development vs withheld
+- [x] Part A: worker 286 pass, ruff/format/project checks; app frontend 1042 pass on the committed state in a clean worktree, typecheck, build (Part B: pending)
+- [~] benchmark report: baseline scored per condition, assistant labels only; raw vs balanced pending Part B; owner labels pending
 - [ ] adoption gate: passed / not passed (with numbers)
-- [ ] no credential, cookie or token written to the repo, a log or a fixture
-- [ ] no source footage or completed result modified
-- [ ] real-account check: not needed
+- [x] no credential, cookie or token written to the repo, a log or a fixture
+- [x] no source footage or completed result modified (prepare/export only read job folders; checked by test)
+- [x] real-account check: not needed

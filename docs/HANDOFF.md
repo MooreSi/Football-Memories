@@ -1,3 +1,19 @@
+## Spec 760 Part A: lighting benchmark built, baseline scored, 26 November 2026
+
+Owner: "Yes, build Part A". Worker branch `codex/lighting-benchmark` (84c9def, pushed, own
+worktree `~/Football Video Analytics lighting`): `football-video lighting-benchmark
+prepare|freeze|score`, 286 pass. App (this branch): the page's team/ball composition moved
+unchanged into `frontend/src/components/videoLab/decisions.ts` (page calls it; 4 new tests,
+mutation-checked red) and `frontend/scripts/export-lab-decisions.mjs` exports what the lab shows.
+Frontend 1042 pass + typecheck on the committed state in a clean worktree; build passes; backend
+untouched. Frozen v1 (assistant labels, 5 matches x 6 moments) and baseline score are in the
+worker's private runtime; numbers and caveats in worker docs/LIGHTING_BENCHMARK.md and spec 760.
+Concurrency note: another session is editing Video Lab files in this checkout (LabVideo,
+PitchMap, livePitch, VeoAnalysisPicker). My first commit swept one of its PitchMap lines into
+VideoLabPage; 64fdad9/96238f9 restored the original line in the branch, its working copy
+untouched. Nothing deployed (no runtime behaviour change). Next: owner spot-check of labels
+(and veo-trial's assumed side), then Part B.
+
 ## Video Lab: live 2D pitch under the video, built from the automatic outline — 26 November 2026
 
 Owner asked for a 2D pitch with players moving on it during playback (reference: tactical-cam

@@ -287,3 +287,9 @@ the ground contact is `y + r * width / height`. On NL 91f49e12 (accepted panoram
 people in the far half bunch near the far touchline because that side of the outline is
 estimated; a better far line fixes it, not the map. No shirt numbers exist in the data, so
 markers carry shape (our team circle, opponent triangle, referee diamond) and GK/R only.
+Low sun (spec 760 Part A, racing-ten): shaded grass is blue to the camera and sunlit grass
+washes out to low saturation, so no fixed green range finds the ground; learn the surface
+colours from the frame. Red kits read orange in direct sun. The lighting benchmark lives in the
+worker (`lighting-benchmark`, docs/LIGHTING_BENCHMARK.md); Video Lab decisions for scoring are
+exported with `frontend/scripts/export-lab-decisions.mjs`, which calls the same `decisions.ts`
+functions as the page, so a score is of what the lab shows.
