@@ -1,3 +1,12 @@
+## Spec770 camera and pitch stage 2.2x faster, outputs identical; NOT deployed — 26 November 2026
+
+Owner: "speed up the camera and pitch stage too". The stage (camera motion, panorama, cylindrical
+pitch atlas with goal posts, pitch lines and bird's-eye) took 313 s on the NL base. Worker branch
+`codex/faster-camera-pitch` (pushed): the atlas decodes forward once instead of 336 seeks (Veo
+keyframes 8.3 s apart), camera steps and per-view atlas analysis run on a 6-thread ordered pool,
+refinement decoding overlaps SIFT. Measured 312.7 s -> 142.5 s with every camera/pitch output
+byte-identical. 299 worker tests pass. NOT deployed: owner's yes, both Macs together, idle restart.
+
 ## Video Lab Pre-analysis; first real scan run and checked; DEPLOYED to admin — 26 November 2026
 
 Owner: add a "Pre-analysis" button that decides how much of a match to scan for a proper
