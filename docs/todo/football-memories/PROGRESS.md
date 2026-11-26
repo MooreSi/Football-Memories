@@ -1,4 +1,4 @@
-## Spec750 hardware render + shared detection built, NOT deployed — 26 November 2026
+## Spec750 hardware render + shared detection DEPLOYED both Macs — 26 November 2026
 
 Owner: "build shared detection across both Macs", then "Build both" after profiling. The
 analysis stage on the 4-minute NL clip spent 223 s of 355 s re-encoding the annotated video
@@ -8,7 +8,11 @@ Split the MacBook detects the last 60% of sampled frames while the mini does the
 reply checked against the mini's own decoded times, no fallback. Measured: stage 355 s -> 102 s
 -> 66 s; whole idle Split job roughly 10 min -> 5 min (camera/pitch, ~222 s, is now the longest
 stage). Details and the M3/M4 detection comparison: spec 750 and worker HANDOFF. 293 worker
-tests pass. NOT deployed: needs the owner's yes, both Macs together, worker restart while idle.
+tests pass.
+DEPLOYED on the owner's "Yes, deploy" at ~21:32 UTC, after Split job c8988347 (261122 NL vs
+Bournville Greens, old code) completed. MacBook backup `src.1c55193`; mini coordinator 984da7a,
+worker restarted idle; code digest 2f34e6a3... both; heartbeat local and remote ready; both Macs
+pick h264_videotoolbox. App and gateway unchanged. Not yet exercised: a real Split job via the UI.
 Note: another session committed and deployed 1c55193 (pitch rebuilds on the MacBook) in the
 same worker checkout during this work; this branch contains it.
 

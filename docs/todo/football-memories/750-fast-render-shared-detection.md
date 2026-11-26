@@ -1,7 +1,7 @@
 # 750: Hardware render and shared detection
 
-**Status:** Built, NOT deployed (owner: "Build both", 26 November 2026). Worker branch
-`codex/fast-render-shared-detection`.
+**Status:** Deployed to both Macs 26 November 2026 (owner: "Build both", "Yes, deploy"). Worker
+branch `codex/fast-render-shared-detection` at 984da7a.
 **Sensitive:** no. Worker only; the MacBook node's SSH task gains one task type. No
 account, credential, source footage or existing result is touched.
 
@@ -100,4 +100,5 @@ None needed. No Hudl or Veo access.
   tracklets 549 -> 550-555, people detections -0.1%.
 - [x] no credential, cookie or token written to the repo, a log or a fixture
 - [x] nothing on Hudl modified; no existing library file deleted or overwritten
-- [ ] deployed to both Macs (needs the owner's yes)
+- [x] deployed to both Macs at 984da7a, code digest 2f34e6a3... on both, heartbeat ready
+- [ ] a real Split job through the UI on the new code

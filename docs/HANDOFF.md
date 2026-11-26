@@ -19,6 +19,31 @@ Frontend 1077 pass (working copy, includes other sessions' tests), typecheck, bu
 backend untouched. Browser on the read-only harness: at 1:30 the map went from 36 people with a
 far-line row to 17 with none. DEPLOYED to admin only on the owner's "Yes, deploy": 386143d -> bfec4f0, clean worktree (frontend 1054 pass there), FM_BUILD_LATEST=0, added to `built` (latest 8c31cdb untouched), exactly 3 admin containers changed, /api/health ok, served bundle has the change. Capture had the companion's idle headless browser and ~3 MB/s outgoing (library polling from an open tab); inbound flat, no new or .part files, so it was swapped.
 
+## Match stats tab on Veo and Hudl match pages — 26 November 2026
+
+Owner asked for "Match Stats" next to Team stats when a library game is opened, with
+charts like four supplied images (now docs/design/reference/04-07). New tab after Team
+stats in `MatchSections`, shown whenever Team stats is. `lib/matchStats.ts` (sided events
+from Veo team events or Hudl tags, conversion, running attempts, 15-minute spells, half by
+half, recent form vs the average of up to 5 earlier dated matches of the same club /
+cohort, and rule-based "What stood out" bullets stated only from the numbers) and
+`components/match/MatchStatsPanel.tsx` (stand-outs card, headline tiles with form delta,
+centre-out comparison bars, conversion rings, gradient attempts chart with clickable goal
+markers, spell bars, half-by-half). No passing / pass-network section: the app has no such
+data. Tests red first: 15 lib, 4 panel, 1 tab order, 1 Veo page, 1 Hudl page. Real data
+showed Veo logs each goal as SHOT then GOAL (~1 s apart), double-counting attempts; folded
+in `veoStatEvents` (test red first) and recorded in the connectors domain. Existing tests
+changed because the requested tab changes the pinned tab list: MatchTabs expects "Match
+stats" after Team stats, and ArrowRight from Team stats now lands on it (one more ArrowRight
+reaches Goals). My own new test was changed once before commit: tiles moved from
+role=group to figure after they clashed with MatchInsights' /Possession/ group query.
+Frontend 1075 pass, typecheck and build pass, excluding another session's untracked
+`frontend/src/__probe/far.test.ts` (fails tests and typecheck; left alone). Backend
+untouched, its suites not run. Browser: Veo match 261116 RCW vs Kidderminster RMC via the
+other session's 5173 dev server, 1440 and 375 px, no horizontal overflow. Hudl page not
+seen in a browser (tests only). NOT deployed: the 8765 owner app needs a frontend rebuild.
+Period labels follow the page header, so a 3-period Veo recording shows "Extra time 1".
+
 ## Spec 760 Part A: lighting benchmark built, baseline scored, 26 November 2026
 
 Owner: "Yes, build Part A". Worker branch `codex/lighting-benchmark` (84c9def, pushed, own
@@ -56,7 +81,7 @@ was not judged there. DEPLOYED to admin only on the owner's "Yes, deploy": ee953
 run (estimated far side of the outline). Branch codex/local-video-analytics. Uncommitted
 VeoAnalysisPicker/launch.json edits and the 750 spec belong to another session and were left alone.
 
-## Spec750 hardware render + shared detection built, NOT deployed — 26 November 2026
+## Spec750 hardware render + shared detection DEPLOYED both Macs — 26 November 2026
 
 Owner: "build shared detection across both Macs", then "Build both" after profiling. The
 analysis stage on the 4-minute NL clip spent 223 s of 355 s re-encoding the annotated video
@@ -66,7 +91,11 @@ Split the MacBook detects the last 60% of sampled frames while the mini does the
 reply checked against the mini's own decoded times, no fallback. Measured: stage 355 s -> 102 s
 -> 66 s; whole idle Split job roughly 10 min -> 5 min (camera/pitch, ~222 s, is now the longest
 stage). Details and the M3/M4 detection comparison: spec 750 and worker HANDOFF. 293 worker
-tests pass. NOT deployed: needs the owner's yes, both Macs together, worker restart while idle.
+tests pass.
+DEPLOYED on the owner's "Yes, deploy" at ~21:32 UTC, after Split job c8988347 (261122 NL vs
+Bournville Greens, old code) completed. MacBook backup `src.1c55193`; mini coordinator 984da7a,
+worker restarted idle; code digest 2f34e6a3... both; heartbeat local and remote ready; both Macs
+pick h264_videotoolbox. App and gateway unchanged. Not yet exercised: a real Split job via the UI.
 Note: another session committed and deployed 1c55193 (pitch rebuilds on the MacBook) in the
 same worker checkout during this work; this branch contains it.
 
