@@ -27,7 +27,7 @@ build pass; backend untouched so pytest not rerun. Owner: "Yes, deploy". Gateway
 (see gateway HANDOFF). App images hosted-037582f built (FM_BUILD_LATEST=0) and added to
 `built`, but admin was mid-Hudl transfer, so admin was NOT moved. The analytics session
 (ba9aefa, contains 037582f) agreed to do one admin move to ba9aefa once idle. Browser
-check still pending (needs the owner signed in to the browser pane).
+Manage switches browser-checked live; the Advanced page check waits for that admin move.
 
 ## Core ML ReID built, NOT enabled — 26 November 2026
 
