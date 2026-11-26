@@ -11,18 +11,21 @@ shown red by removing the wiring). Clean worktree frontend 1064 pass, typecheck,
 untouched. Deployed admin only: bd67d0d -> ee9532b, then (after another session's bfec4f0, an
 ancestor) -> d94271e; 3 admin containers each time, latest untouched.
 Ran it: 261122 NL vs Bournville Greens (old plan 5:00-15:00), Veo read ~25 min for 10 min of
-footage, job c8988347 (Split) 19 min. Stitching excellent (2957/2997 views). Problems found:
+footage, job c8988347 (Split) 19 min. Stitching excellent (2957/2997 views).
 (1) Veo kicked off at 10:00, so half the scan was warm-up -> plan now uses `halves`.
-(2) Multi-pitch 3G: the game runs along the far fence; the automatic outline framed the empty near
-pitch ("four sides found") -> outline is never Ready until accepted. (3) The outline the owner
-then accepted (4 points) also frames the big pitch: only 18% of detected feet fall inside it
-(projected with frame_to_world on the atlas), so most of the game will be treated as off pitch.
-Owner's review left untouched. People (50/frame), ball (100%) and look-alike groups include a
-neighbouring game. Worker `pitch_birds_eye.jpg` is still a smear (goal-mouth rectification).
-Next: worker outline should pick the marked pitch that contains play (feet occupancy), not the
-largest four-sided one; and the app check should flag an accepted outline that excludes most feet
-(needs calibrating on single-pitch games; the atlas-row and stored-ground-plane measures tried here
-did not separate good from bad outlines).
+(2) Outline: I first reported the automatic outline as the wrong (empty near) pitch, from the
+atlas image. WRONG: on the ground plane (fitter's level ground, feet from frame_to_world) and on
+real frames it holds 96% of detected feet, far edge on the far touchline. The low camera squeezes
+the far 20+ m into a thin atlas strip. The owner then said "Yes, fix the worker"; a replay showed
+there was nothing to fix there, so no worker change was made (empty branch deleted).
+(3) The real problem: the 4-point outline the owner accepted holds only 18% of feet (a fifth of
+the area; its far edge crosses midfield), so the lab will treat most of the game as off pitch, and
+the check shows it Ready because acceptance is all it trusts. Owner's review left untouched.
+The "never Ready until accepted" rule stays (four sides found is still not proof).
+People (50/frame), ball (100%) and look-alike groups include a neighbouring game. Worker
+`pitch_birds_eye.jpg` is still a smear. Next: app check flagging an accepted outline that holds
+few feet, measured on the ground plane (atlas rows mislead). Replay tooling for fitter inputs
+(segments, ground, feet): session scratchpad `replay/dump.py`, not kept.
 
 ## Spec 760 Part B: balanced kit colour built, failed the gate, kept off, 26 November 2026
 

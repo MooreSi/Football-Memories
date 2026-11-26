@@ -305,8 +305,12 @@ per-channel gain cannot recover the kit. The worker writes `colour_lab_balanced`
 uses raw colour unless asked. Score any new team-colour idea once against the frozen v1 audit.
 First real run (261122 NL vs Bournville Greens, job c8988347, 26 Nov): Veo recordings start long
 before kick-off (here 10:00), so a fixed minute-5 start scanned warm-ups. Stitching was excellent
-(2957/2997 views, all four sides "found"), but the ground has several pitches and the game was on a
-small pitch across the far side: the automatic outline framed the empty near pitch while every
-player's feet projected into a strip along the far fence. "Four sides found" therefore never means
-"right pitch"; only the reviewer's acceptance does. People/ball/look-alike counts include neighbouring
-games (a red-shirted team beside this one). Worker fix needed: pick the outline that contains play.
+(2957/2997 views, all four sides found). I first read the atlas as the outline framing an empty
+near pitch beside the game. CORRECTION (same day): the automatic outline was right. On the ground plane (feet projected with
+frame_to_world and the fitter's level ground) it holds 96% of detected feet; the 4-point outline the
+owner accepted holds 18% and a fifth of the area, its far edge cutting through midfield. Gotcha: on the
+cylindrical atlas a low camera squeezes the far 20+ m into a thin strip and stretches the near few
+metres over most of the image, so "players only in a far strip" is perspective, not a wrong pitch.
+Judge outlines on the ground plane or on frames, never by atlas rows. Acceptance is not correctness
+either: an app check that flags an accepted outline holding few feet (ground plane) is the next step.
+People/ball/look-alike counts do include a neighbouring game (a red-shirted team beside this one).
