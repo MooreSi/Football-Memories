@@ -1,6 +1,6 @@
 # 670: A detector trained on the owner's own Veo footage
 
-**Status:** Building. Owner approved all four open questions on 25 Nov 2026 ("yes to all four").
+**Status:** Built, waiting for the owner's frame labels (checked 26 Nov 2026: 0 of 380 frames confirmed). Owner approved all four open questions on 25 Nov 2026 ("yes to all four").
 **Sensitive:** no. No Hudl/Veo requests, credentials or library deletes. Owner decisions below.
 
 ## What is wrong or missing today
@@ -129,3 +129,15 @@ None needed. Footage is already in your library; nothing talks to Hudl or Veo.
   main thing training should teach. `presort.json` per set lists each frame's balls, not_balls
   and unsure proposals. Not-balls start unticked (app bb1b387); the note is shown on the frame;
   nothing is a label until the owner confirms the frame.
+
+## Status check (26 Nov 2026, owner chose "Detector fine-tune" after spec 760)
+- No `labels.json` exists in any of the four label sets in `runtime/label-sets` (the live
+  gateway mounts this runtime, so none has been confirmed). Training is blocked on that by
+  design: only human-reviewed labels train, and the gates need the held-out RMC set confirmed.
+- Ready: `/video-lab/labels` is in the deployed admin app (bd67d0d contains a7b2933); presorts
+  exist for all four sets; worker `codex/veo-detector` (838ee61) has `train-veo-detector` and
+  `eval-detector`, not yet merged with later worker branches (merge before training).
+- Owner work for the pilot, about 1.5 h: confirm the 80 held-out RMC frames (gates) and the
+  300 training frames (CG, f7925, Norton). Then the assistant trains, scores the gates and the
+  spec 760 lighting benchmark (detection recall and ball), and reports before any promotion.
+
