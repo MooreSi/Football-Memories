@@ -1,3 +1,19 @@
+## Video Lab: shirt numbers on the 2D pitch, read automatically and correctable (NOT deployed) — 26 November 2026
+
+Owner: "add shirt numbers" then "improve automatic reading and have the ability to correct/update a
+shirt number". Three repos: worker codex/shirt-number-reading f5e55f3 (dense reader + `shirt-numbers`
+child mode; 308 pass), gateway codex/shirt-numbers 50bc76e (route + `shirt_numbers` in the review;
+522 pass), app (this commit: numbers in markers, Selected person correction, Read shirt numbers
+button). Benchmark labels are mine from torso crops (runtime/jersey-benchmark/labels.json in the
+worker runtime): NL 16/32 right, held-out RCW 5/12, 0 wrong, 0 on adults; old reader 0/0. Tests red
+first (app 8: 3 unit, 5 page). A real bug found by them: review saves dropped unknown fields. Two
+of my new test fixtures were corrected before passing (missing detections.jsonl artifact; one text
+matcher split across elements). Frontend 1102 pass, typecheck, build. Browser on the read-only
+harness with the real reader's NL output: numbers in markers, correction 8 -> 18 saved and shown.
+Deploy order: gateway, then worker on BOTH Macs (+ jersey.json `detector_sha256` 4a5efbfb... on
+both; rebase onto the deployed worker commit, the branch base carries undeployed camera work), then
+admin app from this branch at or after ab3fb8f.
+
 ## Video Lab: pre-analysis flags an outline that holds few players; DEPLOYED to admin — 26 November 2026
 
 Owner: "Yes" to an app warning when a pitch outline misses the game. New `playShare`

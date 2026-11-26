@@ -24,6 +24,8 @@ import { isCameraMotion, outlineAt, type Corners } from "../components/videoLab/
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
+import { ReadShirtNumbers } from "../components/videoLab/ReadShirtNumbers";
+import { isShirtCandidates, shirtNumbers } from "../components/videoLab/shirtNumbers";
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { rememberKits } from "../components/videoLab/kits";
@@ -69,6 +71,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const assignments = useJobFile(job.id, "team_assignments.json", has("team_assignments.json"), isAssignments);
   const appearance = useJobFile(job.id, "track_appearance.json", has("track_appearance.json"), isAppearance);
   const dense = useJobFile(job.id, "dense_tracks.json", has("dense_tracks.json"), isDense);
+  const shirtReads = useJobFile(job.id, "jersey_candidates.json", has("jersey_candidates.json"), isShirtCandidates);
   const motion = useJobFile(job.id, "camera_motion.json", has("camera_motion.json"), isCameraMotion);
   const calibrationBenchmark=useJobFile(job.id,"pitch_calibration_benchmark.json",has("pitch_calibration_benchmark.json"),isCalibrationBenchmark);
   const atlas=has("pitch_atlas.json")&&has("pitch_atlas.jpg");
@@ -77,6 +80,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
   const camera = useMemo(() => labCamera(motion.data, panorama.data, review, job.summary?.source_sha256), [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
+  // Shirt numbers: your corrections, else the worker's reading of each tracked stretch.
+  const numbers = useMemo(() => shirtNumbers(shirtReads.data, review?.shirt_numbers), [shirtReads.data, review?.shirt_numbers]);
   const boundaries=useMemo(()=>review?.pitch_boundaries ?? [],[review?.pitch_boundaries]);
   const automaticBoundaries=useMemo(()=>automaticBoundariesFor(motion.data,job.summary?.source_sha256),[motion.data,job.summary?.source_sha256]);
   const currentBoundary=camera ? boundaryAt(camera,boundaries,automaticBoundaries,at):null;
@@ -157,7 +162,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
         {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
-        {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
+        {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} />}
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
@@ -173,6 +178,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
+        {has("team_assignments.json") && has("detections.jsonl") && summary?.source_sha256 && camera && <ReadShirtNumbers jobId={job.id} sourceHash={summary.source_sha256} again={has("jersey_candidates.json")} onQueued={onQueued} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} kits={kits} remembered={remembered} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
@@ -185,7 +191,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
         <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{has("sample.mp4") && <AnalysedExport src={`${BASE}/jobs/${job.id}/files/sample.mp4`} title={job.match_title ?? "Video Lab"} frameAt={withoutOutline} />}
           {artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />{name === "annotated.mp4" ? "Download raw detections (annotated.mp4)" : `Download ${name}`}</a>)}</div></details>
       </section>
-      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} teamAt={timeline.at} appearance={appearance.data} at={at} />
+      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} teamAt={timeline.at} appearance={appearance.data} at={at} numbers={numbers} />
     </div>
   </>;
 }

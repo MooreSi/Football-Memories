@@ -1763,6 +1763,13 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-26: Shirt numbers (worker reader, gateway corrections, lab UI)
+
+- Frontend 208 files / 1102 pass, typecheck, build. Worker 308 pass + ruff/format/project checks
+  (worktree). Gateway 522 pass, ruff, format, mypy (worktree). New tests seen red first.
+- Real-data: reader run end to end on cached NL (16/32, 0 wrong, ~3 min); held-out RCW once.
+- Backend unchanged, not run. Nothing deployed.
+
 ### 2026-11-26: Spec 760 Part B (balanced kit colour), failed the gate
 
 - Worker d63739e: 6 new tests observed failing (stub, missing fields), then green; `uv run pytest`

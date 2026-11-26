@@ -4,6 +4,7 @@ import type { Moment } from "./moments";
 import { ACTION_TYPES, clock, teamName, typeName, type ActionType, type Appearance, type Assignment, type Review, type Role, type Team } from "./labTypes";
 import { BASE, type SaveState } from "./useLabData";
 import { TEAM_COLOUR } from "./LabVideo";
+import { setShirtNumber, type ShirtNumber } from "./shirtNumbers";
 
 export const asAction = (type: string): ActionType => {
   const key = type.replaceAll(" ", "_");
@@ -53,7 +54,7 @@ const ROLES: { label: string; team: Team | null; role: Role }[] = [
 ];
 const SOURCE: Record<Assignment["source"], string> = { you: "labelled by you", kit: "matched to the kit of players you labelled", group: "from your label for its look-alike group", similar: "suggested: looks like players you labelled", model: "suggested from kit colour", none: "not assigned yet" };
 
-function PersonCard({ track, info, appearance, jobId, review, update }: { track: number | null; info?: Assignment; appearance?: Appearance; jobId: string; review: Review; update: Change }) {
+function PersonCard({ track, info, appearance, jobId, review, update, shirt }: { track: number | null; info?: Assignment; appearance?: Appearance; jobId: string; review: Review; update: Change; shirt?: ShirtNumber }) {
   if (track === null) return <section className={card} aria-label="Selected person"><h2 className="font-semibold">Selected person</h2><p className="text-sm text-fg-muted">Click a person on the video to say which team they play for. The ring under each player shows their team: blue our team, orange opponent, yellow referee, white not assigned. Faint rings are suggestions; bold, filled rings are your labels. Each label also improves the suggestions for similar-looking players.</p></section>;
   const entry = appearance?.tracks.find(t => t.track_id === track);
   const sprite = appearance?.sprite;
@@ -68,7 +69,23 @@ function PersonCard({ track, info, appearance, jobId, review, update }: { track:
     </div>
     <div className="grid grid-cols-2 gap-2">{ROLES.map(r => <Button key={r.label} aria-pressed={mine?.team === r.team && mine?.role === r.role} className={mine?.team === r.team && mine?.role === r.role ? "ring-2 ring-accent" : ""} onClick={() => set(r.team, r.role)}>{r.label}</Button>)}</div>
     {mine && <button className="text-xs text-fg-muted underline" onClick={() => update(r => ({ ...r, track_labels: r.track_labels.filter(l => l.track_id !== track) }))}>Clear my label</button>}
+    <ShirtNumberField key={track} track={track} shirt={shirt} corrected={(review.shirt_numbers ?? []).some(n => n.track_id === track)} update={update} />
   </section>;
+}
+
+/** Your shirt number for this person: replaces the automatic reading; "No number" hides a wrong one. */
+function ShirtNumberField({ track, shirt, corrected, update }: { track: number; shirt?: ShirtNumber; corrected: boolean; update: Change }) {
+  const [value, setValue] = useState(shirt ? String(shirt.number) : "");
+  const number = /^\d{1,2}$/.test(value) ? Number(value) : null;
+  return <div className="space-y-2 border-t border-line pt-3">
+    <p className="text-sm">Shirt number: <strong>{shirt ? shirt.number : "none"}</strong> <span className="text-xs text-fg-muted">{shirt ? `· ${shirt.source === "read" ? "read automatically" : "set by you"}` : corrected ? "· set by you" : ""}</span></p>
+    <div className="flex flex-wrap items-center gap-2">
+      <input aria-label="Shirt number" inputMode="numeric" maxLength={2} value={value} onChange={e => setValue(e.target.value.replace(/\D/g, ""))} className="w-16 rounded-md border border-line bg-ink-900 p-1.5 text-sm" />
+      <Button disabled={number === null} onClick={() => update(r => setShirtNumber(r, track, number))}>Save number</Button>
+      <Button variant="ghost" onClick={() => { setValue(""); update(r => setShirtNumber(r, track, null)); }}>No number</Button>
+    </div>
+    {corrected && <button className="text-xs text-fg-muted underline" onClick={() => update(r => setShirtNumber(r, track, undefined))}>Use the automatic reading</button>}
+  </div>;
 }
 
 function AddMoment({ at, update }: { at: number; update: Change }) {
@@ -80,14 +97,14 @@ function AddMoment({ at, update }: { at: number; update: Change }) {
   </section>;
 }
 
-type Props = { jobId: string; review: Review | null; update: Change; state: SaveState; error: string; moment: Moment | null; track: number | null; teams: Map<number, Assignment>; teamAt?: (track: number, time: number) => Assignment | undefined; appearance?: Appearance; at: number };
+type Props = { jobId: string; review: Review | null; update: Change; state: SaveState; error: string; moment: Moment | null; track: number | null; teams: Map<number, Assignment>; teamAt?: (track: number, time: number) => Assignment | undefined; appearance?: Appearance; at: number; numbers?: Map<number, ShirtNumber> };
 
-export function Inspector({ jobId, review, update, state, error, moment, track, teams, teamAt, appearance, at }: Props) {
+export function Inspector({ jobId, review, update, state, error, moment, track, teams, teamAt, appearance, at, numbers }: Props) {
   return <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] lg:overflow-y-auto" aria-label="Review tools">
     <p role="status" className={`text-right text-xs ${state === "error" ? "text-warn" : "text-fg-muted"}`}>{error || SAVE[state]}</p>
     {review ? <>
       <MomentCard key={moment?.key ?? "none"} moment={moment} update={update} />
-      <PersonCard track={track} info={track === null ? undefined : teamAt?.(track, at) ?? teams.get(track)} appearance={appearance} jobId={jobId} review={review} update={update} />
+      <PersonCard track={track} info={track === null ? undefined : teamAt?.(track, at) ?? teams.get(track)} appearance={appearance} jobId={jobId} review={review} update={update} shirt={track === null ? undefined : numbers?.get(track)} />
       <AddMoment at={at} update={update} />
     </> : !error && <p className="text-sm text-fg-muted">Loading your labels…</p>}
     <p className="text-xs leading-relaxed text-fg-muted">Keys: Space play/pause · N next · P previous · 1 Our team · 2 Opponent · R reject. Nothing is confirmed until you approve it; your labels are saved separately and the analysis files never change.</p>

@@ -33,6 +33,7 @@ export type Review = {
   pitch_boundaries?: import("./boundary").Boundary[];
   pitch_size?: PitchSize | null;
   pitch_panorama?: import("./panorama").PanoramaReview | null;
+  shirt_numbers?: import("./shirtNumbers").ShirtCorrection[];
 };
 
 export type Assignment = { team: Team | null; role: Role | null; source: "you" | "kit" | "group" | "similar" | "model" | "none"; confidence: number };

@@ -4,6 +4,7 @@ import { TEAM_COLOUR, colourFor, useFrameTime } from "./LabVideo";
 import { PITCH_PRESETS, trackMovement, type PitchSize } from "./metres";
 import { ballPath, pitchSource, playersAt, pointAt, sidelineTracks, trackPaths, trailOf } from "./livePitch";
 import type { BallPoint } from "./ball";
+import type { ShirtNumber } from "./shirtNumbers";
 import type { Camera, PitchKeyframe } from "./pitch";
 
 type Props = {
@@ -16,6 +17,8 @@ type Props = {
   ball?: BallPoint[]; frame?: { w: number; h: number };
   /** Show everyone: include people standing along the touchlines (parents, coaches). */
   everyone?: boolean;
+  /** Shirt numbers: yours, else the automatic reading. */
+  numbers?: Map<number, ShirtNumber>;
 };
 type View = "live" | "own" | "opponent";
 const COLS = 12, ROWS = 8;
@@ -50,21 +53,21 @@ function Markings({ l, w, line }: { l: number; w: number; line: number }) {
   </g>;
 }
 
-function Marker({ x, y, r, info, selected }: { x: number; y: number; r: number; info?: Assignment; selected: boolean }) {
+function Marker({ x, y, r, info, selected, shirt }: { x: number; y: number; r: number; info?: Assignment; selected: boolean; shirt?: ShirtNumber }) {
   const colour = colourFor(info), ring = selected ? "white" : "#0b1220", sw = r * (selected ? 0.3 : 0.18);
-  const label = info?.role === "goalkeeper" ? "GK" : info?.role === "referee" ? "R" : "";
+  const label = shirt ? String(shirt.number) : info?.role === "goalkeeper" ? "GK" : info?.role === "referee" ? "R" : "";
   const shape = info?.role === "referee"
     ? <polygon points={`${x},${y - r * 1.15} ${x + r * 1.15},${y} ${x},${y + r * 1.15} ${x - r * 1.15},${y}`} fill={colour} stroke={ring} strokeWidth={sw} />
     : info?.team === "opponent"
       ? <polygon points={`${x},${y - r * 1.25} ${x + r * 1.15},${y + r * 0.8} ${x - r * 1.15},${y + r * 0.8}`} fill={colour} stroke={ring} strokeWidth={sw} strokeLinejoin="round" />
       : <circle cx={x} cy={y} r={info?.team ? r : r * 0.7} fill={colour} fillOpacity={info?.team ? 1 : 0.75} stroke={ring} strokeWidth={sw} />;
   return <>{selected && <circle cx={x} cy={y} r={r * 1.9} fill="white" fillOpacity={0.18} />}{shape}
-    {label && <text x={x} y={y + (info?.team === "opponent" ? r * 0.25 : 0)} fontSize={r * 0.85} fontWeight={700} textAnchor="middle" dominantBaseline="central" fill="#0b1220" pointerEvents="none">{label}</text>}</>;
+    {label && <text x={x} y={y + (info?.team === "opponent" ? r * 0.25 : 0)} fontSize={r * (label.length > 1 ? 0.8 : 0.95)} fontWeight={700} textAnchor="middle" dominantBaseline="central" fill="#0b1220" fillOpacity={shirt?.source === "read" ? 0.78 : 1} pointerEvents="none">{label}</text>}</>;
 }
 
 /** Spec 610 + live 2D pitch: everyone's position moving with the video, team heat maps and the
  * selected person's running. Builds from the automatic outline as soon as a match is analysed. */
-export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSize, teamAt, onSelect, videoRef, ball, frame, everyone = false }: Props) {
+export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSize, teamAt, onSelect, videoRef, ball, frame, everyone = false, numbers }: Props) {
   const [view, setView] = useState<View>("live");
   const [custom, setCustom] = useState(false);
   const now = useFrameTime(videoRef ?? NO_REF, at);
@@ -120,10 +123,11 @@ export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSiz
           return grid.flatMap((row, rr) => row.map((n, c) => n ? <rect key={`${rr}-${c}`} x={(c * l) / COLS} y={w - ((rr + 1) * w) / ROWS} width={l / COLS} height={w / ROWS} fill={TEAM_COLOUR[view as "own" | "opponent"]} fillOpacity={0.15 + 0.7 * (n / max)} aria-label={`${teamName(view as "own" | "opponent")} spent ${Math.round((100 * n) / total)}% of tracked time here`} /> : null)); })()}
         <Markings l={l} w={w} line={line} />
         {trail.length > 1 && <polyline points={trail.map(p => `${p.x},${w - p.y}`).join(" ")} fill="none" stroke="white" strokeOpacity={0.7} strokeWidth={line * 1.6} strokeLinecap="round" strokeLinejoin="round" />}
-        {live.map(({ track_id, x, y, info }) => <g key={track_id} role="button" tabIndex={0} aria-label={`${who(info)} ${where(x, y)}`} className="cursor-pointer outline-none"
+        {live.map(({ track_id, x, y, info }) => { const shirt = info?.role === "referee" ? undefined : numbers?.get(track_id);
+          return <g key={track_id} role="button" tabIndex={0} aria-label={`${who(info)}${shirt ? ` number ${shirt.number}${shirt.source === "read" ? " (read automatically)" : ""}` : ""} ${where(x, y)}`} className="cursor-pointer outline-none"
           onClick={() => onSelect?.(track_id)} onKeyDown={e => { if (e.key === "Enter") onSelect?.(track_id); }}>
-          <Marker x={x} y={w - y} r={r} info={info} selected={track_id === selected} />
-        </g>)}
+          <Marker x={x} y={w - y} r={r} info={info} selected={track_id === selected} shirt={shirt} />
+        </g>; })}
         {ballNow && <g aria-label="Ball"><circle cx={ballNow.x} cy={w - ballNow.y} r={r * 0.55} fill="white" stroke="#0b1220" strokeWidth={r * 0.15} /></g>}
       </svg>
       <p className="text-xs text-fg-muted">

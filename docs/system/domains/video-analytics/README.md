@@ -319,3 +319,15 @@ the right goal; f6d0bcb2 far edge short), broken 1% (old NL 48e74eab). Below 70%
 how much play the outline holds and is never Ready, accepted or not. Five outlines, my visual
 verdicts: not a held-out accuracy claim. Frame-centre aim points were too weak (inside almost all).
 People/ball/look-alike counts do include a neighbouring game (a red-shirted team beside this one).
+
+
+Shirt numbers (owner request 26 November 2026): the worker's dense reader (worker branch
+codex/shirt-number-reading, `shirt_numbers.py`) writes `jersey_candidates.json` per tracklet; the
+lab shows them in the pitch markers (fainter = read automatically) and the Selected person panel
+lets you set a number, mark "No number" or go back to the reading. Corrections live in the review
+as `shirt_numbers` [{track_id, number | null}], sent only once set (older gateways refuse the key).
+"Read shirt numbers" queues a `shirt-numbers` child run (gateway `read-shirt-numbers`). Agent-
+labelled benchmark, not owner-reviewed: 16/32 right on NL, 5/12 held out on RCW, no wrong numbers;
+the old reader read none. Numbers are per tracked stretch (median 6 s), so at any moment only some
+players carry one. Gotcha: `useLabData.body` whitelists review fields; a new field must be added
+there or it is silently dropped on save.
