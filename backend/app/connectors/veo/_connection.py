@@ -121,6 +121,9 @@ class VeoConnection:
         self._videos: dict[str, str] = {}
         # Why a match's listed videos were refused (a host or file type, never an address).
         self._video_problems: dict[str, str] = {}
+        # When each address was read: a signed one may expire, so it is read again later.
+        self._video_seen: dict[str, float] = {}
+        self._clock: Callable[[], float] = time.monotonic
         self._stream: tuple[str, str] | None = None
         self._media_lock = threading.Lock()
         self._downloading = False
@@ -290,7 +293,7 @@ class VeoConnection:
                 (make_reel if action == "reel" else save_moments)(self, match_id, name, reel or {})
                 return
             if action in {"watch", "download"} and match_id:
-                url = self._videos.get(match_id) or self._read_video(match_id)
+                url = self._video_url(match_id)
                 if action == "watch":
                     self._watch(match_id, url)
                 else:
@@ -697,6 +700,7 @@ class VeoConnection:
         video = best_video(readable)
         if video is not None:
             self._videos[identity] = str(video["url"])
+            self._video_seen[identity] = self._clock()
             self._video_problems.pop(identity, None)
             return str(video["url"])
         refused = best_video(listed)
@@ -704,6 +708,19 @@ class VeoConnection:
         if isinstance(url, str) and url:
             self._video_problems[identity] = video_problem(url) or "an unreadable file"
         return None
+
+    def _video_url(self, identity: str) -> str:
+        """The remembered address, unless it is a signed one old enough to have expired."""
+        from urllib.parse import urlsplit
+
+        from ._client import SIGNED_FRESH_S
+
+        url = self._videos.get(identity)
+        if url is not None:
+            age = self._clock() - self._video_seen.get(identity, float("-inf"))
+            if not urlsplit(url).query or age < SIGNED_FRESH_S:
+                return url
+        return self._read_video(identity)
 
     def _read_video(self, identity: str) -> str:
         """One sign-in and one JSON read: this match's video list (no match page, no view).

@@ -78,7 +78,6 @@ def test_the_standard_render_is_still_preferred_among_readable_ones(tmp_path: Pa
     ("url", "reason"),
     [
         ("https://other.example-cdn.net/synthetic/match.mp4", "other.example-cdn.net"),
-        ("https://c.veocdn.com/synthetic/match.mp4?Signature=secret-token", "a signed address"),
         ("https://c.veocdn.com/synthetic/playlist.m3u8", "a .m3u8 stream"),
     ],
 )
@@ -98,3 +97,33 @@ def test_unavailable_renders_are_still_ignored(tmp_path: Path) -> None:
     veo, _ = watch_with(tmp_path, [video(GOOD, available="processing")])
     assert veo.status()["state"] == "error"
     assert veo.status()["message"] == "Veo has no video for this match."
+
+
+SIGNED = "https://c.veocdn.com/synthetic/match.mp4?Expires=1&Signature=secret-sig&Key-Pair-Id=k"
+
+
+def test_a_signed_link_on_veos_host_is_used_and_never_shown(tmp_path: Path) -> None:
+    veo, media = watch_with(tmp_path, [video(SIGNED)])
+    status = veo.status()
+    assert status["state"] == "ready", status["message"]
+    token = status["stream_url"].rsplit("/", 1)[1]
+    veo.stream(token, "bytes=0-9")
+    assert media.ranges == [(SIGNED, 0, 9)]
+    assert "secret-sig" not in str(status) + everything(veo.veo, tmp_path)
+
+
+def test_a_signed_link_is_read_again_once_it_may_have_expired(tmp_path: Path) -> None:
+    first, _, _, _, _ = setup(tmp_path, FakeMedia())
+    first.start("refresh")
+    now = [1000.0]
+    veo, api, _, _, _ = setup(tmp_path, FakeMedia())
+    veo._clock = lambda: now[0]
+    api.pages[VIDEOS] = ({}, [video(SIGNED)])
+    veo.start("watch", IDENTITY)
+    reads = api.paths.count(VIDEOS)
+    now[0] += 60  # still fresh: the remembered link is reused
+    veo.start("watch", IDENTITY)
+    assert api.paths.count(VIDEOS) == reads
+    now[0] += 600  # past ten minutes: Veo is asked for a fresh link
+    veo.start("watch", IDENTITY)
+    assert api.paths.count(VIDEOS) == reads + 1

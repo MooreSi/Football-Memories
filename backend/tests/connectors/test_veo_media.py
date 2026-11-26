@@ -65,8 +65,12 @@ def test_refuses_anything_but_veos_video_host_before_any_request() -> None:
         "http://c.veocdn.com/synthetic/match.mp4",
         "https://evil.test/match.mp4",
         "https://c.veocdn.com.evil.test/match.mp4",
-        "https://c.veocdn.com/synthetic/match.mp4?token=x",
         "https://c.veocdn.com/synthetic/page.html",
+        # Owner 2026-11-26: signed links are read on Veo's own host only.
+        "https://evil.test/match.mp4?Signature=x",
+        "https://c.veocdn.com.evil.test/match.mp4?Signature=x",
+        "https://c.veocdn.com/synthetic/match.mp4#fragment",
+        "https://c.veocdn.com/synthetic/page.html?Signature=x",
     ):
         with pytest.raises(CaptureError):
             media_range(url, 0, 10, opener=opener)
@@ -175,3 +179,25 @@ def test_shrinks_a_large_crest_to_a_small_png(tmp_path: Path) -> None:
     width, height = struct.unpack(">II", small[16:24])
     assert max(width, height) == 512 and abs(width / height - 1200 / 1400) < 0.01
     assert shrink_crest(b"not an image") is None
+
+
+# Owner report and request 2026-11-26: 260926 Racing Club Warwick vs. NL is listed only as
+# a signed link on c.veocdn.com (query string). It is read like any Veo MP4: the link,
+# signature included, goes only to Veo's host and never into an error.
+SIGNED = "https://c.veocdn.com/synthetic/match.mp4?Expires=1&Signature=secret-sig&Key-Pair-Id=k"
+
+
+def test_reads_a_signed_link_on_veos_video_host() -> None:
+    opener = Opener(ranged)
+    start, total, body = media_range(SIGNED, 0, 1023, opener=opener)
+    assert (start, total, len(body)) == (0, TOTAL, 1024)
+    assert opener.sent == [("GET", SIGNED, {"range": "bytes=0-1023"})]
+
+
+def test_a_refused_signed_link_never_appears_in_the_error() -> None:
+    def refuse(headers: dict[str, str]) -> Response:
+        raise urllib.error.HTTPError(SIGNED, 403, "no", {}, None)  # type: ignore[arg-type]
+
+    with pytest.raises(CaptureError) as error:
+        media_range(SIGNED, 0, 10, opener=Opener(refuse))
+    assert "secret-sig" not in str(error.value)

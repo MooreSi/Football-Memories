@@ -238,8 +238,11 @@ def public_session() -> Iterator[VeoApi]:
 # Spec 260: Veo's video files. Owner-approved check 2026-11-13: c.veocdn.com serves the
 # full-match MP4 publicly (no cookie or header), answers Range with 206, ~900 MB at
 # 1080p. The address is held in memory only and never reaches a message or a log.
+# Owner report 2026-11-26: some matches are listed only as a signed link on the same host
+# (a query string, likely expiring); those are read too and re-read after SIGNED_FRESH_S.
 CDN = "c.veocdn.com"
 CHUNK = 8 * 1024 * 1024
+SIGNED_FRESH_S = 600.0
 Opener = Callable[[urllib.request.Request, float], Any]
 
 
@@ -263,8 +266,8 @@ def video_problem(url: str) -> str | None:
         return "a non-https address"
     if parts.hostname != CDN or parts.port is not None:
         return f"a file on {parts.hostname or 'an unnamed host'}"
-    if parts.query or parts.fragment:
-        return "a signed address"
+    if parts.fragment:
+        return "an address with a fragment"
     if not parts.path.lower().endswith(".mp4"):
         name = parts.path.rsplit("/", 1)[-1]
         kind = name.rsplit(".", 1)[-1].lower()[:8] if "." in name else ""
@@ -272,13 +275,17 @@ def video_problem(url: str) -> str | None:
     return None
 
 
-def _video(url: str, suffixes: tuple[str, ...] = (".mp4",), host: str = CDN) -> str:
+def _video(
+    url: str, suffixes: tuple[str, ...] = (".mp4",), host: str = CDN, signed: bool = False
+) -> str:
     parts = urlsplit(url)
     if (
         parts.scheme != "https"
         or parts.hostname != host
         or parts.port is not None
-        or parts.query
+        # Match videos may carry a signature (owner request 2026-11-26); images may not.
+        # The host lock above keeps a signature going only to Veo's own video host.
+        or (parts.query and not signed)
         or parts.fragment
         or not parts.path.lower().endswith(suffixes)
     ):
@@ -293,10 +300,11 @@ def _fetch(
     timeout: float,
     suffixes: tuple[str, ...] = (".mp4",),
     host: str = CDN,
+    signed: bool = False,
 ) -> Any:
     # _video allows only https on Veo's own hosts, so no file: or custom scheme.
     request = urllib.request.Request(  # noqa: S310
-        _video(url, suffixes, host), headers=headers, method="GET"
+        _video(url, suffixes, host, signed), headers=headers, method="GET"
     )
     try:
         return (opener or _open)(request, timeout)
@@ -313,7 +321,7 @@ def media_range(
     last = start + CHUNK - 1 if end is None else min(end, start + CHUNK - 1)
     if start < 0 or last < start:
         raise CaptureError("That part of the video does not exist.")
-    with _fetch(url, {"Range": f"bytes={start}-{last}"}, opener, 60) as response:
+    with _fetch(url, {"Range": f"bytes={start}-{last}"}, opener, 60, signed=True) as response:
         found = re.fullmatch(
             r"bytes (\d+)-(\d+)/(\d+)", str(response.headers.get("Content-Range") or "")
         )
@@ -330,7 +338,7 @@ def media_download(
     url: str, target: Path, progress: Callable[[int, int], None], opener: Opener | None = None
 ) -> int:
     """The whole video into `target` (the caller's .part file). Returns its size."""
-    with _fetch(url, {}, opener, 120) as response:
+    with _fetch(url, {}, opener, 120, signed=True) as response:
         length = response.headers.get("Content-Length")
         if response.status != 200 or not str(length or "").isdigit():
             raise CaptureError("Veo's video answered in a way the app does not expect.")
