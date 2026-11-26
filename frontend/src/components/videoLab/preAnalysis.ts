@@ -36,12 +36,12 @@ type AtlasLike = { projection?: unknown; frame_to_panorama: (unknown[] | null)[]
 type SummaryLike = { sampled_frames: number; person_detections: number; ball_observation_coverage: number };
 /** Below this share of players' positions inside, an outline misses the game (right outlines held 92-98%, short ones 23-37%). */
 export const PLAY_HELD = 0.7;
-export type ReadinessInput = { summary?: SummaryLike; atlas?: AtlasLike; accepted?: boolean; play?: number | null; groups: number; labels: { own: boolean; opponent: boolean; referee: boolean } };
+export type ReadinessInput = { summary?: SummaryLike; atlas?: AtlasLike; accepted?: boolean; play?: number | null; groups: number; labels: { own: boolean; opponent: boolean; referee: boolean }; remembered?: { own: boolean; opponent: boolean; referee: boolean } };
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 /** Provisional thresholds (recorded as an open owner decision): a checklist, never a score of accuracy. */
-export function readiness({ summary, atlas, accepted = false, play = null, groups, labels }: ReadinessInput): Check[] {
+export function readiness({ summary, atlas, accepted = false, play = null, groups, labels, remembered }: ReadinessInput): Check[] {
   const checks: Check[] = [];
   const total = atlas?.times.length ?? 0, solved = atlas?.frame_to_panorama.filter(Boolean).length ?? 0, share = total ? solved / total : 0;
   checks.push(!atlas?.projection || !total
@@ -65,9 +65,12 @@ export function readiness({ summary, atlas, accepted = false, play = null, group
   const ball = summary?.ball_observation_coverage ?? 0;
   checks.push({ key: "ball", label: "Ball", status: ball >= 0.5 ? "ready" : ball >= 0.25 ? "partial" : "missing", detail: `A ball seen in ${pct(ball)} of sampled frames (spare balls and other pitches count; the lab follows one smooth path).` });
   const both = labels.own && labels.opponent;
-  checks.push({ key: "teams", label: "Teams", status: !groups ? "missing" : both ? "ready" : "partial",
-    detail: !groups ? "No player look-alike groups. Prepare player grouping." : both ? "Both kits taught; teams are decided moment by moment from them." : `${groups} look-alike groups ready. Label one player from ${labels.own || labels.opponent ? "the other team" : "each team"} to decide teams.` });
-  checks.push({ key: "referee", label: "Referee", status: labels.referee ? "ready" : groups ? "partial" : "missing",
-    detail: labels.referee ? "Referee kit taught; one referee is kept on the pitch." : "Label the referee once so their kit is recognised." });
+  // Kits taught in another window of the same match decide teams here too (until you label this one).
+  const recalled = !both && !!remembered?.own && !!remembered?.opponent;
+  checks.push({ key: "teams", label: "Teams", status: !groups ? "missing" : both || recalled ? "ready" : "partial",
+    detail: !groups ? "No player look-alike groups. Prepare player grouping." : both ? "Both kits taught; teams are decided moment by moment from them." : recalled ? "Both kits remembered from an earlier run of this match; label a player here if the light or kit changed." : `${groups} look-alike groups ready. Label one player from ${labels.own || labels.opponent ? "the other team" : "each team"} to decide teams.` });
+  const referee = labels.referee || !!remembered?.referee;
+  checks.push({ key: "referee", label: "Referee", status: referee ? "ready" : groups ? "partial" : "missing",
+    detail: labels.referee ? "Referee kit taught; one referee is kept on the pitch." : referee ? "Referee kit remembered from an earlier run of this match." : "Label the referee once so their kit is recognised." });
   return checks;
 }

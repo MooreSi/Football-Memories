@@ -74,6 +74,11 @@ describe("readiness", () => {
     expect(items.teams).toBe("partial");
     expect(items.referee).toBe("partial");
   });
+  it("counts kits remembered from another window of the same match as taught", () => {
+    const items = readiness({ summary, atlas: atlas([false, false, false, false]), groups: 6, labels: { own: false, opponent: false, referee: false }, remembered: { own: true, opponent: true, referee: true } });
+    expect(status(items)).toMatchObject({ teams: "ready", referee: "ready" });
+    expect(items.find(i => i.key === "teams")!.detail).toMatch(/remembered from an earlier run of this match/);
+  });
   it("marks thin ball and player evidence", () => {
     const thin = { ...summary, person_detections: 4000, ball_observation_coverage: 0.1 };
     expect(status(readiness({ summary: thin, atlas: atlas([false, false, false, false]), groups: 6, labels: { own: true, opponent: true, referee: true } }))).toMatchObject({ players: "partial", ball: "missing" });

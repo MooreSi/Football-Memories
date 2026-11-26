@@ -23,3 +23,12 @@ it("flags an accepted outline that holds few of the players", () => {
   expect(row).toHaveTextContent("Partly");
   expect(row).toHaveTextContent("Only 18% of players' positions fall inside the accepted outline");
 });
+
+it("counts kits remembered from another window of the same match", () => {
+  const kit = (team: "own" | "opponent" | null, role: "player" | "referee") => ({ team, role, lab: [120, 128, 128], examples: 3 });
+  render(<PreAnalysisCheck summary={summary} atlas={atlas} groups={6} trackLabels={[]} groupLabels={[]} rememberedKits={[kit("own", "player"), kit("opponent", "player"), kit(null, "referee")]} />);
+  const row = (name: string) => within(screen.getByRole("region", { name: "Pre-analysis check" })).getByText(name).closest("li")!;
+  expect(row("Teams")).toHaveTextContent("Ready");
+  expect(row("Teams")).toHaveTextContent("remembered from an earlier run of this match");
+  expect(row("Referee")).toHaveTextContent("Ready");
+});

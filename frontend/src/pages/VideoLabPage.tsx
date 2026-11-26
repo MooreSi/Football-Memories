@@ -16,6 +16,7 @@ import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { PreAnalysisCheck } from "../components/videoLab/PreAnalysisCheck";
+import { matchTitle, relatedRuns } from "../components/videoLab/relatedRuns";
 import { playShare } from "../components/videoLab/playShare";
 import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
@@ -93,8 +94,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const offPitch = useMemo(() => labOffPitch(teamInputs), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
   // Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance
   // model settles only what colour cannot (dark kits). Kits you taught in related runs are reused.
-  const saved = useSavedModels(others.filter(o => o.id !== job.id && o.state === "complete"));
-  const remembered = useMemo(() => rememberKits(saved.data ?? [], job.match_title ?? ""), [saved.data, job.match_title]);
+  // Runs of the same match first (a full match is many windows), and derived runs take their source run's title.
+  const title = matchTitle(job, others);
+  const saved = useSavedModels(relatedRuns(title, others.filter(o => o.id !== job.id && o.state === "complete")));
+  const remembered = useMemo(() => rememberKits(saved.data ?? [], title ?? ""), [saved.data, title]);
   // With whole-clip refinement the denser rows (about ten a second, with shirt colours) replace the sampled ones.
   const rows = useMemo(() => labRows(assignments.data, dense.data), [assignments.data, dense.data]);
   const kits = useMemo(() => labKits(rows, review, remembered), [rows, review?.track_labels, remembered]);
@@ -163,7 +166,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
         </div>
         {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
         {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
-        {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} />}
+        {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} rememberedKits={remembered} />}
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}
