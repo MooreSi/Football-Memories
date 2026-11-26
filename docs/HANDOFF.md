@@ -5,7 +5,7 @@ Opponents to the title bar". App only: `veoExpired()` (api/veo.ts, same test as 
 "Video expired on Veo" badge: not available or status expired) filters Veo matches out of
 the Library page (hero, overview, counts, grouped/automatic tournaments) and the Connected
 Veo list, which now says "N expired on Veo, hidden". Other pages (Opponents, reports, Veo
-match page, Downloaded) still see expired matches. Opponents link moved from the Match
+match page, Downloaded) still see expired matches; owner confirmed "Library only". Opponents link moved from the Match
 profile links to the page header beside "+ Import a match", same href logic. Requirement
 change: the old "marks a match whose video Veo has expired" test is replaced, the "2 of 3"
 count became "2 of 2", and the Opponents test now looks in the header; new tests red first.
