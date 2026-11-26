@@ -68,4 +68,3 @@ Code commits app `f604877`, gateway `aaecf42`; gateway CI45778074931 green
 `hosted-f604877cb620fed047e0befacc2dc6c3ac80923e`; gateway/provisioner images
 `spec720-aaecf42`. These builds changed no running container or shared tag/latest.
 Deployment still requires the full Docker isolation check or explicit exception.
-
