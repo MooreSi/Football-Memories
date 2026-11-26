@@ -1,3 +1,22 @@
+## IN PROGRESS overnight: three Veo matches pre-analysed, then analysed in full — 26-27 November 2026
+
+Owner (going to sleep, no questions): pre-analyse the three most recent Veo matches, tag players
+to teams, mark the pitch, then analyse each full match (~60 min), tracking ball and shirt
+numbers, validate recognition and learn from it. Matches: 261122 NL vs Bournville Greens,
+261116 RCW vs Kidderminster RMC, 261109 RCW vs SBITC Eagles (all downloaded to the admin inbox).
+"Full match" = both halves (Veo `halves`) in consecutive windows of <= 10 min (the worker and
+gateway cap one analysis at 600 s): 19 windows + 2 pre-analyses, each window then a shirt-number
+child run. Driver: JS loop in the built-in browser tab on football-memories.co.uk/video-lab
+(state in localStorage `fmDriver`, code in `fmDriverCode`). Clips were cut by the helper's own
+`_cut` code in a one-off container of the admin capture image with 6 CPUs (`fm-overnight-cut`),
+writing the same `analysis/<ticket>` folders the helper writes: the capture container's 1.5 CPU
+limit made the helper cut at 0.3x real time (32 min per window). Imports, jobs and checks are
+the normal gateway path. Bournville pre-analysis (c8988347): automatic outline accepted (98% of
+play) in place of the 22% one, as a new review revision (8).
+App fixes so far (committed, not yet deployed): 1af18e9 pre-analysis skips a short Veo fragment
+listed before the first half (RMC lists 0:00-3:47); a9f2983 kits remembered from runs of the
+same match first, derived runs take their source run's title, check counts remembered kits.
+
 ## Video Lab: shirt numbers on the 2D pitch, read automatically and correctable; DEPLOYED — 26 November 2026
 
 Owner: "add shirt numbers" then "improve automatic reading and have the ability to correct/update a
