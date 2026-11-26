@@ -14,7 +14,7 @@ const STILL = { times: [0, 5, 10], steps: [[1, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 0
 // Person 2 runs a fifth of the pitch length along the halfway line in four seconds.
 const RUN = [0, 1, 2, 3, 4].map(i => ({ track_id: 2, time_s: i, team_id: null, role: "unknown", image_box: [0.39 + 0.05 * i, 0.4, 0.41 + 0.05 * i, 0.5] }));
 
-function serve(size: unknown = null) {
+function serve(size: unknown = null, extra: unknown[] = []) {
   puts = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
     if (url.endsWith("/_portal/api/me")) return Response.json({ csrf_token: "synthetic-csrf" });
@@ -24,7 +24,7 @@ function serve(size: unknown = null) {
     if (url.endsWith("/jobs")) return Response.json([job]);
     if (url.endsWith(`/jobs/${JOB}`)) return Response.json(job);
     if (url.endsWith("/review")) return Response.json({ revision: 1, source_sha256: sha, events: [], identities: [], reviewed_intervals: [], review_complete: false, track_labels: [{ track_id: 2, team: "own", role: "player" }], group_labels: [], rejected_suggestions: [], pitch_keyframes: WHOLE, pitch_size: size });
-    if (url.endsWith("team_assignments.json")) return Response.json({ image_width: 1920, image_height: 1080, observations: RUN });
+    if (url.endsWith("team_assignments.json")) return Response.json({ image_width: 1920, image_height: 1080, observations: [...RUN, ...extra] });
     if (url.endsWith("camera_motion.json")) return Response.json(STILL);
     throw new Error(`unstubbed ${url}`);
   }));
@@ -87,4 +87,16 @@ it("selects a player by clicking their dot on the pitch", async () => {
   const map = await screen.findByRole("region", { name: "Pitch map" });
   await userEvent.click(await within(map).findByRole("button", { name: /^Our team player/ }));
   expect(await within(map).findByText(/20 m covered/)).toBeInTheDocument();
+});
+
+// A parent standing on the far touchline (feet at image y 0.02 -> 58.8 m in on a 60 m wide pitch).
+const PARENT = [0, 1, 2, 3, 4].map(i => ({ track_id: 9, time_s: i, team_id: null, role: "unknown", image_box: [0.69, 0.0, 0.71, 0.02] }));
+
+it("leaves people standing on the touchline off the map unless you show everyone", async () => {
+  serve({ length_m: 100, width_m: 60 }, PARENT); renderWithProviders(<VideoLabPage />);
+  const map = await screen.findByRole("region", { name: "Pitch map" });
+  await within(map).findByLabelText("Our team player at 40 m along, 30 m in");
+  expect(within(map).queryByLabelText(/at 70 m along/)).toBeNull();
+  await userEvent.click(screen.getByLabelText("Show everyone"));
+  expect(await within(map).findByLabelText("Unassigned person at 70 m along, 59 m in")).toBeInTheDocument();
 });

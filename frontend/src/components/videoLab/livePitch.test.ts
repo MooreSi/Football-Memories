@@ -1,7 +1,7 @@
 import {expect,it} from "vitest";
 import {applyRay,rayPanorama} from "./atlasGeometry";
 import {inverse} from "./landmarks";
-import {ballPath,pitchSource,playersAt,trackPaths,trailOf} from "./livePitch";
+import {ballPath,pitchSource,playersAt,sidelineTracks,trackPaths,trailOf} from "./livePitch";
 import type {Panorama} from "./panorama";
 import type {Camera,PitchKeyframe} from "./pitch";
 import type {Observation} from "./labTypes";
@@ -86,4 +86,18 @@ it("builds an approximate pitch from the automatic outline alone, with the camer
  const [p]=playersAt(trackPaths([at(7,3,image[0]/image[2],image[1]/image[2])],source),3);
  expect(p.x).toBeCloseTo(40,3);
  expect(p.y).toBeCloseTo(20,3);
+});
+
+it("treats someone standing still on a touchline as a sideline person, not a player",()=>{
+ const source=pitchSource(still([0,10]),WHOLE,SIZE)!;
+ // Feet at image y 0.02: 58.8 m in, on the far touchline of a 60 m wide pitch, for ten seconds.
+ const parent=[0,2,4,6,8,10].map(t=>at(9,t,.7+.002*t,.02));
+ // A winger who runs 30 m along the same touchline.
+ const winger=[0,1,2,3,4,5].map(t=>at(3,t,.2+.06*t,.03));
+ // A coach on the near touchline.
+ const coach=[0,2,4].map(t=>at(4,t,.5,.99));
+ const paths=trackPaths([...parent,...winger,...coach],source);
+ expect([...sidelineTracks(paths,SIZE,()=>false)].sort()).toEqual([4,9]);
+ // Your label always wins: a labelled player standing on the line stays on the map.
+ expect([...sidelineTracks(paths,SIZE,id=>id===9)]).toEqual([4]);
 });

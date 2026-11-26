@@ -1,3 +1,14 @@
+## Video Lab: far-touchline bunching on the 2D pitch fixed (sideline people) — 26 November 2026
+
+Owner: "fix the far half bunching on the far touchline". Measured on NL 91f49e12 first: not a
+geometry fault (person height flat across depth), but parents/coaches standing along the far
+side (half of all observations, barely moving, adult height, some given a team by kit matching).
+New `livePitch.sidelineTracks`; PitchMap leaves them off live and heat views unless Show
+everyone is ticked; owner-labelled people always stay. Tests red first (1 unit, 1 page).
+Frontend 1077 pass (working copy, includes other sessions' tests), typecheck, build pass;
+backend untouched. Browser on the read-only harness: at 1:30 the map went from 36 people with a
+far-line row to 17 with none. NOT yet deployed (admin still runs 386143d).
+
 ## Spec 760 Part A: lighting benchmark built, baseline scored, 26 November 2026
 
 Owner: "Yes, build Part A". Worker branch `codex/lighting-benchmark` (84c9def, pushed, own

@@ -1748,6 +1748,12 @@ backups/integrity are implemented above; remaining tasks are in brief section 26
 
 ## Verification log (newest first)
 
+### 2026-11-26: Video Lab sideline people off the 2D pitch
+
+- Frontend `npm test` 205 files / 1077 pass, typecheck, build pass. New tests seen red first.
+- Real-data replay (throwaway probe, not committed) on 91f49e12 and 6c216d41; numbers in the
+  video-analytics domain README. Backend unchanged, not run. Not deployed.
+
 ### 2026-11-26: Spec 760 Part A (lighting benchmark)
 
 - Worker `codex/lighting-benchmark`: `uv run pytest` 286 passed; ruff, format, project checks pass.

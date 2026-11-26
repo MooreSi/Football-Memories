@@ -283,9 +283,14 @@ chosen it draws a 9v9 (73 x 46 m) shape and says so. Positions glide between det
 max gap, 0.5 s hold), steps over 12 m/s are dropped as swapped boxes, close neighbours get a
 [1,2,1] average. Distance and top speed stay exact-only (`trackMovement`). Gotcha: tracked ball
 points (`ball.ts`) are fractions of the frame and the radius is a fraction of the frame WIDTH, so
-the ground contact is `y + r * width / height`. On NL 91f49e12 (accepted panorama, no corners)
-people in the far half bunch near the far touchline because that side of the outline is
-estimated; a better far line fixes it, not the map. No shirt numbers exist in the data, so
+the ground contact is `y + r * width / height`. Far-touchline bunching on NL 91f49e12 was
+NOT geometry (corrected 26 Nov, first guess was the estimated far outline): person height in
+camera-height units is flat at ~0.39 from 8 to 36 m in; the 40-48 m band (half of all
+observations, 209 tracks, median 0.43 m/s vs 1.9 on the pitch, ~15% taller = adults) is parents
+and coaches lining the far side. `sidelineTracks` (middle within 4 m of a touchline or beyond,
+90% of samples within 4 m of it; your labels exempt) leaves them off the map and heat maps unless
+Show everyone is ticked. NL: far-band observations ~12k -> 1.4k, 0 of 9 labels hidden; f2ab96a2
+refinement: 178 still tracks hidden, 0 of 6 labels. Kit matching had given some of them a team. No shirt numbers exist in the data, so
 markers carry shape (our team circle, opponent triangle, referee diamond) and GK/R only.
 Low sun (spec 760 Part A, racing-ten): shaded grass is blue to the camera and sunlit grass
 washes out to low saturation, so no fixed green range finds the ground; learn the surface

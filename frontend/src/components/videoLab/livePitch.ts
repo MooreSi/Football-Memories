@@ -121,3 +121,23 @@ export function ballPath(ball:BallPoint[],source:PitchSource,width:number,height
  for(const b of ball){const p=source.project(b.time_s,[b.x,b.y+b.r*width/height]);if(p)out.push({time_s:b.time_s,x:p[0],y:p[1]});}
  return out;
 }
+
+const SIDELINE_M=4,STILL_M=4;
+
+/** People who stand along a touchline: the middle of their track is within 4 m of either touchline
+ * (or beyond it) and they stay within 4 m of that spot nine-tenths of the time. On NL 91f49e12 this
+ * was parents and coaches lining the far side: half of every observation, moving at a median
+ * 0.43 m/s against 1.9 m/s on the pitch, and measuring adult height. Your labelled people (`keep`)
+ * are never treated this way; "Show everyone" shows them all. */
+export function sidelineTracks(paths:Map<number,PitchPoint[]>,{width_m:w}:PitchSize,keep:(track:number)=>boolean):Set<number>{
+ const out=new Set<number>();
+ const middle=(v:number[])=>{const s=[...v].sort((a,b)=>a-b);return s[s.length>>1];};
+ for(const [track,path] of paths){
+  if(!path.length||keep(track))continue;
+  const mx=middle(path.map(p=>p.x)),my=middle(path.map(p=>p.y));
+  if(my>SIDELINE_M&&my<w-SIDELINE_M)continue;
+  const d=path.map(p=>Math.hypot(p.x-mx,p.y-my)).sort((a,b)=>a-b);
+  if(d[Math.floor(.9*(d.length-1))]<STILL_M)out.add(track);
+ }
+ return out;
+}

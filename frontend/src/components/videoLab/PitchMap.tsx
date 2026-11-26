@@ -2,7 +2,7 @@ import { useMemo, useState, type RefObject } from "react";
 import { clock, teamName, type Assignment, type Observation } from "./labTypes";
 import { TEAM_COLOUR, colourFor, useFrameTime } from "./LabVideo";
 import { PITCH_PRESETS, trackMovement, type PitchSize } from "./metres";
-import { ballPath, pitchSource, playersAt, pointAt, trackPaths, trailOf } from "./livePitch";
+import { ballPath, pitchSource, playersAt, pointAt, sidelineTracks, trackPaths, trailOf } from "./livePitch";
 import type { BallPoint } from "./ball";
 import type { Camera, PitchKeyframe } from "./pitch";
 
@@ -14,6 +14,8 @@ type Props = {
   onSelect?: (track: number) => void;
   videoRef?: RefObject<HTMLVideoElement | null>;
   ball?: BallPoint[]; frame?: { w: number; h: number };
+  /** Show everyone: include people standing along the touchlines (parents, coaches). */
+  everyone?: boolean;
 };
 type View = "live" | "own" | "opponent";
 const COLS = 12, ROWS = 8;
@@ -62,14 +64,16 @@ function Marker({ x, y, r, info, selected }: { x: number; y: number; r: number; 
 
 /** Spec 610 + live 2D pitch: everyone's position moving with the video, team heat maps and the
  * selected person's running. Builds from the automatic outline as soon as a match is analysed. */
-export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSize, teamAt, onSelect, videoRef, ball, frame }: Props) {
+export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSize, teamAt, onSelect, videoRef, ball, frame, everyone = false }: Props) {
   const [view, setView] = useState<View>("live");
   const [custom, setCustom] = useState(false);
   const now = useFrameTime(videoRef ?? NO_REF, at);
   const drawn = size ?? ASSUMED;
   const preset = size && PITCH_PRESETS.find(p => p.size.length_m === size.length_m && p.size.width_m === size.width_m);
   const source = useMemo(() => pitchSource(camera, marks, drawn), [camera, marks, drawn]);
-  const paths = useMemo(() => source ? trackPaths(rows, source) : new Map<number, never[]>(), [rows, source]);
+  const allPaths = useMemo(() => source ? trackPaths(rows, source) : new Map<number, never[]>(), [rows, source]);
+  const sideline = useMemo(() => everyone ? new Set<number>() : sidelineTracks(allPaths, drawn, id => teams.get(id)?.source === "you"), [allPaths, drawn, teams, everyone]);
+  const paths = useMemo(() => sideline.size ? new Map([...allPaths].filter(([id]) => !sideline.has(id) || id === selected)) : allPaths, [allPaths, sideline, selected]);
   const ballTrack = useMemo(() => source && ball?.length ? ballPath(ball, source, frame?.w ?? 1920, frame?.h ?? 1080) : [], [ball, source, frame?.w, frame?.h]);
   const heat = useMemo(() => {
     if (view === "live") return null;
@@ -125,7 +129,7 @@ export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSiz
       <p className="text-xs text-fg-muted">
         {!size && <>Size not set: drawn as a {l} x {w} m pitch until you choose the real size. </>}
         {source.exact ? "Positions come from your pitch marks and the pitch size; a misplaced corner shifts them." : "Built from the automatic pitch outline, so positions are approximate (the far half most of all). Confirm the pitch corners for exact metres."}
-        {" "}Tracked people are stretches, not whole matches. Click a player to follow them.</p>
+        {" "}Tracked people are stretches, not whole matches. {sideline.size ? "People standing along the touchlines are left off; tick Show everyone to include them. " : ""}Click a player to follow them.</p>
       {selected !== null && <p className="text-sm">{moved && moved.seconds > 0
         ? <>Selected person: <strong>{Math.round(moved.distance_m)} m covered</strong> over {clock(moved.seconds)} tracked · top speed {moved.top_speed_ms.toFixed(1)} m/s ({Math.round(moved.top_speed_ms * 3.6)} km/h)</>
         : source.exact && size ? "The selected person has no positions on the marked pitch yet." : "Distance and speed need the pitch size and marked corners."}</p>}
