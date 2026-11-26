@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Clock3, Film, RefreshCw } from "lucide-react";
-import { type VeoMatch, useVeoLibrary, useVeoStatus, veoAgeGroups, veoExpiry, veoRequest } from "../../api/veo";
+import { type VeoMatch, useVeoLibrary, useVeoStatus, veoAgeGroups, veoExpired, veoExpiry, veoRequest } from "../../api/veo";
 import { connectionShown } from "../../lib/connections";
 import { Button } from "../ui/Button";
 import { ScoreBadge } from "../hudl/HudlLibrary";
@@ -33,14 +33,17 @@ export function VeoLibrary({ filters }: { filters: VeoFilters }) {
   const [count, setCount] = useState(12);
   useEffect(() => setCount(12), [filters.age, filters.season, filters.search, tournament?.tournamentId, tournament?.team]);
   if (!shown) return null;
-  const all = library.data ?? [];
+  // Owner request 2026-11-26: "for veo don't show expired matches".
+  const cached = library.data ?? [];
+  const all = cached.filter(m => !veoExpired(m));
+  const expired = cached.length - all.length;
   const matches = all.filter(m => (tournament?.includes(`veo:${m.id}`) ?? true) && (!filters.age || veoAgeGroups(m).includes(filters.age))
     && (!filters.season || (m.season_label || "Unclassified") === filters.season)
     && (!filters.search || m.title.toLowerCase().includes(filters.search.toLowerCase())));
   return <section aria-label="Veo match library" className="space-y-4 border-t border-line pt-5">
     <div className="flex flex-wrap items-center gap-3">
       <div className="mr-auto"><h3 className="text-sm font-semibold">Connected Veo</h3>
-        <p className="mt-1 text-xs text-fg-subtle">{matches.length} of {all.length} cached Veo matches · Details and highlights</p></div>
+        <p className="mt-1 text-xs text-fg-subtle">{matches.length} of {all.length} cached Veo matches{expired > 0 && ` · ${expired} expired on Veo, hidden`} · Details and highlights</p></div>
       <Button disabled={!(status.data?.configured || status.data?.shared) || status.data.busy || refresh.isPending || library.isError}
         title={status.data && !status.data.configured && !status.data.shared ? "Save your Veo account or a shared match link in Settings → Connections first" : undefined}
         onClick={() => refresh.mutate()}><RefreshCw size={14} /> Refresh Veo</Button>

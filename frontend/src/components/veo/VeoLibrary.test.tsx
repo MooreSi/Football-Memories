@@ -25,15 +25,18 @@ it("lists cached Veo matches with links, score and expiry, filtered like All mat
   expect(a).toHaveTextContent("1 highlight");
   expect(within(screen.getByRole("link", { name: /Town/ })).getByText("Video expires soon on Veo")).toBeInTheDocument();
   expect(screen.queryByRole("link", { name: /City/ })).toBeNull();
-  expect(screen.getByText(/2 of 3 cached Veo matches/)).toBeInTheDocument();
+  expect(screen.getByText(/2 of 2 cached Veo matches/)).toBeInTheDocument();
 });
 
-it("marks a match whose video Veo has expired", async () => {
+// Owner request 2026-11-26: "for veo don't show expired matches" (replaces the expired badge).
+it("hides matches whose video Veo has expired, and says how many", async () => {
   stubFetch({ [LIB]: matches });
-  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "City" }} />);
-  const b = await screen.findByRole("link", { name: /City/ });
-  expect(within(b).getByText("Video expired on Veo")).toBeInTheDocument();
-  expect(screen.queryByRole("link", { name: /Rovers/ })).toBeNull();
+  renderWithProviders(<VeoLibrary filters={{ age: "", season: "", search: "" }} />);
+  await screen.findByRole("link", { name: /Rovers/ });
+  expect(screen.getByRole("link", { name: /Town/ })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /City/ })).toBeNull();
+  expect(screen.queryByText("Video expired on Veo")).toBeNull();
+  expect(screen.getByText(/2 of 2 cached Veo matches · 1 expired on Veo, hidden/)).toBeInTheDocument();
 });
 
 it("shows nothing when Settings has Show Veo off, and an empty cache explains Refresh", async () => {

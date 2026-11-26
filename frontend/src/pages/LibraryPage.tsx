@@ -26,7 +26,7 @@ import { useHomeClub } from "../lib/useHomeClub";
 import { looksLikePlayer } from "../lib/hudlPlayer";
 import { possession, possessionTotals, withPossessionTime } from "../lib/insights";
 import { ContinueWatching } from "../components/library/ContinueWatching";
-import { useVeoLibrary } from "../api/veo";
+import { useVeoLibrary, veoExpired } from "../api/veo";
 import { connectionShown } from "../lib/connections";
 import { veoAsHudl } from "../lib/veoAsHudl";
 import { teamSplit } from "../lib/veoTeamSplit";
@@ -75,7 +75,9 @@ function LibraryContent() {
   const {age:ageGroup,setAge:setAgeGroup,season:seasonLabel,setSeason:setSeasonLabel} = useArchiveFilters();
   const hostedPerms = useHostedPermissions();
   const hudlLibrary = useHudlLibrary();
-  const veoLibrary = useVeoLibrary();
+  const veoQuery = useVeoLibrary();
+  // Owner request 2026-11-26: "for veo don't show expired matches" (hero, counts, tournaments).
+  const veoLibrary = { ...veoQuery, data: veoQuery.data?.filter(m => !veoExpired(m)) };
   const downloaded=downloadState(useDownloadIndex().data);
   // Owner request 2026-11-14: Show Hudl off with Show Veo on puts Veo matches in the
   // hero, latest match, overview and match profile.
@@ -183,7 +185,11 @@ function LibraryContent() {
       <header className="dashboard-heading">
         <div><p className="screen-eyebrow">YOUR FOOTBALL ARCHIVE</p><h1>Match Library</h1>
         <p>Every game. Every moment. Your football story.</p></div>
-        <Link to="/import" className="dashboard-import">+ Import a match</Link>
+        {/* Owner request 2026-11-26: Opponents moves from the match profile to the title bar. */}
+        <div className="flex flex-wrap items-center gap-3">
+          {remote.data?.length ? <Link to={shown?.source === "veo" && club ? `/opponents?club=${encodeURIComponent(club)}` : "/opponents"} className="dashboard-import">Opponents</Link> : null}
+          <Link to="/import" className="dashboard-import">+ Import a match</Link>
+        </div>
       </header>
       <aside className="dashboard-overview space-y-5">
         <YourPlayerCard />
@@ -205,7 +211,6 @@ function LibraryContent() {
           links={remote.data?.length ? <>
             {shown && <Link className="text-accent hover:underline" to={`/report/match/${encodeURIComponent(shown.id)}`}>Share match report</Link>}
             <Link className="text-accent hover:underline" to="/report/season">Share season report</Link>
-            <Link className="text-accent hover:underline" to={shown?.source === "veo" && club ? `/opponents?club=${encodeURIComponent(club)}` : "/opponents"}>Opponents</Link>
           </> : undefined} />
       </aside>
 

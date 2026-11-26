@@ -42,8 +42,12 @@ export function useVeoLibrary() {
 export function veoAgeGroups(match: VeoMatch): string[] {
   return match.age_groups?.length ? match.age_groups : [match.age_group || "Unclassified"];
 }
+/** Owner request 2026-11-26: expired Veo matches are left out of the library. */
+export function veoExpired(match: VeoMatch): boolean {
+  return !match.available || match.expiration_status === "expired";
+}
 export function veoExpiry(match: VeoMatch): string | null {
-  if (!match.available || match.expiration_status === "expired") return "Video expired on Veo";
+  if (veoExpired(match)) return "Video expired on Veo";
   return match.expiration_status === "expires-soon" ? "Video expires soon on Veo" : null;
 }
 export function useVeoStatus() {
