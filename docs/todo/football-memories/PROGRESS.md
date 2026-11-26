@@ -46,7 +46,12 @@ Read worker code, historical detector/atlas trials and gateway admission; inspec
 local hardware/network and LaunchAgent profile flags. M4 mini/24 GB confirmed;
 Thunderbolt Bridge inactive. Strict SSH probe stopped at unknown host key, before
 remote execution. Owner follow-up confirms M3 MacBook Pro/18 GB and Thunderbolt;
-exact M3 variant, active cable networking and performance remain unconfirmed.
+exact M3 variant and performance remain unconfirmed. Follow-up desktop/network
+inspection: bridge active, connected MacBook Pro at reported40 Gb/s, peer ping4/4
+with0.659 ms average and TCP22 reachable via bridge0; internet route remains en0.
+Existing configuration already correct; no setting changed or remote login made.
+UI Unknown state differs from active interface/network checks. Bulk throughput
+unmeasured. Documentation-only verification: links retained, diff whitespace clean.
 Follow-up docs checked for links/whitespace; no code/runtime,
 account, source/result or deployment changes. Docs links and whitespace checked;
 runtime suites not run for this docs-only checkpoint. Existing unrelated app edits

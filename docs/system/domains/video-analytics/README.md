@@ -4,7 +4,9 @@
 current native M4 worker is single-consumer; a second host requires job scheduling
 and result transfer, not just a shared runtime mount. Whole-job offload/batch work
 is the first candidate. Owner confirms M3 MacBook Pro/18 GB and Thunderbolt;
-second-host performance and cable throughput are unmeasured.
+second-host performance and cable throughput are unmeasured. Follow-up verifies
+active Thunderbolt networking, zero-loss ping and reachable existing SSH service;
+40 Gb/s is the reported link rate, not measured file-transfer throughput.
 
 The private [worker repository](https://github.com/MooreSi/Football-Video-Analytics)
 owns models, local bounded inference and append-only artifacts. The app owns Video

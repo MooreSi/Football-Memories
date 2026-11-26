@@ -7,12 +7,23 @@ does not make the current pipeline use both Macs.
 
 ## Hardware and connection
 
+Follow-up verification on 26 November: the Thunderbolt connection is now active.
+System Information identifies a connected MacBook Pro and reports a 40 Gb/s link
+(negotiated link rate, not measured application throughput). Existing manual IPv4
+settings on both hosts use the same dedicated subnet. Bonjour resolves the peer on
+`bridge0`; four ICMP packets returned with zero loss and 0.659 ms average round trip,
+and the peer's existing SSH port accepts TCP connections over that bridge. The
+internet default route remains Ethernet. System Settings still displays “Unknown
+state”, despite its member interface showing Active and successful network tests.
+No settings change, host trust acceptance or remote login was necessary. Private
+addresses are deliberately omitted from the committed report.
+
 Read-only inspection identifies this host as an Apple M4 Mac mini, 10 CPU cores
 (4 performance, 6 efficiency), 24 GB memory. Its native LaunchAgent is configured
 with detector and ReID profiles. Analysis already runs on this Mac, outside Docker.
 
-`system_profiler` reports no FireWire device and no connected Thunderbolt device.
-`ifconfig` shows Thunderbolt Bridge and all three member interfaces inactive,
+At the initial inspection, `system_profiler` reported no FireWire device and no
+connected Thunderbolt device. `ifconfig` showed all bridge member interfaces inactive,
 without a bridge IP address. Thus no usable cable network was visible at inspection;
 the connection state was not verified. The owner subsequently confirmed a
 Thunderbolt cable and a MacBook Pro with an M3 chip and 18 GB memory. The exact
@@ -84,9 +95,8 @@ about 1 second. These are arithmetic examples, not observed link speeds.
 
 ## Recommended next measurement
 
-1. Confirm the MacBook Pro's exact M3 variant and macOS, and establish that the
-   confirmed Thunderbolt cable has an active network interface. No remote trust
-   or login change was made here.
+1. Confirm the MacBook Pro's exact M3 variant and macOS. Active Thunderbolt
+   networking is now verified; application throughput still needs measurement.
 2. Copy one already archived representative 2–4 minute clip into a new private
    scratch directory on each host. Use identical code revisions, model hashes,
    resolution and sampling; leave existing footage/results untouched.
@@ -98,6 +108,6 @@ about 1 second. These are arithmetic examples, not observed link speeds.
    independent workers before investing in splitting one clip. Keep source-account
    access on its existing helper and retain owner/admin checks at result publication.
 
-No new analysis, transfer benchmark, software installation, deployment, account
+No new analysis, bulk transfer benchmark, software installation, deployment, account
 access or footage modification was performed for this investigation. A numeric
 speedup for the second Mac remains unmeasured.

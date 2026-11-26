@@ -44,12 +44,16 @@ for gateway-first migration/ancestry and normal shared-app rollout sequence.
 Docs-only on `codex/local-video-analytics`. See
 [report](system/domains/video-analytics/two-mac-performance.md). Current worker
 already runs natively on this M4 mini (24 GB). Thunderbolt Bridge inactive at
-inspection; owner confirms M3 MacBook Pro/18 GB and Thunderbolt. Exact M3 variant
+initial inspection; owner confirms M3 MacBook Pro/18 GB and Thunderbolt. Follow-up:
+bridge now active, peer ping 4/4 (0.659 ms average), existing SSH port reachable;
+40 Gb/s link reported, bulk transfer unmeasured. Existing settings correct, no
+network change or remote login needed. System Settings shows Unknown state despite
+working bridge. Exact M3 variant
 and second-host performance unconfirmed. Prefer benchmarking
 whole-job offload, then independent-job scheduling; current worker lock and gateway
 admission prohibit simply running two consumers. No deployment, media writes or
 new benchmarks. Unrelated existing app edits left untouched. Next: confirm exact
-M3 variant and active bridge, then time identical cached clips in separate scratch
+M3 variant, then time identical cached clips in separate scratch
 directories. Owner clarification recorded in docs-only follow-up; links/whitespace
 checked, no runtime suite rerun.
 
