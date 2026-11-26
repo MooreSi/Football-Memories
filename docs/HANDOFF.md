@@ -44,11 +44,14 @@ for gateway-first migration/ancestry and normal shared-app rollout sequence.
 Docs-only on `codex/local-video-analytics`. See
 [report](system/domains/video-analytics/two-mac-performance.md). Current worker
 already runs natively on this M4 mini (24 GB). Thunderbolt Bridge inactive at
-inspection; second Mac specification/performance unconfirmed. Prefer benchmarking
+inspection; owner confirms M3 MacBook Pro/18 GB and Thunderbolt. Exact M3 variant
+and second-host performance unconfirmed. Prefer benchmarking
 whole-job offload, then independent-job scheduling; current worker lock and gateway
 admission prohibit simply running two consumers. No deployment, media writes or
-new benchmarks. Unrelated existing app edits left untouched. Next: confirm second
-host and cable, then time identical cached clips in separate scratch directories.
+new benchmarks. Unrelated existing app edits left untouched. Next: confirm exact
+M3 variant and active bridge, then time identical cached clips in separate scratch
+directories. Owner clarification recorded in docs-only follow-up; links/whitespace
+checked, no runtime suite rerun.
 
 ## Spec700 calibration benchmark COMPLETE; admin preview deployed — 25 November2026
 

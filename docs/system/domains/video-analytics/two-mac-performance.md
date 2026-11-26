@@ -14,7 +14,9 @@ with detector and ReID profiles. Analysis already runs on this Mac, outside Dock
 `system_profiler` reports no FireWire device and no connected Thunderbolt device.
 `ifconfig` shows Thunderbolt Bridge and all three member interfaces inactive,
 without a bridge IP address. Thus no usable cable network was visible at inspection;
-the cable type, connection state and second Mac specification remain unconfirmed.
+the connection state was not verified. The owner subsequently confirmed a
+Thunderbolt cable and a MacBook Pro with an M3 chip and 18 GB memory. The exact
+chip variant, macOS and measured analysis performance remain unconfirmed.
 Bonjour briefly advertised a MacBook Pro SSH service over Ethernet/Wi-Fi, which
 does not establish that it is the owner's intended second Mac. A strict, batch-mode
 SSH probe stopped at unknown-host-key verification; no remote command ran and no
@@ -23,8 +25,14 @@ trust setting was changed.
 Apple supports [IP networking between Macs over Thunderbolt](https://support.apple.com/en-ie/guide/mac-help/mchld53dd2f5/27/mac/27).
 A genuine Thunderbolt cable and active Thunderbolt Bridge provide a transfer path;
 they do not combine this application's GPU or memory across hosts. Ordinary USB-C
-cables must not be assumed to provide that Thunderbolt connection. If the connection
-really is legacy FireWire, measure it separately rather than using Thunderbolt rates.
+cables must not be assumed to provide that Thunderbolt connection.
+
+For this pair, keep the M4 mini as the baseline and use the M3 MacBook Pro as a
+candidate for independent jobs. Its 18 GB is a separate memory budget, not an
+addition to the mini's 24 GB. A whole-job move could also free the mini for hosting
+and interactive work, but faster completion depends on stage timings and transfer
+cost. The supplied specifications do not justify ranking the two machines without
+a representative benchmark, especially before confirming the exact M3 variant.
 
 ## Existing performance evidence
 
@@ -76,8 +84,9 @@ about 1 second. These are arithmetic examples, not observed link speeds.
 
 ## Recommended next measurement
 
-1. Confirm the second Mac's model, chip, memory and macOS, and establish which
-   cable/interface is active. No remote trust or login change was made here.
+1. Confirm the MacBook Pro's exact M3 variant and macOS, and establish that the
+   confirmed Thunderbolt cable has an active network interface. No remote trust
+   or login change was made here.
 2. Copy one already archived representative 2–4 minute clip into a new private
    scratch directory on each host. Use identical code revisions, model hashes,
    resolution and sampling; leave existing footage/results untouched.

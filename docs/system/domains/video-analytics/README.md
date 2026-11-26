@@ -3,7 +3,8 @@
 [Two Mac performance investigation](two-mac-performance.md) (26 November 2026):
 current native M4 worker is single-consumer; a second host requires job scheduling
 and result transfer, not just a shared runtime mount. Whole-job offload/batch work
-is the first candidate; second-host performance and cable throughput are unmeasured.
+is the first candidate. Owner confirms M3 MacBook Pro/18 GB and Thunderbolt;
+second-host performance and cable throughput are unmeasured.
 
 The private [worker repository](https://github.com/MooreSi/Football-Video-Analytics)
 owns models, local bounded inference and append-only artifacts. The app owns Video

@@ -45,7 +45,9 @@ Docs-only report: [two Mac performance](../../system/domains/video-analytics/two
 Read worker code, historical detector/atlas trials and gateway admission; inspected
 local hardware/network and LaunchAgent profile flags. M4 mini/24 GB confirmed;
 Thunderbolt Bridge inactive. Strict SSH probe stopped at unknown host key, before
-remote execution. Second host and performance remain unconfirmed. No code/runtime,
+remote execution. Owner follow-up confirms M3 MacBook Pro/18 GB and Thunderbolt;
+exact M3 variant, active cable networking and performance remain unconfirmed.
+Follow-up docs checked for links/whitespace; no code/runtime,
 account, source/result or deployment changes. Docs links and whitespace checked;
 runtime suites not run for this docs-only checkpoint. Existing unrelated app edits
 preserved. Recommendation: benchmark whole-job offload before distributed processing.
