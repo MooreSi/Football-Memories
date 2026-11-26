@@ -217,3 +217,14 @@ owner checks for jobs/reviews/frame sets/artifacts. Granted users use portal rou
 because the edge keeps the admin console LAN-only. Imported sample metadata now
 records owner_id; users never receive operator samples or other users' sample lists.
 Turning off either lab preserves its saved work. See hosting domain for rollout.
+
+Analysed video export (owner request 26 November 2026): `annotated.mp4` is the worker's
+first-pass render (raw detection boxes, burned in before camera tracking, pitch, teams or
+reviews), so it is now labelled "raw detections". Download results also offers Export
+analysed video: the browser plays the clean `sample.mp4` once, paints each frame with
+`overlayAt` (the same per-frame data the player's SVG uses) via `paintOverlay` on a canvas,
+and records it with MediaRecorder (H.264 MP4 where supported, else WebM). Real-time only;
+the tab must stay open and visible (hidden tabs throttle frame callbacks). Nothing is
+uploaded or stored on the server. Gotcha: on macOS a module named `analysedExport.ts`
+beside `AnalysedExport.tsx` made `./AnalysedExport` resolve to the `.ts` file (case-
+insensitive FS, `.ts` tried first), rendering `undefined`; keep such names distinct.

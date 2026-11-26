@@ -13,6 +13,18 @@ Tests red first (helper3, gateway2, UI1); existing picker tests changed only for
 requested rename. NOT verified against real Hudl (owner: one short U11 window) and
 NOT deployed. `hudl_browser/_account.py` is 866 lines (was 851): split is pending.
 
+## Analysed video export — 26 November 2026
+
+Video Lab Download results: annotated.mp4 relabelled "raw detections" (it is the
+worker's pre-tracking box render). New Export analysed video records the clean sample
+in the browser with the player's own overlay (pitch outline, halfway line, team rings,
+ball, your labels, current toggles) via shared `overlayAt` + canvas `paintOverlay` +
+MediaRecorder. Tests red first (module missing; Workspace labels/progress/cancel).
+Real Chrome check on a synthetic 6 s harness clip: 1280x720 H.264 MP4, 5.99 s, frame
+at 3 s shows own/opponent/unassigned rings and caption. Outline/halfway only unit
+tested (harness had no camera tracking); audio track in the recording not inspected.
+Frontend only; not deployed.
+
 ## Spec730 admin execution settings implemented — 26 November 2026
 
 Branch `codex/local-video-analytics`; worker70f44ac and gatewayee2fe28. Advanced

@@ -8,7 +8,8 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { BoundaryPanel } from "../components/videoLab/BoundaryEditor";
 import { boundaryAt } from "../components/videoLab/boundary";
-import { LabVideo } from "../components/videoLab/LabVideo";
+import { indexObservations, LabVideo, overlayAt } from "../components/videoLab/LabVideo";
+import { AnalysedExport } from "../components/videoLab/AnalysedExport";
 import { MomentRail } from "../components/videoLab/MomentRail";
 import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
@@ -133,6 +134,11 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const summary = job.summary;
   // The clean sample sits under the clickable overlay; annotated.mp4 has boxes burned in.
   const clip = has("sample.mp4") ? "sample.mp4" : has("annotated.mp4") ? "annotated.mp4" : null;
+  // The analysed video export paints the same frame as the player, with its current toggles.
+  const overlayIndex = useMemo(() => indexObservations(mergeDense(assignments.data?.observations ?? [], peopleDense)), [assignments.data, peopleDense]);
+  const frameAt = (time: number) => overlayAt({ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080, index: overlayIndex, teams, teamAt: timeline.at, selected: null,
+    showBoxes: boxes && !!assignments.data, everyone, ball, showBall, camera, marks, boundaries, automaticBoundaries }, time);
+  const withoutOutline = (time: number) => { const frame = frameAt(time); return showOutline ? frame : { ...frame, outline: null, halfway: null }; };
   return <>
     <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[250px_minmax(0,1fr)_330px]">
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
@@ -174,7 +180,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           <p className="mt-2 text-sm leading-relaxed text-fg-muted">No confirmed football events are produced automatically. Model suggestions and estimated teams wait for your approval. Tracked people are short stretches, not named players, and may include referees and spectators. Ball proximity does not establish possession.</p>
           <dl className="mt-3 grid grid-cols-4 gap-3 text-sm">{[["Sampled frames", summary.sampled_frames], ["Person detections", summary.person_detections], ["Ball detections", summary.ball_detections], ["Short tracklets", summary.unique_tracklets]].map(([label, value]) => <div key={label}><dt className="text-xs text-fg-muted">{label}</dt><dd className="font-semibold">{Number(value).toLocaleString()}</dd></div>)}</dl>
           <p className="mt-2 text-sm">Ball observed in {(summary.ball_observation_coverage * 100).toFixed(1)}% of sampled frames.</p></details>}
-        <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />Download {name}</a>)}</div></details>
+        <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{has("sample.mp4") && <AnalysedExport src={`${BASE}/jobs/${job.id}/files/sample.mp4`} title={job.match_title ?? "Video Lab"} frameAt={withoutOutline} />}
+          {artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />{name === "annotated.mp4" ? "Download raw detections (annotated.mp4)" : `Download ${name}`}</a>)}</div></details>
       </section>
       <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} teamAt={timeline.at} appearance={appearance.data} at={at} />
     </div>

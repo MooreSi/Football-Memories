@@ -132,3 +132,31 @@ it("while playing through the list, the next moment starts after the current cli
   fireEvent.timeUpdate(video);
   await waitFor(() => expect(played).toHaveBeenLastCalledWith(17));
 });
+
+it("names annotated.mp4 as raw detections and offers the analysed video as seen in the lab", async () => {
+  serve([...FULL, "sample.mp4"]); renderWithProviders(<VideoLabPage />);
+  const downloads = (await screen.findByText("Download results")).closest("details")!;
+  expect(within(downloads).getByRole("link", { name: /raw detections \(annotated\.mp4\)/i })).toHaveAttribute("href", expect.stringMatching(/\/files\/annotated\.mp4$/));
+  expect(within(downloads).queryByRole("link", { name: "Download annotated.mp4" })).toBeNull();
+  // jsdom has no MediaRecorder: the control says why instead of failing silently.
+  expect(within(downloads).getByRole("button", { name: "Export analysed video" })).toBeDisabled();
+  expect(within(downloads).getByText(/cannot record video/i)).toBeInTheDocument();
+});
+
+it("records the analysed video with progress and can be cancelled without saving", async () => {
+  class Recorder { static isTypeSupported = (t: string) => t.startsWith("video/mp4"); state = "inactive"; ondataavailable = null; onstop = null; start() { this.state = "recording"; } stop() { this.state = "inactive"; } }
+  vi.stubGlobal("MediaRecorder", Recorder);
+  const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
+  const had = "captureStream" in proto;
+  proto.captureStream = () => ({ getTracks: () => [], addTrack: () => undefined });
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: () => undefined } as unknown as CanvasRenderingContext2D);
+  try {
+    serve([...FULL, "sample.mp4"]); renderWithProviders(<VideoLabPage />);
+    const downloads = (await screen.findByText("Download results")).closest("details")!;
+    await userEvent.click(within(downloads).getByRole("button", { name: "Export analysed video" }));
+    expect(await within(downloads).findByRole("progressbar", { name: "Recording analysed video" })).toBeInTheDocument();
+    await userEvent.click(within(downloads).getByRole("button", { name: "Cancel export" }));
+    expect(await within(downloads).findByText(/Export cancelled\. Nothing was saved\./)).toBeInTheDocument();
+    expect(within(downloads).getByRole("button", { name: "Export analysed video" })).toBeEnabled();
+  } finally { if (!had) delete proto.captureStream; }
+});
