@@ -1,3 +1,19 @@
+## Apple Core AI benchmarked on both Macs, NOT adopted — 26 November 2026
+
+Owner: macOS updated, "install the dependencies and run performance, accuracy and other
+tests comparing to existing". Both Macs are on 27.2.1 with CoreAI.framework. Scratch venvs only
+(mini scratchpad; MacBook `~/coreai-bench-scratch`, 2.2 GB, safe to delete); nothing in
+repos, models, worker or node changed; nothing deployed. Results:
+docs/system/domains/video-analytics/two-mac-performance.md ("Apple Core AI").
+ReID: Core AI runs the ViT on the GPU (MPSGraph) even when preferring the Neural Engine;
+567-774 ms/64 crops vs Core ML NE 359-379 and MPS 848-1199. Whole appearance stage on six
+games: MPS 938 s, Core ML NE 438 s, Core AI 682 s; Core AI groups identically to Standard
+on 4/6 games (e6e2c61a 0.905, 09b50973 0.977) where Core ML NE changes two games noticeably.
+Detector: Core AI NE about 107-112 ms/frame vs current Core ML 72-76 ms. Keep current
+backends. Open owner question: whether to offer Core AI as a third "accurate and faster
+than Standard" player-matching option (would need a pinned .aimodel, worker path,
+tests). Worker 245 tests + ruff pass on 27.2.1. Requires USE_OS_COREAI=1; no Xcode 27.
+
 ## MacBook status light on the Video Lab page — 26 November 2026
 
 Owner: "on the video lab page top right of the page show a green/red light to show the

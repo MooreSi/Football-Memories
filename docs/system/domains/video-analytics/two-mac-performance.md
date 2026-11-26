@@ -230,3 +230,75 @@ runs a Neural Engine job with `--reid-coreml-config` (a ReID config holding the
 only when it is not standard; the MacBook node needs `reid_coreml_config` in its
 profile. `node-status.json` lists `reid_backends` / `remote_reid_backends`; the
 gateway offers the Neural Engine only where the job would run.
+
+## Apple Core AI on macOS 27.2.1 (measured 26 November 2026)
+
+Both Macs now run macOS 27.2.1 with `CoreAI.framework`. Scratch-only test: nothing
+in either repo, the models folders, the worker or the MacBook node changed; nothing
+deployed. Python stack in separate scratch venvs on each Mac: `coreai-torch` 0.4.4
+(converter), `coreai-core` 1.0.0 (runtime), ultralytics 8.4.219 for the detector
+export, and the worker's exact torch 2.11.0 / torchvision 0.26.0 / numpy 2.5.5 /
+coremltools 9.0 / opencv-headless 4.14.0.94. Both Macs were busy with post-update
+indexing (Docker VM, Time Machine, photolibraryd) during the runs.
+
+Gotchas: the runtime only uses the OS framework (and only then accepts compute-unit
+preferences) with `USE_OS_COREAI=1`; otherwise it uses its in-package copy.
+`coreai-build` (AOT compile) ships with Xcode 27; Xcode 26.4.1 is installed, so models
+specialise on first load (about 1 s, cached under `~/Library/Caches/coreai-cache`).
+Core AI has no strict compute-unit pinning, only a preferred unit. The detector
+export has no embedded NMS (host NMS needed). Installing ultralytics pulls
+opencv-python 5.x, which shadows the headless 4.14 build and breaks `teams.py`
+(`HoughLinesP` result shape); pin OpenCV to the worker lock.
+
+**ReID ViT-B/16, FP16, model only, 512 real crops, ms per 64 crops (median):**
+
+| Backend | M4 mini | M3 Pro |
+| --- | --- | --- |
+| PyTorch MPS (Standard) | 1199 | 848 |
+| Core ML b16 `CPU_AND_NE` (Neural Engine option) | 379 | 359 |
+| Core AI b16, prefer Neural Engine | 931 | 690 |
+| Core AI b64, prefer Neural Engine | 774 | 567 |
+| Core AI b64, prefer GPU | 821 | 566 |
+| Core AI b16 FP32, prefer Neural Engine | 1335 | - |
+
+Core AI does not put this ViT on the Neural Engine: its profiler shows the whole
+function running through MPSGraph, and the M3 Pro gives identical times for the
+Neural Engine and GPU preferences. Accuracy against FP32 CPU: Core AI cosine >= 0.99999,
+pairwise similarity diff <= 0.0008; Core ML NE min cosine 0.99986, pair diff <= 0.0094.
+
+**Whole `prepare_review` on the six cached games (mini, same session):**
+
+| Game | Tracks | MPS s | Core ML NE s | ARI vs MPS | Core AI b64 s | ARI vs MPS |
+| --- | --- | --- | --- | --- | --- | --- |
+| 03964514 | 1100 | 98.6 | 41.1 | 0.996 | 71.8 | 1.000 |
+| e6e2c61a | 618 | 69.7 | 29.6 | 0.685 | 50.9 | 0.905 |
+| f2bb7aac | 5175 | 240.5 | 90.9 | 0.996 | 165.3 | 1.000 |
+| 09b50973 | 2106 | 249.9 | 154.8 | 0.983 | 193.9 | 0.977 |
+| c880cae0 | 2199 | 190.5 | 87.2 | 0.896 | 139.4 | 1.000 |
+| cbd21303 | 973 | 88.8 | 34.1 | 0.975 | 61.2 | 1.000 |
+| Total | | 938 | 438 | | 682 | |
+
+Core ML NE reproduced its earlier ARI values exactly. Core AI is 1.4x faster than
+MPS (Core ML NE 2.1x) and matches the Standard grouping exactly on 4 of 6 games,
+including c880cae0; e6e2c61a still changes (0.905, against Core ML's 0.685).
+Earlier MPS-vs-MPS control on e6e2c61a and c880cae0 gave 1.0.
+
+**Detector YOLO11l 1920x1088 FP16, 59 frames from 3 games, ms per frame (median):**
+
+| Backend | M4 mini | M3 Pro |
+| --- | --- | --- |
+| Core ML `ALL`, embedded NMS (current) | 72-76 | 72 |
+| Core AI prefer Neural Engine, host NMS | 109-112 (model 91) | 107 (model 89) |
+| Core AI prefer GPU | 206-239 | 156 |
+| PyTorch CPU FP32, host NMS (reference) | 1366 | - |
+
+The detector does reach the Neural Engine under Core AI (half the GPU time) but
+stays about 1.2x slower in the model alone, plus about 20 ms of host NMS.
+Against FP32 PyTorch with the same host NMS, Core AI NE person recall/precision
+0.993/0.983; the current Core ML 0.997/0.959 (its embedded NMS keeps about 4% more
+boxes). No ground truth; these are agreement figures.
+
+**Verdict:** keep the current backends. Core AI is slower than Core ML on the Neural
+Engine for both models on both Macs. Its one advantage is ReID fidelity: as a
+GPU-only option it would be a 1.4x faster Standard that groups almost identically.
+Owner decision recorded in the handoff. Worker suite (245) and ruff pass on 27.2.1.
