@@ -1,6 +1,6 @@
 # 780: Finished analysis runs archived on the MacBook share
 
-**Status:** Draft
+**Status:** Building (code deployed 27 Nov; first move waits for eligible runs and the owner)
 **Sensitive:** no account surface. Moves analysis outputs (not footage library files); the
 mover deletes the local copy only after a verified copy exists. Owner approves the first move.
 
@@ -57,8 +57,23 @@ under disk pressure (owner chose finished runs only, not overflow); Time Machine
 ## Real-account check
 None needed (no Hudl or Veo access).
 
-## Verification (filled in when shipped)
-- [ ] suite green: app, gateway, worker
-- [ ] no credential, cookie or token written to the repo, a log or a fixture
-- [ ] nothing on Hudl modified; no existing library file deleted or overwritten
+## As built (27 Nov 2026), where it differs from the plan above
+- Mount point is `~/Football-Analytics-Share` on the mini (always exists), not `/Volumes/...`:
+  Docker refuses to start a container whose bind source is missing (checked), which would take
+  the gateway down. Mounted by NetFS from Finder's Keychain entry (`mount_smbfs -N` cannot read
+  it); LaunchAgent `com.footballmemories.analytics-share` retries every 60 s (worker repo
+  `tools/share-mount`). Whether NetFS's soft-mount option took effect is not visible; unverified.
+- The share root carries `.football-analytics-store`; the mover refuses a folder without it, so
+  an empty mount point is never mistaken for the share.
+- The gateway probes the archive in a thread (2 s) and remembers "away" for 15 s, so a sleeping
+  MacBook cannot hang the run list.
+- Video Lab shows the gateway's 409 message (other 409s too, e.g. "metadata not ready").
+
+## Verification
+- [x] suites green: gateway 534 (+7 new), worker 320 + 13 new, app frontend 1112 (deploy tree 1103)
+- [x] no credential written anywhere (password only in the mini's login Keychain)
+- [x] nothing on Hudl touched; no run moved yet (dry run: 0 eligible, oldest run 3.4 days)
+- [x] deployed: worker 1a1f0b5 both Macs (digest 0af697e7...), gateway archive-a2625ad, admin
+      app 01e4cb5; exactly the expected containers changed; health 200
+- [ ] away MacBook checked for real (sleep it, open an archived run): needs an archived run
 - [ ] first move reviewed by the owner: runs, bytes freed, an archived review opened

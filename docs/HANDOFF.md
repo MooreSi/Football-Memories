@@ -1,3 +1,27 @@
+## Finished analysis runs archive to the MacBook share; DEPLOYED (no run moved yet) — 27 November 2026
+
+Owner: "map a shared drive from the MacBook" for video analytics storage, then chose "finished
+runs only" and "set it up over SSH" (the sudo share step and File Sharing were done by the owner:
+the agent cannot type passwords and the node SSH key has no PTY). Spec 780 (docs/todo/
+football-memories/780-...md) has the as-built notes. Share `Football-Analytics-Store` on the
+MacBook, mounted on the mini at `~/Football-Analytics-Share` by NetFS + LaunchAgent
+`com.footballmemories.analytics-share`. Code: worker codex/analytics-archive 1a1f0b5 (mover
+`archive-runs`, `--archive-root`), gateway codex/analytics-archive a2625ad (archive lookup,
+bounded probe, overlay), app dad8d34 (409 message). Tests red first in all three; two existing
+worker node tests caught my first node-call change (code fixed); one of my new worker tests was
+fixed before it ever passed (hook never fired), then a mutation check proved it.
+DEPLOYED: worker 1a1f0b5 on both Macs (mini coordinator checkout + LaunchAgent
+`--archive-root`, backup runtime/launchagent-before-archive.plist; MacBook src copy, backup
+src.f5e55f3-before-archive; digests equal 0af697e7..., heartbeat local+remote ready). Gateway
+image archive-a2625ad via compose.yaml + public + analytics + ~/fm-archive-gateway/
+compose.analytics-archive.yaml + ~/fm-archive-gateway/images-archive.yaml (KEEP that worktree:
+the container's config_files label points there), FM_ANALYTICS_ARCHIVE=~/Football-Analytics-Share;
+only the gateway changed, origin right, portal health 200, it can write the share. Admin app
+01e4cb5 (= 17bda1d + dad8d34, branch codex/analytics-archive-deploy), exactly 3 containers.
+NOT done: no run moved. Dry run: 0 of 62 eligible (oldest finished 3.4 days ago; 7-day rule).
+First real move (`--apply`) waits for the owner's review, then check an archived run opens and,
+with the MacBook asleep, says "stored on the MacBook".
+
 ## Hudl analysis windows failed to encode; FIXED and DEPLOYED to admin — 27 November 2026
 
 Owner: "fix this issue" (Video Lab, 261108 U11 v Stoke: "The analysis clip could not be encoded;

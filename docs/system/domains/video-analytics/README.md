@@ -366,3 +366,15 @@ there or it is silently dropped on save.
 - Validation: `frontend/scripts/lab-run-summary.mjs` (what the lab shows per run) and the
   worker's lighting benchmark with assistant audits (`runtime/overnight-pre-v1`, splits: eagles
   development, rmc withheld).
+
+## Finished runs archived on the MacBook share (spec 780, 27 November 2026)
+
+- `worker archive-runs RUNTIME ~/Football-Analytics-Share [--days 7] [--apply]` (dry run by
+  default) moves finished run families verified by SHA-256 and leaves `runtime/archived/<id>.json`.
+  The gateway (`FM_GW_ANALYTICS_ARCHIVE_DIR`, overlay `compose.analytics-archive.yaml`) and the
+  worker (`--archive-root`) read a recorded run from the archive; the runtime always wins.
+- Gotchas found: Docker will not start a container whose bind source is missing (an unmounted
+  `/Volumes/<share>` gives "mkdir ... permission denied"), so the share is mounted onto a local
+  folder. `mount_smbfs -N` cannot use Finder's Keychain entry; NetFS can. Docker's VM keeps
+  handles on files containers touched, so the mount reports busy and deleted files linger as
+  `.smbdelete*` until released: use `diskutil unmount force` only with the gateway stopped.
