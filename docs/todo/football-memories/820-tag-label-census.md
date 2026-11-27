@@ -1,6 +1,6 @@
 # 820: Tag label census (do Hudl's tags carry pass outcomes?)
 
-**Status:** Built (app branch; helper not restarted, census not yet taken)
+**Status:** Census taken 27 Nov 2026: no outcome labels (see connectors domain README)
 **Sensitive:** yes (Hudl tag parsing and the tag cache). No new Hudl request: the census reads the
 payloads the normal tag indexing already receives.
 

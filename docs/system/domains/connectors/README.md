@@ -873,6 +873,10 @@ receive previously discarded labels on their next normal read.
 - Free-text tag values do occur (tests plant a URL token in a "Private note"). `safe_label` keeps
   only short plain labels; anything else leaves its group name. Values equal to a match code
   (player names) are dropped.
+- Census result (27 Nov 2026, 3 matches with action tags): Individual action values are DEF 1V1,
+  DRIBBLING & RWTB, DEFENSIVE ACTION, PASSING, ATT 1V1, RECEIVING, BALL PROTECTION AND TURNING,
+  FINISHING, CROSSING, REGAIN. No outcome labels exist: pass success/lost cannot come from Hudl
+  tags. HUDL ID values are bare sequence numbers (noise).
 - Only matches without `tag_status` are re-indexed; to re-read one, drop that key from its cache
   file and Refresh Hudl. The helper runs from the shared checkout's working tree.
 

@@ -8,7 +8,14 @@ Owner: "Yes, build it" (the read-only label count after the pass investigation).
   "261011 U10s v Man United (H) - Pitch One" (VmlkZW82YWNiYzMxYjMyNGQyNTUzZjU3NTk0MjQ=) made due:
   `tag_status` dropped, 1735 moments kept, original file backed up in the session scratchpad.
   11 unavailable matches are also due (weekly retry), so a Refresh re-reads 12.
-- Waiting on the owner: Refresh Hudl in the app. Then read that match's `label_counts`.
+- Census taken 27 Nov (owner's local Refresh). The marked match has no action tags (counts empty);
+  three other re-read matches do: Ipswich Town and Cambridge United (12 Jul), Notts County (13 Jun).
+  INDIVIDUAL ACTION values: DEF 1V1, DRIBBLING & RWTB, DEFENSIVE ACTION, PASSING, ATT 1V1,
+  RECEIVING, BALL PROTECTION AND TURNING, FINISHING, CROSSING, REGAIN. No outcome label anywhere
+  (no successful/unsuccessful/won/lost group). Only other group: HUDL ID with one-off numbers
+  (noise; the 300 cap holds it). Unused by the app today: DRIBBLING & RWTB, DEFENSIVE ACTION,
+  RECEIVING, BALL PROTECTION AND TURNING, FINISHING. PASSING labels 274 vs 59 cached `passes`
+  (Ipswich): actions are kept only on single-code moments, so most labels may be dropped. Unverified.
 Verification: backend 875 pass (5 new), ruff, format, mypy, in a scratch worktree of HEAD + these
 files only (another session's uncommitted test-fixture move was breaking the shared checkout's suite
 at the time). Postgres run skipped: no database change. Frontend unchanged, not run.
