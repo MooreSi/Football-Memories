@@ -1,57 +1,15 @@
 """Owner request 2026-11-10: export selected moments without downloading the whole match."""
 
 import re
-import subprocess
 import zipfile
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.connectors import hudl_exports
 from app.connectors.hudl_browser import BrowserConnection
 from app.connectors.hudl_exports import export_from_segments
 from app.services.media import probe
-
-
-@pytest.fixture(scope="module")
-def hls(tmp_path_factory, tiny_video):
-    """A 4 s video split into 1 s segments, shaped like the helper's local playlist."""
-    folder = tmp_path_factory.mktemp("hls")
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-i",
-            str(tiny_video),
-            "-c:v",
-            "libx264",
-            "-g",
-            "25",
-            "-keyint_min",
-            "25",
-            "-sc_threshold",
-            "0",
-            "-c:a",
-            "aac",
-            "-f",
-            "hls",
-            "-hls_time",
-            "1",
-            "-hls_playlist_type",
-            "vod",
-            str(folder / "src.m3u8"),
-        ],
-        check=True,
-    )
-    lines, segments = [], []
-    for line in (folder / "src.m3u8").read_text().splitlines():
-        if line and not line.startswith("#"):
-            lines.append(f"asset-{len(segments)}.bin")
-            segments.append((folder / line).read_bytes())
-        else:
-            lines.append(line)
-    return "\n".join(lines) + "\n", segments
 
 
 def test_only_segments_covering_the_moments_are_fetched(hls, tmp_path):
@@ -133,3 +91,41 @@ def test_clips_use_the_open_stream_and_keep_it_playing(tmp_path, hls):
     assert status["filename"].startswith("moments/hudl-moments-")  # spec 190 folder
     assert status["stream_url"].endswith("/stream/s1/playlist.m3u8")
     connection._executor.shutdown()
+
+
+def test_a_moment_mid_match_on_a_fragmented_mp4_stream_keeps_its_full_length(fmp4, tmp_path):
+    """Owner report 2026-11-27: every highlight reel stopped with "MediaError in media.py:60".
+    Hudl serves fMP4. Input-side -ss on a mini playlist that starts mid-match is taken
+    as an absolute time, so the cut landed before the first segment and came out short,
+    or with no frames at all once the moment was a segment or more into the match."""
+    playlist, segments = fmp4
+    moments = [
+        {"id": "a", "category": "SAM", "time_s": 2.6, "duration_s": 1.2},
+        {"id": "b", "category": "SAM", "time_s": 1.5, "duration_s": 1.0},
+    ]
+    result = export_from_segments(playlist, lambda i: segments[i], moments, tmp_path)
+    with zipfile.ZipFile(result) as archive:
+        archive.extractall(tmp_path / "out")
+    assert abs(probe(tmp_path / "out" / "moment-0001.mp4").duration_s - 1.0) < 0.15
+    assert abs(probe(tmp_path / "out" / "moment-0002.mp4").duration_s - 1.2) < 0.15
+
+
+def test_the_cut_seeks_on_the_output_side_of_a_mini_playlist(fmp4, tmp_path):
+    """Owner report 2026-11-27: ffmpeg 7.1 (the capture image) reads an input-side -ss on
+    a mini playlist that starts mid-match as an absolute time; with Hudl's segment lengths
+    every clip had no frames. ffmpeg 8 (this Mac) reads it relative, so the length check
+    above passes here either way: this pins where the seek goes."""
+    playlist, segments = fmp4
+    calls = []
+    real = hudl_exports._ffmpeg
+
+    def spy(arguments, *rest, **kwargs):
+        calls.append(arguments)
+        return real(arguments, *rest, **kwargs)
+
+    moments = [{"id": "a", "category": "SAM", "time_s": 2.6, "duration_s": 1.2}]
+    with patch.object(hudl_exports, "_ffmpeg", side_effect=spy):
+        export_from_segments(playlist, lambda i: segments[i], moments, tmp_path)
+    cut = next(a for a in calls if any(str(x).endswith(".m3u8") for x in a))
+    assert cut.index("-ss") > cut.index("-i")
+    assert float(cut[cut.index("-ss") + 1]) == pytest.approx(0.6)

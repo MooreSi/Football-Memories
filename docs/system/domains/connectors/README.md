@@ -196,7 +196,14 @@ never call load on an hls.js MediaSource, which would detach it.
 - `export_from_segments` takes the helper's local media playlist (asset-N.bin
   lines) and a fetch-by-index callback. It writes a mini playlist per moment
   (header tags, active EXT-X-MAP, covering segments) and encodes with
-  `-ss (moment start - first segment start)`.
+  `-ss (moment start - first segment start)`, placed after `-i` (output side).
+- 27 November 2026 (owner: every highlight reel stopped with "MediaError in
+  media.py:60"): an input-side `-ss` on a mini playlist that starts mid-match is
+  read as an absolute time by ffmpeg 7.1.5 (the Debian capture image) but as
+  relative by ffmpeg 8.0.1 (Homebrew on the Mac). On 7.1 with 6 s segments every
+  clip had no frames; with 1 s segments clips came out short. The Mac suite can't
+  show it: `test_the_cut_seeks_on_the_output_side_of_a_mini_playlist` pins the
+  argument order. Test ffmpeg behaviour on the deployed image, not only the Mac.
 - The fetch callback is `BrowserConnection.resource`, which queues on the
   single Playwright worker, so the encode runs on its own thread; the clips
   action decrements `_pending` from that thread (`handed_off`).
