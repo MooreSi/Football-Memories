@@ -13,7 +13,7 @@ Verification: backend 875 pass (5 new), ruff, format, mypy, in a scratch worktre
 files only (another session's uncommitted test-fixture move was breaking the shared checkout's suite
 at the time). Postgres run skipped: no database change. Frontend unchanged, not run.
 
-## Highlight reels failed on every run: moment cut seeked before the playlist; FIXED (27 November 2026)
+## Highlight reels failed on every run: moment cut seeked before the playlist; FIXED, DEPLOYED to admin (27 November 2026)
 
 Owner: "keep getting issues when trying to create a highlight reel, this is the 3rd or 4th time"
 (Arian Hossaini, 53 moments, 1 match: "The batch stopped (MediaError in media.py:60)").
@@ -29,6 +29,11 @@ Owner: "keep getting issues when trying to create a highlight reel, this is the 
 Verification: backend 877 passed SQLite and Postgres, alembic no drift, mypy clean, ruff clean
 except S105 in the other session's untracked `test_hudl_label_census.py`. Frontend unchanged.
 Not run against the real Hudl account.
+DEPLOYED to the admin library only (owner: "Yes, deploy admin"): `codex/reel-seek-deploy` = admin's
+live 5755a12 + the fix (584c895, 872 pass), built FM_BUILD_LATEST=0, added to status.json `built`
+(`latest` stays 4152fff), `_move` admin after re-reading its live image; capture idle (no ffmpeg,
+inbound flat). Exactly its 3 containers changed, health ok, served capture has the output-side seek.
+Other families still have the bug until it reaches main.
 
 ## Training tab DEPLOYED: worker both Macs, gateway, admin library; 1200 crops ready to label (27 November 2026)
 
