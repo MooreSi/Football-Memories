@@ -253,6 +253,14 @@ U10 v Stoke City reads 12-9.
   (the rest rest on one kick in the whole match) and fills blank periods in 38 more,
   without changing any spell or conceded goal the per-period rule already assigned.
   Being near a kick without leading it never counts.
+- Shot-on-target votes (2026-11-27, owner: the same match's second keeper, never at one of
+  our kicks): the one player whose tag starts 11-14 s after an opposition ON TARGET tag starts
+  votes as keeper (two or more in the window: no vote). Measured on 197 cached matches whose
+  kicks name the keeper, 687 shots: alone in that window the keeper 284 times, another player
+  26; the keeper's start peaks at 12-13 s (268 of ~690 tags), any shot length. Effect on the
+  cache: 270 unchanged, 21 gain or fill periods, 4 change keeper (each from a player named
+  in 1-2 games to a regular keeper named in 12-44), 1 loses a period to a tie (a wrong shot
+  vote against one kick), conceded goals with a keeper 772 -> 802 of 1000.
   A closing END HALF whose window ends with the recording opens no new period.
   Otherwise empty periods remain gaps; do not extend the previous keeper.
 - Conceded goals use estimated ball-in time, not the padded clip start. An owner

@@ -255,6 +255,38 @@ describe("keeper attribution across periods", () => {
     // The quarter with no kick and the quarter led once by someone else stay unknown.
     expect(result.goals.map(g => g.keeper)).toEqual(["Sam Gloves", null, null]);
   });
+  // Owner report 2026-11-27, same match: two keepers alternating by quarter, the second
+  // never tagged at one of our goal kicks but tagged at every shot on target they faced.
+  // Measured on the cached tags (197 matches whose kicks name the keeper): the keeper's
+  // tag starts 11-14 s into the opposition's on-target tag; alone in that window it is
+  // the keeper 284 times, another player 26.
+  const shot = (id: string, at: number, keeper: string, others: [string, number][] = []) => [
+    t(`shot-${id}`, "OPPOSITION ON TARGET", at, 25), t(`saver-${id}`, keeper, at + 12.5, 15),
+    ...others.map(([name, lead], i) => t(`def-${id}-${i}`, name, at + lead, 15)),
+  ];
+  it("finds a keeper from the opposition's shots on target, alternating by quarter", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), ...shot("a", 500, "Sam Gloves", [["Ali Demo", 8]]),
+      t("h1", "END HALF", 1200),
+      ...shot("b", 1500, "Jo Palms", [["Ali Demo", 5]]), ...shot("c", 1800, "Jo Palms", [["Ben Stone", -10]]),
+      t("h2", "END HALF", 2400),
+      ...kick("c", 2600, "Sam Gloves"), ...shot("d", 3000, "Sam Gloves"),
+      t("h3", "END HALF", 3600),
+      ...kick("d", 3800, "Ben Stone", 2), t("late-d", "Jo Palms", 3783, 29),
+      ...shot("e", 4000, "Jo Palms", [["Ben Stone", 10]]), ...shot("f", 4300, "Jo Palms", [["Ali Demo", -3]]),
+      ...[1500, 1800, 4300].map((at, i) => t(`goal-${i}`, "OPPOSITION GOAL", at, 25)),
+    ] }, CLUB);
+    expect(result.spells.map(s => [s.name, s.from_s, s.to_s])).toEqual([
+      ["Sam Gloves", 0, 1200], ["Jo Palms", 1200, 2400], ["Sam Gloves", 2400, 3600], ["Jo Palms", 3600, null],
+    ]);
+    expect(result.goals.map(g => g.keeper)).toEqual(["Jo Palms", "Jo Palms", "Jo Palms"]);
+  });
+  it("takes no shot evidence when two players' tags start in the keeper's window", () => {
+    const result = matchGoals({ moments: [
+      ...shot("a", 100, "Sam Gloves", [["Ali Demo", 13]]), ...shot("b", 400, "Sam Gloves", [["Ali Demo", 12]]),
+    ] }, CLUB);
+    expect(result.spells).toEqual([]);
+  });
   it("does not accept a teammate who is near two kicks but never the likeliest", () => {
     const result = matchGoals({ moments: [
       ...kick("a", 100, "Sam Gloves"), t("near-a", "Ali Demo", 98, 15),

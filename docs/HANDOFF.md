@@ -1,3 +1,17 @@
+## Second keeper found from the opposition's shots on target; RELEASING (27 November 2026)
+
+Owner: "still not right ... before you had accurately calculated the other goalkeeper was lawson moore,
+don't hard code this" (261101 U11s v West Brom (A)). Findings: no version of the code ever named Lawson
+Moore for this match (6855cbe, b7ed9e6, 4c6c034: Henry all match; 70bbc49: nobody); he is named in the
+22 Nov West Brom Games 2 and 3. No saved goals entry has ever existed on admin. But the tags show the
+rotation: Henry tagged at every opposition shot on target in Q1/Q3, Lawson at every one in Q2/Q4
+(all 7 goals). Inference only ever used our goal kicks (Lawson led none).
+- Fix (`goals.ts`): opposition ON TARGET tags vote for the one player whose tag starts 11-14 s in
+  (measured, see interface README). This match now: Henry Q1+Q3 (2 conceded), Lawson Q2+Q4 (5).
+- Cache effect: 270 same, 21 gain/fill, 4 change keeper (rare name -> regular keeper), 1 loses a
+  period to a tie (U10s v Nottingham Forest (A) Pitch Two, Q4 now unknown, was Seb Smith).
+Verification: frontend 1241 pass (2 new: shot test red first; two-in-window guard), typecheck, build.
+
 ## Keepers named again in quarters with one goal kick each; RELEASED to all libraries, admin at parity (27 November 2026)
 
 Owner: "why on the west brom game doesn't it recognise the goalkeeper? it did before ... has this
