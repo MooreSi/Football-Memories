@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from app.connectors.hudl_companion import create_companion
 from app.connectors.hudl_posters import poster_from_playlist
 from app.services.media import probe
-from tests.connectors.test_hudl_segment_exports import hls  # noqa: F401 (fixture)
 
 ORIGIN = {"Origin": "http://127.0.0.1:8765"}
 

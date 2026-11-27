@@ -1,3 +1,20 @@
+## Highlight reels failed on every run: moment cut seeked before the playlist; FIXED (27 November 2026)
+
+Owner: "keep getting issues when trying to create a highlight reel, this is the 3rd or 4th time"
+(Arian Hossaini, 53 moments, 1 match: "The batch stopped (MediaError in media.py:60)").
+- Cause: `hudl_exports._encode` put `-ss` before `-i` on the per-moment mini playlist. ffmpeg
+  7.1.5 in the capture image reads that as an absolute time, so with Hudl-length segments every
+  clip had no frames and the first probe raised. ffmpeg 8.0.1 on the Mac reads it relative, which
+  is why the suite stayed green. Reproduced on the deployed image (cd7c4d0) with a synthetic fMP4
+  stream, 6 s segments: the exact MediaError; with 1 s segments clips 0.5-0.8 s instead of 1.2 s.
+- Fix: output-side `-ss` for HLS sources (whole-file exports keep input-side). Same image with the
+  fixed file: 1.22 s clips at 1.5 s, 8 s and 16.5 s. New tests: fMP4 mid-match length, and the
+  seek placement (red before the fix; the length test passes on Mac ffmpeg either way).
+  `hls`/`fmp4` stream fixtures moved to `tests/connectors/conftest.py`.
+Verification: backend 877 passed SQLite and Postgres, alembic no drift, mypy clean, ruff clean
+except S105 in the other session's untracked `test_hudl_label_census.py`. Frontend unchanged.
+Not run against the real Hudl account.
+
 ## Training tab DEPLOYED: worker both Macs, gateway, admin library; 1200 crops ready to label (27 November 2026)
 
 Owner: "Yes, deploy it" (spec 790). Done while idle (no job queued/running, no MacBook task, every

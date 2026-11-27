@@ -2,18 +2,15 @@
 
 import hashlib
 import re
-import subprocess
 import time
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.connectors.hudl_browser import BrowserConnection
 from app.connectors.hudl_companion import create_companion
 from app.services.media import probe
-from tests.connectors.test_hudl_segment_exports import hls as hls  # noqa: F401
 
 APP = {"Origin": "http://127.0.0.1:8765"}
 
@@ -138,55 +135,6 @@ def test_companion_accepts_the_action_and_serves_only_ticket_files(tmp_path):
         assert client.get(f"/analysis/{'a' * 32}/video", headers=APP).content == b"synthetic"
         assert client.get("/analysis/not-a-ticket/video", headers=APP).status_code == 404
         assert client.get(f"/analysis/{'b' * 32}/info", headers=APP).status_code == 404
-
-
-@pytest.fixture(scope="module")
-def fmp4(tmp_path_factory, tiny_video):
-    """The same 4 s video as fragmented MP4: its init segment is its own asset (#EXT-X-MAP)."""
-    folder = tmp_path_factory.mktemp("fmp4")
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-i",
-            str(tiny_video),
-            "-c:v",
-            "libx264",
-            "-g",
-            "25",
-            "-keyint_min",
-            "25",
-            "-sc_threshold",
-            "0",
-            "-c:a",
-            "aac",
-            "-f",
-            "hls",
-            "-hls_time",
-            "1",
-            "-hls_playlist_type",
-            "vod",
-            "-hls_segment_type",
-            "fmp4",
-            str(folder / "src.m3u8"),
-        ],
-        check=True,
-    )
-    lines, segments = [], []
-    for line in (folder / "src.m3u8").read_text().splitlines():
-        if line.startswith("#EXT-X-MAP:"):
-            uri = line.split('URI="', 1)[1].split('"', 1)[0]
-            lines.append(f'#EXT-X-MAP:URI="asset-{len(segments)}.bin"')
-            segments.append((folder / uri).read_bytes())
-        elif line and not line.startswith("#"):
-            lines.append(f"asset-{len(segments)}.bin")
-            segments.append((folder / line).read_bytes())
-        else:
-            lines.append(line)
-    assert lines.count('#EXT-X-MAP:URI="asset-0.bin"') == 1
-    return "\n".join(lines) + "\n", segments
 
 
 def test_analysis_window_fetches_the_init_segment_of_a_fragmented_mp4_stream(tmp_path, fmp4):
