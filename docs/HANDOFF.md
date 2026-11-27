@@ -1,3 +1,23 @@
+## Released to every library: codex/local-video-analytics merged into main (27 November 2026)
+
+Owner: "Yes, release it". Merged PRs (merge commits, branches kept because live runs from them):
+- App MooreSi/Football-Memories#1 -> main 62bb55f (106 commits: Video Lab, Hudl analysis encode,
+  match/player pages, Library, reel themes). main's 8c31cdb and a0befe8 were cherry-picks of
+  b2598ae/ab3fb8f already on the branch; merge ffb56b6 took the branch side, tree unchanged.
+  Frontend 1151, backend 870 SQLite + 870 Postgres, ruff, mypy, typecheck, build green.
+- Gateway MooreSi/football-memories-frontend#2 -> main 772daf9 (CPU uncap, admin console, archive).
+- Worker MooreSi/Football-Video-Analytics#1 -> codex/local-pipeline bb93018 (every core, archive,
+  shirt numbers, speed-ups). Neither of these two feeds anything automatically.
+
+Rollout: 7 of 8 accounts (all families) have "Update automatically" on, so the updater's build of
+main moves them within ~10 minutes. Before the release every family library ran a0befe8 (the
+rollback point); admin runs 8d018dc and is not auto-updated. No family capture was active.
+
+Updater bug found: `github_json` reads at most 200,000 bytes of /commits/main, which includes
+every file's patch. The 149-file merge overflowed it ("GitHub could not be read" twice). This
+docs-only commit puts a small commit on top of main so the hourly build can read it; the updater
+itself still needs a fix (ask for the SHA only, e.g. Accept application/vnd.github.sha).
+
 ## Stoke follow-up: team labels shown, pitch from the goals, detector zoom, where a run ran; DEPLOYED (27 November 2026)
 
 Owner (goal, 261108 U11 v Stoke, run 5b0125cf + pitch rebuild 33e876a2): the pitch outline was

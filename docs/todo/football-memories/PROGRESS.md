@@ -76,6 +76,10 @@ dark-team rule is untested on the benchmark (no match there has a dark team kit 
 Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);
 gateway 538 pass, ruff, format, mypy; worker 331 pass, ruff, format, project checks.
 
+## Released to every library: working branch merged into main (27 November 2026)
+
+App main 62bb55f, gateway main 772daf9, worker codex/local-pipeline bb93018. Families auto-update from a0befe8. Updater 200 KB read limit broke on the 149-file merge; see HANDOFF.
+
 ## Video Lab encode progress, source-sized clip, all CPU on both Macs and hosted (27 November 2026)
 
 Owner report: "Preparing analysis clip / Encoding the analysis window" sat ten minutes with
