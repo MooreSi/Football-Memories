@@ -32,7 +32,7 @@ import { isShirtCandidates, shirtNumbers } from "../components/videoLab/shirtNum
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { rememberKits } from "../components/videoLab/kits";
-import { automaticBoundariesFor, labBall, labCamera, labKits, labOffPitch, labPanorama, labRows, labTimeline } from "../components/videoLab/decisions";
+import { automaticBoundariesFor, labAnalytics, labBall, labCamera, labKits, labOffPitch, labPanorama, labRows, labTimeline } from "../components/videoLab/decisions";
 import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } from "../components/videoLab/useLabData";
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
@@ -116,7 +116,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);
   const ball = useMemo(() => labBall(dense.data, detections.data, assignments.data, camera), [dense.data, detections.data, assignments.data, camera]);
   const [showBall, setShowBall] = useState(true);
-  const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
+  // Pitch analytics tags: Hudl-style tags read off the live 2D pitch, beside (never instead of) Hudl's and Veo's.
+  const analytics = useMemo(() => labAnalytics({ rows: allRows, camera, marks, size: review?.pitch_size, ball, frame: { w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }, timeline }),
+    [allRows, camera, marks, review?.pitch_size, ball, assignments.data, timeline]);
+  const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams, analytics }), [veo.data, suggestions.data, review, teams, analytics]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
   const current = cursor !== null ? visible[cursor] ?? null : visible.find(m => Math.abs(m.time - at) <= LEAD) ?? null;
   const playAt = useCallback((index: number) => {
@@ -138,7 +141,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
       if (e.key === " ") { e.preventDefault(); if (video.current?.paused) void video.current.play()?.catch(() => undefined); else video.current?.pause(); }
       else if (e.key === "n") step(1);
       else if (e.key === "p") step(-1);
-      else if (current && current.source !== "veo" && ["1", "2", "r"].includes(e.key)) update(r => decide(r, current, e.key === "1" ? "own" : e.key === "2" ? "opponent" : "reject"));
+      else if (current && current.source !== "veo" && current.source !== "analytics" && ["1", "2", "r"].includes(e.key)) update(r => decide(r, current, e.key === "1" ? "own" : e.key === "2" ? "opponent" : "reject"));
     }
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -174,7 +177,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
         {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
-        {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
+        {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} analytics={analytics} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {summary && <RanPlacement summary={summary} />}
         {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} rememberedKits={remembered} />}
         {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={pitchData} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}

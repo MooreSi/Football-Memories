@@ -27,14 +27,15 @@ function MomentCard({ moment, update }: { moment: Moment | null; update: Change 
   const [type, setType] = useState<ActionType | "">("");
   if (!moment) return <section className={card} aria-label="Current moment"><h2 className="font-semibold">Current moment</h2><p className="text-sm text-fg-muted">Pick a moment on the left, or press N for the next one. Its clip plays from a few seconds before.</p></section>;
   const chosen = type || asAction(moment.type);
-  const editable = moment.source !== "veo";
+  const editable = moment.source !== "veo" && moment.source !== "analytics";
   return <section className={card} aria-label="Current moment">
     <div className="flex items-baseline justify-between gap-2"><h2 className="font-semibold capitalize">{moment.type}</h2><span className="text-sm tabular-nums text-fg-muted">{clock(moment.time)}{moment.sourceTime !== undefined ? ` · match ${clock(moment.sourceTime)}` : ""}</span></div>
-    <p className="text-sm">{moment.source === "veo" ? "Veo tag" : moment.source === "model" ? "Model suggestion" : "Added by you"} · <span className="font-medium">{teamName(moment.team)}</span>
-      {moment.teamBasis === "estimated" && <span className="block text-xs text-fg-muted">Team estimated from the {EVIDENCE[moment.evidence ?? ""] ?? "nearby players"}. Check before approving.</span>}
+    <p className="text-sm">{moment.source === "veo" ? "Veo tag" : moment.source === "model" ? "Model suggestion" : moment.source === "analytics" ? "Pitch analytics tag" : "Added by you"} · <span className="font-medium">{teamName(moment.team)}</span>
+      {moment.teamBasis === "estimated" && moment.source !== "analytics" && <span className="block text-xs text-fg-muted">Team estimated from the {EVIDENCE[moment.evidence ?? ""] ?? "nearby players"}. Check before approving.</span>}
       {moment.status === "approved" && <span className="block text-xs text-accent">Approved by you</span>}
       {moment.status === "rejected" && <span className="block text-xs text-warn">Rejected by you</span>}</p>
-    {!editable && <p className="text-xs text-fg-muted">Veo tags are shown as Veo recorded them. Their team comes from Veo.</p>}
+    {moment.source === "analytics" ? <p className="text-xs text-fg-muted">Estimated from the 2D pitch (tracked positions of the ball and players), in addition to any Hudl or Veo tags; not a person's tagging. {moment.evidence}{moment.end !== undefined && moment.end > moment.time ? `, until ${clock(moment.end)}` : ""}.</p>
+      : !editable && <p className="text-xs text-fg-muted">Veo tags are shown as Veo recorded them. Their team comes from Veo.</p>}
     {editable && <>
       <label className="block text-xs text-fg-muted">What happened<select className="mt-1 w-full rounded-md border border-line bg-ink-900 p-1.5 text-sm text-fg" value={chosen} onChange={e => setType(e.target.value as ActionType)}>{ACTION_TYPES.map(t => <option key={t} value={t}>{typeName(t)}</option>)}</select></label>
       <div className="grid grid-cols-2 gap-2">

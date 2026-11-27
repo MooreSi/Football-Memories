@@ -8,7 +8,10 @@ import { cleanAnchors, kitTimeline, learnKits, type KitObservation, type KitProt
 import { denseBalls, parseBalls, trackBall, type BallPoint } from "./ball";
 import { goalPitch } from "./goalPitch";
 import { playShare } from "./playShare";
-import type { PitchSize } from "./metres";
+import { PITCH_PRESETS, type PitchSize } from "./metres";
+import { ballPath, pitchSource, sidelineTracks, trackPaths } from "./livePitch";
+import { analyticsTags, ballsHeld, type AnalyticsParams, type AnalyticsTag } from "./analyticsTags";
+import type { PitchKeyframe } from "./pitch";
 import { indexObservations, overlayAt } from "./LabVideo";
 
 /**
@@ -116,6 +119,28 @@ export function labBall(dense: DenseTracks | undefined, detections: string | und
   const toPitch = camera ? (t: number, x: number, y: number) => stabilise(camera, t, x, y) : undefined;
   if (dense?.balls?.length) return trackBall(denseBalls(dense, w, h), w, h, toPitch);
   return detections ? trackBall(parseBalls(detections), w, h, toPitch) : [];
+}
+
+/** The pitch the live map draws until the owner sets the real size. */
+export const ASSUMED_PITCH: PitchSize = PITCH_PRESETS[2].size;
+
+export type AnalyticsInputs = {
+  rows: Observation[]; camera: LabCamera | undefined; marks: PitchKeyframe[]; size: PitchSize | null | undefined;
+  ball: BallPoint[]; frame: { w: number; h: number }; timeline: TeamTimeline; params?: Partial<AnalyticsParams>;
+};
+
+/** Pitch analytics tags from exactly what the live 2D pitch shows: the same placement, paths and
+ * ball, with people standing along the touchlines left off (your labelled people always kept). */
+export function labAnalytics({ rows, camera, marks, size, ball, frame, timeline, params }: AnalyticsInputs): AnalyticsTag[] {
+  if (!camera || !(marks.length || camera.panorama || camera.proposal)) return [];
+  const drawn = size ?? ASSUMED_PITCH;
+  const source = pitchSource(camera, marks, drawn);
+  if (!source || !ball.length) return [];
+  const all = trackPaths(rows, source);
+  const sideline = sidelineTracks(all, drawn, id => timeline.tracks.get(id)?.source === "you");
+  const paths = new Map([...all].filter(([id]) => !sideline.has(id)));
+  const teamAt = (track: number, time: number) => timeline.at(track, time) ?? timeline.tracks.get(track);
+  return analyticsTags({ paths, ball: ballPath(ball, source, frame.w, frame.h), size: drawn, teamAt, params, held: ballsHeld(rows, ball) });
 }
 
 export type RunFiles = {

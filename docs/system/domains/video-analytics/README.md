@@ -411,3 +411,20 @@ there or it is silently dropped on save.
 - Do not derive a halfway line from an outline's shape on the level ground: a low camera stretches
   the far side so much that the minimum-area rectangle's long side is the depth direction (tried
   27 Nov 2026, rolled back). Check any pitch line drawn on the atlas image, not by an area ratio.
+
+## Pitch analytics tags (27 November 2026)
+
+Hudl-style tags read from the live 2D pitch (`videoLab/analyticsTags.ts`, scored by
+`frontend/scripts/score-analytics-tags.mjs`). Learned on Stoke 92908cc3 against Hudl's tags:
+- Hudl event tags (throw, goal kick, corner, free kick, chance, on target, cross, penalty area entry)
+  are fixed-length clips (15/20/25/30 s) that start before the event: all five Stoke throw clips
+  start exactly 5.0 s before the ball comes back in. Possession, third entries and out-of-play are
+  true spans that start at the event. Score clips by overlap, spans by start time.
+- A panning camera rarely shows the ball leave. Stoppages show as outfield players standing (median
+  speed 0.9 m/s in Hudl's out-of-play vs 2.1 m/s in play) and the ball resting; keepers stand
+  anyway, so leave them out of that measure.
+- A ball held overhead projects metres off its ground spot (near-side throws looked like free kicks
+  9 m in); the holder's feet place it. The far half is approximate, so a ball seen beyond a line is
+  better evidence than where it is next seen.
+- Veo windows (no keeper labels) transfer only out-of-play; restarts and goals fail there mostly
+  because the detector sees no ball while it is in someone's hands or off screen.

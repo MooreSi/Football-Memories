@@ -6,6 +6,8 @@ import { ballPath, pitchSource, playersAt, pointAt, sidelineTracks, trackPaths, 
 import type { BallPoint } from "./ball";
 import type { ShirtNumber } from "./shirtNumbers";
 import type { Camera, PitchKeyframe } from "./pitch";
+import type { AnalyticsTag } from "./analyticsTags";
+import { AnalyticsSummary } from "./AnalyticsSummary";
 
 type Props = {
   rows: Observation[]; camera: Camera; marks: PitchKeyframe[]; size: PitchSize | null; at: number;
@@ -19,6 +21,8 @@ type Props = {
   everyone?: boolean;
   /** Shirt numbers: yours, else the automatic reading. */
   numbers?: Map<number, ShirtNumber>;
+  /** Pitch analytics tags read off this pitch (analyticsTags.ts), summarised under it. */
+  analytics?: AnalyticsTag[];
 };
 type View = "live" | "own" | "opponent";
 const COLS = 12, ROWS = 8;
@@ -67,7 +71,7 @@ function Marker({ x, y, r, info, selected, shirt }: { x: number; y: number; r: n
 
 /** Spec 610 + live 2D pitch: everyone's position moving with the video, team heat maps and the
  * selected person's running. Builds from the automatic outline as soon as a match is analysed. */
-export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSize, teamAt, onSelect, videoRef, ball, frame, everyone = false, numbers }: Props) {
+export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSize, teamAt, onSelect, videoRef, ball, frame, everyone = false, numbers, analytics }: Props) {
   const [view, setView] = useState<View>("live");
   const [custom, setCustom] = useState(false);
   const now = useFrameTime(videoRef ?? NO_REF, at);
@@ -137,6 +141,7 @@ export function PitchMap({ rows, camera, marks, size, at, teams, selected, onSiz
       {selected !== null && <p className="text-sm">{moved && moved.seconds > 0
         ? <>Selected person: <strong>{Math.round(moved.distance_m)} m covered</strong> over {clock(moved.seconds)} tracked · top speed {moved.top_speed_ms.toFixed(1)} m/s ({Math.round(moved.top_speed_ms * 3.6)} km/h)</>
         : source.exact && size ? "The selected person has no positions on the marked pitch yet." : "Distance and speed need the pitch size and marked corners."}</p>}
+      {analytics && <AnalyticsSummary tags={analytics} />}
     </>}
   </section>;
 }

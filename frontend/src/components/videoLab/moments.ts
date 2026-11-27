@@ -1,17 +1,19 @@
 import type { Assignment, Review, Suggestion, Team, VeoTags } from "./labTypes";
 import { typeName } from "./labTypes";
 import { estimateActionTeam } from "./teams";
+import type { AnalyticsTag } from "./analyticsTags";
 
-export type Source = "veo" | "model" | "you";
+/** analytics: read from the live 2D pitch (analyticsTags.ts), never a Hudl, Veo or person's tag. */
+export type Source = "veo" | "model" | "you" | "analytics";
 export type Moment = {
   key: string; id: string; source: Source; type: string; time: number; sourceTime?: number;
   team: Team | null; teamBasis: "veo" | "approved" | "estimated" | "none";
-  evidence: string | null; status: "teacher" | "unreviewed" | "approved" | "rejected"; score?: number;
+  evidence: string | null; status: "teacher" | "unreviewed" | "approved" | "rejected" | "estimated"; score?: number; end?: number;
 };
 export type Filter = { source: Source | null; team: Team | "none" | null; type: string | null; showRejected?: boolean };
 
-/** One timeline of Veo tags, model suggestions (with your decisions) and actions you added. */
-export function buildMoments({ veo, suggestions, review, teams }: { veo?: VeoTags; suggestions?: Suggestion[]; review?: Review | null; teams: Map<number, Assignment> }): Moment[] {
+/** One timeline of Veo tags, model suggestions (with your decisions), actions you added and pitch analytics tags. */
+export function buildMoments({ veo, suggestions, review, teams, analytics }: { veo?: VeoTags; suggestions?: Suggestion[]; review?: Review | null; teams: Map<number, Assignment>; analytics?: AnalyticsTag[] }): Moment[] {
   const list: Moment[] = [];
   const decided = new Map((review?.events ?? []).map(e => [e.id, e]));
   const rejected = new Set(review?.rejected_suggestions ?? []);
@@ -32,6 +34,8 @@ export function buildMoments({ veo, suggestions, review, teams }: { veo?: VeoTag
   }
   for (const e of review?.events ?? []) if (!suggested.has(e.id) && ok(e.time_s))
     list.push({ key: `you-${e.id}`, id: e.id, source: "you", type: typeName(e.type), time: e.time_s, team: e.team ?? null, teamBasis: e.team ? "approved" : "none", evidence: null, status: "approved" });
+  for (const t of analytics ?? []) if (ok(t.time_s))
+    list.push({ key: t.id, id: t.id, source: "analytics", type: typeName(t.type), time: t.time_s, end: t.end_s, team: t.team, teamBasis: t.team ? "estimated" : "none", evidence: t.evidence, status: "estimated" });
   return list.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
 }
 
@@ -43,8 +47,9 @@ export function filterMoments(moments: Moment[], filter: Filter) {
 }
 
 export function momentCounts(moments: Moment[]) {
+  // Tagged actions only: pitch analytics tags are summarised beside the pitch map (AnalyticsSummary).
   const empty = () => ({ veo: 0, model: 0, you: 0 });
   const counts = { own: empty(), opponent: empty(), none: empty() };
-  for (const m of moments) counts[m.team ?? "none"][m.source]++;
+  for (const m of moments) if (m.source !== "analytics") counts[m.team ?? "none"][m.source]++;
   return counts;
 }

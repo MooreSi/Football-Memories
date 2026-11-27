@@ -2,10 +2,10 @@ import { useEffect, useRef } from "react";
 import type { Filter, Moment, Source } from "./moments";
 import { clock, teamName } from "./labTypes";
 
-const SOURCES: [Source, string][] = [["veo", "Veo tags"], ["model", "Model suggestions"], ["you", "Added by you"]];
+const SOURCES: [Source, string][] = [["veo", "Veo tags"], ["model", "Model suggestions"], ["you", "Added by you"], ["analytics", "Pitch analytics"]];
 const TEAMS: [Filter["team"], string][] = [["own", "Our team"], ["opponent", "Opponent"], ["none", "No team yet"]];
 const chip = (active: boolean) => `flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ${active ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`;
-const status = { teacher: "Veo", unreviewed: "To review", approved: "Approved", rejected: "Rejected" };
+const status = { teacher: "Veo", unreviewed: "To review", approved: "Approved", rejected: "Rejected", estimated: "Analytics" };
 
 type Props = { moments: Moment[]; visible: Moment[]; filter: Filter; setFilter: (f: Filter) => void; cursor: number | null; onPlay: (index: number) => void };
 

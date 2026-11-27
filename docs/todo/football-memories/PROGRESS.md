@@ -1,3 +1,42 @@
+## Pitch analytics tags from the 2D pitch, scored against Hudl (27 November 2026)
+
+Owner: "using the 2d pitch map add analytics tags to include passing, and all of the other hudl
+tags ... in addition to the hudl tags ... for both veo and hudl matches"; success = the analysed tags
+overlap Hudl's, improve with computer vision until they correlate.
+- `videoLab/analyticsTags.ts` (pure) + `labAnalytics` in decisions.ts (same paths, ball and teams as
+  the live pitch map). Tags: possession, contested possession, ball out of play, throw, goal kick,
+  corner, free kick, defensive/midfield/attacking third entry, penalty area entry, pass, cross,
+  chance, on target, goal. Moments list them as their own source "Pitch analytics" (status
+  Analytics, never approvable, keys 1/2/R ignore them); the pitch map gets a per-team summary that
+  says they are not Hudl or Veo tags. Hudl tags themselves are still not imported into the lab.
+- Model: possession = a placed player within reach of the ball; passes = ball between two players
+  of one team; stoppages = ball seen over a line, or outfield players' median speed < 1 m/s for 6 s
+  while the ball is not played (Stoke: 2.1 m/s in play vs 0.9 m/s in Hudl's out-of-play); restart
+  type from the exit line when seen, else where the ball rests (corner flag / by a goal / touchline /
+  centre spot = kick-off after a goal / elsewhere = free kick); a ball at the top of a person's box
+  (`ballsHeld`, read from the picture) is a throw-in from that player's feet.
+- Scorer `frontend/scripts/score-analytics-tags.mjs` (read-only; `--hudl` helper match detail or
+  `--veo`, `--sweep` coordinate search, `--timeline`, `--direction`). Hudl event tags are clips with a
+  lead-in (every Stoke throw clip starts 5.0 s before the restart), so they match when ours falls
+  inside the clip; spans (possession, entries, out of play) match on start +-4 s.
+- Results with shipped defaults. Stoke 92908cc3 vs Hudl (98 tags, development after the first look):
+  F1 0.47 (0-300 s 0.55, 300-600 s 0.37); possession agreement 0.84 at 80% coverage; midfield
+  third entries 10/12, possession 14/20, throws 3/6, out of play 7/16 (span overlap 0.45). Before
+  tuning: F1 0.30, possession 0.65. The first withheld check (300-600 s, scored before the stoppage
+  model) gave possession 0.69 -> 0.88 and F1 0.21 -> 0.28; after that it was looked at, so it is
+  development. Held-out Veo (7 labelled windows, 4 matches, Veo's own tags, never tuned on): F1
+  0.25; out of play 34/80 transfers; throws 3/23, goal kicks 0/20, corners 0/16, goals 0/18 do not.
+  One false "goal" on Stoke (no Hudl goal in that window). Hudl has no pass tags on Stoke, so passes
+  are unscored.
+- The limit is the ball: Stoke has it placed in 343 of 600 s; at Veo throws the detector often sees
+  no ball at all while it is in someone's hands. Next real gain is worker-side ball detection
+  (training/zoom for held and out-of-play balls), not more rules here.
+Verification: frontend 1188 pass, typecheck, build; backend 870 SQLite + 870 Postgres 17, ruff,
+format, mypy, alembic check clean (backend unchanged). Browser: hosted build on a read-only harness
+over 92908cc3's real files: 132 tags, same as the scorer, summary under the map, first throw 0:12
+ours (Hudl: Aston Villa throw). Not deployed to the admin library; family libraries take main
+automatically but the Video Lab is admin-only.
+
 ## Stoke follow-up: team labels shown, pitch from the goals, detector zoom, where a run ran; DEPLOYED (27 November 2026)
 
 Owner (goal, 261108 U11 v Stoke, run 5b0125cf + pitch rebuild 33e876a2): the pitch outline was
