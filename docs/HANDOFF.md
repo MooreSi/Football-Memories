@@ -1,3 +1,21 @@
+## Hudl analysis windows failed to encode; FIXED and DEPLOYED to admin — 27 November 2026
+
+Owner: "fix this issue" (Video Lab, 261108 U11 v Stoke: "The analysis clip could not be encoded;
+nothing was saved."). Cause: fragmented-MP4 Hudl streams name an init segment with `#EXT-X-MAP`
+as its own asset; `hudl_browser/_analysis.export_window` fetched only the media segments in range,
+so ffmpeg decoded nothing. Moment exports already fetched the map. Fix 50147e7 on this branch (test
+red first with the exact message: new fMP4 fixture in test_hudl_analysis; old fixtures were TS only).
+Checks: SQLite and Postgres suites, alembic, ruff, mypy green (frontend untouched).
+DEPLOYED admin only: 99dfe44 + the fix as 17bda1d (branch codex/hudl-analysis-init-deploy, pushed),
+so the three undeployed overnight commits (1af18e9, a9f2983, a52662a) stay undeployed. `built`
+updated, `latest` untouched, exactly 3 admin containers changed, helper idle, health ok. The next
+admin deploy from this branch must merge 17bda1d's line (live 17bda1d is not an ancestor here).
+Not checked against the real account: the owner's retry of the same window is the acceptance.
+Pre-existing test hang (NOT fixed, needs owner OK to edit tests): fake clocks in test_team_logos /
+test_jgh_crests leave `team_logos._LAST_REQUEST/_LAST_JGH/_LAST_SPORTSDB` at fake times up to a day
+ahead; test_shared_crests then sleeps for hours on the real clock when the Mac's uptime < ~1 day.
+Workaround: run tests/services/test_shared_crests.py in its own process.
+
 ## IN PROGRESS overnight: three Veo matches pre-analysed, then analysed in full — 26-27 November 2026
 Status 04:50 27 Nov: Bournville all 6 windows done (each labelled from checked crops, outline
 accepted, shirt-number run; sampled shirt checks 26/27, 18/21, 10/12 right). RMC windows 1-5 analysed,
