@@ -1,6 +1,6 @@
 # 780: Finished analysis runs archived on the MacBook share
 
-**Status:** Building (code deployed 27 Nov; first move waits for eligible runs and the owner)
+**Status:** Shipped 27 Nov (away case not yet seen for real)
 **Sensitive:** no account surface. Moves analysis outputs (not footage library files); the
 mover deletes the local copy only after a verified copy exists. Owner approves the first move.
 
@@ -40,7 +40,7 @@ Moving footage, the helper's analysis tickets, benchmarks or label sets; automat
 under disk pressure (owner chose finished runs only, not overflow); Time Machine of the share.
 
 ## Open questions (provisional default)
-- Age before archiving: **7 days** after finishing.
+- Age before archiving: **2 days** (owner, 27 Nov; was 7).
 - Run the mover by hand or nightly: **by hand** until the first move is reviewed.
 - Derived runs (shirt numbers) move with their source run: **yes, together**.
 
@@ -76,4 +76,5 @@ None needed (no Hudl or Veo access).
 - [x] deployed: worker 1a1f0b5 both Macs (digest 0af697e7...), gateway archive-a2625ad, admin
       app 01e4cb5; exactly the expected containers changed; health 200
 - [ ] away MacBook checked for real (sleep it, open an archived run): needs an archived run
-- [ ] first move reviewed by the owner: runs, bytes freed, an archived review opened
+- [x] first move (27 Nov, 2 days): 12 runs, 10.7 GB copied, 6.2 GB freed, 0 failed; archived runs open
+- [x] run list kept fast: archived entries remembered on the mini (9 s -> 0.06 s)

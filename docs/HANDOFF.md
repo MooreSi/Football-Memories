@@ -18,9 +18,19 @@ compose.analytics-archive.yaml + ~/fm-archive-gateway/images-archive.yaml (KEEP 
 the container's config_files label points there), FM_ANALYTICS_ARCHIVE=~/Football-Analytics-Share;
 only the gateway changed, origin right, portal health 200, it can write the share. Admin app
 01e4cb5 (= 17bda1d + dad8d34, branch codex/analytics-archive-deploy), exactly 3 containers.
-NOT done: no run moved. Dry run: 0 of 62 eligible (oldest finished 3.4 days ago; 7-day rule).
-First real move (`--apply`) waits for the owner's review, then check an archived run opens and,
-with the MacBook asleep, says "stored on the MacBook".
+FIRST MOVE done on the owner's "Yes, use 2 days": 12 runs moved (families whose newest run is
+2+ days old), 0 failed, 70 s; 10.7 GB copied, 6.2 GB freed (rest hard-linked to kept runs; jobs/
+43 -> 37 GB; df unchanged until the 07:17 Time Machine local snapshot expires). Archived runs open
+through the live gateway (~1 s each). That exposed a regression: the run list read every archived
+run over SMB (9 s for 12); fixed in gateway 9cd8849 (entries kept in runtime/archived/views/, tests
+first), deployed as archive-9cd8849: list 0.06 s. Owner: "make 2 days the default": worker
+8a61b54 (`--days` default 2, test first), deployed both Macs (digest 9f3dcf6a..., MacBook backup
+src.1a1f0b5). Speed: SMB copies at ~140-150 MB/s over the Thunderbolt bridge (bridge0); the link
+itself carried 4 GB in 2.8 s over SSH (~1.5 GB/s). Likely cause: the MacBook's SMB server
+requires signing. Changing that needs the MacBook password: the owner's step, not done.
+The owner pasted the MacBook password in chat; it was not used. Advised changing it (and the
+mini's Keychain entry for 192.168.5.3, or the share stops remounting).
+Still unverified: the away case for real (MacBook asleep).
 
 ## Hudl analysis windows failed to encode; FIXED and DEPLOYED to admin — 27 November 2026
 
