@@ -21,7 +21,9 @@ containers have no CPU cap. Admin stays on 8d018dc. Rollback for a family: move 
 Updater bug found: `github_json` reads at most 200,000 bytes of /commits/main, which includes
 every file's patch. The 149-file merge overflowed it ("GitHub could not be read" twice). This
 docs-only commit puts a small commit on top of main so the hourly build can read it; the updater
-itself still needs a fix (ask for the SHA only, e.g. Accept application/vnd.github.sha).
+itself is now fixed: it asks for application/vnd.github.sha (gateway 614d6b1, PR
+MooreSi/football-memories-frontend#3; live as 85b0897 on codex/admin-usage). A live run read
+main (7c94b52) with no error; all 7 families moved to 7c94b52, health 200.
 
 ## Stoke follow-up: team labels shown, pitch from the goals, detector zoom, where a run ran; DEPLOYED (27 November 2026)
 
