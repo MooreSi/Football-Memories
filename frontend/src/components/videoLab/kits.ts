@@ -253,6 +253,16 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     const mine = label.get(track);
     const ownKit = mine ? kits.filter(k => k.team === mine.team && k.role === mine.role) : [];
     const ownKitDecides = ownKit.some(k => chroma(k.lab) >= CHROMA);
+    // A track that never shows your label's kit is not a tracker swap: you looked at the person and
+    // overruled the colour (owner report, 261108 Stoke: "Our player" did not change the tag), so your
+    // label holds. A swap shows both kits on one track, and then the kit decides each stretch.
+    const nearestIsMine = (c: number[] | null | undefined) => {
+      if (!mine || !valid(c)) return false;
+      let best: KitPrototype | null = null, d = Infinity;
+      for (const k of kits) { const e = kitDistance(c, k.lab); if (e < d) { d = e; best = k; } }
+      return !!best && best.team === mine.team && best.role === mine.role;
+    };
+    const overruled = !!mine && mine.role !== "other" && ownKit.length > 0 && !list.some(r => nearestIsMine(r.colour_lab));
     // In an overlap the vote along the tracklet is unreliable, so a nearer kit decides with a smaller lead.
     const matchedNear = (r: KitObservation) => { const m = match(r.colour_lab, kits, NEAR); return m && canon.get(keyOf(m.team, m.role))!; };
     const values = filled.map((f, i) => {
@@ -266,6 +276,7 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
       }
       if (!mine) return assignment(f.kit, "kit", f.share);
       if (f.kit.team === mine.team && f.kit.role === mine.role) return assignment(f.kit, "you", 1);
+      if (overruled) return { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
       // Your label disagrees with the kit here: a tracker swap, unless your label is itself a dark kit
       // and this colour is only a passing minority of the tracklet (someone crossing in front).
       const minority = (counts.get(f.kit) ?? 0) < list.length / 2;

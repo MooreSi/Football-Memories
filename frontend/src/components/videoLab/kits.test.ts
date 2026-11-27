@@ -88,6 +88,11 @@ describe("kitTimeline", () => {
     expect(teams.at(20, 11)).toMatchObject({ team: "opponent", source: "you" });
     expect(teams.at(20, 18)).toMatchObject({ team: "own", source: "kit" });
   });
+  it("your label wins on a track that never shows your label's kit: you overruled the colour (owner report, Stoke)", () => {
+    const rows = [...labelled, ...run(21, 10, 20, RED)];
+    const teams = kitTimeline(rows, kits, [...labels, { track_id: 21, team: "own", role: "player" }], none);
+    for (const t of [10, 15, 20]) expect(teams.at(21, t)).toMatchObject({ team: "own", source: "you" });
+  });
   it("one odd frame does not flip a player", () => {
     const rows = [...labelled, ...run(21, 10, 12, YELLOW), row(21, 12.333, RED), ...run(21, 12.667, 15, YELLOW)];
     const teams = kitTimeline(rows, kits, labels, none);

@@ -31,7 +31,9 @@ export function ranPlacement(summary: unknown): Placement[] | null {
   const remote = ex.mode === "remote";
   const host = (part: unknown) => (remote || part === "remote" ? MACBOOK : MINI);
   const mini = Number(sharing.mini_samples), macbook = Number(sharing.macbook_samples);
-  const shared = !remote && Number.isFinite(mini) && Number.isFinite(macbook) && mini + macbook > 0;
+  // A measured split is a fact about where detection ran, even in a run derived from a later
+  // MacBook-only step (a pitch rebuild records mode "remote" but inherits detection).
+  const shared = Number.isFinite(mini) && Number.isFinite(macbook) && mini + macbook > 0;
   const encoder = rec(s.render).encoder;
   const reid = rec(s.review_preparation), reidModel = rec(reid.model);
   const rows: Placement[] = [
@@ -39,14 +41,17 @@ export function ranPlacement(summary: unknown): Placement[] | null {
       stage: "Player detection", where: shared ? `${MINI} + ${MACBOOK}` : host(ex.detection ?? ex.detection_tracking), compute: modelCompute(rec(s.model)),
       ...(shared ? { detail: `${MINI} ${mini} frames (${Math.round((mini / (mini + macbook)) * 100)}%), ${MACBOOK} ${macbook} frames (${Math.round((macbook / (mini + macbook)) * 100)}%)` } : {}),
     },
-    { stage: "Tracking and kit colours", where: host(ex.tracking ?? ex.detection_tracking), compute: "CPU" },
-    { stage: "Video render", where: host(ex.tracking ?? ex.detection_tracking), compute: encoder === "h264_videotoolbox" ? "Media engine (hardware H.264)" : encoder === "libx264" ? "CPU (software H.264)" : "Not recorded" },
+    { stage: "Tracking and kit colours", where: shared ? MINI : host(ex.tracking ?? ex.detection_tracking), compute: "CPU" },
+    { stage: "Video render", where: shared ? MINI : host(ex.tracking ?? ex.detection_tracking), compute: encoder === "h264_videotoolbox" ? "Media engine (hardware H.264)" : encoder === "libx264" ? "CPU (software H.264)" : "Not recorded" },
   ];
   if (s.camera_tracking) rows.push({ stage: "Camera and pitch", where: host(ex.camera_pitch), compute: rec(rec(s.camera_tracking).compute).device === "cpu" ? "CPU" : "Not recorded" });
   if (s.review_preparation) {
     const compute = Object.keys(reidModel).some(k => k === "device" || k === "preferred_compute_unit") ? modelCompute(reidModel) : REID.pytorch;
     rows.push({ stage: "Player matching", where: host(ex.player_appearance), compute, ...(typeof reid.elapsed_s === "number" ? { detail: `${Math.round(reid.elapsed_s)} s` } : {}) });
   }
+  // Team enrichment (Update shirt colours) runs on the Mac mini's CPU.
+  const enrich = rec(s.team_enrichment);
+  if (s.team_enrichment) rows.push({ stage: "Shirt colours re-read", where: MINI, compute: "CPU", ...(typeof enrich.elapsed_s === "number" ? { detail: `${Math.round(enrich.elapsed_s)} s` } : {}) });
   return rows;
 }
 
