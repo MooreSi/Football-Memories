@@ -16,7 +16,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.connectors.hudl_capture import CaptureError
-from app.connectors.hudl_exports import _AUDIO, _HLS_INPUT, _VIDEO, _ffmpeg, _segments
+from app.connectors.hudl_exports import _AUDIO, _HLS_INPUT, _segments
+from app.connectors.veo._encoding import encode
 from app.services.media import probe
 from app.services.publish import publish_new
 
@@ -24,6 +25,10 @@ if TYPE_CHECKING:
     from ._account import BrowserConnection
 
 MAX_WINDOW_S = 600.1
+ENCODING = "Encoding the analysis window"
+# Hudl serves HEVC; the worker takes H.264. CRF 20 measured at the source's size on real
+# footage, where the moment exports' CRF 18 came out 1.4x larger (owner report 2026-11-27).
+_ANALYSIS_VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p"]
 
 
 def check_window(window: dict[str, Any] | None) -> tuple[float, float]:
@@ -43,6 +48,8 @@ def export_window(
 ) -> None:
     """Runs on its own thread: segment fetches queue on the single account worker."""
     try:
+        with connection._lock:
+            connection._steps = 2  # fetch, then encode
         identity = connection._stream_match
         header, segments = _segments(playlist)
         end = start + duration
@@ -75,14 +82,12 @@ def export_window(
             lines.append("#EXT-X-ENDLIST")
             source = scratch / "window.m3u8"
             source.write_text("\n".join(lines) + "\n")
-            connection.report("working", "Encoding the analysis window…")
-            with connection._lock:
-                connection._progress = None
+            connection.report("working", f"{ENCODING}…")
             partial = scratch / "sample.mp4"
             # Output-side -ss: input-side seeking on a playlist that starts mid-match
             # lands late (synthetic 2 s window came out 1.4 s). Decoding at most one
             # extra segment is cheap and frame accurate.
-            ok = _ffmpeg(
+            ok = encode(
                 [
                     *_HLS_INPUT,
                     "-i",
@@ -95,12 +100,14 @@ def export_window(
                     "0:v:0",
                     "-map",
                     "0:a?",
-                    *_VIDEO,
+                    *_ANALYSIS_VIDEO,
                     *_AUDIO,
                     "-movflags",
                     "+faststart",
                     str(partial),
-                ]
+                ],
+                duration,
+                lambda done: connection._set_progress(ENCODING, 2, done, duration),
             )
             if not ok or not partial.is_file():
                 raise CaptureError("The analysis clip could not be encoded; nothing was saved.")
@@ -141,3 +148,4 @@ def export_window(
         with connection._lock:
             connection._pending -= 1
             connection._progress = None
+            connection._steps = 1

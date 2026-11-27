@@ -106,6 +106,13 @@ segments reference (its own `asset-N.bin`, outside the chosen range). The first 
 fetched only the media segments, so a fragmented-MP4 stream failed every window
 with "The analysis clip could not be encoded" (owner hit it on 261108 U11 v Stoke).
 The test fixtures were MPEG-TS only; `test_hudl_analysis` now has an fMP4 stream.
+27 November 2026 (owner report, Stoke window): the encode step showed no progress for ten
+minutes and made a 454 MB clip from about 350 MB of HEVC segments. Hudl serves HEVC and the
+worker takes H.264, so a stream copy is not possible. The encode is now step 2 of 2 and
+reports ffmpeg's measured output seconds; the analysis clip uses CRF 20 (60 s of real
+footage: source 35.8 MB, CRF 20 37.0 MB, CRF 18 50.6 MB). Moment exports keep CRF 18. The
+real cost was the capture container's 1.5 CPU cap: 30 s encoded in 21 s capped, 3 s uncapped
+(same image, same M4). Hosted containers are now uncapped for CPU (gateway 28dbc64).
 
 Analysis source selection reuses an archived match or the existing private range
 relay; input-side `-ss` and output `-t` bound the chosen footage. Range reads also

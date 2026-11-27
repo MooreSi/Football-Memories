@@ -110,7 +110,7 @@ class BrowserConnection:
                 "session_active": self._context is not None and not self._session_lost(),
             }
 
-    def _set_progress(self, label: str, step: int, done: int, total: int) -> None:
+    def _set_progress(self, label: str, step: int, done: float, total: float) -> None:
         """Step fraction plus a time-left estimate from this step's own pace."""
         now = time.monotonic()
         with self._lock:
