@@ -23,6 +23,10 @@ def clock(monkeypatch):
     monkeypatch.setattr(team_logos, "_PAUSED_UNTIL", [0.0])
     monkeypatch.setattr(team_logos, "_UNSETTLED", set())
     monkeypatch.setattr(team_logos, "_SITE_PAUSED", {"wikimedia": 0.0, "sportsdb": 0.0})
+    # Pacing stamps are written in place on the fake clock; fresh lists keep them
+    # from outliving the test (a later real-clock test would sleep for hours).
+    for name in ("_LAST_REQUEST", "_LAST_SPORTSDB", "_LAST_JGH"):
+        monkeypatch.setattr(team_logos, name, [0.0])
     monkeypatch.setattr(team_logos.time, "monotonic", fake.monotonic)
     monkeypatch.setattr(team_logos.time, "sleep", fake.sleep)
     return fake

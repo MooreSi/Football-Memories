@@ -11,10 +11,11 @@ so the three undeployed overnight commits (1af18e9, a9f2983, a52662a) stay undep
 updated, `latest` untouched, exactly 3 admin containers changed, helper idle, health ok. The next
 admin deploy from this branch must merge 17bda1d's line (live 17bda1d is not an ancestor here).
 Not checked against the real account: the owner's retry of the same window is the acceptance.
-Pre-existing test hang (NOT fixed, needs owner OK to edit tests): fake clocks in test_team_logos /
-test_jgh_crests leave `team_logos._LAST_REQUEST/_LAST_JGH/_LAST_SPORTSDB` at fake times up to a day
-ahead; test_shared_crests then sleeps for hours on the real clock when the Mac's uptime < ~1 day.
-Workaround: run tests/services/test_shared_crests.py in its own process.
+Pre-existing test hang FIXED on the owner's "Yes": the fake clocks in test_team_logos /
+test_jgh_crests wrote `team_logos._LAST_REQUEST/_LAST_JGH/_LAST_SPORTSDB` in place at fake times
+up to a day ahead, so test_shared_crests slept for hours on the real clock when uptime < ~1 day.
+Both fixtures now patch fresh lists; the full suite runs in one process again. Still loose:
+test_team_logos relies on a JGH index an earlier test in the same file fills (harmless, no hang).
 
 ## IN PROGRESS overnight: three Veo matches pre-analysed, then analysed in full — 26-27 November 2026
 Status 04:50 27 Nov: Bournville all 6 windows done (each labelled from checked crops, outline
