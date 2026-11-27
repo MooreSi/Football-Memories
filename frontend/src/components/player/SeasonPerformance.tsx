@@ -1,5 +1,6 @@
 import { Crosshair, Shield, Swords, Waypoints } from "lucide-react";
 import type { FootballRecord } from "../../lib/playerRecords";
+import { FILL_CLASS } from "../match/statsUi";
 const number = (value: number | null, percent = false) => value === null ? "—" : `${value.toLocaleString("en-GB")}${percent ? "%" : ""}`;
 const matches = (n: number) => `${n} ${n === 1 ? "match" : "matches"}`;
 
@@ -9,7 +10,7 @@ function StatBar({ card, maximum }: { card: FootballRecord; maximum: number }) {
       <span className="text-lg font-semibold text-fg tabular-nums">{number(card.value)}</span></div>
     {card.value !== null && <div role="meter" aria-label={card.label} aria-valuemin={0} aria-valuemax={maximum} aria-valuenow={card.value}
       className="h-1.5 overflow-hidden rounded-full bg-white/10">
-      <div className="h-full rounded-full bg-linear-to-r from-[#2563eb] to-[#38bdf8]" style={{ width: `${card.value / maximum * 100}%` }} />
+      <div className={`h-full rounded-full ${FILL_CLASS}`} style={{ width: `${card.value / maximum * 100}%` }} />
     </div>}
     <p className="text-[11px] leading-relaxed text-fg-subtle">{card.note}</p>
   </div>;

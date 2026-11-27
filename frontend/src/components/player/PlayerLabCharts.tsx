@@ -4,7 +4,7 @@ import { fixtureParts } from "../../lib/hudlFixture";
 import { aggregateCells, clipHref, compareWindows, LAB_METRICS, SOURCE_LABELS, teammateComparison, type LabRow } from "../../lib/playerLab";
 import { recentSummary, sharedComparison } from "../../lib/playerLabTrends";
 import { OURS, THEIRS } from "../../lib/teamColours";
-import { Card, Figure, GradientBar, OURS_FILL, Ring, THEIRS_FILL, useSvgId } from "../match/statsUi";
+import { Card, Figure, GradientBar, OURS_FILL, Ring, THEIRS_FILL, useSvgId, VersusBars } from "../match/statsUi";
 
 /** Owner request 2026-11-27: Player Lab in the Match stats look (gradients, headline
  *  tiles, rings and versus bars), with the trend, recent five and teammate panels fixed. */
@@ -132,8 +132,8 @@ type Compared = { key: string; label: string; ours: number; theirs: number; perc
 
 /** The comparisons a teammate supports: per 30 confirmed minutes where the lab has them,
  *  otherwise per shared match from the same kind of record. Never team-tag overlap. */
-export function labComparisons(own: LabRow[], other: LabRow[], metric: string): Compared[] {
-  const keys = [metric, ...LAB_METRICS.map(m => m.key).filter(k => k !== metric)];
+export function labComparisons(own: LabRow[], other: LabRow[], metric: string, allowed = LAB_METRICS.map(m => m.key)): Compared[] {
+  const keys = [metric, ...allowed.filter(k => k !== metric)];
   return keys.flatMap((key): Compared[] => {
     const info = LAB_METRICS.find(m => m.key === key)!;
     const strict = teammateComparison(own, other, key);
@@ -160,10 +160,7 @@ export function LabCompare({ name, other, teammates, list, onPick }: { name: str
           <p className="mb-1.5 text-center text-sm text-fg-muted">{c.label} <span className="text-[10px] text-fg-subtle">· {c.matches} matches{c.basis === "minutes" ? " · per 30 min" : ""}</span></p>
           <div className="flex items-center gap-3 tabular-nums">
             <span className="w-12 shrink-0 text-lg font-bold">{labNumber(c.ours, c.percent)}</span>
-            <div aria-hidden className="flex flex-1 items-center gap-1">
-              <div className="flex h-2 flex-1 justify-end overflow-hidden rounded-full bg-white/[0.06]"><span className="block h-full rounded-full" style={{ width: `${(c.ours / max) * 100}%`, background: OURS_FILL }} /></div>
-              <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]"><span className="block h-full rounded-full" style={{ width: `${(c.theirs / max) * 100}%`, background: THEIRS_FILL }} /></div>
-            </div>
+            <VersusBars ours={c.ours} theirs={c.theirs} max={max} />
             <span className="w-12 shrink-0 text-right text-lg font-bold">{labNumber(c.theirs, c.percent)}</span>
           </div>
         </div>;

@@ -81,3 +81,12 @@ Owner selection 2026-11-21 (spec 410): match Player stats follows the Action pro
 mockup selected in chat: player identity/minutes beside common-scale horizontal action
 bars, compact zero counts, expandable sources/unrecorded stats. Retains reference 02
 navy/cyan palette and stacks at phone width; no invented ratings or player imagery.
+
+Owner request 2026-11-27: the Match stats look (references 04-07) is the app's look.
+`components/match/statsUi.tsx` holds it: `OURS_FILL` / `THEIRS_FILL` (and the
+`_COLUMN` verticals) for us-v-them bars, `VersusBars` for centre-out comparisons
+(Team stats, Match stats, Player Lab compare), `FILL_CLASS` for single-value bars and
+progress, `ACTIVE_ROW` (blue gradient) for the selected rail row or tab, which
+replaces reference 02's solid blue. Momentum bars are vertical gradients, brightest
+at the tip. Use these rather than a new flat colour or another gradient. The match
+rail lists player codes first, then the other moments, each A to Z.

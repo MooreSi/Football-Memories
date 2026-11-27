@@ -1,7 +1,8 @@
 import { expect, it } from "vitest";
 import type { HudlMatch } from "../api/hudl";
 import { EMPTY_BOOK, labRows } from "./playerLab";
-import { mainSquad, recentSummary, sharedComparison, teammatesBySharedMatches } from "./playerLabTrends";
+import { LAB_METRICS } from "./playerLab";
+import { labRole, mainSquad, recentSummary, roleMetrics, sharedComparison, teammatesBySharedMatches } from "./playerLabTrends";
 
 // Owner request 2026-11-27: "fix Performance Over Time, Recent Five Matches, Compare on
 // fair terms". Made-up names.
@@ -45,4 +46,31 @@ it("lists teammates by shared appearances, most first, leaving the player out", 
   const lib = [...shared, match("x", 9, "U11", [tag("s", sam, 10), tag("z", "Zed Other", 40)])];
   expect(teammatesBySharedMatches(labRows(lib, sam, null, null, EMPTY_BOOK), [sam, ali, "Zed Other", "Nobody Here"], sam))
     .toEqual([{ name: ali, shared: 3 }, { name: "Zed Other", shared: 1 }]);
+});
+
+// Owner request 2026-11-27: "if i select an outfield player the stats need to reflect this".
+// One estimated keeper match out of many made the whole lab show saves and goals conceded.
+const tagged = (n: number, saves: number[]) => labRows(Array.from({ length: n }, (_, i) => match(`r${i}`, i + 1, "U11", [tag("s", sam, 10, ["passes"])])),
+  sam, null, null, { ...EMPTY_BOOK, records: saves.map(i => ({ match: `r${i}`, player: sam, position: "", minutes: null, counts: { saves: 2 }, note: "" })) });
+
+it("treats a player with only an occasional keeper record as outfield", () => {
+  expect(labRole(tagged(10, [3]), null)).toBe("outfield");
+  expect(labRole(tagged(10, []), null)).toBe("outfield");
+});
+
+it("treats a player in goal for at least half the selection as a keeper", () => {
+  expect(labRole(tagged(10, [0, 1, 2, 3, 4]), null)).toBe("keeper");
+});
+
+it("follows a set position over the records", () => {
+  expect(labRole(tagged(10, []), "Goalkeeper")).toBe("keeper");
+  expect(labRole(tagged(10, [0, 1, 2, 3, 4, 5]), "Centre back")).toBe("outfield");
+});
+
+it("offers outfield players no keeper metrics, and keepers their own first", () => {
+  const outfield = roleMetrics("outfield").map(m => m.key);
+  for (const k of ["saves", "conceded", "faced", "savePercentage", "cleanSheets", "penaltiesSaved"]) expect(outfield).not.toContain(k);
+  expect(outfield).toContain("goals");
+  expect(roleMetrics("keeper").slice(0, 4).map(m => m.key)).toEqual(["saves", "conceded", "faced", "savePercentage"]);
+  expect(roleMetrics("keeper")).toHaveLength(LAB_METRICS.length);
 });

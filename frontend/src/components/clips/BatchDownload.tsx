@@ -8,6 +8,7 @@ import { looksLikePlayer } from "../../lib/hudlPlayer";
 import { timeLeft } from "../../lib/taggedPlayback";
 import { useHomeClub } from "../../lib/useHomeClub";
 import { Button } from "../ui/Button";
+import { FILL_CLASS } from "../match/statsUi";
 
 type Output = "zip" | "mp4" | "reel" | "reels";
 const OUTPUTS: { id: Output; label: string; hint: string; icon: typeof Film }[] = [
@@ -129,7 +130,7 @@ export function BatchDownload({ matches }: { matches: HudlMatch[] }) {
       {running && progress && (
         <div className="space-y-2" role="status" aria-label="Batch progress">
           <div className="flex flex-wrap justify-between gap-2 text-sm"><span>{progress.label}</span><span className="text-fg-muted">{Math.round(progress.fraction * 100)}% · {timeLeft(progress.eta_s)}</span></div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-ok to-accent transition-[width]" style={{ width: `${Math.max(2, progress.fraction * 100)}%` }} /></div>
+          <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full ${FILL_CLASS} transition-[width]`} style={{ width: `${Math.max(2, progress.fraction * 100)}%` }} /></div>
         </div>
       )}
       {!running && status.data?.state === "done" && !status.data.match_id && status.data.message && <p role="status" className="text-sm text-ok">{status.data.message} See <a className="underline" href="/downloaded">Downloaded</a>.</p>}

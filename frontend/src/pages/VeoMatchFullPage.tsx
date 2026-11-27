@@ -17,6 +17,7 @@ import { GoalsPanel } from "../components/match/GoalsPanel";
 import { QuickReels } from "../components/match/QuickReels";
 import { MatchSections } from "../components/match/MatchSections";
 import { MatchStatsPanel } from "../components/match/MatchStatsPanel";
+import { ACTIVE_ROW, FILL_CLASS } from "../components/match/statsUi";
 import { earlier, veoStatEvents } from "../lib/matchStats";
 import { recordAgainst } from "../lib/headToHead";
 import { fixtureParts } from "../lib/hudlFixture";
@@ -137,7 +138,7 @@ export function VeoMatchFull({ id }: { id: string }) {
   const teamTypes = counted(teamMoments).sort((a, b) => stem(a[0]).localeCompare(stem(b[0])) || (a[0].startsWith("OUR") ? -1 : 1));
   const allEvents = teamTypes.length > 0 && teamTypes.every(([t]) => picked.includes(t));
   const pickAllEvents = () => setPicked(p => (allEvents ? p.filter(t => !teamTypes.some(([x]) => x === t)) : [...p.filter(t => !teamTypes.some(([x]) => x === t)), ...teamTypes.map(([t]) => t)]));
-  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-xs uppercase ${on ? "border-blue-500 bg-blue-600 text-white" : "border-line text-fg-muted hover:bg-white/5"}`;
+  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-xs uppercase ${on ? `border-blue-500 ${ACTIVE_ROW}` : "border-line text-fg-muted hover:bg-white/5"}`;
   const shown = picked.length ? everything.filter(h => picked.includes(h.category)) : highlights;
   const chosen = selected.length ? everything.filter(h => selected.includes(h.id)) : shown;
   const current = queue?.list[queue.index];
@@ -248,10 +249,10 @@ export function VeoMatchFull({ id }: { id: string }) {
       <div className="space-y-2 border-b border-line p-4"><Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link>
         <h2 className="text-sm font-semibold">{label ?? match.title}</h2><p className="text-xs text-fg-subtle">{[age || null, `${highlights.length} highlights`].filter(Boolean).join(" · ")}</p></div>
       <nav aria-label="Highlight types" className="min-h-0 flex-1 overflow-y-auto">
-        <button type="button" className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} aria-pressed={!picked.length} onClick={() => setPicked([])}>ALL HIGHLIGHTS <span>{highlights.length}</span></button>
-        {types.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${picked.includes(t) ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} aria-pressed={picked.includes(t)} onClick={() => toggle(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
+        <button type="button" className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? ACTIVE_ROW : "text-fg-muted hover:bg-white/5"}`} aria-pressed={!picked.length} onClick={() => setPicked([])}>ALL HIGHLIGHTS <span>{highlights.length}</span></button>
+        {types.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${picked.includes(t) ? ACTIVE_ROW : "text-fg-muted hover:bg-white/5"}`} aria-pressed={picked.includes(t)} onClick={() => toggle(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
         {teamTypes.length > 0 && <h3 className="border-t border-line px-4 pt-4 pb-2 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">Team events</h3>}
-        {teamTypes.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${picked.includes(t) ? "bg-blue-600 text-white" : "text-fg-muted hover:bg-white/5"}`} aria-pressed={picked.includes(t)} onClick={() => toggle(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
+        {teamTypes.map(([t, n]) => <button type="button" key={t} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs uppercase ${picked.includes(t) ? ACTIVE_ROW : "text-fg-muted hover:bg-white/5"}`} aria-pressed={picked.includes(t)} onClick={() => toggle(t)}><span className="truncate">{t}</span><span>{n}</span></button>)}
       </nav>
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
@@ -284,7 +285,7 @@ export function VeoMatchFull({ id }: { id: string }) {
         <Button variant="ghost" aria-label="Stop tagged playback" onClick={() => setQueue(undefined)}><Square size={14} /> Stop</Button>
       </div>}
       {own && status.data?.progress && <div role="progressbar" aria-label="Download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(status.data.progress.fraction * 100)} className="h-2 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-gradient-to-r from-ok to-accent" style={{ width: `${Math.max(2, status.data.progress.fraction * 100)}%` }} /></div>}
+        <div className={`h-full rounded-full ${FILL_CLASS}`} style={{ width: `${Math.max(2, status.data.progress.fraction * 100)}%` }} /></div>}
       {own && status.data?.busy && <p role="status" className="text-sm text-accent">{status.data.message}</p>}
       {own && !status.data?.busy && status.data?.state === "done" && <p role="status" className="text-sm text-ok">{status.data.message} It is listed under Downloaded.{status.data.download_url && <> <a href={status.data.download_url} className="font-semibold text-accent underline">Save the highlights</a></>}</p>}
       {(action.isError || (own && status.data?.state === "error")) && <p role="alert" className="text-sm text-danger">{action.error?.message || status.data?.message}</p>}

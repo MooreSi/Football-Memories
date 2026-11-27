@@ -9,6 +9,7 @@ import { radarPoints } from "../../lib/player";
 import { OURS, THEIRS } from "../../lib/teamColours";
 import type { Possession } from "../../lib/insights";
 import { PossessionBar } from "../match/MatchInsights";
+import { FILL_CLASS } from "../match/statsUi";
 export { OURS, THEIRS };
 
 type Shape = { side: "ours" | "theirs" | "all"; values: number[]; colour: string; dashed?: boolean };
@@ -99,7 +100,7 @@ function Bars({ kinds }: { kinds: Kind[] }) {
           <span className="truncate text-sm">{t.name}</span>
           <span className="text-sm text-fg-muted tabular-nums">{t.count}</span>
           <span className="col-span-2 h-1.5 overflow-hidden rounded-full bg-ink-700">
-            <span className="block h-full rounded-full bg-gradient-to-r from-ok to-accent" style={{ width: `${(t.count / max) * 100}%` }} />
+            <span className={`block h-full rounded-full ${FILL_CLASS}`} style={{ width: `${(t.count / max) * 100}%` }} />
           </span>
         </li>
       ))}

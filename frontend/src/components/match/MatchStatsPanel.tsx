@@ -5,7 +5,7 @@ import {
 } from "../../lib/matchStats";
 import { OURS, THEIRS } from "../../lib/teamColours";
 import type { TeamRow } from "../../lib/veoTeamSplit";
-import { Card, OURS_COLUMN, OURS_FILL, Ring, StatsHeader, Standouts, THEIRS_FILL, useSvgId } from "./statsUi";
+import { Card, OURS_COLUMN, OURS_FILL, Ring, StatsHeader, Standouts, THEIRS_COLUMN, THEIRS_FILL, useSvgId, VersusBars } from "./statsUi";
 
 /** Owner request 2026-11-26: the match's own numbers as charts, beside Team stats.
  *  References: docs/design/reference/04-07 (key bars, headline tiles, charts, what stood
@@ -130,14 +130,7 @@ function VersusBar({ row, ours, theirs, compact = false }: { row: TeamRow; ours:
     <div className="flex items-center gap-3 tabular-nums">
       <span className={`w-12 shrink-0 font-bold ${compact ? "text-base" : "text-xl"} ${lead === "theirs" ? "text-fg-muted" : ""}`}>{row.own}{unit}</span>
       {compact && <span className="w-16 shrink-0 text-xs text-fg-subtle">{name}</span>}
-      <div aria-hidden className="flex flex-1 items-center gap-1">
-        <div className="flex h-2 flex-1 justify-end overflow-hidden rounded-full bg-white/[0.06]">
-          <span className="block h-full rounded-full transition-[width] duration-700" style={{ width: `${(row.own / max) * 100}%`, background: OURS_FILL, boxShadow: lead === "ours" ? `0 0 12px ${OURS}66` : undefined }} />
-        </div>
-        <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-          <span className="block h-full rounded-full transition-[width] duration-700" style={{ width: `${(row.opponent / max) * 100}%`, background: THEIRS_FILL, boxShadow: lead === "theirs" ? `0 0 12px ${THEIRS}66` : undefined }} />
-        </div>
-      </div>
+      <VersusBars ours={row.own} theirs={row.opponent} max={max} />
       <span className={`w-12 shrink-0 text-right font-bold ${compact ? "text-base" : "text-xl"} ${lead === "ours" ? "text-fg-muted" : ""}`}>{row.opponent}{unit}</span>
     </div>
   </div>;
@@ -201,7 +194,7 @@ function SpellBars({ events, duration, ours, theirs, onSeek }: { events: StatEve
             {s[side].attempts > 0 && <span className="mb-1 text-[11px] font-semibold tabular-nums text-fg-muted">{s[side].attempts}</span>}
             <span className="block w-full rounded-t-md transition-[height] duration-700 group-hover:brightness-110"
               style={{ height: `${(s[side].attempts / top) * 80}%`, minHeight: s[side].attempts ? 4 : 0,
-                background: side === "ours" ? OURS_COLUMN : "linear-gradient(180deg, #fed7aa, #fb923c 35%, #9a3412)" }} />
+                background: side === "ours" ? OURS_COLUMN : THEIRS_COLUMN }} />
             {s[side].goals > 0 && <span aria-hidden className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-white" />}
           </span>)}
         </button>;

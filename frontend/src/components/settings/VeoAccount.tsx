@@ -5,6 +5,7 @@ import { type VeoStatus, veoRequest } from "../../api/veo";
 import { Button } from "../ui/Button";
 import { ForgetAccount } from "./ForgetAccount";
 import { VeoSharedLinks } from "./VeoSharedLinks";
+import { FILL_CLASS } from "../match/statsUi";
 
 const KEY = ["veo-account"];
 
@@ -57,7 +58,7 @@ export function VeoAccount({ onConnectionChange }: { onConnectionChange?: (state
     {saved && <p className="text-xs text-ok" role="status">Saved in {where}. Select Connect to sign in and read your matches.</p>}
     {q.data.message && <p role="status" className={`text-xs ${q.data.state === "error" ? "text-danger" : "text-fg-muted"}`}>{q.data.message}</p>}
     {q.data.progress && <div role="progressbar" aria-label="Reading Veo matches" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(q.data.progress.fraction * 100)} className="h-1.5 overflow-hidden rounded-full bg-white/10">
-      <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, q.data.progress.fraction * 100)}%` }} /></div>}
+      <div className={`h-full rounded-full ${FILL_CLASS}`} style={{ width: `${Math.max(2, q.data.progress.fraction * 100)}%` }} /></div>}
     {s && <ul aria-label="What the Veo account has" className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
       <li className="tile p-3"><span className="block text-lg font-semibold tabular-nums">{s.matches}</span> matches</li>
       <li className="tile p-3"><span className="block text-lg font-semibold tabular-nums text-ok">{s.with_video}</span> with video</li>

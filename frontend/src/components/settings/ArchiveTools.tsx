@@ -3,6 +3,7 @@ import { FileSearch, ImagePlus, ScanSearch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { Button } from "../ui/Button";
+import { FILL_CLASS } from "../match/statsUi";
 
 /** Brief section 22: integrity verification, relinking moved files, rebuilding thumbnails. */
 export function ArchiveTools() {
@@ -32,7 +33,7 @@ export function ArchiveTools() {
           </Button>
           {v && v.state !== "idle" && (
             <div aria-live="polite" className="space-y-2">
-              <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-accent" style={{ width: `${pct}%` }} /></div>
+              <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full ${FILL_CLASS}`} style={{ width: `${pct}%` }} /></div>
               <p className="text-xs text-fg-muted">
                 {v.checked} of {v.total} checked
                 {v.state === "done" && (problems.length === 0 ? " · all intact" : ` · ${problems.length} need attention`)}

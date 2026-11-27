@@ -1,5 +1,6 @@
 import { sameCode } from "./codes";
 import { aggregateCells, LAB_METRICS, type LabRow } from "./playerLab";
+import { goalkeeperPosition } from "./playerRecords";
 
 /** Owner request 2026-11-27: Player Lab's trend, recent-form and teammate panels showed
  *  almost nothing. Causes: the squad picker opened on the alphabetically first age group
@@ -52,4 +53,23 @@ export function teammatesBySharedMatches(rows: LabRow[], names: string[], player
     .map(name => ({ name, shared: rows.filter(r => (r.match.moments ?? []).some(m => sameCode(m.category, name))).length }))
     .filter(t => t.shared > 0)
     .sort((a, b) => b.shared - a.shared || a.name.localeCompare(b.name));
+}
+
+export type LabRole = "keeper" | "outfield";
+const KEEPER_METRICS = ["saves", "conceded", "faced", "savePercentage", "cleanSheets", "penaltiesSaved"];
+
+/** Owner request 2026-11-27: the lab follows the player's role. A set position decides;
+ *  without one, a keeper is in goal (assigned, estimated or a lab record) for at least half
+ *  the selection. One guessed spell in goal does not make an outfield player a keeper. */
+export function labRole(rows: LabRow[], position: string | null): LabRole {
+  if (position?.trim()) return goalkeeperPosition(position) ? "keeper" : "outfield";
+  const inGoal = rows.filter(r => goalkeeperPosition(r.position) || r.stats.saves.value !== null || r.stats.conceded.value !== null).length;
+  return rows.length && inGoal * 2 >= rows.length ? "keeper" : "outfield";
+}
+
+/** Metrics for the role: outfield players never see keeper numbers; keepers see theirs first. */
+export function roleMetrics(role: LabRole): typeof LAB_METRICS {
+  const keeper = KEEPER_METRICS.map(k => LAB_METRICS.find(m => m.key === k)!);
+  const rest = LAB_METRICS.filter(m => !KEEPER_METRICS.includes(m.key));
+  return role === "keeper" ? [...keeper, ...rest] : rest;
 }

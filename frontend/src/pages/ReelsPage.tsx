@@ -8,6 +8,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Spinner } from "../components/ui/Spinner";
 import { formatClock } from "../lib/format";
+import { FILL_CLASS } from "../components/match/statsUi";
 
 export const STATUS: Record<ReelSummary["status"], { label: string; tone: "neutral" | "accent" | "ok" | "danger" | "warn" }> = {
   draft: { label: "Draft", tone: "neutral" },
@@ -45,7 +46,7 @@ export function ReelsPage() {
                   <span className="absolute top-3 left-3"><Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge></span>
                   {(r.status === "rendering" || r.status === "queued") && (
                     <span className="absolute inset-x-3 bottom-3 h-1.5 overflow-hidden rounded-full bg-white/15">
-                      <span className="block h-full bg-accent" style={{ width: `${Math.round(r.progress * 100)}%` }} />
+                      <span className={`block h-full ${FILL_CLASS}`} style={{ width: `${Math.round(r.progress * 100)}%` }} />
                     </span>
                   )}
                 </div>

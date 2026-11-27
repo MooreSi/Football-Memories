@@ -10,6 +10,7 @@ import { ArchiveTools } from "./ArchiveTools";
 import { DownloadFolderSettings } from "./DownloadFolder";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
+import { FILL_CLASS } from "../match/statsUi";
 
 const TITLES = { archive: "Archive folder", inbox: "Import folder" } as const;
 const ROLES = {
@@ -55,7 +56,7 @@ function FolderCard({ f }: { f: FolderHealth }) {
             <span>{formatBytes(f.total_bytes!)} disk</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <div className={`h-full rounded-full ${used > 0.95 ? "bg-danger" : used > 0.85 ? "bg-warn" : "bg-gradient-to-r from-ok to-accent"}`} style={{ width: `${Math.round(used * 100)}%` }} />
+            <div className={`h-full rounded-full ${used > 0.95 ? "bg-danger" : used > 0.85 ? "bg-warn" : FILL_CLASS}`} style={{ width: `${Math.round(used * 100)}%` }} />
           </div>
         </div>
       )}

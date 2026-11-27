@@ -2,6 +2,7 @@ import { Folder, Plus, Sparkles, Tag, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { Facets, MomentFilters, PlaylistSummary } from "../../api/types";
 import { formatClock } from "../../lib/format";
+import { ACTIVE_ROW } from "../match/statsUi";
 
 function toggle<T>(list: T[], v: T): T[] {
   return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
@@ -24,7 +25,7 @@ export function ClipFiltersRail({ facets, filters, onChange, playlists, activePl
   const set = (patch: Partial<MomentFilters>) => onChange({ ...filters, ...patch });
   const row = (active: boolean) =>
     `flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] font-medium tracking-wide uppercase transition ${
-      active ? "bg-gradient-to-r from-[#2563eb] to-[#3b82f6] text-white" : "text-fg-muted hover:bg-white/5 hover:text-fg"
+      active ? ACTIVE_ROW : "text-fg-muted hover:bg-white/5 hover:text-fg"
     }`;
   const total = facets?.categories.reduce((a, c) => a + c.count, 0) ?? 0;
 

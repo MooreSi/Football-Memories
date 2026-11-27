@@ -5,6 +5,7 @@ import type { MatchDetail } from "../../api/types";
 import { formatDate } from "../../lib/format";
 import type { MomentFilter } from "../../lib/useMomentFilter";
 import { FixtureCrests } from "../FixtureCrests";
+import { ACTIVE_ROW } from "./statsUi";
 
 function count<T>(items: T[], key: (t: T) => string[]): [string, number][] {
   const m = new Map<string, number>();
@@ -23,7 +24,7 @@ export function MomentsRail({ match, filter }: { match: MatchDetail; filter: Mom
 
   const row = (active: boolean) =>
     `flex w-full items-center gap-2 px-3 py-2.5 text-left text-[11px] font-medium tracking-wide uppercase transition ${
-      active ? "bg-gradient-to-r from-[#2563eb] to-[#3b82f6] text-white" : "text-fg-muted hover:bg-white/5 hover:text-fg"
+      active ? ACTIVE_ROW : "text-fg-muted hover:bg-white/5 hover:text-fg"
     }`;
 
   return (

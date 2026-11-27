@@ -7,6 +7,12 @@ import { OURS, THEIRS } from "../../lib/teamColours";
 export const OURS_FILL = "linear-gradient(90deg, #0e7490, #22d3ee 70%, #a5f3fc)";
 export const THEIRS_FILL = "linear-gradient(90deg, #fdba74, #fb923c 30%, #c2410c)";
 export const OURS_COLUMN = "linear-gradient(180deg, #a5f3fc, #22d3ee 35%, #0e7490)";
+export const THEIRS_COLUMN = "linear-gradient(180deg, #fed7aa, #fb923c 35%, #9a3412)";
+/** Owner request 2026-11-27: the Match stats bars, boxes and lines are the app's look.
+ *  The same fill as a class for single-value bars (progress, counts), and the selected
+ *  row of a rail or tab group. */
+export const FILL_CLASS = "bg-[linear-gradient(90deg,#0e7490,#22d3ee_70%,#a5f3fc)]";
+export const ACTIVE_ROW = "bg-gradient-to-r from-[#2563eb] to-[#3b82f6] text-white";
 
 export function StatsHeader({ icon, title, sub, children }: { icon: ReactNode; title: string; sub: string; children?: ReactNode }) {
   return <header className="flex flex-wrap items-end gap-3">
@@ -64,6 +70,19 @@ export function Ring({ label, value, colour, note, size = "h-40 w-40" }: { label
 export function GradientBar({ value, max, fill = OURS_FILL, glow = false }: { value: number; max: number; fill?: string; glow?: boolean }) {
   return <div aria-hidden className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
     <span className="block h-full rounded-full transition-[width] duration-700" style={{ width: `${Math.max(0, Math.min(1, value / Math.max(1, max))) * 100}%`, background: fill, boxShadow: glow ? `0 0 12px ${OURS}66` : undefined }} />
+  </div>;
+}
+
+/** Two bars growing out from the middle, us left and them right, on one scale. */
+export function VersusBars({ ours, theirs, max, height = "h-2" }: { ours: number; theirs: number; max: number; height?: string }) {
+  const lead = ours === theirs ? null : ours > theirs ? "ours" : "theirs", top = Math.max(0.0001, max);
+  return <div aria-hidden className="flex flex-1 items-center gap-1">
+    <div className={`flex ${height} flex-1 justify-end overflow-hidden rounded-full bg-white/[0.06]`}>
+      <span className="block h-full rounded-full transition-[width] duration-700" style={{ width: `${(ours / top) * 100}%`, background: OURS_FILL, boxShadow: lead === "ours" ? `0 0 12px ${OURS}66` : undefined }} />
+    </div>
+    <div className={`flex ${height} flex-1 overflow-hidden rounded-full bg-white/[0.06]`}>
+      <span className="block h-full rounded-full transition-[width] duration-700" style={{ width: `${(theirs / top) * 100}%`, background: THEIRS_FILL, boxShadow: lead === "theirs" ? `0 0 12px ${THEIRS}66` : undefined }} />
+    </div>
   </div>;
 }
 

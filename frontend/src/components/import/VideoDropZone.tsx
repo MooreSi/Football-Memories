@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import { type DragEvent, useRef, useState } from "react";
 import type { InboxFile } from "../../api/types";
 import { uploadVideo } from "../../api/upload";
+import { FILL_CLASS } from "../match/statsUi";
 
 // The importer's video types (backend importer.VIDEO_EXTENSIONS).
 const VIDEO = /\.(mp4|mov|m4v|mkv|avi|mts|m2ts|webm)$/i;
@@ -47,7 +48,7 @@ export function VideoDropZone({ onUploaded }: { onUploaded: (file: InboxFile) =>
           <p className="text-sm text-fg-muted">Uploading… {Math.round(progress * 100)}%. Keep this page open.</p>
           <div role="progressbar" aria-label="Upload progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}
             className="h-1.5 overflow-hidden rounded-full bg-white/10">
-            <span className="block h-full bg-accent transition-all" style={{ width: `${progress * 100}%` }} />
+            <span className={`block h-full ${FILL_CLASS} transition-all`} style={{ width: `${progress * 100}%` }} />
           </div>
         </div>
       )}

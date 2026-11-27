@@ -3,6 +3,7 @@ import { useGoalEntries } from "../../lib/goals";
 import { useScoreCorrections } from "../../lib/matchScore";
 import { milestones } from "../../lib/milestones";
 import { playerPerformance } from "../../lib/playerPerformance";
+import { FILL_CLASS } from "../match/statsUi";
 export function MilestonesTimeline({ library, name, position, club, importedGames = 0 }: { library: HudlMatch[] | undefined; name: string; position: string | null; club: string | null; importedGames?: number }) {
   const entries = useGoalEntries();
   const corrections = useScoreCorrections();
@@ -18,7 +19,7 @@ export function MilestonesTimeline({ library, name, position, club, importedGame
         <p className="text-[11px] text-fg-subtle">{m.note}</p>
         {m.next !== null && <><p className="text-xs text-fg-muted">Next: {m.next.toLocaleString("en-GB")} · {m.remaining!.toLocaleString("en-GB")} to go</p>
           <div role="progressbar" aria-label={`${m.label} next milestone`} aria-valuemin={0} aria-valuemax={m.next} aria-valuenow={m.value!} className="h-1.5 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-linear-to-r from-[#2563eb] to-[#38bdf8]" style={{ width: `${m.fraction! * 100}%` }} /></div></>}
+            <div className={`h-full ${FILL_CLASS}`} style={{ width: `${m.fraction! * 100}%` }} /></div></>}
       </div>)}</div>}
   </section>;
 }
