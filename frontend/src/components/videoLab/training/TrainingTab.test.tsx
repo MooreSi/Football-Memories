@@ -112,3 +112,19 @@ it("counts read naturally for one of each", async () => {
   const model = await screen.findByRole("region", { name: "Ball model" });
   expect(await within(model).findByText(/1 match ball and 1 other thing labelled/)).toBeInTheDocument();
 });
+
+it("names each finished run so runs of one match can be told apart", async () => {
+  serve();
+  const runs = [
+    { id: "3".repeat(32), sample_id: "veo-x", match_title: "NL vs Bournville", state: "complete", created_at: "2026-11-27T09:00:00Z" },
+    { id: "4".repeat(32), sample_id: "veo-x", mode: "team-enrichment", parent_job_id: "3".repeat(32), state: "complete", created_at: "2026-11-27T10:00:00Z" },
+    { id: "5".repeat(32), sample_id: "hudl-y", match_title: "U11 v Stoke", state: "complete", created_at: "2026-11-27T11:00:00Z" },
+  ];
+  const plain = globalThis.fetch;
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => url.endsWith("/jobs") ? Response.json(runs) : (plain as typeof fetch)(url, init)));
+  renderWithProviders(<VideoLabPage />, "/video-lab?tab=training");
+  const pick = within(await screen.findByRole("region", { name: "Add crops" })).getByLabelText("Finished run");
+  await waitFor(() => expect(within(pick).getAllByRole("option").map(o => o.textContent)).toEqual([
+    "NL vs Bournville · 33333333", "NL vs Bournville · 44444444 · shirt colours", "U11 v Stoke",
+  ]));
+});

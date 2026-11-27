@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../ui/Button";
 import { BallLabeller } from "./BallLabeller";
+import { matchTitle } from "../relatedRuns";
 import { getJson, MIN_EACH, send, sides, type BallLabels, type BallSet, type BallSetSummary, type Training, type TrainingRequest } from "./trainingApi";
 
-type Run = { id: string; match_title?: string; state: string; parent_job_id?: string };
+type Run = { id: string; match_title?: string; sample_id?: string; state: string; mode?: string; parent_job_id?: string };
+const KIND: Record<string, string> = { "team-enrichment": "shirt colours", "review-preparation": "player grouping", "moment-refinement": "refined moments", "camera-tracking": "pitch rebuild", "shirt-numbers": "shirt numbers" };
 const pct = (v: number | null) => v === null ? "-" : `${Math.round(v * 100)}%`;
 const STATE: Record<TrainingRequest["state"], string> = { queued: "Waiting for the worker", running: "Running", complete: "Done", failed: "Failed" };
 
@@ -21,7 +23,10 @@ export function TrainingTab() {
   const chosen = useQuery({ queryKey: ["ball-set", open], queryFn: () => getJson<BallSet>(`/ball-sets/${open}`), enabled: !!open });
   const finished = (runs.data ?? []).filter(r => r.state === "complete");
   const picked = run || finished[0]?.id || "";
-  const titled = (r: Run) => r.match_title ?? finished.find(p => p.id === r.parent_job_id)?.match_title ?? `Run ${r.id.slice(0, 8)}`;
+  // The Analysis tab's naming: a derived run takes its match's title; repeated names get the run id and kind.
+  const nameOf = (r: Run) => matchTitle(r, runs.data ?? []) ?? finished.find(p => p.id === r.parent_job_id)?.match_title ?? `Run ${r.id.slice(0, 8)}`;
+  const titled = (r: Run) => finished.filter(o => nameOf(o) === nameOf(r)).length > 1
+    ? [nameOf(r), r.id.slice(0, 8), ...(r.mode && KIND[r.mode] ? [KIND[r.mode]] : [])].join(" · ") : nameOf(r);
   const counts = useMemo(() => sides(labels.flatMap(l => l.data ? [l.data] : [])), [labels]);
   const enough = counts.balls >= MIN_EACH && counts.other >= MIN_EACH;
   const busyTrain = training.data?.requests.some(r => r.kind === "ball-train" && (r.state === "queued" || r.state === "running"));
