@@ -27,6 +27,7 @@ import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landm
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
 import { ReadShirtNumbers } from "../components/videoLab/ReadShirtNumbers";
+import { RefreshColours } from "../components/videoLab/RefreshColours";
 import { isShirtCandidates, shirtNumbers } from "../components/videoLab/shirtNumbers";
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
@@ -190,6 +191,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
+        {has("team_assignments.json") && has("detections.jsonl") && has("sample.mp4") && summary?.source_sha256 && <RefreshColours jobId={job.id} sourceHash={summary.source_sha256} kits={kits} onQueued={onQueued} />}
         {has("team_assignments.json") && has("detections.jsonl") && summary?.source_sha256 && camera && <ReadShirtNumbers jobId={job.id} sourceHash={summary.source_sha256} again={has("jersey_candidates.json")} onQueued={onQueued} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} kits={kits} remembered={remembered} />
