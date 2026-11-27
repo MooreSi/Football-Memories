@@ -5,13 +5,30 @@ export type KeeperVote = { at: number; names: string[]; explicit?: boolean; weig
 const SWITCH_COST = 2.5;
 const distinct = (names: string[]) => [...new Map(names.map(n => [codeKey(n), n])).values()];
 
+const weightOf = (v: KeeperVote, n: string) => v.weights?.[codeKey(n)]
+  ?? (v.names.some(x => codeKey(x) === codeKey(n)) ? 1 : 0);
+
+/** How many votes each name leads outright (strictly the heaviest), across the match. */
+function leadCounts(votes: KeeperVote[]): Map<string, number> {
+  const leads = new Map<string, number>();
+  for (const v of votes) {
+    const ranked = distinct(v.names).map(n => ({ n, w: weightOf(v, n) })).sort((a, b) => b.w - a.w);
+    if (!ranked.length || (ranked[1] && ranked[1].w === ranked[0].w)) continue;
+    leads.set(codeKey(ranked[0].n), (leads.get(codeKey(ranked[0].n)) ?? 0) + 1);
+  }
+  return leads;
+}
+
 // Changes between tagged periods cost nothing; within a period, isolated odd
 // kicks must not create a change. Unsupported periods remain gaps in the spells.
+// Short periods (youth quarters) often hold one of our goal kicks each, so a spell
+// is also supported when its keeper led two or more kicks anywhere in the match.
 export function keeperSpells(votes: KeeperVote[], breaks: number[]): Spell[] {
   const edges = [0, ...new Set(breaks.filter(b => b > 0).sort((a, b) => a - b))];
+  const leads = leadCounts(votes);
   const spells = edges.flatMap((from, i) => {
     const to = edges[i + 1] ?? null;
-    return inferPeriod(votes.filter(v => v.at >= from && (to === null || v.at < to)), from, to);
+    return inferPeriod(votes.filter(v => v.at >= from && (to === null || v.at < to)), from, to, leads);
   });
   return spells.reduce<Spell[]>((merged, s) => {
     const last = merged.at(-1);
@@ -21,12 +38,11 @@ export function keeperSpells(votes: KeeperVote[], breaks: number[]): Spell[] {
   }, []);
 }
 
-function inferPeriod(votes: KeeperVote[], from: number, to: number | null): Spell[] {
+function inferPeriod(votes: KeeperVote[], from: number, to: number | null, leads: Map<string, number>): Spell[] {
   const seq = votes.filter((v) => v.names.length).sort((a, b) => a.at - b.at);
   const names = distinct(seq.flatMap((v) => v.names)).sort((a, b) => a.localeCompare(b));
   if (!seq.length) return [];
-  const evidence = (i: number, n: string) => seq[i].weights?.[codeKey(n)]
-    ?? (seq[i].names.some(x => codeKey(x) === codeKey(n)) ? 1 : 0);
+  const evidence = (i: number, n: string) => weightOf(seq[i], n);
   let cost: number[] = names.map((n) => (1 - evidence(0, n)));
   const back: number[][] = [];
   for (let i = 1; i < seq.length; i++) {
@@ -50,6 +66,6 @@ function inferPeriod(votes: KeeperVote[], from: number, to: number | null): Spel
   return spells.filter(s => {
     const support = seq.filter(v => v.at >= s.from_s && (s.to_s === null || v.at < s.to_s)
       && v.names.some(n => codeKey(n) === codeKey(s.name)));
-    return support.some(v => v.explicit) || support.length >= 2;
+    return support.some(v => v.explicit) || support.length >= 2 || (leads.get(codeKey(s.name)) ?? 0) >= 2;
   });
 }

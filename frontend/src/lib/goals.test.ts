@@ -237,6 +237,32 @@ describe("keeper attribution across periods", () => {
   it("requires repeated goal-kick evidence", () => {
     expect(matchGoals({ moments: kick("a", 100, "Sam Gloves") }, CLUB).spells).toEqual([]);
   });
+  // Owner report 2026-11-27 (a U11 match, four quarters, three of our goal kicks): the
+  // keeper led the kicks in quarters 1 and 3, one kick each, and was named before spec 400.
+  it("accepts a keeper who leads one kick in each of two periods", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), t("near-a", "Ali Demo", 98, 15),
+      t("h1", "END HALF", 400),
+      t("h2", "END HALF", 800),
+      ...kick("b", 900, "Sam Gloves"), t("near-b", "Ali Demo", 898, 15),
+      t("h3", "END HALF", 1200),
+      ...kick("c", 1300, "Ben Stone", 2),
+      ...[150, 500, 1350].map((at, i) => t(`goal-${i}`, "OPPOSITION GOAL", at, 25)),
+    ] }, CLUB);
+    expect(result.spells).toEqual([
+      { name: "Sam Gloves", from_s: 0, to_s: 400 }, { name: "Sam Gloves", from_s: 800, to_s: 1200 },
+    ]);
+    // The quarter with no kick and the quarter led once by someone else stay unknown.
+    expect(result.goals.map(g => g.keeper)).toEqual(["Sam Gloves", null, null]);
+  });
+  it("does not accept a teammate who is near two kicks but never the likeliest", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), t("near-a", "Ali Demo", 98, 15),
+      t("h1", "END HALF", 400),
+      ...kick("b", 500, "Jo Palms"), t("near-b", "Ali Demo", 498, 15),
+    ] }, CLUB);
+    expect(result.spells).toEqual([]);
+  });
   it("uses the ball-in time when the goal clip starts before a keeper change", () => {
     const result = matchGoals({ moments: [
       ...kick("a", 100, "Sam Gloves"), ...kick("b", 200, "Sam Gloves"),
