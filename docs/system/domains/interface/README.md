@@ -201,6 +201,18 @@ U10 v Stoke City reads 12-9.
 - The studio preview loops each card with a fade to black; a screenshot can land on
   the black frame. Sample the canvas or take several before calling it broken.
 
+### Reel card themes (2026-11-26)
+
+- Themes live in two places: classic ones in `reelCards.ts`, broadcast and game-style
+  ones in `reelThemes.ts`; both register in `BACKGROUNDS` and `THEMES` (with a group).
+- A theme can bring its own title type (`Palette.headline`, must return the text width
+  for the underline), an `overlay` drawn over the finished card (it gets the card kind:
+  Cinematic thins its letterbox on the stats card) and a `shadow` for small lines.
+- Recording is real time at 30 fps, so per-frame work matters: grain and LED masks use
+  plain fillRect loops, no per-frame offscreen canvases.
+- Keep themes original: "GTA 6 style" means the look (sunset, palms, poster type), never
+  the game's logo, name or font on the card.
+
 ## Veo expiry queue (spec 280, 2026-11-16)
 
 - Veo gives no expiry date per match, only `expiration_status`; the panel estimates

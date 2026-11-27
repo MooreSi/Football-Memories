@@ -3,7 +3,7 @@ import type { Assignment, Assignments, Observation } from "./labTypes";
 import { inPlay, mergeDense, type DenseTracks } from "./playArea";
 import { feet, footMargin, insidePitch, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
 import type { Landmark } from "./landmarks";
-import { boundaryAt, type Boundary } from "./boundary";
+import { boundaryAt, halfwayAt, type Boundary } from "./boundary";
 import { BoundaryLayer } from "./BoundaryEditor";
 import { MarkLayer, PAD } from "./MarkLayer";
 import { ballAt, type BallPoint } from "./ball";
@@ -66,8 +66,40 @@ function pillLabel(info: Assignment | undefined) {
   return `${side}${info.role === "goalkeeper" ? " · GK" : ""}${info.source === "you" ? "" : info.source === "kit" ? " · matched by kit" : " · suggested"}`;
 }
 
+export type OverlayInput = {
+  w: number; h: number; index: ObservationIndex; teams: Map<number, Assignment>; teamAt?: (track: number, time: number) => Assignment | undefined;
+  selected: number | null; showBoxes: boolean; everyone: boolean; ball?: BallPoint[]; showBall: boolean;
+  camera?: Camera; marks?: PitchKeyframe[]; boundaries?: Boundary[]; automaticBoundaries?: Boundary[];
+};
+export type OverlayPerson = { row: Observation; info: Assignment | undefined; colour: string };
+export type OverlayFrame = { w: number; h: number; outline: Corners | null; halfway: Corners | null; people: OverlayPerson[]; ball: BallPoint | null };
+
+/** Everything the player draws at one moment. The analysed video export paints the same frame. */
+export function overlayAt({ w, h, index, teams, teamAt, selected, showBoxes, everyone, ball, showBall, camera, marks = [], boundaries = [], automaticBoundaries = [] }: OverlayInput, now: number): OverlayFrame {
+  const here = showBoxes ? boxesAt(index, now) : [];
+  const frameTeams = new Map<number, Assignment>();
+  for (const o of here) {
+    const moment = teamAt?.(o.track_id, now), whole = teams.get(o.track_id);
+    // A track's overall verdict fills a moment with no reading, but never as referee or keeper: there is
+    // one of each per team at a moment, and the moment's decision has already chosen who.
+    const unique = whole?.role === "referee" || whole?.role === "goalkeeper";
+    const info = moment ?? (teamAt && unique ? undefined : whole);
+    if (info) frameTeams.set(o.track_id, info);
+  }
+  // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
+  const outline = camera ? boundaryAt(camera, boundaries, automaticBoundaries, now) ?? outlineAt(camera, marks, now) : null;
+  const halfway = camera ? halfwayAt(camera, now) : null;
+  const visible = everyone ? here : outline
+    ? here.filter(o => o.track_id === selected || insidePitch(feet(o), outline, footMargin(o)))
+    : inPlay(here, frameTeams, selected);
+  // Draw the selected person last so their highlight sits on top.
+  const ordered = [...visible].sort((a, b) => Number(a.track_id === selected) - Number(b.track_id === selected));
+  const people = ordered.map(row => { const info = frameTeams.get(row.track_id); return { row, info, colour: colourFor(info) }; });
+  return { w, h, outline, halfway, people, ball: showBall && ball?.length ? ballAt(ball, now) : null };
+}
+
 /** Playhead time for every painted video frame while playing (timeupdate fires only about four times a second). */
-function useFrameTime(videoRef: RefObject<HTMLVideoElement | null>, at: number) {
+export function useFrameTime(videoRef: RefObject<HTMLVideoElement | null>, at: number) {
   const [frame, setFrame] = useState<number | null>(null);
   useEffect(() => {
     const video = videoRef.current;
@@ -105,18 +137,8 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
   const index = useMemo(() => indexObservations(mergeDense(assignments?.observations ?? [], dense)), [assignments, dense]);
   const now = useFrameTime(videoRef, at);
   const w = assignments?.image_width ?? 1920, h = assignments?.image_height ?? 1080;
-  const here = showBoxes && assignments ? boxesAt(index, now) : [];
-  const frameTeams = new Map<number, Assignment>();
-  for (const o of here) { const info = teamAt?.(o.track_id, now) ?? teams.get(o.track_id); if (info) frameTeams.set(o.track_id, info); }
-  const ballNow = showBall && ball?.length ? ballAt(ball, now) : null;
-  // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
-  const outline = camera ? boundaryAt(camera,boundaries,automaticBoundaries,now) ?? outlineAt(camera, marks, now) : null;
-  const visible = everyone ? here : outline
-    ? here.filter(o => o.track_id === selected || insidePitch(feet(o), outline, footMargin(o)))
-    : inPlay(here, frameTeams, selected);
+  const { outline, halfway, people: ordered, ball: ballNow } = overlayAt({ w, h, index, teams, teamAt, selected, showBoxes: showBoxes && !!assignments, everyone, ball, showBall, camera, marks, boundaries, automaticBoundaries }, now);
   const glows = Object.entries(TEAM_COLOUR);
-  // Draw the selected person last so their highlight sits on top.
-  const ordered = [...visible].sort((a, b) => Number(a.track_id === selected) - Number(b.track_id === selected));
   return <div className="relative overflow-hidden rounded-xl bg-black">
     <div className="relative transition-transform" style={marking || boundaryEditing ? { transform: `scale(${1 - 2 * PAD})` } : undefined}>
     <video ref={videoRef} onTimeUpdate={e => onTime(e.currentTarget.currentTime)} onSeeked={e => onTime(e.currentTarget.currentTime)} className="aspect-video w-full" controls preload="metadata" src={src} aria-label="Match video" />
@@ -125,10 +147,9 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
         <stop offset="0" stopColor={colour} stopOpacity="0" /><stop offset="0.55" stopColor={colour} stopOpacity="0.22" /><stop offset="1" stopColor={colour} stopOpacity="0.55" />
       </linearGradient>)}</defs>
       {outline && showOutline && !marking && !boundaryEditing && <polygon points={outline.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="#22c55e" fillOpacity={0.05} stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Pitch outline" />}
-      {ordered.map(row => {
+      {halfway && showOutline && !marking && !boundaryEditing && <polyline points={halfway.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="none" stroke="#f59e0b" strokeOpacity={0.85} strokeWidth={h / 350} strokeDasharray={`${h / 50} ${h / 80}`} aria-label="Halfway line" />}
+      {ordered.map(({ row, info, colour }) => {
         const [x1, y1, x2, y2] = row.image_box!;
-        const info = frameTeams.get(row.track_id);
-        const colour = colourFor(info);
         const key = glows.find(([, c]) => c === colour)?.[0] ?? "none";
         const focus = row.track_id === selected || row.track_id === hover;
         const yours = info?.source === "you";

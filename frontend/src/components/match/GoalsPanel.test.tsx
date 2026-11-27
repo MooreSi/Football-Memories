@@ -47,6 +47,12 @@ it("shows the likely scorer and keeper, marked as likely, and seeks to a goal", 
   renderWithProviders(<GoalsPanel match={hudl} club="Aston Villa" onSeek={seek} />);
   const panel = await screen.findByRole("region", { name: "Goals and keepers" });
   expect(within(panel).getByText("1 scored · 1 conceded")).toBeInTheDocument();
+  // Owner request 2026-11-27: titled Goals & Keepers, in the Match stats style.
+  expect(within(panel).getByRole("heading", { level: 2, name: "Goals & Keepers" })).toBeInTheDocument();
+  expect(within(panel).getByRole("figure", { name: "Scored headline" })).toHaveTextContent("1");
+  expect(within(panel).getByRole("figure", { name: "Conceded headline" })).toHaveTextContent("1");
+  expect(within(panel).getByRole("figure", { name: "Saves headline" })).toHaveTextContent("1");
+  expect(within(panel).getByRole("img", { name: "Chris Hands save rate 50%" })).toBeInTheDocument();
   const ours = within(panel).getByRole("list", { name: "Our goals" });
   expect(within(ours).getByText("Alex Demo")).toBeInTheDocument();
   expect(within(ours).getByText("Likely")).toBeInTheDocument();

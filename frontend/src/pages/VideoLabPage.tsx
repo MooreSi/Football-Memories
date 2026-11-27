@@ -1,6 +1,6 @@
 import {CalibrationBenchmarkPanel,isCalibrationBenchmark} from "../components/videoLab/CalibrationBenchmark";
 import {PanoramaPanel} from "../components/videoLab/PanoramaPanel";
-import {bindPanorama,isPanorama,panoramaBoundaryAt,pitchProposal} from "../components/videoLab/panorama";
+import {isPanorama,panoramaBoundaryAt} from "../components/videoLab/panorama";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
@@ -8,32 +8,45 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { BoundaryPanel } from "../components/videoLab/BoundaryEditor";
 import { boundaryAt } from "../components/videoLab/boundary";
-import { LabVideo } from "../components/videoLab/LabVideo";
+import { indexObservations, LabVideo, overlayAt } from "../components/videoLab/LabVideo";
+import { AnalysedExport } from "../components/videoLab/AnalysedExport";
 import { MomentRail } from "../components/videoLab/MomentRail";
 import { Inspector, decide } from "../components/videoLab/Inspector";
 import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/TeamSetup";
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
+import { PreAnalysisCheck } from "../components/videoLab/PreAnalysisCheck";
+import { LivePlacement, RanPlacement } from "../components/videoLab/RunPlacement";
+import { matchTitle, relatedRuns } from "../components/videoLab/relatedRuns";
+import { playShare } from "../components/videoLab/playShare";
+import { MacStatusLight } from "../components/videoLab/MacStatusLight";
 import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
-import { buildCamera, isCameraMotion, offPitchTracks, outlineAt, stabilise, type Corners } from "../components/videoLab/pitch";
+import { isCameraMotion, outlineAt, type Corners } from "../components/videoLab/pitch";
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
 import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
 import { PitchMap } from "../components/videoLab/PitchMap";
+import { ReadShirtNumbers } from "../components/videoLab/ReadShirtNumbers";
+import { RefreshColours } from "../components/videoLab/RefreshColours";
+import { isShirtCandidates, shirtNumbers } from "../components/videoLab/shirtNumbers";
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
-import { propagateTeams } from "../components/videoLab/teams";
-import { cleanAnchors, kitTimeline, learnKits, rememberKits, type KitObservation } from "../components/videoLab/kits";
-import { denseBalls, parseBalls, trackBall } from "../components/videoLab/ball";
+import { rememberKits } from "../components/videoLab/kits";
+import { automaticBoundariesFor, labBall, labCamera, labKits, labOffPitch, labPanorama, labRows, labTimeline } from "../components/videoLab/decisions";
 import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } from "../components/videoLab/useLabData";
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
 type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
 type Summary = { source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
-type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string };
+type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string; execution?: string; reid_backend?: string };
 const LEAD = 3, AFTER = 4;
 async function get<T,>(path: string): Promise<T> {
   const response = await fetch(BASE + path, { credentials: "same-origin", cache: "no-store" });
+  if (response.status === 409) {
+    // Spec 780: an archived run on an away MacBook share says so instead of "unavailable".
+    const detail = await response.json().then((b: { detail?: unknown }) => b?.detail, () => undefined);
+    if (typeof detail === "string" && detail) throw new Error(detail);
+  }
   if (!response.ok) throw new Error("Local video analysis is unavailable. Please retry when the worker is connected.");
   return response.json() as Promise<T>;
 }
@@ -66,42 +79,42 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const assignments = useJobFile(job.id, "team_assignments.json", has("team_assignments.json"), isAssignments);
   const appearance = useJobFile(job.id, "track_appearance.json", has("track_appearance.json"), isAppearance);
   const dense = useJobFile(job.id, "dense_tracks.json", has("dense_tracks.json"), isDense);
+  const shirtReads = useJobFile(job.id, "jersey_candidates.json", has("jersey_candidates.json"), isShirtCandidates);
   const motion = useJobFile(job.id, "camera_motion.json", has("camera_motion.json"), isCameraMotion);
   const calibrationBenchmark=useJobFile(job.id,"pitch_calibration_benchmark.json",has("pitch_calibration_benchmark.json"),isCalibrationBenchmark);
   const atlas=has("pitch_atlas.json")&&has("pitch_atlas.jpg");
   const panorama=useJobFile(job.id,atlas?"pitch_atlas.json":"pitch_panorama.json",atlas||(has("pitch_panorama.json")&&has("pitch_panorama.jpg")),isPanorama);
   const { review, update, state, error } = useReview(job.id);
-  const camera = useMemo(() => motion.data ? {...buildCamera(motion.data),panorama:bindPanorama(panorama.data,review?.pitch_panorama,job.summary?.source_sha256),proposal:pitchProposal(panorama.data,job.summary?.source_sha256)} : undefined, [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
+  // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
+  const title = matchTitle(job, others);
+  // The automatic outline: painted lines, or the two goals when those hold the play better (decisions.ts).
+  const pitchData = useMemo(() => labPanorama(panorama.data, assignments.data?.observations, title, review?.pitch_size), [panorama.data, assignments.data, title, review?.pitch_size]);
+  const camera = useMemo(() => labCamera(motion.data, pitchData, review, job.summary?.source_sha256), [motion.data,pitchData,review?.pitch_panorama,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
+  // Shirt numbers: your corrections, else the worker's reading of each tracked stretch.
+  const numbers = useMemo(() => shirtNumbers(shirtReads.data, review?.shirt_numbers), [shirtReads.data, review?.shirt_numbers]);
   const boundaries=useMemo(()=>review?.pitch_boundaries ?? [],[review?.pitch_boundaries]);
-  const automaticBoundaries=useMemo(()=>job.summary?.source_sha256 && motion.data?.source_sha256===job.summary.source_sha256 ? motion.data?.pitch_boundaries ?? []:[],[motion.data,job.summary?.source_sha256]);
+  const automaticBoundaries=useMemo(()=>automaticBoundariesFor(motion.data,job.summary?.source_sha256),[motion.data,job.summary?.source_sha256]);
   const currentBoundary=camera ? boundaryAt(camera,boundaries,automaticBoundaries,at):null;
-  // A whole-clip refinement (it carries balls) adds the ball only: its people are each linked to one
-  // sampled tracklet across the whole clip, which moved labels onto the wrong people on a real run.
+  // A whole-clip refinement (it carries balls) adds the ball only (see labRows).
   const peopleDense = dense.data?.balls ? undefined : dense.data;
   const allRows = useMemo(() => mergeDense(assignments.data?.observations ?? [], peopleDense), [assignments.data, peopleDense]);
-  const offPitch = useMemo(() => camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal) ? offPitchTracks(assignments.data?.observations ?? [], camera, marks,t=>boundaryAt(camera,boundaries,automaticBoundaries,t) ?? outlineAt(camera,marks,t)) : new Set<number>(), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
+  // Spec 760: the team and ball decisions live in decisions.ts, so a benchmark exporter scores exactly what this page shows.
+  const teamInputs = useMemo(() => ({ assignments: assignments.data, dense: dense.data, appearance: appearance.data, review, camera, automaticBoundaries, remembered: [] }), [assignments.data, dense.data, appearance.data, review, camera, automaticBoundaries]);
+  const offPitch = useMemo(() => labOffPitch(teamInputs), [camera, marks, boundaries, automaticBoundaries, assignments.data]);
   // Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance
   // model settles only what colour cannot (dark kits). Kits you taught in related runs are reused.
-  const saved = useSavedModels(others.filter(o => o.id !== job.id && o.state === "complete"));
-  const remembered = useMemo(() => rememberKits(saved.data ?? [], job.match_title ?? ""), [saved.data, job.match_title]);
+  // Runs of the same match first (a full match is many windows), and derived runs take their source run's title.
+  const saved = useSavedModels(relatedRuns(title, others.filter(o => o.id !== job.id && o.state === "complete")));
+  const remembered = useMemo(() => rememberKits(saved.data ?? [], title ?? ""), [saved.data, title]);
   // With whole-clip refinement the denser rows (about ten a second, with shirt colours) replace the sampled ones.
-  const rows = (assignments.data ? allRows : undefined) as KitObservation[] | undefined;
-  const kits = useMemo(() => learnKits(rows ?? [], review?.track_labels ?? [], remembered), [rows, review?.track_labels, remembered]);
-  const timeline = useMemo(() => {
-    const labels = review?.track_labels ?? [];
-    const fallback = propagateTeams(appearance.data ? cleanAnchors(appearance.data.tracks, labels, kits) : [], labels, review?.group_labels ?? [], appearance.data ? [] : rows ?? [], offPitch);
-    return kitTimeline((rows ?? []).filter(o => !offPitch.has(o.track_id)), kits, labels, fallback);
-  }, [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch]);
+  const rows = useMemo(() => labRows(assignments.data, dense.data), [assignments.data, dense.data]);
+  const kits = useMemo(() => labKits(rows, review, remembered), [rows, review?.track_labels, remembered]);
+  const timeline = useMemo(() => labTimeline(teamInputs, rows, kits, offPitch), [appearance.data, rows, kits, review?.track_labels, review?.group_labels, offPitch, camera, marks, boundaries, automaticBoundaries]);
   const teams = timeline.tracks;
   const denseHasBalls = !!dense.data?.balls?.length;
   const detections = useJobText(job.id, "detections.jsonl", has("detections.jsonl") && (!has("dense_tracks.json") || dense.isFetched) && !denseHasBalls);
-  const ball = useMemo(() => {
-    const w = assignments.data?.image_width ?? 1920, h = assignments.data?.image_height ?? 1080;
-    const toPitch = camera ? (t: number, x: number, y: number) => stabilise(camera, t, x, y) : undefined;
-    if (dense.data?.balls?.length) return trackBall(denseBalls(dense.data, w, h), w, h, toPitch);
-    return detections.data ? trackBall(parseBalls(detections.data), w, h, toPitch) : [];
-  }, [dense.data, detections.data, assignments.data, camera]);
+  const ball = useMemo(() => labBall(dense.data, detections.data, assignments.data, camera), [dense.data, detections.data, assignments.data, camera]);
   const [showBall, setShowBall] = useState(true);
   const moments = useMemo(() => buildMoments({ veo: veo.data, suggestions: suggestions.data, review, teams }), [veo.data, suggestions.data, review, teams]);
   const visible = useMemo(() => filterMoments(moments, filter), [moments, filter]);
@@ -131,8 +144,18 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
     return () => window.removeEventListener("keydown", key);
   }, [visible, cursor, current, playAt, update]);
   const summary = job.summary;
+  // Pre-analysis: does the outline in use hold the players? Judged on the level ground, never by atlas rows.
+  const atlasData = atlas && pitchData?.source_sha256 === summary?.source_sha256 ? pitchData : undefined;
+  const outlineAccepted = !!camera?.panorama && review?.pitch_panorama?.accepted === true && review.pitch_panorama.panorama_id === atlasData?.panorama_id;
+  const acceptedPoints = outlineAccepted ? review?.pitch_panorama?.points : undefined;
+  const play = useMemo(() => atlasData && assignments.data ? playShare(atlasData, acceptedPoints ?? atlasData.suggested_boundary, assignments.data.observations) : null, [atlasData, assignments.data, acceptedPoints]);
   // The clean sample sits under the clickable overlay; annotated.mp4 has boxes burned in.
   const clip = has("sample.mp4") ? "sample.mp4" : has("annotated.mp4") ? "annotated.mp4" : null;
+  // The analysed video export paints the same frame as the player, with its current toggles.
+  const overlayIndex = useMemo(() => indexObservations(mergeDense(assignments.data?.observations ?? [], peopleDense)), [assignments.data, peopleDense]);
+  const frameAt = (time: number) => overlayAt({ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080, index: overlayIndex, teams, teamAt: timeline.at, selected: null,
+    showBoxes: boxes && !!assignments.data, everyone, ball, showBall, camera, marks, boundaries, automaticBoundaries }, time);
+  const withoutOutline = (time: number) => { const frame = frameAt(time); return showOutline ? frame : { ...frame, outline: null, halfway: null }; };
   return <>
     <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[250px_minmax(0,1fr)_330px]">
       <MomentRail moments={moments} visible={visible} filter={filter} setFilter={setFilter} cursor={cursor} onPlay={playAt} />
@@ -150,7 +173,11 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           {ball.length > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showBall} onChange={e => setShowBall(e.target.checked)} />Show ball</label>}
           {has("team_assignments.json") && <label className="flex items-center gap-2 text-sm" title="Include spectators and people on other pitches"><input type="checkbox" checked={everyone} onChange={e => setEveryone(e.target.checked)} />Show everyone</label>}
         </div>
-        {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
+        {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
+        {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
+        {summary && <RanPlacement summary={summary} />}
+        {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} rememberedKits={remembered} />}
+        {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={pitchData} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}
         {camera && review && !camera.panorama && <BoundaryPanel editing={boundaryEditing} selected={boundarySelected} setSelected={setBoundarySelected} onChange={setBoundaryEditing} marks={boundaries} manual={!!boundaryAt(camera,boundaries,[],at)} automatic={!!currentBoundary}
@@ -164,7 +191,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
           onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
-        {camera && (marks.length > 0 || !!camera.panorama?.review.corners) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} selected={track} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
+        {has("team_assignments.json") && has("detections.jsonl") && has("sample.mp4") && summary?.source_sha256 && <RefreshColours jobId={job.id} sourceHash={summary.source_sha256} kits={kits} onQueued={onQueued} />}
+        {has("team_assignments.json") && has("detections.jsonl") && summary?.source_sha256 && camera && <ReadShirtNumbers jobId={job.id} sourceHash={summary.source_sha256} again={has("jersey_candidates.json")} onQueued={onQueued} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
         {appearance.data && review ? <TeamSetup jobId={job.id} appearance={appearance.data} review={review} update={update} teams={teams} kits={kits} remembered={remembered} />
           : !has("track_appearance.json") && summary?.source_sha256 && <PrepareGrouping jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
@@ -174,9 +202,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           <p className="mt-2 text-sm leading-relaxed text-fg-muted">No confirmed football events are produced automatically. Model suggestions and estimated teams wait for your approval. Tracked people are short stretches, not named players, and may include referees and spectators. Ball proximity does not establish possession.</p>
           <dl className="mt-3 grid grid-cols-4 gap-3 text-sm">{[["Sampled frames", summary.sampled_frames], ["Person detections", summary.person_detections], ["Ball detections", summary.ball_detections], ["Short tracklets", summary.unique_tracklets]].map(([label, value]) => <div key={label}><dt className="text-xs text-fg-muted">{label}</dt><dd className="font-semibold">{Number(value).toLocaleString()}</dd></div>)}</dl>
           <p className="mt-2 text-sm">Ball observed in {(summary.ball_observation_coverage * 100).toFixed(1)}% of sampled frames.</p></details>}
-        <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />Download {name}</a>)}</div></details>
+        <details className="panel p-4"><summary className="cursor-pointer font-semibold">Download results</summary><div className="mt-3 flex flex-wrap gap-2">{has("sample.mp4") && <AnalysedExport src={`${BASE}/jobs/${job.id}/files/sample.mp4`} title={job.match_title ?? "Video Lab"} frameAt={withoutOutline} />}
+          {artifacts.map(name => <a key={name} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm hover:border-accent" href={`${BASE}/jobs/${job.id}/files/${name}`} download><Download size={14} aria-hidden />{name === "annotated.mp4" ? "Download raw detections (annotated.mp4)" : `Download ${name}`}</a>)}</div></details>
       </section>
-      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} teamAt={timeline.at} appearance={appearance.data} at={at} />
+      <Inspector jobId={job.id} review={review} update={update} state={state} error={error} moment={current} track={track} teams={teams} teamAt={timeline.at} appearance={appearance.data} at={at} numbers={numbers} />
     </div>
   </>;
 }
@@ -207,7 +236,7 @@ export default function VideoLabPage() {
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
         <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
-      <Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link>
+      <div className="flex flex-wrap items-center gap-2 self-start"><MacStatusLight /><Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link></div>
 
     </header>
     <VeoAnalysisPicker busy={!!running || !!jobs.data?.some(j=>["queued","running"].includes(j.state))} onQueued={queued} />
@@ -215,7 +244,7 @@ export default function VideoLabPage() {
     {!!jobs.data?.length && <nav className="panel space-y-2 p-3" aria-label="Previous runs"><label className="block text-sm">Analysis run<select className="mt-1 block w-full rounded-lg border border-line bg-ink-900 p-2" value={selected ?? ""} onChange={e=>setSelected(e.target.value)}>{jobs.data.map(j=>{const sample=samples.data?.find(s=>s.id===j.sample_id);const name=j.match_title || sample?.label || j.sample_id || "Uncatalogued run";return <option key={j.id} value={j.id}>{name}{sample?.duration_s?` · ${Math.round(sample.duration_s/60)} min`:""} · {runLabel(j)}</option>;})}</select></label>
       {jobs.data.filter(j=>!j.sample_id).map(j=><button key={j.id} className="mr-2 text-xs text-fg-muted" onClick={()=>setSelected(j.id)}>{runLabel(j)}</button>)}
     </nav>}
-    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
+    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.state === "running" && <LivePlacement job={active} />}{active.error && <p className="text-sm text-warn">{active.error}</p>}
       <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
     {active?.state === "complete" && <Workspace key={active.id} job={active} others={jobs.data ?? []} onQueued={queued} />}
       <div className="panel flex flex-wrap items-end gap-3 p-3">

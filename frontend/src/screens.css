@@ -207,6 +207,12 @@
 .theme-neon { background: linear-gradient(#07020f, #1d0a35); box-shadow: inset 0 0 0 1px #e879f966, inset 0 -18px 30px -12px #c026d388; }
 .theme-matchday { background: linear-gradient(90deg, #0b1020 55%, transparent 55%), linear-gradient(-60deg, #0b1020 20%, #2563eb 20% 40%, #f43f5e 40% 60%, #facc15 60% 72%, #0b1020 72%); }
 .theme-minimal { background: linear-gradient(135deg, #15171c, #262a31); }
+.theme-primetime { background: linear-gradient(115deg, transparent 40%, #78a0ff33 40% 55%, transparent 55%), radial-gradient(70% 90% at 50% 50%, #4f6eff55, transparent 70%), linear-gradient(135deg, #04051a, #101848 50%, #22073a); box-shadow: inset 0 3px 0 -1px #38bdf8, inset 0 -3px 0 -1px #a855f7; }
+.theme-studio { background: linear-gradient(#0000 calc(100% - 12px), #e11d2e calc(100% - 12px) calc(100% - 9px), #08090c calc(100% - 9px)), radial-gradient(80% 60% at 50% 110%, #e11d2e77, transparent 70%), linear-gradient(#0b0c11, #191b23); }
+.theme-starnight { background: radial-gradient(1px 1px at 20% 30%, #fff, transparent), radial-gradient(1px 1px at 70% 20%, #fff, transparent), radial-gradient(1.5px 1.5px at 85% 70%, #dbeafe, transparent), radial-gradient(1px 1px at 40% 80%, #fff, transparent), radial-gradient(70% 80% at 50% 45%, #123a9c, #071a5c 50%, #010616); }
+.theme-cinematic { background: linear-gradient(#000 0 14%, transparent 14% 86%, #000 86%), linear-gradient(transparent 49%, #8cc8ff66 50%, transparent 51%), linear-gradient(135deg, #021316, #0b2a30 50%, #331a0b); }
+.theme-ledboard { background: repeating-linear-gradient(90deg, #0009 0 2px, transparent 2px 5px), repeating-linear-gradient(#0009 0 2px, transparent 2px 5px), linear-gradient(90deg, #22d3ee55, #a855f755, #ec489955), #020306; }
+.theme-heist { background: radial-gradient(circle at 84% 74%, #ffe08a 0 14%, transparent 14.5%), linear-gradient(#160935, #5d1a78 35%, #e0457b 60%, #ff8c42 72%, #4a1660 72%, #0e0519); }
 
 /* Spec 190: header "Update available" flash. */
 .update-badge { color: #0b1020; background: linear-gradient(90deg, #facc15, #fde68a, #facc15); background-size: 200% 100%;

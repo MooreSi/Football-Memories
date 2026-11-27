@@ -18,7 +18,7 @@ it("uses the Veo library and queues the selected minutes then imports the verifi
   return Response.json({id:'a'.repeat(32),state:'queued'});
  }));
  renderWithProviders(<VideoLabPage/>);
- await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'veo-synthetic');
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-synthetic');
  await userEvent.clear(screen.getByRole('spinbutton',{name:'Minutes to analyse'}));
  await userEvent.type(screen.getByRole('spinbutton',{name:'Minutes to analyse'}),'5');
  await userEvent.clear(screen.getByRole('spinbutton',{name:'Start minute'}));
@@ -42,7 +42,7 @@ it("does not import the previous clip when analysing the same game with a new du
  }));
  const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
  renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
- await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'veo-synthetic');
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-synthetic');
  await userEvent.click(screen.getByRole('button',{name:'Analyse selected match'}));
  await waitFor(()=>expect(imported).toEqual(['1'.repeat(32)]));
  await userEvent.click(await screen.findByRole('button',{name:'Analyse selected match'}));
@@ -63,10 +63,10 @@ it("unlocks a new match when an earlier background run finishes",async()=>{
   throw new Error(`Unexpected request: ${url}`);
  }));
  renderWithProviders(<VideoLabPage/>);
- await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'new-match');
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'new-match');
  const analyse=screen.getByRole('button',{name:'Analyse selected match'});
  expect(analyse).toBeDisabled();
- expect(within(screen.getByRole('region',{name:'Analyse a Veo match'})).getByRole('status')).toHaveTextContent('Another analysis is queued or running. This button will unlock automatically when it finishes.');
+ expect(within(screen.getByRole('region',{name:'Analyse a Match'})).getByRole('status')).toHaveTextContent('Another analysis is queued or running. This button will unlock automatically when it finishes.');
  finished=true;
  await waitFor(()=>expect(analyse).toBeEnabled(),{timeout:4000});
 });
@@ -75,7 +75,7 @@ it("explains an out-of-range window and enables a valid correction",async()=>{
  vi.stubGlobal('fetch',vi.fn(async()=>Response.json([{id:'short-match',title:'Synthetic short match',available:true,duration_s:1140}])));
  const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
  renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
- await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'short-match');
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'short-match');
  await userEvent.clear(screen.getByRole('spinbutton',{name:'Start minute'}));
  await userEvent.type(screen.getByRole('spinbutton',{name:'Start minute'}),'16');
  await userEvent.clear(screen.getByRole('spinbutton',{name:'Minutes to analyse'}));
@@ -96,7 +96,7 @@ it("shows measured preparation progress with a gradient bar",async()=>{
  }));
  const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
  renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
- await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'progress-match');
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'progress-match');
  await userEvent.click(screen.getByRole('button',{name:'Analyse selected match'}));
  const bar=await screen.findByRole('progressbar',{name:'Preparing analysis clip'});
  await waitFor(()=>expect(bar).toHaveAttribute('aria-valuenow','25'));
@@ -113,9 +113,107 @@ it("uses indeterminate progress while connecting instead of inventing a percenta
  }));
  const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
  renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
- await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Veo match'}),'connecting-match');
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'connecting-match');
  await userEvent.click(screen.getByRole('button',{name:'Analyse selected match'}));
  const bar=await screen.findByRole('progressbar',{name:'Preparing analysis clip'});
  expect(bar).not.toHaveAttribute('aria-valuenow');
  expect(bar).not.toHaveTextContent('%');
+});
+
+it("lists U11 2026/27 Hudl games in their own group and imports a prepared Hudl window",async()=>{
+ const posts:{url:string,body:unknown}[]=[];
+ vi.stubGlobal('fetch',vi.fn(async(url:string,init?:RequestInit)=>{
+  if(init?.method==='POST'){
+   posts.push({url,body:JSON.parse(init.body as string)});
+   return Response.json(url.endsWith('/hudl-jobs')?{id:'a'.repeat(32),state:'queued'}:{accepted:true});
+  }
+  if(url.endsWith('/me'))return Response.json({csrf_token:'fake'});
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-synthetic',title:'Synthetic Veo match',available:true,duration_s:3600}]);
+  if(url.endsWith('/library'))return Response.json([
+   {id:'hudl-u11',title:'261122 U11 v Synthetic (Game 1)',age_group:'U11',season_label:'2026/27',capture_key:'k1'},
+   {id:'hudl-u12',title:'261122 U12 v Synthetic',age_group:'U12',season_label:'2026/27',capture_key:'k2'},
+   {id:'hudl-old',title:'250913 U11 v Synthetic',age_group:'U11',season_label:'2025/26',capture_key:'k3'},
+  ]);
+  if(url.endsWith('/account'))return Response.json({busy:false,state:'done',match_id:'hudl-u11',analysis_ticket:'e'.repeat(32),configured:true,message:''});
+  return Response.json([]);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ const region=screen.getByRole('region',{name:'Analyse a Match'});
+ expect(within(region).getByRole('heading',{name:'Analyse a Match'})).toBeInTheDocument();
+ const select=await screen.findByRole('combobox',{name:'Match'});
+ const hudl=await within(select).findByRole('group',{name:'Hudl · U11 2026/27'});
+ expect(within(hudl).getAllByRole('option').map(o=>o.textContent)).toEqual(['261122 U11 v Synthetic (Game 1)']);
+ expect(within(within(select).getByRole('group',{name:'Veo'})).getAllByRole('option').map(o=>o.textContent)).toEqual(['Synthetic Veo match']);
+ await userEvent.selectOptions(select,'hudl:hudl-u11');
+ await userEvent.clear(screen.getByRole('spinbutton',{name:'Start minute'}));
+ await userEvent.type(screen.getByRole('spinbutton',{name:'Start minute'}),'4');
+ await userEvent.click(screen.getByRole('button',{name:'Analyse selected match'}));
+ await waitFor(()=>expect(posts).toEqual([
+  {url:expect.stringMatching(/\/account\/action$/),body:{action:'analysis',match_id:'hudl-u11',start_s:240,duration_s:600}},
+  {url:'/_admin/api/video-analytics/hudl-jobs',body:{ticket:'e'.repeat(32)}}
+ ]));
+});
+
+it("pre-analysis scans ten minutes from minute five and says why",async()=>{
+ const posts:{url:string,body:unknown}[]=[];const queued:string[]=[];
+ vi.stubGlobal('fetch',vi.fn(async(url:string,init?:RequestInit)=>{
+  if(init?.method==='POST'){
+   posts.push({url,body:JSON.parse(init.body as string)});
+   return Response.json(url.endsWith('/veo-jobs')?{id:'d'.repeat(32),state:'queued'}:{accepted:true});
+  }
+  if(url.endsWith('/me'))return Response.json({csrf_token:'fake'});
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-full',title:'Synthetic full match',available:true,duration_s:3000}]);
+  if(url.endsWith('/veo/account'))return Response.json({busy:false,state:'done',match_id:'veo-full',analysis_ticket:'9'.repeat(32)});
+  return Response.json([]);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={id=>queued.push(id)}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
+ expect(screen.getByText(/Pre-analysis scans 5:00–15:00/)).toBeInTheDocument();
+ await userEvent.click(screen.getByRole('button',{name:'Pre-analysis'}));
+ await waitFor(()=>expect(posts).toEqual([
+  {url:expect.stringContaining('/veo/action'),body:{action:'analysis',match_id:'veo-full',start_s:300,duration_s:600}},
+  {url:'/_admin/api/video-analytics/veo-jobs',body:{ticket:'9'.repeat(32)}}
+ ]));
+ await waitFor(()=>expect(queued).toEqual(['d'.repeat(32)]));
+});
+
+it("pre-analysis is unavailable while another analysis runs",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>Response.json([{id:'veo-full',title:'Synthetic full match',available:true,duration_s:3000}])));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
+ expect(screen.getByRole('button',{name:'Pre-analysis'})).toBeDisabled();
+});
+
+it("shows clip preparation on the Pre-analysis button it started from",async()=>{
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-full',title:'Synthetic full match',available:true,duration_s:3000}]);
+  if(url.endsWith('/veo/action'))return Response.json({accepted:true});
+  if(url.endsWith('/veo/account'))return Response.json({busy:true,state:'working',message:'Connecting to the selected footage…',progress:null});
+  throw new Error(`Unexpected request: ${url}`);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-full');
+ await userEvent.click(screen.getByRole('button',{name:'Pre-analysis'}));
+ expect(await screen.findByRole('button',{name:'Pre-analysing 5:00–15:00…'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Analyse selected match'})).toBeDisabled();
+});
+
+it("pre-analysis starts a minute after Veo's kick-off when Veo gives the halves",async()=>{
+ const posts:unknown[]=[];
+ vi.stubGlobal('fetch',vi.fn(async(url:string,init?:RequestInit)=>{
+  if(init?.method==='POST'){posts.push(JSON.parse(init.body as string));return Response.json({accepted:true});}
+  if(url.endsWith('/veo/library'))return Response.json([{id:'veo-late',title:'Synthetic late kick-off',available:true,duration_s:3904,halves:[[600,2156],[2314,3831]]}]);
+  if(url.endsWith('/veo/account'))return Response.json({busy:true,state:'working',message:'Connecting…',progress:null});
+  return Response.json([]);
+ }));
+ const {VeoAnalysisPicker}=await import('./VeoAnalysisPicker');
+ renderWithProviders(<VeoAnalysisPicker busy={false} onQueued={()=>undefined}/>);
+ await userEvent.selectOptions(await screen.findByRole('combobox',{name:'Match'}),'veo-late');
+ expect(screen.getByText(/Pre-analysis scans 11:00–21:00/)).toBeInTheDocument();
+ await userEvent.click(screen.getByRole('button',{name:'Pre-analysis'}));
+ await waitFor(()=>expect(posts).toEqual([{action:'analysis',match_id:'veo-late',start_s:660,duration_s:600}]));
 });

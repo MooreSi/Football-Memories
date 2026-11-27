@@ -1,6 +1,6 @@
 # 670: A detector trained on the owner's own Veo footage
 
-**Status:** Building. Owner approved all four open questions on 25 Nov 2026 ("yes to all four").
+**Status:** Draft model training on assistant labels (owner decision 016, 26 Nov 2026); gates wait for the owner's 80 held-out frames. Owner approved all four open questions on 25 Nov 2026 ("yes to all four").
 **Sensitive:** no. No Hudl/Veo requests, credentials or library deletes. Owner decisions below.
 
 ## What is wrong or missing today
@@ -129,3 +129,30 @@ None needed. Footage is already in your library; nothing talks to Hudl or Veo.
   main thing training should teach. `presort.json` per set lists each frame's balls, not_balls
   and unsure proposals. Not-balls start unticked (app bb1b387); the note is shown on the frame;
   nothing is a label until the owner confirms the frame.
+
+## Status check (26 Nov 2026, owner chose "Detector fine-tune" after spec 760)
+- No `labels.json` exists in any of the four label sets in `runtime/label-sets` (the live
+  gateway mounts this runtime, so none has been confirmed). Training is blocked on that by
+  design: only human-reviewed labels train, and the gates need the held-out RMC set confirmed.
+- Ready: `/video-lab/labels` is in the deployed admin app (bd67d0d contains a7b2933); presorts
+  exist for all four sets; worker `codex/veo-detector` (838ee61) has `train-veo-detector` and
+  `eval-detector`, not yet merged with later worker branches (merge before training).
+- Owner work for the pilot, about 1.5 h: confirm the 80 held-out RMC frames (gates) and the
+  300 training frames (CG, f7925, Norton). Then the assistant trains, scores the gates and the
+  spec 760 lighting benchmark (detection recall and ball), and reports before any promotion.
+
+## Draft on assistant labels (26 Nov 2026, owner decision 016: "You confirm the 300")
+- Worker `codex/veo-detector-draft` (4bc4a4e, merges the latest worker): `assistant_labels.json`
+  (`assistant_reviewed`) trains only for sets named with `--assistant`; it cannot claim to be
+  human-reviewed; `provenance.json` records which labels each set used; the model name says
+  "draft on assistant labels"; `eval-detector` (the gates) still reads only the owner's
+  `labels.json`. 4 new tests (3 red first, 1 guard already green); 309 pass.
+- Labels (runtime only): 300 frames, 10,376 people and 556 balls kept, 1,529 proposals rejected.
+  Method: people at 0.5+ accepted after a 120-box spot check (118 clearly people, 2 too blurred);
+  pre-sorted balls and not-balls kept; all 2,746 people at 0.25-0.5 and 813 unsorted balls checked
+  on numbered crop sheets; under 0.25 dropped; duplicates merged. Blurred far-side people were
+  kept when person-shaped, because a rejected box teaches "background". Limitation: only the
+  detector's own proposals could be kept, so people and balls it missed are unlabelled.
+- Training: CG + Norton train, f7925 picks the best epoch, YOLO11l COCO base, 40 epochs, 1280 px,
+  with tiles. Output `runtime/veo-detector-draft-016/`. The default detector is unchanged.
+

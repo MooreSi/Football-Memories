@@ -1,3 +1,234 @@
+## Stoke follow-up: team labels shown, pitch from the goals, detector zoom, where a run ran; DEPLOYED (27 November 2026)
+
+Owner (goal, 261108 U11 v Stoke, run 5b0125cf + pitch rebuild 33e876a2): the pitch outline was
+poor; changing a person to "Our player" did not change their tag or colour; improve the detector;
+say where an analysis runs and on what; pitch must be symmetric about the goals and halfway line,
+allowing 7v7/9v9 laid inside bigger pitches. The "second analysis" after the pre-analysis was the
+owner's "Rebuild complete pitch" (POST track-camera at 10:32), not an automatic job; the one 409
+in the log was a label save on that rebuild while it was still queued.
+- Tags (app 1362f1e): labels saved, the overlay showed kit decisions instead. Kits compared only
+  colourful kits (navy took the nearest colourful one), a colourful kit weighed lightness 0.25 even
+  for a colourless reading far darker than it, and a "Not a player" label became a colour that
+  claimed 2221 people. Fixed, plus a dark-team rule (one dark team kit vs a colourful one: a dark
+  shirt on the pitch is the dark team unless your label/look-alike says referee or keeper).
+- Pitch (app 05c2851): `goalPitch` on the level ground from the worker's two selected goals: goal
+  lines, kick-off spot half way, halfway line square through it, equal width either side; width
+  from the format (U11 in the title -> 9v9 73x46; else the chosen size), widened only if play spills
+  past BOTH touchlines (Stoke far side: players stop at 0.27 of length, the fence crowd at 0.41).
+  Used only when it holds >= 85% of central play and no less than painted lines - 3 points: Stoke
+  94% (owner's outline 94%, painted 83%); all 21 other cached runs keep their outline (their goal
+  pairs are often false). The review offers "Use the outline from the goals".
+- Placement (app 05c2851 + gateway 791c6b4): running jobs show stage, Mac and compute (from the
+  mode they started with); finished runs list each stage from summary.json (measured split, model
+  devices, encoder). Core ML ALL is reported as "macOS chooses", never one unit.
+- Detector (worker ac40f39): far boxes two people wide or touching another are re-detected in a
+  2x zoomed half-frame crop (<= 2 a frame), people only (crops see disc cones as balls). 100 Stoke
+  frames: 1.45 zooms/frame, 187 vs ~75 ms/frame, +2.6% people, both merged pairs split.
+- Shirt colour (worker 4c01cfe): torso crops test turf at full resolution; the 1/3-size closed mask
+  swallowed thin navy torsos. Stoke offline re-enrichment: no-colour samples 7217 -> 207; lab shows
+  7417 ours / 7920 Stoke among central people (was 1155 / 7928 before any of this).
+- "Update shirt colours" (app 7030d9f): team-calibration child, labels carry over.
+- Benchmark (frozen spec 760 v1, assistant labels; candidates kit-dark-reading, kit-dark-reading-2,
+  other-dark-team, fullres-turf): withheld precision 0.779 -> 0.793, coverage 0.669 -> 0.675, leaks
+  25 -> 21; development 0.739 -> 0.813, coverage 0.955 -> 0.991. Withheld was scored after each of
+  four candidates, and the lightness rule was revised once on development (NL) evidence.
+DEPLOYED (owner set the goal; no separate yes): worker 4c01cfe on both Macs (mini coordinator
+detach; MacBook coreml_detector.py + teams.py, backup src.2d3661c; digests 96e3f6ee..., heartbeat
+ready both). Gateway fm-gateway-gateway:placement-791c6b4 (branch codex/run-placement from
+28dbc64; override ~/fm-archive-gateway/images-placement.yaml with the live compose files and
+FM_ANALYTICS_RUNTIME/ARCHIVE; origin and mounts unchanged, health 200). Admin app 10d6fbf
+(codex/goal-pitch-deploy = live 29f6b26 + the three app commits, without relatedRuns/lab-run-summary
+from the undeployed overnight commits; 1139 pass there), FM_BUILD_LATEST=0, `built` updated,
+_move admin twice (d9c89c9 then 10d6fbf), exactly 3 containers each time. Owner was using the app.
+Stoke DONE: the browser pane was signed out, so, as the overnight run did, the gateway's own
+handlers ran inside fm-gateway-gateway-1 as the admin user: queue_child team-enrichment of
+33e876a2 (kits #403d4a / #8f75af from the label kits) -> run 92908cc3 (complete, review copied),
+then put_review revision 34 with the goal outline (labPanorama on that run's files) accepted.
+Measured on its level ground: kick-off to each goal 1.901 / 1.901, halfway ends 1.198 each side,
+width 0.630 of length (9v9 73x46 from the review's pitch size), 93.8% of central play inside.
+Lab replay of 92908cc3: central people 7392 ours / 7966 Stoke / 2516 unassigned; all 17 labels
+shown as labelled except tracker swaps onto Stoke players (25, part of 28). Visual check at 2:00:
+every player right, 2 unassigned (one likely the referee). Owner's earlier runs are unchanged.
+Follow-up a6e701d (deployed to admin the same way): the dark-team rule now matches any shade of
+the dark kit (track 377 at 2:00, L 15); live 92908cc3 replay: 7594 ours / 7966 Stoke / 2314
+unassigned. Tracks 25 and 28 checked by crops: genuine tracker swaps (25 is a Stoke player except
+~4 s, 28 is Villa except ~3-5 s), so their colour changes are right. The remaining unassigned
+person by the goal at 2:00 reads as Stoke's grey keeper kit; keepers are never assigned by colour.
+Page check (8d018dc, deployed to admin the same way): the live build and then this branch's hosted
+build (VITE_FM_HOSTED=1) served by a read-only harness over run 92908cc3's real files (review saves in
+memory only; the old harness script from session c29a4a82). Found and fixed two things there: a
+Stoke-shirted person tagged Opponent then "Our player" stayed orange (kit overrode a label it
+disagreed with); now a track never nearest your label's kit keeps your label, swaps unchanged,
+benchmark unchanged (candidate label-overrules). And placement claimed all-MacBook on runs derived
+from a MacBook pitch rebuild; the measured split now wins. After: Person 217 Opp -> Our, "labelled
+by you"; 2:00 shows 7 ours / 8 Stoke / 1 unassigned, outline and halfway drawn, review "Accepted".
+Across games, TRIED AND ROLLED BACK (16067a3, reverted 565b466; admin moved back to 8d018dc within
+minutes): a halfway line through the centre of each outline's minimum-area ground rectangle. The
+area measure said "equal halves" but drawn on the atlases the line ran along the far edge on Eagles
+4bd4003f/e1e0cf6c and Bournville db07377c/c8988347: on a low camera the far side is stretched hugely
+on the ground plane, so the "long side" is the depth direction. Lesson: check a pitch line on the
+image, never by an area ratio alone. Findings that stand: RMC 0671e86b's saved halfway lies exactly on
+the painted halfway line (correct); NL 91f49e12's too. Other matches keep their outlines and
+whatever halfway they had (none on several). A correct cross-game halfway needs the painted halfway
+line or the two goals (as Stoke), not outline shape.
+Next: worker enrichment of archived runs needs annotated.mp4 (archive copy of f81b4684 lacks it);
+dark-team rule is untested on the benchmark (no match there has a dark team kit with colours).
+Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);
+gateway 538 pass, ruff, format, mypy; worker 331 pass, ruff, format, project checks.
+
+## Video Lab encode progress, source-sized clip, all CPU on both Macs and hosted (27 November 2026)
+
+Owner report: "Preparing analysis clip / Encoding the analysis window" sat ten minutes with
+no moving bar (261108 U11 v Stoke, 5:00-15:00). It was working; the encode took ~10 min
+because the hosted capture container was capped at 1.5 CPUs, and CRF 18 inflated the clip
+to 454 MB from ~350 MB of HEVC segments. Owner then asked to remove CPU/GPU/Neural Engine/
+memory restrictions on both Macs.
+- App 561f7ef. DEPLOYED to the admin library only as 29f6b26 (codex/encode-progress-deploy =
+  live 9429c6e + this fix + cbb6a9f crest test-clock fix, which 9429c6e lacked: its suite hangs
+  in test_shared_crests without it). Built FM_BUILD_LATEST=0, added to status.json built,
+  _move admin: exactly its web/backend/capture changed, recreated with no CPU cap. Not
+  checked against the real Hudl account (owner-only); the native helper picks it up on its
+  next restart. encode is step 2 of 2 with ffmpeg-measured seconds; analysis clip CRF 20
+  (measured source-sized); moment exports keep CRF 18. Two tests written red first.
+- Gateway 28dbc64 (codex/uncap-cpu from live 44949e5): no NanoCpus on any hosted container;
+  lockdown test now asserts no CPU cap (owner decision via question, 2026-11-27), threat model
+  T7 updated. Provisioner fm-gateway-provisioner:uncap-28dbc64 recreated alone (override
+  ~/fm-archive-gateway/images-uncap.yaml). Running 32 user containers set to --cpus 10
+  (docker update ignores 0); recreated ones get no cap. Memory/pids caps kept.
+- Docker Desktop VM 7.75 GB -> 16 GB (owner chose restart now; backup
+  settings-store.json.before-16g). All 47 containers back up, 8765 and edge answer.
+- Worker 2d3661c (codex/full-resources from live 8a61b54): resources.CPU_THREADS =
+  os.cpu_count() replaces torch 4 threads (detector x2, T-DEED, PnLCalib), frame pool 6 and
+  render ffmpeg -threads 2. Deployed mini (coordinator detach) + MacBook (src.8a61b54 backup),
+  digests equal d88df9db..., threads 10/11. Mini LaunchAgent gains ProcessType Interactive
+  (unset = launchd throttles CPU and I/O; backup runtime/launchagent-before-interactive.plist).
+  MacBook node runs over SSH, no LaunchAgent, Low Power Mode off on both.
+- Not changed: Core ML compute units (detector already ALL; Neural Engine ReID stays
+  CPU_AND_NE so it does not contend with the detector on the GPU and keeps its grouping).
+- Benchmark (same capture image, M4): 30 s HEVC->H.264 veryfast 21 s at 1.5 CPU, 3 s uncapped.
+Verification: backend 870 pass (SQLite and Postgres 17), ruff, mypy; provisioner 90, ruff,
+mypy; worker 325, ruff, format. Frontend unchanged.
+
+## Spec770 camera and pitch stage 2.2x faster, outputs identical; DEPLOYED both Macs — 26 November 2026
+
+Owner: "speed up the camera and pitch stage too". The stage (camera motion, panorama, cylindrical
+pitch atlas with goal posts, pitch lines and bird's-eye) took 313 s on the NL base. Worker branch
+`codex/faster-camera-pitch` (pushed): the atlas decodes forward once instead of 336 seeks (Veo
+keyframes 8.3 s apart), camera steps and per-view atlas analysis run on a 6-thread ordered pool,
+refinement decoding overlaps SIFT. Measured 312.7 s -> 142.5 s with every camera/pitch output
+byte-identical. 299 worker tests pass.
+DEPLOYED on the owner's "Yes" while idle: MacBook backup `src.984da7a`; mini coordinator b45b74e,
+worker restarted; code digest 98c3c217... both; heartbeat local and remote ready. Not yet exercised: a real job.
+
+## Spec750 hardware render + shared detection DEPLOYED both Macs — 26 November 2026
+
+Owner: "build shared detection across both Macs", then "Build both" after profiling. The
+analysis stage on the 4-minute NL clip spent 223 s of 355 s re-encoding the annotated video
+(libx264, 2 threads) and only 50 s detecting. Worker branch `codex/fast-render-shared-detection`
+(pushed): single raw-pipe encode on `h264_videotoolbox` (libx264 all cores where missing), and in
+Split the MacBook detects the last 60% of sampled frames while the mini does the rest, every
+reply checked against the mini's own decoded times, no fallback. Measured: stage 355 s -> 102 s
+-> 66 s; whole idle Split job roughly 10 min -> 5 min (camera/pitch, ~222 s, is now the longest
+stage). Details and the M3/M4 detection comparison: spec 750 and worker HANDOFF. 293 worker
+tests pass.
+DEPLOYED on the owner's "Yes, deploy" at ~21:32 UTC, after Split job c8988347 (261122 NL vs
+Bournville Greens, old code) completed. MacBook backup `src.1c55193`; mini coordinator 984da7a,
+worker restarted idle; code digest 2f34e6a3... both; heartbeat local and remote ready; both Macs
+pick h264_videotoolbox. App and gateway unchanged. Not yet exercised: a real Split job via the UI.
+Note: another session committed and deployed 1c55193 (pitch rebuilds on the MacBook) in the
+same worker checkout during this work; this branch contains it.
+
+## Video Lab: one referee on the pitch; overlay from 0:00 — 26 November 2026
+
+Suggested referees seen mostly off the marked pitch are unassigned (your label always holds);
+missing atlas poses are carried with the camera motion so the pitch overlay shows from the start.
+Frontend only; deployed to admin (bd67d0d).
+
+## Reel card themes — 26 November 2026
+
+Five broadcast themes and a GTA 6 style theme for title cards (reelThemes.ts). Frontend only; not deployed.
+
+## Hudl U11 2026/27 games in Video Lab — 26 November 2026
+
+Video Lab's picker is now "Analyse a Match" with a "Match" select: a Veo group and a
+"Hudl · U11 2026/27" group (Hudl library filtered by season_label and age group).
+Hudl uses new helper action `analysis` (start_s, duration_s <=600.1): it reuses the
+open player stream (or prepares one exactly as Stream/clips do), fetches only the
+segments covering the window, encodes with output-side `-ss` and publishes a
+verified clip under `.hudl-account/analysis/<ticket>/` (nothing in downloads).
+Gateway POST /hudl-jobs (generalised from /veo-jobs) needs CSRF plus the Hudl
+permission and imports by 32-hex ticket only; sample `hudl-<id>`, `hudl_match_id`.
+Hudl clips carry no tags: the worker imports sample tags as Veo teacher records.
+Tests red first (helper3, gateway2, UI1); existing picker tests changed only for the
+requested rename. NOT verified against real Hudl (owner: one short U11 window) and
+NOT deployed. `hudl_browser/_account.py` is 866 lines (was 851): split is pending.
+
+## Analysed video export — 26 November 2026
+
+Video Lab Download results: annotated.mp4 relabelled "raw detections" (it is the
+worker's pre-tracking box render). New Export analysed video records the clean sample
+in the browser with the player's own overlay (pitch outline, halfway line, team rings,
+ball, your labels, current toggles) via shared `overlayAt` + canvas `paintOverlay` +
+MediaRecorder. Tests red first (module missing; Workspace labels/progress/cancel).
+Real Chrome check on a synthetic 6 s harness clip: 1280x720 H.264 MP4, 5.99 s, frame
+at 3 s shows own/opponent/unassigned rings and caption. Outline/halfway only unit
+tested (harness had no camera tracking); audio track in the recording not inspected.
+Frontend only; not deployed.
+
+## Spec730 execution nodes implementation — 26 November 2026
+
+Admin Advanced selector Local/MacBook/Split, status polling, authenticated save,
+offline refusal and immutable new-job snapshots implemented across app/gateway.
+Worker223 pass/all gates; gateway500 pass/2 existing skips plus4 Docker cases,
+lint/format/mypy. App frontend980 tests/194 files, typecheck and hosted build pass;
+backend854 SQLite +854 PostgreSQL, ruff/format/mypy and no Alembic drift. New API
+and UI missing-behaviour tests observed red before implementation. Worker dispatch
+red on ignored remote policy; split red on explicit stub. Initial archive/transport
+tests followed implementation; later symlink/undeclared-payload guards red/green.
+No existing assertions weakened. Browser1280 and375px isolated synthetic account
+verified save and no phone overflow, reference01 compared. Real SSH synthetic2s
+all modes complete with source/manifest/ZIP checks. MacBook installed separately,
+existing Football Analysis and Docker containers preserved. Cached15s Local/Remote/Split smoke also passed source/hash/ZIP/decode checks.
+Isolated provisioner Docker verification and admin-only deployment still pending.
+No source account access. Unrelated launch.json unchanged.
+
+## Spec720 DEPLOYED to all eight libraries — 26 November 2026
+
+Owner replied "deploy it" after the explicit full provisioner Docker isolation
+exception request; this waives that check for this release only. App main/shared
+latest is `e7fee2b84396b20ab5468775cf2f5e867c54a9fa` (runtime code identical to
+verified `f604877`); gateway main `081a353` / code `aaecf42` deployed from prepared
+`spec720-aaecf42` images, gateway CI45778074931 green. Gateway migration0008
+applied, release ancestry seeded before replacement, 12 gateway networks restored.
+Shared default app tags and crest service follow the release. All eight running
+libraries moved through the existing gateway update path and passed health checks.
+
+Live verification: current==latest==e7fee2b, available=false for every account;
+admin's two labs on by default, seven ordinary accounts off, no explicit grants
+created. Advanced settings bundle served by every library. Anonymous public portal
+lab API401; public health200. No production session fabricated and no signed-in
+browser/real toggle mutation exercised. Existing test/UI evidence above still applies.
+
+Audit: exactly27/48 containers replaced (gateway, provisioner, crests and8x3 app
+containers), other21 unchanged; every user's database container and persistent
+mount unchanged. Roles, account status, quotas and automatic-update preferences
+match the pre-deploy snapshot. All1225 existing analysis JSON SHA-256 hashes
+unchanged. Native analytics worker untouched/idle. Private rollback DB/status and
+inventory snapshots in /tmp/fm720-deployment; no secrets printed or committed.
+
+Seven helpers were busy=false/not syncing, no ffmpeg, zero network bytes over12s,
+and no queued/rendering reels before their moves. Admin still had streaming traffic
+while busy=false; repeated checks found no active capture/export/reel/analysis job,
+ffmpeg or open media-file writer. The explicitly requested final app restart ended
+that ephemeral stream. Do not claim admin network counters were flat. Saved source
+connections/volumes retained; no source login, refresh or footage download performed
+for verification, and no existing media or analysis result overwritten.
+
+Refresh the app, then use Settings > Advanced as admin for own/per-user lab switches
+and Update all users. Other users remain denied until deliberately granted. App and
+gateway workspace branches remain codex/local-video-analytics for ongoing work;
+release main references are above. External .claude/launch.json remains untouched.
+
 ## Spec720 lab switches and preview-safe updates — 26 November 2026
 
 Code commits app `f604877`, gateway `aaecf42`; gateway CI45778074931 green
@@ -46,7 +277,12 @@ Read worker code, historical detector/atlas trials and gateway admission; inspec
 local hardware/network and LaunchAgent profile flags. M4 mini/24 GB confirmed;
 Thunderbolt Bridge inactive. Strict SSH probe stopped at unknown host key, before
 remote execution. Owner follow-up confirms M3 MacBook Pro/18 GB and Thunderbolt;
-exact M3 variant, active cable networking and performance remain unconfirmed.
+exact M3 variant and performance remain unconfirmed. Follow-up desktop/network
+inspection: bridge active, connected MacBook Pro at reported40 Gb/s, peer ping4/4
+with0.659 ms average and TCP22 reachable via bridge0; internet route remains en0.
+Existing configuration already correct; no setting changed or remote login made.
+UI Unknown state differs from active interface/network checks. Bulk throughput
+unmeasured. Documentation-only verification: links retained, diff whitespace clean.
 Follow-up docs checked for links/whitespace; no code/runtime,
 account, source/result or deployment changes. Docs links and whitespace checked;
 runtime suites not run for this docs-only checkpoint. Existing unrelated app edits
@@ -1637,6 +1873,56 @@ resumable capture remain unavailable. Phase 5 highlight rendering and phase 6
 backups/integrity are implemented above; remaining tasks are in brief section 26.
 
 ## Verification log (newest first)
+
+### 2026-11-26: Shirt numbers (worker reader, gateway corrections, lab UI)
+
+- Frontend 208 files / 1102 pass, typecheck, build. Worker 308 pass + ruff/format/project checks
+  (worktree). Gateway 522 pass, ruff, format, mypy (worktree). New tests seen red first.
+- Real-data: reader run end to end on cached NL (16/32, 0 wrong, ~3 min); held-out RCW once.
+- Backend unchanged, not run. Nothing deployed.
+
+### 2026-11-26: Spec 760 Part B (balanced kit colour), failed the gate
+
+- Worker d63739e: 6 new tests observed failing (stub, missing fields), then green; `uv run pytest`
+  292 passed; ruff, format, project checks pass.
+- App 17119d5: Part B tests red on the previous decisions.ts (3), then green; one test's data was
+  corrected before it had ever passed (its "shaded" colour was too grey to be a decisive kit).
+  After the gate the default changed to raw: two tests rewritten for that and observed red first.
+  Clean worktree (HEAD plus the staged change): typecheck pass, vitest 1058 passed, build pass.
+- Real data, read-only: five runs re-enriched into new outputs; colour_lab identical on the four
+  current-format runs. Scored enriched-raw and enriched-balanced against frozen v1.
+- Not checked: the page in a browser (default behaviour is unchanged from before Part B).
+
+### 2026-11-26: Video Lab sideline people off the 2D pitch
+
+- Frontend `npm test` 205 files / 1077 pass, typecheck, build pass. New tests seen red first.
+- Real-data replay (throwaway probe, not committed) on 91f49e12 and 6c216d41; numbers in the
+  video-analytics domain README. Backend unchanged, not run. Not deployed.
+
+### 2026-11-26: Spec 760 Part A (lighting benchmark)
+
+- Worker `codex/lighting-benchmark`: `uv run pytest` 286 passed; ruff, format, project checks pass.
+  14 new tests observed failing first (stubs; low-sun grass case on the old code).
+- App: `decisions.test.ts` 4 tests, made to fail by breaking the function (2 failed), restored.
+  Committed state checked in a clean worktree: `npm run typecheck` pass, `vitest run` 1042 passed.
+  `npm run build` pass (in the shared checkout). Backend not touched, its suites not run.
+- Real data, read-only: 5 cached runs exported and scored; frozen v1 audit, assistant labels only.
+- Not checked: the refactored page in a browser (needs the gateway admin sign-in); owner labels.
+
+### 2026-11-26: Video Lab live 2D pitch
+
+- Frontend: `npm test` 203 files / 1053 tests pass on the second and third full runs; the first full run
+  had 1 failure in `TournamentSquadChoice.test.tsx` (unrelated; passes alone and on rerun).
+  `npm run typecheck`, `npm run build` pass. New tests seen red first (livePitch 7, PitchMap 3).
+- Backend unchanged; its suites not run.
+- Browser: local read-only harness on cached run 91f49e12; nothing written back, not deployed.
+
+### 2026-11-26: Lighting research, spec 760 drafted (docs only)
+
+- No code changed; no suites run (docs-only change). Read-only probe over six cached
+  worker runs (script kept in the session scratchpad, not the repo): grass lightness
+  spread and torso vs local grass lightness correlation, figures in spec 760.
+- Not checked: the a/b colour cast of shade; any labelled accuracy. Both are Part A.
 
 ### 2026-11-22 — Incremental Veo checks (spec 460)
 

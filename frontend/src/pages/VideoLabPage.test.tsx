@@ -30,6 +30,17 @@ it("reports API refusal without inventing a finished analysis",async()=>{
  expect(await screen.findByRole("alert")).toHaveTextContent(/unavailable/i);
  expect(screen.queryByRole("link",{name:/Download/})).toBeNull();
 });
+it("says where an archived run is when the MacBook share is away",async()=>{
+ const away="b".repeat(32);
+ vi.stubGlobal("fetch",vi.fn(async(url:string)=>{
+  if(url.endsWith("/samples"))return Response.json([]);
+  if(url.endsWith("/jobs"))return Response.json([{id:away,state:"complete",progress:1}]);
+  if(url.endsWith(`/jobs/${away}`))return Response.json({detail:"This run is stored on the MacBook. Connect the MacBook to open it."},{status:409});
+  return Response.json([]);
+ }));
+ renderWithProviders(<VideoLabPage/>);
+ expect(await screen.findByRole("alert")).toHaveTextContent("This run is stored on the MacBook. Connect the MacBook to open it.");
+});
 it("shows the selected ten-minute sample duration",async()=>{
  vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/samples")?Response.json([{id:"ten-minute",label:"Synthetic ten-minute fixture",duration_s:600,source_offset_s:900}]):Response.json([])));
  renderWithProviders(<VideoLabPage/>);
@@ -46,4 +57,10 @@ it("labels jersey-tagging runs with the run they were tagged from",async()=>{
  renderWithProviders(<VideoLabPage/>);
  expect(await screen.findByRole("button",{name:"cccccccc · complete · jersey tagging of bbbbbbbb"})).toBeInTheDocument();
  expect(screen.getByRole("button",{name:"bbbbbbbb · complete"})).toBeInTheDocument();
+});
+it("shows the connected Mac's status light in the page header",async()=>{
+ vi.stubGlobal("fetch",vi.fn(async(url:string)=>url.endsWith("/video-nodes")?Response.json({mode:"local",local_ready:true,remote_ready:true}):Response.json([])));
+ renderWithProviders(<VideoLabPage/>);
+ const light=await screen.findByRole("status",{name:"MacBook Pro connected"});
+ expect(light.closest("header")).not.toBeNull();
 });

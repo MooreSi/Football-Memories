@@ -41,6 +41,8 @@ function body(review: Review) {
     pitch_keyframes: review.pitch_keyframes ?? [], pitch_size: review.pitch_size ?? null,
     ...(review.pitch_panorama !== undefined ? {pitch_panorama:review.pitch_panorama}:{}),
     ...(review.pitch_boundaries !== undefined ? {pitch_boundaries:review.pitch_boundaries}:{}),
+    // Sent only once you set one, so reviews without numbers still save against an older gateway.
+    ...(review.shirt_numbers !== undefined ? { shirt_numbers: review.shirt_numbers.map(({ track_id, number }) => ({ track_id, number })) } : {}),
   };
 }
 

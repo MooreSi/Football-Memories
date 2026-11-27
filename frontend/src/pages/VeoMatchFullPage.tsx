@@ -10,9 +10,8 @@ import { fixtureLabel } from "../lib/hudlFixture";
 import { advanceTagged, arrived, needsSeek, nextMoment, taggedPlaylist } from "../lib/taggedPlayback";
 import { DownloadChoice } from "./HudlMatchPage";
 import { useVeoClubOf } from "../lib/useVeoClub";
-import { SPELL, veoInsights } from "../lib/veoInsights";
-import { teamSplit, VEO_MOMENTUM_WEIGHTS, veoMomentum } from "../lib/veoTeamSplit";
-import { HeadToHeadRecord, MomentumBars } from "../components/match/MatchInsights";
+import { teamSplit, veoMomentum } from "../lib/veoTeamSplit";
+import { HeadToHeadRecord } from "../components/match/MatchInsights";
 import { TeamStatsTable } from "../components/match/TeamStatsTable";
 import { GoalsPanel } from "../components/match/GoalsPanel";
 import { QuickReels } from "../components/match/QuickReels";
@@ -47,71 +46,6 @@ function VeoPlayer({ url, seek, onTime, poster }: { url: string; seek?: { time: 
       onError={() => setFailed(true)} onLoadedMetadata={() => setFailed(false)} />
     {failed && <p role="alert" className="text-sm text-danger">The video stopped loading. Select Watch match to start it again.</p>}
   </div>;
-}
-
-/** Owner request 2026-11-13: what Veo's highlights allow (types and times, no team). */
-function VeoInsights({ match, onSeek }: { match: VeoMatch; onSeek: (t: number) => void }) {
-  const s = veoInsights(match.moments ?? [], match.halves, match.duration_s);
-  const clubOf = useVeoClubOf();
-  const ownName = clubOf(match) || "Us";
-  // Owner request 2026-11-15: momentum as on a Hudl match, from Veo's team events.
-  const flow = veoMomentum(match.team_data?.events ?? [], match.halves, match.duration_s);
-  // Owner request 2026-11-15: the record against this opponent across the Veo matches.
-  const library = useVeoLibrary();
-  const club = clubOf(match);
-  const opponent = fixtureParts(match.title, club)?.opponent;
-  // Only this club's matches: the account films more than one club.
-  const record = opponent ? recordAgainst(library.data?.filter(m => clubOf(m) === club).map(veoAsHudl), club, undefined, opponent) : null;
-  // Spec 320: Insights is a tab, so it says when there is nothing rather than vanishing.
-  if (!match.moments?.length && !flow.minutes.length && !record) return <section aria-label="Match insights" className="panel p-5">
-    <p className="text-sm text-fg-muted">Veo gave no highlights or team events for this match.</p></section>;
-  const peak = Math.max(1, ...s.spells.map(x => x.goals + x.shots + x.other));
-  const tiles: [string, string][] = [
-    ["Score", match.score ? `${match.score.ours}–${match.score.theirs}` : "–"],
-    ["Goals tagged", String(s.goals)],
-    ["Shots on goal", String(s.shots)],
-    ["First goal", s.firstGoal === null ? "–" : formatClock(s.firstGoal)],
-    ["Busiest spell", s.busiest === null ? "–" : `${formatClock(s.busiest)}–${formatClock(s.busiest + SPELL)}`],
-    ["Recorded", match.duration_s ? `${Math.round(match.duration_s / 60)} min` : "–"],
-  ];
-  return <section aria-label="Match insights" className="panel space-y-5 p-5">
-    <h2 className="flex items-center gap-2 text-xl font-semibold"><Activity size={18} className="text-accent" aria-hidden /> Match insights</h2>
-    <div className="flex flex-wrap gap-8"><div className="min-w-0 flex-[999_1_480px] space-y-5">
-    {flow.minutes.length > 0 && <MomentumBars rows={flow.minutes} halves={flow.halves} ours={ownName} theirs="Opponent" onSeek={onSeek}
-      caption={`Bars weigh each side's Veo events per minute: ${Object.entries(VEO_MOMENTUM_WEIGHTS).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ")}. Dots are goals, dashed lines half-time. Click a bar to watch it. Veo gives no possession data for this account, so there is no possession bar.`} />}
-    {match.moments?.length ? <>
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {tiles.map(([label, value]) => <div key={label} className="tile p-3"><p className="text-xs text-fg-subtle">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums">{value}</p></div>)}
-    </div>
-    {s.halves.length > 1 && <div className="grid gap-3 sm:grid-cols-2">
-      {s.halves.map(h => <div key={h.label} className="tile flex flex-wrap items-baseline gap-x-4 gap-y-1 p-3 text-sm">
-        <span className="mr-auto font-semibold">{h.label}</span>
-        <span>{h.goals} {h.goals === 1 ? "goal" : "goals"}</span><span>{h.shots} {h.shots === 1 ? "shot" : "shots"}</span>
-        <span className="text-fg-muted">{h.highlights} highlights</span></div>)}
-    </div>}
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-fg-muted"><span>Highlights through the match, 5 minutes a bar</span>
-        <span className="text-xs"><span className="text-ok">■</span> Goal · <span className="text-accent">■</span> Shot · <span className="text-fg-subtle">■</span> Other</span></div>
-      <div role="group" aria-label="Highlights by 5 minutes" className="flex h-28 items-end gap-1">
-        {s.spells.map(x => {
-          const total = x.goals + x.shots + x.other;
-          const label = `${formatClock(x.start)} to ${formatClock(x.start + SPELL)}: ${x.goals} goals, ${x.shots} shots${x.other ? `, ${x.other} other` : ""}`;
-          return <button key={x.start} type="button" aria-label={label} title={label} disabled={!total} onClick={() => onSeek(x.start)}
-            className="flex h-full min-w-0 flex-1 flex-col-reverse rounded-sm bg-white/5 hover:bg-white/10 disabled:cursor-default">
-            <span className="block bg-ok" style={{ height: `${(x.goals / peak) * 100}%` }} />
-            <span className="block bg-accent" style={{ height: `${(x.shots / peak) * 100}%` }} />
-            <span className="block bg-fg-subtle/60" style={{ height: `${(x.other / peak) * 100}%` }} />
-          </button>;
-        })}
-      </div>
-      <div className="flex justify-between text-[11px] text-fg-subtle"><span>0:00</span><span>{formatClock(s.spells.length * SPELL)}</span></div>
-    </div>
-    <p className="text-xs text-fg-subtle">Veo marks the type and time of each highlight but not the team, so these count both teams. Click a bar to watch from there.</p>
-    </> : null}
-    </div>
-    {record && <div className="min-w-0 flex-[1_1_260px]"><HeadToHeadRecord record={record} current={match.id} linkTo={id => matchLink({ id, source: "veo" })} /></div>}
-    </div>
-  </section>;
 }
 
 /** Decision 009 (owner, 2026-11-14): Veo's own stats and events with the team each
@@ -265,6 +199,10 @@ export function VeoMatchFull({ id }: { id: string }) {
   if (!match) return <div className="panel space-y-3 p-6"><Link to="/">← Library</Link><p className="text-sm text-fg-muted">This match is not in the Veo cache. Select Refresh matches in Settings → Connections → Veo.</p></div>;
   const age = match.age_group && match.age_group !== "Unclassified" ? match.age_group : "";
   const team = clubOf(match);
+  // Owner request 2026-11-15: the record against this opponent across this club's Veo matches
+  // (since 2026-11-27 in the Match stats tab; the Insights tab was removed).
+  const opponent = fixtureParts(match.title, team)?.opponent;
+  const h2h = opponent ? recordAgainst(library.data?.filter(m => clubOf(m) === team).map(veoAsHudl), team, undefined, opponent) : null;
   const label = team ? fixtureLabel(match.title, team, age) : undefined;
   const expiry = veoExpiry(match);
   const where = match.home_or_away === "home" ? "Home" : match.home_or_away === "away" ? "Away" : null;
@@ -359,7 +297,7 @@ export function VeoMatchFull({ id }: { id: string }) {
           previous={earlier((library.data ?? []).filter(m => m.id !== id && clubOf(m) === team && teamSplit(m.team_data).length), match.title, m => m.title)
             .map(m => teamSplit(m.team_data))} /> : null}
         goals={<GoalsPanel match={match} club={null} onSeek={seekTo} />}
-        insights={<VeoInsights match={match} onSeek={seekTo} />} />
+        record={h2h && <div className="panel p-5"><HeadToHeadRecord record={h2h} current={match.id} linkTo={mid => matchLink({ id: mid, source: "veo" })} /></div>} />
     </div>
     {asking && <DownloadChoice count={chosen.length} onCancel={() => setAsking(false)} onChoose={combined => {
       setAsking(false);

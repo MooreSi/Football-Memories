@@ -31,3 +31,40 @@ it("prefers the complete cylindrical atlas and persists goal anchors with the li
  await userEvent.click(screen.getByRole("button",{name:"Accept pitch calibration"}));
  await waitFor(()=>expect(saved?.pitch_panorama).toEqual(expect.objectContaining({panorama_id:atlasId,points,goal_posts:[goals[0].posts[0],goals[0].posts[1],goals[1].posts[1],goals[1].posts[0]],goals_confirmed:false,accepted:true})),{timeout:3000});
 });
+it("shows the proposed halfway line and saves it with the accepted pitch",async()=>{
+ let saved:Record<string,unknown>|undefined;
+ const id="a".repeat(32),hash="b".repeat(64),atlasId="c".repeat(64),halfway=[[.5,.3],[.52,.95]];
+ vi.stubGlobal("fetch",vi.fn(async(url:string,init?:RequestInit)=>{
+  if(url.endsWith("/me"))return Response.json({csrf_token:"synthetic"});
+  if(url.endsWith("/samples"))return Response.json([]);
+  if(init?.method==="PUT"){saved=JSON.parse(init.body as string);return Response.json({...saved,revision:2});}
+  if(url.endsWith("/review"))return Response.json({revision:1,source_sha256:hash});
+  if(url.endsWith("camera_motion.json"))return Response.json({source_sha256:hash,times:[0,1],steps:[[1,0,0,0,1,0,0,0,1]],cuts:[false]});
+  if(url.endsWith("pitch_atlas.json"))return Response.json({panorama_id:atlasId,source_sha256:hash,width:2400,height:900,image:"pitch_atlas.jpg",times:[0,1],cuts:[false],frame_to_panorama:[[1,0,0,0,1,0,0,0,1],[1,0,0,0,1,0,0,0,1]],frame_to_world:[[1,0,-.5,0,1,0,0,0,.8],[1,0,-.5,0,1,0,0,0,.8]],projection:{kind:"cylindrical",origin:[-1,-.3],span:[2,1.3]},suggested_boundary:points,pitch_outline:{method:"painted_lines",halfway},selected_goals:goals,goal_candidates:goals,keyframe_times:[0,1]});
+  if(url.endsWith("team_assignments.json"))return Response.json({image_width:1920,image_height:1080,observations:[]});
+  const job={id,state:"complete",progress:1,summary:{source_sha256:hash},artifacts:["sample.mp4","camera_motion.json","team_assignments.json","pitch_atlas.json","pitch_atlas.jpg"]};
+  return Response.json(url.endsWith("/jobs")?[job]:job);
+ }));
+ renderWithProviders(<VideoLabPage/>);
+ await screen.findByRole("img",{name:"Complete pitch panorama"});
+ expect(screen.getAllByLabelText("Halfway line").length).toBeGreaterThan(0);
+ await userEvent.click(screen.getByRole("button",{name:"Accept pitch calibration"}));
+ await waitFor(()=>expect(saved?.pitch_panorama).toEqual(expect.objectContaining({halfway})),{timeout:3000});
+});
+it("says plainly when a goal end was never filmed and suggests a longer window",async()=>{
+ const id="a".repeat(32),hash="b".repeat(64),atlasId="c".repeat(64);
+ vi.stubGlobal("fetch",vi.fn(async(url:string)=>{
+  if(url.endsWith("/me"))return Response.json({csrf_token:"synthetic"});
+  if(url.endsWith("/samples"))return Response.json([]);
+  if(url.endsWith("/review"))return Response.json({revision:1,source_sha256:hash});
+  if(url.endsWith("camera_motion.json"))return Response.json({source_sha256:hash,times:[0,1],steps:[[1,0,0,0,1,0,0,0,1]],cuts:[false]});
+  if(url.endsWith("pitch_atlas.json"))return Response.json({panorama_id:atlasId,source_sha256:hash,width:2400,height:900,image:"pitch_atlas.jpg",times:[0,1],cuts:[false],frame_to_panorama:[[1,0,0,0,1,0,0,0,1],[1,0,0,0,1,0,0,0,1]],frame_to_world:[[1,0,-.5,0,1,0,0,0,.8],[1,0,-.5,0,1,0,0,0,.8]],projection:{kind:"cylindrical",origin:[-1,-.3],span:[2,1.3]},suggested_boundary:points,pitch_outline:{method:"painted_lines",unseen_sides:[false,false,true,true]},selected_goals:goals,goal_candidates:goals,keyframe_times:[0,1]});
+  if(url.endsWith("team_assignments.json"))return Response.json({image_width:1920,image_height:1080,observations:[]});
+  const job={id,state:"complete",progress:1,summary:{source_sha256:hash},artifacts:["sample.mp4","camera_motion.json","team_assignments.json","pitch_atlas.json","pitch_atlas.jpg"]};
+  return Response.json(url.endsWith("/jobs")?[job]:job);
+ }));
+ renderWithProviders(<VideoLabPage/>);
+ expect(await screen.findByText(/left goal end was not filmed/i)).toBeInTheDocument();
+ expect(screen.getByText(/longer analysis window/i)).toBeInTheDocument();
+ expect(screen.queryByText(/Both goal ends located/)).toBeNull();
+});

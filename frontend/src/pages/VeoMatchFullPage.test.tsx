@@ -46,17 +46,6 @@ it("filters the highlights by type from the rail", async () => {
   expect(within(list).getAllByRole("listitem")).toHaveLength(2);
 });
 
-it("shows the match stats Veo allows, and says they count both teams", async () => {
-  stub(ready);
-  renderWithProviders(<App />, "/veo/veo-a");
-  const stats = await screen.findByRole("region", { name: "Match insights" });
-  expect(within(stats).getByText("Goals tagged").closest("div")).toHaveTextContent("2");
-  expect(within(stats).getByText("Shots on goal").closest("div")).toHaveTextContent("1");
-  expect(within(stats).getByText("First goal").closest("div")).toHaveTextContent("5:00");
-  expect(within(stats).getByText(/both teams/)).toBeInTheDocument();
-  expect(within(stats).getByRole("group", { name: "Highlights by 5 minutes" })).toBeInTheDocument();
-});
-
 it("starts Watch on opening, once, when this match is not already playing", async () => {
   const calls = stub(idle);
   renderWithProviders(<App />, "/veo/veo-a");
@@ -195,12 +184,12 @@ it("shows the match's numbers as charts in a Match stats tab, against earlier ma
 it("shows no team stats for a match Veo gave none for", async () => {
   routes([{ ...match, team_data: null }], ready);
   renderWithProviders(<App />, "/veo/veo-a");
-  await screen.findByRole("region", { name: "Match insights" });
+  await screen.findByRole("tablist", { name: "Match sections" });
   expect(screen.queryByRole("region", { name: "Team stats" })).toBeNull();
 });
 
 // Owner request 2026-11-15: Veo's team events in the rail, chosen like highlights, and
-// momentum in Match insights as on a Hudl match.
+// momentum as on a Hudl match (since 2026-11-27 in the match timeline above the tabs).
 const teamMoments = [
   { id: "t-own-corner-kick-400000", category: "OUR CORNER", side: "own", time_s: 390, duration_s: 15, team: true },
   { id: "t-opponent-corner-kick-900000", category: "OPPONENT CORNER", side: "opponent", time_s: 890, duration_s: 15, team: true },
@@ -229,9 +218,8 @@ it("lists the team events in the rail and downloads the ones chosen", async () =
 it("shows momentum minute by minute from Veo's team events", async () => {
   routes([{ ...match, team_data: teamData }], ready);
   renderWithProviders(<App />, "/veo/veo-a");
-  const insights = await screen.findByRole("region", { name: "Match insights" });
-  expect(within(insights).getByRole("img", { name: "Momentum chart" })).toBeInTheDocument();
-  expect(within(insights).getByText(/Veo gives no possession/)).toBeInTheDocument();
+  expect(await screen.findByRole("img", { name: "Match timeline" })).toBeInTheDocument();
+  expect(screen.queryByRole("tab", { name: "Insights" })).toBeNull();
 });
 
 // Owner request 2026-11-15: several highlight types and team events at once.

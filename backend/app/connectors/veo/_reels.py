@@ -86,7 +86,7 @@ def _match_source(
     if saved is not None:
         yield str(saved), None
         return
-    url = connection._videos.get(identity) or connection._read_video(identity)
+    url = connection._video_url(identity)
 
     def fetch(start: int, end: int | None) -> tuple[int, int, bytes]:
         with connection._media_lock:

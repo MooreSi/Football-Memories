@@ -88,3 +88,21 @@ def test_remote_analysis_reads_a_window_without_downloading_the_match(tmp_path, 
     assert media.downloads == []
     assert index.entries(folder) == []
     assert "http" not in status["message"]
+
+
+# Owner report 2026-11-26: an analysis window from a match not saved on this computer
+# failed with "could not be cut from the saved match", hiding what Veo actually said.
+def test_remote_analysis_reports_veo_refusal_not_a_saved_match_failure(tmp_path, long_video):
+    from tests.connectors.test_veo_reels import ChunkedMedia
+
+    media = ChunkedMedia(long_video.read_bytes(), refuse_after=1)
+    veo, _, _, folder, index = _ready(tmp_path, media)
+    veo.start("analysis", IDENTITY, reel={"start_s": 60, "duration_s": 4})
+    status = veo.status()
+    assert status["state"] == "error"
+    assert status["message"] == (
+        "Veo refused access to that page. Nothing was retried; try again later."
+    )
+    assert "saved match" not in status["message"]
+    assert not list((veo.directory / "analysis").rglob("sample.mp4"))
+    assert media.downloads == []

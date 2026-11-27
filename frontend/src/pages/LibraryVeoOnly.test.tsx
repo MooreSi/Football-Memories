@@ -92,13 +92,30 @@ it("lists the Veo team events first in recent moments, then the highlights", asy
   expect(recent).toHaveTextContent("4 tagged in this match");
 });
 
-it("links the Veo match profile to Opponents for the match's own club", async () => {
-  // Owner request 2026-11-15: "add opponents to the match profile for veo".
+it("keeps Opponents out of the Library heading and the match profile", async () => {
+  // Owner request 2026-11-15: "add opponents to the match profile for veo"; moved to the
+  // title bar on 2026-11-26, then on 2026-11-27 to the top navigation bar ("move Opponents
+  // to the top title bar next to Library"), which is covered in AppShell.nav.test.tsx.
   localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
   render(veo, "Riverside Juniors");
   const profile = await screen.findByRole("region", { name: "Match profile" });
-  expect(await within(profile).findByRole("link", { name: "Opponents" }))
-    .toHaveAttribute("href", "/opponents?club=Riverside%20Juniors");
+  const heading = screen.getByRole("heading", { level: 1, name: "Match Library" }).closest("header")!;
+  expect(within(heading).getByRole("link", { name: /Import a match/ })).toBeInTheDocument(); // negative control
+  expect(within(heading).queryByRole("link", { name: "Opponents" })).toBeNull();
+  expect(within(profile).queryByRole("link", { name: "Opponents" })).toBeNull();
+});
+
+// Owner request 2026-11-26: "for veo don't show expired matches".
+it("leaves expired Veo matches out of the hero, overview and counts", async () => {
+  localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
+  const expired = { ...veo[0], id: "veo-x", title: "261115 RJ vs Lapsed FC", available: false, expiration_status: "expired", moments: [] };
+  render([expired, ...veo]);
+  const hero = await screen.findByRole("region", { name: "Featured match" });
+  expect(await within(hero).findByText(/Northgate/)).toBeInTheDocument();
+  expect(screen.queryByText(/Lapsed/)).toBeNull();
+  const overview = screen.getByRole("region", { name: "Overview" });
+  expect(within(overview).getByText("Matches").closest("div")?.parentElement).toHaveTextContent("2");
+  expect(await screen.findByText(/· 2 Veo/)).toBeInTheDocument();
 });
 
 // Owner report 2026-11-20: Veo connected with no Hudl matches left All matches, the

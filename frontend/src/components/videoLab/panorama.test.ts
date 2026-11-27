@@ -60,3 +60,22 @@ it("uses the accepted panorama instead of an older local boundary throughout the
  const old:[number,number][]=[[.8,.8],[.95,.8],[.95,.95],[.8,.95]];
  expect(boundaryAt(camera,[{time_s:0,points:old}],[],0)?.[0]).toEqual([.2,.2]);
 });
+
+it("carries the first registered pose back to the start of the video with the camera motion, never across a cut (f2ab96a2: no overlay until 0:20)",async()=>{
+ const {buildCamera}=await import("./pitch");const {bridgePoses}=await import("./panorama");
+ const later:Panorama={...data,times:[0,1,2,3],cuts:[false,false,true],frame_to_panorama:[null,null,[.5,0,0,0,1,0,0,0,1],null],keyframe_times:[2]};
+ const shift=[1,0,.1,0,1,0,0,0,1],still=[1,0,0,0,1,0,0,0,1];
+ const camera=buildCamera({times:later.times,steps:[shift,shift,still],cuts:later.cuts});
+ const bound=bindPanorama(bridgePoses(later,camera),review,data.source_sha256)!;
+ const atTwo=panoramaPointsAt(bound,2)!, atZero=panoramaPointsAt(bound,0)!;
+ // The camera panned right 0.1 a step, so at 0 the same ground sits 0.2 further left in the picture.
+ atZero.forEach(([x,y],n)=>{expect(x).toBeCloseTo(atTwo[n][0]-.2);expect(y).toBeCloseTo(atTwo[n][1]);});
+ expect(panoramaPointsAt(bound,3)).toBeNull();
+ expect(later.frame_to_panorama[0]).toBeNull();
+});
+it("leaves poses alone when the camera motion does not share the registration's sample times",async()=>{
+ const {buildCamera}=await import("./pitch");const {bridgePoses}=await import("./panorama");
+ const later:Panorama={...data,times:[0,1,2],cuts:[false,false],frame_to_panorama:[null,null,[.5,0,0,0,1,0,0,0,1]],keyframe_times:[2]};
+ const camera=buildCamera({times:[0,.5,1],steps:[[1,0,0,0,1,0,0,0,1],[1,0,0,0,1,0,0,0,1]],cuts:[false,false]});
+ expect(bridgePoses(later,camera).frame_to_panorama[0]).toBeNull();
+});

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildCamera, insidePitch, offPitchTracks, outlineAt, stabilise, type CameraMotion } from "./pitch";
 import { propagateTeams } from "./teams";
 import type { AppearanceTrack, Observation } from "./labTypes";
@@ -60,4 +60,22 @@ it("stabilise undoes the camera pan, so a point resting on the ground keeps one 
   expect(stabilise(camera, 0, 0.5, 0.5)).toEqual([0, 0.5, 0.5]);
   const later = stabilise(camera, 2, 0.3, 0.5)!;
   expect(later[0]).toBe(0); expect(later[1]).toBeCloseTo(0.5, 6); expect(later[2]).toBeCloseTo(0.5, 6);
+});
+
+describe("standingOnPitch", () => {
+  const square: [number, number][] = [[0.1, 0.4], [0.9, 0.4], [0.9, 0.9], [0.1, 0.9]];
+  const person = (x: number, footY: number) => ({ track_id: 1, time_s: 0, team_id: null, role: "unknown", image_box: [x - 0.01, footY - 0.1, x + 0.01, footY] });
+  it("is true clearly inside the lines and false on or just beyond the touchline, where coaches stand (f2ab96a2)", async () => {
+    const { standingOnPitch } = await import("./pitch");
+    const test = standingOnPitch(() => square);
+    expect(test(person(0.5, 0.6))).toBe(true);
+    expect(test(person(0.5, 0.395))).toBe(false);
+    expect(test(person(0.5, 0.405))).toBe(false);
+    expect(test(person(0.5, 0.3))).toBe(false);
+  });
+  it("is unknown without an outline or a box", async () => {
+    const { standingOnPitch } = await import("./pitch");
+    expect(standingOnPitch(() => null)(person(0.5, 0.6))).toBeNull();
+    expect(standingOnPitch(() => square)({ track_id: 1, time_s: 0, team_id: null, role: "unknown" })).toBeNull();
+  });
 });

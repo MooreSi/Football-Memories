@@ -38,6 +38,14 @@ describe("cleanAnchors", () => {
 });
 
 describe("learnKits", () => {
+  it("never learns a colourful shade for a dark kit (261109 low sun: grass behind a thin referee read as his kit)", () => {
+    const GRASS = [98, 109, 149];
+    const ref = [...run(4, 0, 6, BLACK), ...run(4, 6.33, 9, GRASS)];
+    const kits = learnKits([...labelled.filter(r => r.track_id !== 4), ...ref], labels);
+    expect(kits.filter(k => k.role === "referee").map(k => k.lab)).toEqual([BLACK]);
+    const teams = kitTimeline([...labelled, ...run(70, 20, 23, GRASS)], kits, labels, none);
+    expect(teams.at(70, 21)?.role).not.toBe("referee");
+  });
   it("learns each labelled kit from the shirt seen most, not from shorts or a tracker switch", () => {
     const noisy = [...labelled, ...run(1, 5, 6, BLACK), ...run(2, 5, 6, YELLOW)];
     const kits = learnKits(noisy, labels);
@@ -79,6 +87,11 @@ describe("kitTimeline", () => {
     const teams = kitTimeline(rows, kits, [...labels, { track_id: 20, team: "opponent", role: "player" }], none);
     expect(teams.at(20, 11)).toMatchObject({ team: "opponent", source: "you" });
     expect(teams.at(20, 18)).toMatchObject({ team: "own", source: "kit" });
+  });
+  it("your label wins on a track that never shows your label's kit: you overruled the colour (owner report, Stoke)", () => {
+    const rows = [...labelled, ...run(21, 10, 20, RED)];
+    const teams = kitTimeline(rows, kits, [...labels, { track_id: 21, team: "own", role: "player" }], none);
+    for (const t of [10, 15, 20]) expect(teams.at(21, t)).toMatchObject({ team: "own", source: "you" });
   });
   it("one odd frame does not flip a player", () => {
     const rows = [...labelled, ...run(21, 10, 12, YELLOW), row(21, 12.333, RED), ...run(21, 12.667, 15, YELLOW)];
@@ -191,6 +204,64 @@ describe("kitTimeline", () => {
     expect(teams.at(41, 6)).toBeUndefined();
     expect(teams.at(42, 6)).toMatchObject({ team: "own", source: "kit" });
   });
+  // 261108 U11 v Stoke (job 5b0125cf): our kit is dark navy, Stoke red and white stripes. Kits and
+  // readings below are the run's own numbers. Track 3 was labelled "Our player" but showed as
+  // "Not a player": its dark shirt sat inside the colourful "not a player" kit's range, because a
+  // colourful kit weighed lightness down even for a dark, colourless reading.
+  const NAVY = [68, 132, 121], OTHER = [78, 140, 109], STOKE = [137, 150, 101];
+  const stokeKits = [
+    { team: "own" as const, role: "player" as const, lab: NAVY, examples: 111 },
+    { team: "opponent" as const, role: "player" as const, lab: STOKE, examples: 47 },
+    { team: null, role: "other" as const, lab: OTHER, examples: 54 },
+  ];
+  it("a dark shirt is never claimed by a colourful kit: your 'Our player' label on a navy player shows (Stoke track 3)", () => {
+    const shades = [[62, 132, 119], [36, 134, 116], [43, 135, 116], [18, 133, 118], [21, 134, 116], [17, 133, 118], [26, 134, 116], [50, 132, 116]];
+    const rows = shades.flatMap((c, i) => run(3, i * 2, i * 2 + 1.67, c));
+    const stokeLabels: TrackLabel[] = [{ track_id: 3, team: "own", role: "player" }];
+    const teams = kitTimeline(rows, stokeKits, stokeLabels, none);
+    for (const t of [1, 5, 9, 13]) expect(teams.at(3, t)).toMatchObject({ team: "own", role: "player", source: "you" });
+  });
+  it("a sunlit shirt washed out to almost no colour still matches its colourful kit (modelled on NL sunny)", () => {
+    const nlKits = [
+      { team: "opponent" as const, role: "player" as const, lab: [105, 134, 109], examples: 147 },
+      { team: null, role: "referee" as const, lab: [21, 128, 122], examples: 160 },
+      { team: "own" as const, role: "player" as const, lab: [119, 127, 175], examples: 342 },
+    ];
+    const teams = kitTimeline(run(60, 0, 4, [150, 133, 120]), nlKits, [], none);
+    expect(teams.at(60, 2)).toMatchObject({ team: "opponent", source: "kit" });
+  });
+  it("'Not a player' is said of one person: it never claims others by shirt colour (Stoke track 16 claimed 2221 people)", () => {
+    const teams = kitTimeline(run(41, 0, 4, [80, 141, 108]), stokeKits, [], none);
+    expect(teams.at(41, 2)?.role).not.toBe("other");
+  });
+  it("with one team in a dark kit and the other colourful, a dark shirt on the pitch is the dark team (Stoke navy)", () => {
+    const kits = [...stokeKits, { team: null, role: "referee" as const, lab: [71, 133, 122], examples: 40 }];
+    const onPitch = (r: KitObservation) => r.track_id !== 43;
+    const teams = kitTimeline([...run(42, 0, 4, [40, 133, 118]), ...run(43, 0, 4, [40, 133, 118])], kits, [], none, onPitch);
+    expect(teams.at(42, 2)).toMatchObject({ team: "own", role: "player", source: "kit" });
+    // Off the pitch: a coach or parent in a dark coat stays unassigned.
+    expect(teams.at(43, 2)?.team ?? null).toBeNull();
+  });
+  it("the dark-team rule uses every shade of the dark kit (Stoke track 377 at 2:00: navy in shadow, L 15)", () => {
+    const kits = [{ team: "own" as const, role: "player" as const, lab: [66, 130, 123], examples: 300 }, { team: "own" as const, role: "player" as const, lab: [19, 130, 122], examples: 120 },
+      ...stokeKits.slice(1), { team: null, role: "referee" as const, lab: [70, 133, 123], examples: 50 }];
+    expect(kitTimeline(run(47, 0, 4, [15, 126, 132.5]), kits, [], none, () => true).at(47, 2)).toMatchObject({ team: "own", source: "kit" });
+  });
+  it("the dark-team rule never overrides the look-alike model's referee, and needs a known pitch", () => {
+    const kits = [...stokeKits, { team: null, role: "referee" as const, lab: [71, 133, 122], examples: 40 }];
+    const ref = new Map<number, Assignment>([[44, { team: null, role: "referee", source: "similar", confidence: 0.7 }]]);
+    const teams = kitTimeline(run(44, 0, 4, [40, 133, 118]), kits, [], ref, () => true);
+    expect(teams.at(44, 2)).toMatchObject({ role: "referee", source: "similar" });
+    expect(kitTimeline(run(45, 0, 4, [40, 133, 118]), kits, [], none).at(45, 2)?.team ?? null).toBeNull();
+  });
+  it("the dark-team rule is off when both teams wear colourful kits (a dark shirt is then a referee or a coat)", () => {
+    const kits = [{ team: "own" as const, role: "player" as const, lab: [105, 153, 173], examples: 50 }, ...stokeKits.slice(1)];
+    expect(kitTimeline(run(46, 0, 4, [40, 133, 118]), kits, [], none, () => true).at(46, 2)?.team ?? null).toBeNull();
+  });
+  it("an unlabelled navy player is not suggested as 'not a player' by a colourful kit (Stoke)", () => {
+    const teams = kitTimeline(run(40, 0, 4, [20, 133, 117]), stokeKits, [], none);
+    expect(teams.at(40, 2)?.role).not.toBe("other");
+  });
 });
 
 describe("rememberKits", () => {
@@ -229,5 +300,50 @@ describe("kitColour", () => {
     expect(kitColour([0, 128, 128])).toBe("#000000");
     const [r, g, b] = [1, 3, 5].map(i => parseInt(kitColour(RED).slice(i, i + 2), 16));
     expect(r).toBeGreaterThan(2 * g); expect(r).toBeGreaterThan(2 * b);
+  });
+});
+
+describe("one referee, on the pitch (f2ab96a2: sideline people in the referee's colour were suggested as referees)", () => {
+  // A colourful referee kit, so shirt colour alone matches people on the sideline too.
+  const GREEN = [120, 90, 170];
+  const refLabels: TrackLabel[] = [labels[0], labels[1], { track_id: 4, team: null, role: "referee" }];
+  const refRows = [...run(1, 0, 4, YELLOW), ...run(2, 0, 4, RED), ...run(4, 0, 4, GREEN)];
+  const refKits = learnKits(refRows, refLabels);
+  const sideline = new Set([20]);
+  const onPitch = (o: KitObservation) => !sideline.has(o.track_id);
+  it("someone in the referee's colour standing off the pitch is not suggested as the referee; the one on the pitch is", () => {
+    const rows = [...refRows, ...run(20, 10, 14, GREEN), ...run(21, 10, 14, GREEN)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, onPitch);
+    expect(teams.at(21, 12)).toMatchObject({ role: "referee", source: "kit" });
+    expect(teams.at(20, 12)?.role).not.toBe("referee");
+    expect(teams.tracks.get(20)?.role).not.toBe("referee");
+    expect(teams.tracks.get(21)).toMatchObject({ role: "referee", source: "kit" });
+  });
+  it("an off-pitch referee look-alike stays unassigned even when nobody else is the referee at that moment", () => {
+    const rows = [...refRows, ...run(20, 10, 14, GREEN)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, onPitch);
+    expect(teams.at(20, 12)).toBeUndefined();
+    expect(teams.tracks.get(20)).toMatchObject({ role: null, source: "none" });
+  });
+  it("an appearance-model referee suggestion off the pitch is dropped as well", () => {
+    const fallback = new Map<number, Assignment>([[20, { team: null, role: "referee", source: "similar", confidence: 0.8 }]]);
+    const teams = kitTimeline([...refRows, ...run(20, 10, 14, BLACK)], refKits, refLabels, fallback, onPitch);
+    expect(teams.at(20, 12)).toBeUndefined();
+    expect(teams.tracks.get(20)?.role).not.toBe("referee");
+  });
+  it("your own referee label holds wherever the person stands", () => {
+    const teams = kitTimeline(refRows, refKits, refLabels, none, () => false);
+    expect(teams.at(4, 2)).toMatchObject({ role: "referee", source: "you" });
+    expect(teams.tracks.get(4)).toMatchObject({ role: "referee", source: "you" });
+  });
+  it("without a known pitch outline nobody is ruled out", () => {
+    const rows = [...refRows, ...run(20, 10, 14, GREEN)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, () => null);
+    expect(teams.at(20, 12)).toMatchObject({ role: "referee", source: "kit" });
+  });
+  it("team players off the pitch keep their kit match (substitutes warming up are still a team)", () => {
+    const rows = [...refRows, ...run(20, 10, 14, YELLOW)];
+    const teams = kitTimeline(rows, refKits, refLabels, none, onPitch);
+    expect(teams.at(20, 12)).toMatchObject({ team: "own", source: "kit" });
   });
 });

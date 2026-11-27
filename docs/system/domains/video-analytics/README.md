@@ -1,10 +1,23 @@
 # Video analytics
 
+Spec730 adds an admin-only execution selector in Advanced. Local remains default;
+Remote runs the whole job on the prepared MacBook, and Split overlaps local
+camera reconstruction with remote appearance preparation after local tracking.
+The mini alone consumes the queue. Readiness expires after120s, and new admin
+requests snapshot the selected mode; ordinary users stay local. SSH profiles,
+keys and executable paths stay outside the gateway mount. Source/code/model/hash
+checks precede publication; remote failure does not silently fall back. This is
+stage distribution, not independent video chunks or a claimed speed improvement.
+Split also sends pitch rebuilds (camera-tracking children) of a finished analysis to the
+MacBook as whole jobs, like player matching (owner request, 26 Nov 2026).
+
 [Two Mac performance investigation](two-mac-performance.md) (26 November 2026):
 current native M4 worker is single-consumer; a second host requires job scheduling
 and result transfer, not just a shared runtime mount. Whole-job offload/batch work
 is the first candidate. Owner confirms M3 MacBook Pro/18 GB and Thunderbolt;
-second-host performance and cable throughput are unmeasured.
+second-host performance and cable throughput are unmeasured. Follow-up verifies
+active Thunderbolt networking, zero-loss ping and reachable existing SSH service;
+40 Gb/s is the reported link rate, not measured file-transfer throughput.
 
 The private [worker repository](https://github.com/MooreSi/Football-Video-Analytics)
 owns models, local bounded inference and append-only artifacts. The app owns Video
@@ -82,6 +95,25 @@ including when a different completed run is selected. A one-shot list leaves the
 Veo picker disabled after the worker finishes because its busy guard reads stale
 rows. Keep admission enforced and show the busy/range reason beside the picker.
 
+Hudl analysis (26 November 2026): the picker adds this season's U11 Hudl games in
+their own group. The helper cuts the window from the open stream's segments with
+output-side `-ss`: input-side seeking on a mini playlist that starts mid-match came
+out short (synthetic 2 s window encoded as 1.4 s). Hudl clips are imported with no
+tags because the worker would label them Veo teacher highlights; proper Hudl tag
+provenance in the worker is a follow-up. Real-account acceptance is owner-only.
+27 November 2026: the window must also fetch each `#EXT-X-MAP` init segment its
+segments reference (its own `asset-N.bin`, outside the chosen range). The first cut
+fetched only the media segments, so a fragmented-MP4 stream failed every window
+with "The analysis clip could not be encoded" (owner hit it on 261108 U11 v Stoke).
+The test fixtures were MPEG-TS only; `test_hudl_analysis` now has an fMP4 stream.
+27 November 2026 (owner report, Stoke window): the encode step showed no progress for ten
+minutes and made a 454 MB clip from about 350 MB of HEVC segments. Hudl serves HEVC and the
+worker takes H.264, so a stream copy is not possible. The encode is now step 2 of 2 and
+reports ffmpeg's measured output seconds; the analysis clip uses CRF 20 (60 s of real
+footage: source 35.8 MB, CRF 20 37.0 MB, CRF 18 50.6 MB). Moment exports keep CRF 18. The
+real cost was the capture container's 1.5 CPU cap: 30 s encoded in 21 s capped, 3 s uncapped
+(same image, same M4). Hosted containers are now uncapped for CPU (gateway 28dbc64).
+
 Analysis source selection reuses an archived match or the existing private range
 relay; input-side `-ss` and output `-t` bound the chosen footage. Range reads also
 need the MP4 index, preceding keyframe and bounded read-ahead, so fetched bytes
@@ -115,6 +147,13 @@ Dark kits share colour, so a dark person takes a labelled dark role only when th
 (ReID cosine) is also 0.58+: on RCW vs CG our keeper's tracklets score 0.73+ to each other and
 coats at most 0.66. A keeper holding the ball is undetectable as a ball; a spare that rests,
 leaves the picture and returns is still a spare (judge resting over 15 s on the ground).
+There is one referee and they work on the pitch (f2ab96a2/6c216d41, 26 Nov 2026): that referee
+wore a colourful kit, so shirt colour matched coats and shirts along the far touchline, and the
+per-moment "one referee" rule often kept a sideline person instead. A suggested referee (kit or
+look-alike, never your label) seen mostly off the marked pitch is now unassigned. "On the pitch"
+for this test means feet inside the outline by a tenth of the person's height: the sideline people
+stood about 0.5% of the frame height beyond the far touchline, inside the looser half-height margin
+used for team suggestions. Off-pitch referee rings on that run: 514 to 37; referee tracks 69 to 13.
 
 Spec680: prepare a perspective panorama and register revisited camera views to it.
 Rendering the whole frame needs stricter bounds than projecting observed ground;
@@ -124,6 +163,12 @@ because distant vertices cross the horizon discards known visible ground. Green
 union envelopes are suggestions, not physical touchlines. Exact panorama/source
 IDs bind acceptance; unknown poses abstain, never inherit by match title. Old local
 corrections remain. The analysis window cap is unchanged.
+Registration can leave whole stretches unsolved: on f2ab96a2 the atlas had no pose for the first
+20.6 s (the legacy panorama never registered them), so the overlay appeared at 0:20. The app now
+carries the nearest solved pose in the same shot with `camera_motion.json` (`bridgePoses`, up to
+30 s, never across a cut, only when both files share sample times). Hiding the real poses for
+20.6-41 s and carrying from 41 s matched them within 0.15% of the frame. The worker still leaves
+those poses empty; a worker fix would also give the atlas image those views.
 
 Spec690: a matched-camera percentage does not prove goal-end coverage. Wide pans
 need a reversible cylindrical ray atlas: a planar horizon guard can silently drop
@@ -192,6 +237,17 @@ change on RCW (the refit converges on the same partial arcs; the halfway line's
 detected extent also stops short). Reverted. Root cause: far-field markings on pale,
 sunlit grass are too faint at this resolution; a better far-line detector (or
 higher-resolution far crops) is the next step, not more fitting heuristics.
+Fourth pass (26 Nov, worker `codex/robust-pitch-outline` ed4f18d): the poor bird's-eye on
+new matches (NL 260926, run 48e74eab) came from the outline, which frames the view. Replayed
+offline on five cached games, only RCW vs CG was right. The detector missed worn/thick near
+lines (threshold set by trees and people) and took tree-shadow edges as lines; the fitter let
+false circles on short fragments outrank the halfway line. Fixed in the worker: whiteness with
+contrast on both sides of a line, turf-noise threshold, halfway candidates beside the camera.
+Now NL, frost, RCW vs CG and overcast get whole-pitch outlines; 3G frames a dashed small pitch.
+The ground plane (pan axis) stays: a player-height plane was ~1 degree off (oval circle). On a
+low camera the far touchline sits 3-5 degrees below the horizon, so the far half of the plan
+is approximate and smeared; only confirmed corners give metres. Existing runs need "Rebuild
+complete pitch". Deployed to both Macs 26 Nov (code digest a69e712e...).
 
 Spec720: lab entitlements are per-account gateway metadata, separate from app builds.
 Only admin can grant/revoke; Video Lab enforces access at every endpoint, retaining
@@ -199,3 +255,159 @@ owner checks for jobs/reviews/frame sets/artifacts. Granted users use portal rou
 because the edge keeps the admin console LAN-only. Imported sample metadata now
 records owner_id; users never receive operator samples or other users' sample lists.
 Turning off either lab preserves its saved work. See hosting domain for rollout.
+
+Analysed video export (owner request 26 November 2026): `annotated.mp4` is the worker's
+first-pass render (raw detection boxes, burned in before camera tracking, pitch, teams or
+reviews), so it is now labelled "raw detections". Download results also offers Export
+analysed video: the browser plays the clean `sample.mp4` once, paints each frame with
+`overlayAt` (the same per-frame data the player's SVG uses) via `paintOverlay` on a canvas,
+and records it with MediaRecorder (H.264 MP4 where supported, else WebM). Real-time only;
+the tab must stay open and visible (hidden tabs throttle frame callbacks). Nothing is
+uploaded or stored on the server. Gotcha: on macOS a module named `analysedExport.ts`
+beside `AnalysedExport.tsx` made `./AnalysedExport` resolve to the `.ts` file (case-
+insensitive FS, `.ts` tried first), rendering `undefined`; keep such names distinct.
+
+Pre-analysis (owner request 26 November 2026): a "Pre-analysis" button beside "Analyse selected
+match" runs the normal Veo/Hudl analysis on a planned window (`preAnalysis.scanPlan`: 600 s from one
+minute after Veo's first-half kick-off in `halves`; without halves 600 s from minute 5); a Veo import already builds the
+atlas, outline, bird's-eye and player views, so no extra job is chained. Every completed run shows a
+"Pre-analysis check" (`readiness`): panorama registration share, outline sides seen, people per
+sampled frame, ball coverage, and teams/referee, which stay "partly" until labelled: look-alike
+groups never decide teams on their own. Thresholds are provisional (owner decision 015).
+
+Lighting (spec 760, 26 November 2026): do not filter or grade video fed to the detector;
+published studies find enhancement helps only in genuinely dark scenes and often lowers
+detection otherwise. Light robustness belongs in training (brightness/saturation, little
+or no hue augmentation) and in light-tolerant team features. Grass lightness varies 22-60
+(0-255 OpenCV L) across a single frame on cached runs, and torso lightness tracked local
+grass on f2ab96a2 (r 0.52). `kitDistance` already weights lightness 0.25 for colourful kits,
+so the exposure is greatest for white/grey/dark kits and for the bluer cast of shade on a/b.
+The grass under a player's feet is in the same light and is the reference spec 760 uses.
+
+
+Live 2D pitch (owner request 26 November 2026): the Pitch map now sits directly under the video
+and plays with it (`livePitch.ts`, `PitchMap.tsx`). It appears on every analysed run with an
+automatic painted-lines outline or an accepted panorama, not only after marking. Exact metres still
+need marked keyframes or confirmed corners; otherwise `pitchSource` uses the camera-level ground
+plan (`levelCalibration`) framed by the outline's bounding rectangle in plan view, stretched onto the
+pitch size: true shape up to scale, labelled approximate, far half least reliable. Until a size is
+chosen it draws a 9v9 (73 x 46 m) shape and says so. Positions glide between detections (1.5 s
+max gap, 0.5 s hold), steps over 12 m/s are dropped as swapped boxes, close neighbours get a
+[1,2,1] average. Distance and top speed stay exact-only (`trackMovement`). Gotcha: tracked ball
+points (`ball.ts`) are fractions of the frame and the radius is a fraction of the frame WIDTH, so
+the ground contact is `y + r * width / height`. Far-touchline bunching on NL 91f49e12 was
+NOT geometry (corrected 26 Nov, first guess was the estimated far outline): person height in
+camera-height units is flat at ~0.39 from 8 to 36 m in; the 40-48 m band (half of all
+observations, 209 tracks, median 0.43 m/s vs 1.9 on the pitch, ~15% taller = adults) is parents
+and coaches lining the far side. `sidelineTracks` (middle within 4 m of a touchline or beyond,
+90% of samples within 4 m of it; your labels exempt) leaves them off the map and heat maps unless
+Show everyone is ticked. NL: far-band observations ~12k -> 1.4k, 0 of 9 labels hidden; f2ab96a2
+refinement: 178 still tracks hidden, 0 of 6 labels. Kit matching had given some of them a team. No shirt numbers exist in the data, so
+markers carry shape (our team circle, opponent triangle, referee diamond) and GK/R only.
+Low sun (spec 760 Part A, racing-ten): shaded grass is blue to the camera and sunlit grass
+washes out to low saturation, so no fixed green range finds the ground; learn the surface
+colours from the frame. Red kits read orange in direct sun. The lighting benchmark lives in the
+worker (`lighting-benchmark`, docs/LIGHTING_BENCHMARK.md); Video Lab decisions for scoring are
+exported with `frontend/scripts/export-lab-decisions.mjs`, which calls the same `decisions.ts`
+functions as the page, so a score is of what the lab shows.
+Spec 760 Part B (26 Nov 2026): correcting kit colour by the ground beside the feet made teams
+worse on the withheld benchmark (low sun precision 0.93 to 0.59). In low sun the feet and the
+shirt are often in different light, and sunlit shirts and ground clip near white, so a
+per-channel gain cannot recover the kit. The worker writes `colour_lab_balanced` but Video Lab
+uses raw colour unless asked. Score any new team-colour idea once against the frozen v1 audit.
+First real run (261122 NL vs Bournville Greens, job c8988347, 26 Nov): Veo recordings start long
+before kick-off (here 10:00), so a fixed minute-5 start scanned warm-ups. Stitching was excellent
+(2957/2997 views, all four sides found). I first read the atlas as the outline framing an empty
+near pitch beside the game. CORRECTION (same day): the automatic outline was right. On the ground plane (feet projected with
+frame_to_world and the fitter's level ground) it holds 96% of detected feet; the 4-point outline the
+owner accepted holds 18% and a fifth of the area, its far edge cutting through midfield. Gotcha: on the
+cylindrical atlas a low camera squeezes the far 20+ m into a thin strip and stretches the near few
+metres over most of the image, so "players only in a far strip" is perspective, not a wrong pitch.
+Judge outlines on the ground plane or on frames, never by atlas rows. Acceptance is not correctness
+either. `playShare` now measures it: the share of `central` feet (middle of the view; Veo follows
+play, spectators line the far fence) inside the outline in use, on `levelGround`. Judged outlines:
+right 92-98% (Bournville automatic, NL 91f49e12), short 23-37% (RMC 6c216d41/bcdbc765 stop before
+the right goal; f6d0bcb2 far edge short), broken 1% (old NL 48e74eab). Below 70% the check says
+how much play the outline holds and is never Ready, accepted or not. Five outlines, my visual
+verdicts: not a held-out accuracy claim. Frame-centre aim points were too weak (inside almost all).
+People/ball/look-alike counts do include a neighbouring game (a red-shirted team beside this one).
+
+
+Shirt numbers (owner request 26 November 2026): the worker's dense reader (worker branch
+codex/shirt-number-reading, `shirt_numbers.py`) writes `jersey_candidates.json` per tracklet; the
+lab shows them in the pitch markers (fainter = read automatically) and the Selected person panel
+lets you set a number, mark "No number" or go back to the reading. Corrections live in the review
+as `shirt_numbers` [{track_id, number | null}], sent only once set (older gateways refuse the key).
+"Read shirt numbers" queues a `shirt-numbers` child run (gateway `read-shirt-numbers`). Agent-
+labelled benchmark, not owner-reviewed: 16/32 right on NL, 5/12 held out on RCW, no wrong numbers;
+the old reader read none. Numbers are per tracked stretch (median 6 s), so at any moment only some
+players carry one. Gotcha: `useLabData.body` whitelists review fields; a new field must be added
+there or it is silently dropped on save.
+
+## Overnight three-match run: lessons (27 November 2026)
+
+- A full Veo match is analysed as consecutive windows of at most 10 min covering each of Veo's
+  `halves` (worker and gateway cap one analysis at 600 s). Veo can list a fragment before the real
+  first half (261116 RMC: 0:00-3:47); the pre-analysis plan now skips listed halves under 5 min.
+- The helper cuts a window at ~0.3x real time from a saved match: the capture container is held
+  to 1.5 CPUs. The same `_cut` code in a one-off container of the capture image with 6 CPUs takes
+  ~2 min per 10-min window. Downloading the full match first (~20 MB/s) avoids Veo range reads.
+- Remembered kits: the page asked the 6 most recent runs; with many windows those were other
+  matches, and derived runs (shirt numbers) had no title. Same-match runs now come first and a
+  derived run takes its source run's title (`relatedRuns.ts`).
+- Low sun, thin figures: the torso colour of a distant referee can read as the grass behind him
+  (261109: [98,109,149]), and the referee label then learned a second, grass-coloured "shade", so
+  grassy readings became referees (up to 12 per frame). A referee's dark kit has no colourful
+  shade now, and a track's overall verdict never makes someone referee or keeper at a moment the
+  one-referee rule left unassigned (`LabVideo.tsx overlayAt`). Choose label tracks whose median
+  colour is the kit, not grass: check `colour_lab` medians before labelling.
+- Sunlit yellow reads near white (261116 RCW: [244,129,131]) and is achromatic, so it never
+  decides by colour; the yellow seen further away sits within matching range of RMC's orange.
+  Colour alone cannot separate them there; needs a worker-side change (torso pixels without grass
+  and highlights) and a re-run.
+- Navy adults (coaches in coats) match a pale blue kit with navy shorts: colourful kits weigh
+  lightness at 0.25 so sun and shade stay one kit. Most remaining "sideline leaks" are these and
+  substitutes at the far end in team kit.
+- `playShare` counts spectators behind a rail that the follow-cam keeps in the middle of the view
+  (261116: automatic outline right on the atlas and frames, but 54% share).
+- Validation: `frontend/scripts/lab-run-summary.mjs` (what the lab shows per run) and the
+  worker's lighting benchmark with assistant audits (`runtime/overnight-pre-v1`, splits: eagles
+  development, rmc withheld).
+
+## Finished runs archived on the MacBook share (spec 780, 27 November 2026)
+
+- `worker archive-runs RUNTIME ~/Football-Analytics-Share [--days 7] [--apply]` (dry run by
+  default) moves finished run families verified by SHA-256 and leaves `runtime/archived/<id>.json`.
+  The gateway (`FM_GW_ANALYTICS_ARCHIVE_DIR`, overlay `compose.analytics-archive.yaml`) and the
+  worker (`--archive-root`) read a recorded run from the archive; the runtime always wins.
+- Gotchas found: Docker will not start a container whose bind source is missing (an unmounted
+  `/Volumes/<share>` gives "mkdir ... permission denied"), so the share is mounted onto a local
+  folder. `mount_smbfs -N` cannot use Finder's Keychain entry; NetFS can. Docker's VM keeps
+  handles on files containers touched, so the mount reports busy and deleted files linger as
+  `.smbdelete*` until released: use `diskutil unmount force` only with the gateway stopped.
+
+## Stoke follow-up (27 November 2026): kits, pitch from goals, zoom, placement
+
+- Kit matching must compare a reading with ALL kits and decide by colour only when the nearest is
+  colourful: comparing with colourful kits only gave dark-kit players the nearest colourful kit.
+  A colourless reading darker than a colourful kit keeps full lightness weight; a lighter one
+  (sunlit, washed out) keeps 0.25. "Not a player" is never a colour that claims others.
+- One dark team kit against a colourful one (Villa navy v Stoke stripes): dark shirts standing on
+  the pitch go to the dark team unless a label or the look-alike model says referee/keeper.
+- Worker torso colour: test turf per pixel at full resolution. The frame mask is 1/3 size and
+  closed 5x5, which swallowed thin navy torsos on dark 3G (7217 of 47959 samples had no colour).
+- Youth games inside bigger pitches: the painted lines can be the big pitch's (Stoke: 9v9 goals on
+  the full pitch's penalty-box lines, cones for touchlines). The goals belong to the game:
+  `goalPitch` (equal halves, equal width either side of the goals, format shape from the title's
+  age group). Side-on goals: the worker's "posts" are front and back of the frame, not two posts,
+  so post orientation is not a usable check. Searching goal candidate pairs by play held just
+  picks the widest spare goals; only the worker's chosen pair is used, gated by play held.
+- Spectators crowd one touchline, so widen a pitch from play only when it spills past both.
+- Detector: close far players merge into one box (two kits). A 2x zoom on crowded spots splits
+  them for about 2.5x detection time; crops find flat disc cones as balls, so balls stay full-frame.
+- Placement: finished runs already record where each stage ran (summary `execution`,
+  `detection_sharing`, model device/compute_units, render encoder); live jobs only have the mode
+  they started with (gateway job view `execution`, `reid_backend`).
+- Do not derive a halfway line from an outline's shape on the level ground: a low camera stretches
+  the far side so much that the minimum-area rectangle's long side is the depth direction (tried
+  27 Nov 2026, rolled back). Check any pitch line drawn on the atlas image, not by an area ratio.

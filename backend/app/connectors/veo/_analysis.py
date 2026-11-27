@@ -52,9 +52,19 @@ def export_sample(connection: VeoConnection, identity: str, window: dict[str, An
                 progress={"done": done, "total": duration, "fraction": done / duration},
             )
 
-        _cut(address, start, duration, partial, progress=progress)
+        try:
+            _cut(address, start, duration, partial, progress=progress)
+        except CaptureError:
+            # A match streamed from Veo: say what Veo said, not "the saved match".
+            if relay is None or relay.failure is None:
+                raise
         if relay is not None and relay.failure is not None:
-            raise CaptureError("Veo's video could not be read. Nothing was retried.")
+            failure = relay.failure
+            raise (
+                failure
+                if isinstance(failure, CaptureError)
+                else CaptureError("Veo's video could not be read. Nothing was retried.")
+            ) from None
     connection._report(message="Verifying the prepared clip…", progress=None)
     info = probe(partial)
     if info.video_codec != "h264" or abs(info.duration_s - duration) > 0.1:

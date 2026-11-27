@@ -7,9 +7,10 @@ import { OURS, THEIRS } from "./teamColours";
  *  into the reel (the Mac's ffmpeg cannot draw text). Crests come from the app's own
  *  /api/team-logo, so the canvas is never tainted. */
 import { fixtureDate, fixtureParts, ukDate } from "./hudlFixture";
+import { FONT, H, type Palette, W, backOut, rand, span } from "./reelDraw";
+import { cinematic, heist, ledboard, primetime, starnight, studio } from "./reelThemes";
 
-export const W = 1920;
-export const H = 1080;
+export { H, W };
 
 export type CardKind = "opening" | "match" | "closing" | "stats";
 export interface CardSpec {
@@ -26,14 +27,26 @@ export interface CardSpec {
   /** Owner request 2026-11-15: a team stats card's rows, us v them. */
   stats?: { label: string; own: number; opponent: number }[];
 }
-export type ThemeId = "floodlights" | "kickoff" | "gold" | "neon" | "matchday" | "minimal";
-export const THEMES: { id: ThemeId; label: string; blurb: string }[] = [
-  { id: "floodlights", label: "Floodlights", blurb: "Night match, sweeping floodlights" },
-  { id: "kickoff", label: "Kick-off", blurb: "Pitch lines draw in, crests clash" },
-  { id: "gold", label: "Trophy gold", blurb: "Gold foil with a shine sweep" },
-  { id: "neon", label: "Neon", blurb: "Glowing outlines on a stadium grid" },
-  { id: "matchday", label: "Matchday poster", blurb: "Bold stripes and a date stamp" },
-  { id: "minimal", label: "Clean", blurb: "Calm type, growing underline" },
+export type ThemeId = "floodlights" | "kickoff" | "gold" | "neon" | "matchday" | "minimal"
+  | "primetime" | "studio" | "starnight" | "cinematic" | "ledboard" | "heist";
+export type ThemeGroup = "broadcast" | "classic" | "game";
+export const THEME_GROUPS: { id: ThemeGroup; label: string }[] = [
+  { id: "broadcast", label: "Broadcast" }, { id: "classic", label: "Classic" }, { id: "game", label: "Game style" },
+];
+/** Owner request 2026-11-26: broadcast-quality themes and a GTA 6 style theme (reelThemes.ts). */
+export const THEMES: { id: ThemeId; label: string; blurb: string; group: ThemeGroup }[] = [
+  { id: "primetime", label: "Prime Time", blurb: "Network graphics: glass panels, light wipe", group: "broadcast" },
+  { id: "studio", label: "Studio", blurb: "Highlights show: red slab, replay bug, ticker", group: "broadcast" },
+  { id: "starnight", label: "Star Night", blurb: "Cup night: starfield, silver type", group: "broadcast" },
+  { id: "cinematic", label: "Cinematic", blurb: "Letterbox, lens flare and film grain", group: "broadcast" },
+  { id: "ledboard", label: "Stadium LED", blurb: "Ribbon board pixels and racing chevrons", group: "broadcast" },
+  { id: "floodlights", label: "Floodlights", blurb: "Night match, sweeping floodlights", group: "classic" },
+  { id: "kickoff", label: "Kick-off", blurb: "Pitch lines draw in, crests clash", group: "classic" },
+  { id: "gold", label: "Trophy gold", blurb: "Gold foil with a shine sweep", group: "classic" },
+  { id: "neon", label: "Neon", blurb: "Glowing outlines on a stadium grid", group: "classic" },
+  { id: "matchday", label: "Matchday poster", blurb: "Bold stripes and a date stamp", group: "classic" },
+  { id: "minimal", label: "Clean", blurb: "Calm type, growing underline", group: "classic" },
+  { id: "heist", label: "Sunset Heist", blurb: "GTA 6 style: Vice-pink sunset, palms, poster type", group: "game" },
 ];
 export const CARD_SECONDS: Record<CardKind, number> = { opening: 4, match: 3.5, closing: 3.5, stats: 8 };
 /** The choices for how long the team stats card stays on screen. */
@@ -54,19 +67,6 @@ export function matchCard(title: string, club: string | null, extra: { age?: str
 /** Owner request 2026-11-15: a team stats card for one match (at most 9 rows fit). */
 export function statsCard(match: CardSpec, rows: { label: string; own: number; opponent: number }[]): CardSpec {
   return { kind: "stats", title: "Team stats", subtitle: match.title, home: match.home, away: match.away, stats: rows.slice(0, 9) };
-}
-
-// ---------- maths and helpers ----------
-const clamp = (x: number) => Math.max(0, Math.min(1, x));
-const ease = (x: number) => 1 - Math.pow(1 - clamp(x), 3);
-const backOut = (x: number) => { const c = 1.70158; const v = clamp(x) - 1; return 1 + (c + 1) * v * v * v + c * v * v; };
-/** 0 before `a`, 1 after `b`, eased between. */
-const span = (t: number, a: number, b: number) => ease((t - a) / (b - a));
-const FONT = '"Inter", "Helvetica Neue", system-ui, -apple-system, "Segoe UI", sans-serif';
-
-function rand(seed: number) {
-  let s = seed;
-  return () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
 }
 
 export type Crests = Partial<Record<string, HTMLImageElement | null>>;
@@ -127,8 +127,6 @@ function fitFont(ctx: CanvasRenderingContext2D, text: string, weight: number, ma
   }
   return size;
 }
-
-interface Palette { text: string; sub: string; accent: string; ring: string }
 
 // ---------- backgrounds ----------
 function floodlights(ctx: CanvasRenderingContext2D, t: number): Palette {
@@ -244,8 +242,13 @@ function minimal(ctx: CanvasRenderingContext2D): Palette {
   return { text: "#ffffff", sub: "#aab2c0", accent: "#22d3ee", ring: "#2b2f38" };
 }
 
+const BACKGROUNDS: Record<ThemeId, (ctx: CanvasRenderingContext2D, t: number) => Palette> = {
+  floodlights, kickoff, gold, neon, matchday, minimal, primetime, studio, starnight, cinematic, ledboard, heist,
+};
+
 // ---------- type ----------
 function headline(ctx: CanvasRenderingContext2D, text: string, y: number, size: number, palette: Palette, t: number, theme: ThemeId) {
+  if (palette.headline) return palette.headline(ctx, text, y, size, t);
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -279,8 +282,9 @@ function headline(ctx: CanvasRenderingContext2D, text: string, y: number, size: 
   return width;
 }
 
-function line(ctx: CanvasRenderingContext2D, text: string, y: number, size: number, colour: string, weight = 600, spacing = 0) {
+function line(ctx: CanvasRenderingContext2D, text: string, y: number, size: number, colour: string, weight = 600, spacing = 0, shadow?: string) {
   ctx.save();
+  if (shadow) { ctx.shadowColor = shadow; ctx.shadowBlur = 18; ctx.shadowOffsetY = 3; }
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.font = `${weight} ${size}px ${FONT}`;
   if (spacing && "letterSpacing" in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = `${spacing}px`;
@@ -294,8 +298,7 @@ export function drawCard(ctx: CanvasRenderingContext2D | null, card: CardSpec, t
   if (!ctx) return false;
   ctx.save();
   ctx.clearRect(0, 0, W, H);
-  const palette = theme === "floodlights" ? floodlights(ctx, t) : theme === "kickoff" ? kickoff(ctx, t)
-    : theme === "gold" ? gold(ctx, t) : theme === "neon" ? neon(ctx, t) : theme === "matchday" ? matchday(ctx, t) : minimal(ctx);
+  const palette = (BACKGROUNDS[theme] ?? minimal)(ctx, t);
   const enter = span(t, 0.08, 0.42);
   const rise = (1 - enter) * 60;
 
@@ -315,17 +318,17 @@ export function drawCard(ctx: CanvasRenderingContext2D | null, card: CardSpec, t
     ctx.save(); ctx.globalAlpha = enter; ctx.translate(0, rise);
     const size2 = fitFont(ctx, card.title, 900, 96, W - 260);
     headline(ctx, card.title, 680, size2, palette, t, theme);
-    if (card.date) line(ctx, card.date, 790, 52, palette.accent, 700, 2);
-    if (card.detail) line(ctx, card.detail, 870, 36, palette.sub, 500, 1);
+    if (card.date) line(ctx, card.date, 790, 52, palette.accent, 700, 2, palette.shadow);
+    if (card.detail) line(ctx, card.detail, 870, 36, palette.sub, 500, 1, palette.shadow);
     ctx.restore();
   } else if (card.kind === "stats") {
     drawStats(ctx, card, palette, t, enter, rise);
   } else {
     ctx.save(); ctx.globalAlpha = enter; ctx.translate(0, rise);
-    if (card.kind === "opening") line(ctx, "FOOTBALL MEMORIES", 300, 34, palette.accent, 700, 14);
+    if (card.kind === "opening") line(ctx, "FOOTBALL MEMORIES", 300, 34, palette.accent, 700, 14, palette.shadow);
     const size = fitFont(ctx, card.title, 900, card.kind === "closing" ? 120 : 150, W - 260);
     const width = headline(ctx, card.title, H / 2 - (card.subtitle ? 30 : 0), size, palette, t, theme);
-    if (card.subtitle) line(ctx, card.subtitle, H / 2 + size * 0.75, 54, palette.sub, 600, 1);
+    if (card.subtitle) line(ctx, card.subtitle, H / 2 + size * 0.75, 54, palette.sub, 600, 1, palette.shadow);
     const grow = span(t, 0.3, 0.7);
     const bar = Math.min(width, 900) * grow;
     const g = ctx.createLinearGradient(W / 2 - bar / 2, 0, W / 2 + bar / 2, 0);
@@ -334,6 +337,7 @@ export function drawCard(ctx: CanvasRenderingContext2D | null, card: CardSpec, t
     ctx.fillRect(W / 2 - bar / 2, H / 2 + size * 0.75 + (card.subtitle ? 70 : -10), bar, 8);
     ctx.restore();
   }
+  palette.overlay?.(ctx, t, card.kind);
   // Fade from black in, and to black out, so cards cut smoothly into the footage.
   const fade = Math.max(1 - span(t, 0, 0.08), span(t, 0.92, 1));
   if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${fade})`; ctx.fillRect(0, 0, W, H); }
