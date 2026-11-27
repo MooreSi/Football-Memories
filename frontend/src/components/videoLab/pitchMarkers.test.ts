@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { boundaryAt, halfwayAt } from "./boundary";
-import { labCamera } from "./decisions";
-import { PITCH_CORNERS, type Point } from "./landmarks";
+import { labCamera, usableMarks } from "./decisions";
+import { fixesPitch, PITCH_CORNERS, type Point } from "./landmarks";
 import { imageToPitch } from "./metres";
 import type { Panorama } from "./panorama";
 import type { CameraMotion, PitchKeyframe } from "./pitch";
 import { landmarksToSave, markingStart } from "./markingStart";
 import { rayPanorama } from "./atlasGeometry";
-import { buildMarkers, markerHalfwayAt, markerImageToPitch, markerOutlineAt, markerPointsAt } from "./pitchMarkers";
+import { buildMarkers, markerBoxesAt, markerHalfwayAt, markerImageToPitch, markerOutlineAt, markerPointsAt, penaltyBoxes } from "./pitchMarkers";
+import { indexObservations, overlayAt } from "./LabVideo";
 import type { Review } from "./labTypes";
 
 /* A synthetic rotating, zooming camera 10 m above level ground (y down). The pitch runs X -30..30 m
@@ -180,5 +181,115 @@ describe("opening the editor on an outline without reviewed corners", () => {
     expect(landmarksToSave(moved, start.landmarks, 4).map(l => l.name)).toEqual(NAMES);
     // With only two corners in use, the off-screen end is still needed for four points.
     expect(landmarksToSave(start.landmarks, start.landmarks, 2).map(l => l.name)).toEqual(NAMES);
+  });
+});
+
+// The test pitch is 60 x 40 m; a 7v7-length pitch, so its penalty boxes are 9 m deep and 16 m wide (FA guide).
+const SIZE = { length_m: 60, width_m: 40 };
+const onLine = (a: Point, b: Point, p: Point) => ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+
+describe("penalty boxes", () => {
+  it("uses the FA guide's box for each format, and Law 1's for the adult pitch", () => {
+    const front = (size: { length_m: number; width_m: number }) => penaltyBoxes(size)[0].points[1].pitch;
+    // Left box, near front corner: depth along the pitch, half the box width either side of the middle.
+    expect(front({ length_m: 37, width_m: 27 })).toEqual([8 / 37, (27 - 15) / 2 / 27]);
+    expect(front({ length_m: 55, width_m: 37 })).toEqual([9 / 55, (37 - 16) / 2 / 37]);
+    expect(front({ length_m: 73, width_m: 46 })).toEqual([12 / 73, (46 - 29) / 2 / 46]);
+    expect(front({ length_m: 91, width_m: 55 })).toEqual([16 / 91, (55 - 40) / 2 / 55]);
+    expect(front({ length_m: 100, width_m: 64 })).toEqual([16.5 / 100, (64 - 40.3) / 2 / 64]);
+    // A 9v9 marked across a full pitch (FA option 1, 68 x 46 m) still has the 9v9 box.
+    expect(front({ length_m: 68, width_m: 46 })).toEqual([12 / 68, (46 - 29) / 2 / 46]);
+    const [left, right] = penaltyBoxes({ length_m: 73, width_m: 46 });
+    expect(left.points.map(p => p.pitch[0])).toEqual([0, 12 / 73, 12 / 73, 0]);
+    expect(right.points.map(p => p.pitch[0])).toEqual([1, 1 - 12 / 73, 1 - 12 / 73, 1]);
+    expect(new Set([...left.points, ...right.points].map(p => p.name)).size).toBe(8);
+  });
+
+  it("draws both boxes on the video from your marks, on the true box lines", () => {
+    const model = buildMarkers(atlas(), [mark(0, p => truth(0, p))])!;
+    const boxes = markerBoxesAt(model, 4, SIZE);
+    expect(boxes.length).toBeGreaterThan(0);
+    const all = penaltyBoxes(SIZE).flatMap(b => [0, 1, 2].map(k => [b.points[k].pitch, b.points[k + 1].pitch]));
+    for (const line of boxes) for (const p of line) {
+      // Every drawn point lies on one of the six true box sides.
+      expect(Math.min(...all.map(([a, b]) => Math.abs(onLine(truth(4, a), truth(4, b), p))))).toBeLessThan(1e-6);
+    }
+  });
+
+  it("puts the boxes in the frame the player and the analysed export draw", () => {
+    const camera = labCamera(motion, atlas(), review({ pitch_keyframes: [mark(0, p => truth(0, p))] }), HASH)!;
+    const input = { w: 1920, h: 1080, index: indexObservations([]), teams: new Map(), selected: null, showBoxes: false, everyone: false, showBall: false, camera };
+    expect(overlayAt({ ...input, size: SIZE }, 4).boxes).toEqual(markerBoxesAt(camera.markers!, 4, SIZE));
+    // Without marks there is no exact pitch, so no boxes.
+    expect(overlayAt({ ...input, size: SIZE, camera: labCamera(motion, atlas(), review({}), HASH)! }, 4).boxes ?? []).toEqual([]);
+  });
+
+  it("opens the editor with the box handles that are in view, at the boxes of the pitch as drawn", () => {
+    const camera = labCamera(motion, atlas(), review({ pitch_keyframes: [mark(0, p => truth(0, p))] }), HASH)!;
+    const start = markingStart(camera, [mark(0, p => truth(0, p))], 6, SIZE);
+    const box = start.landmarks.filter(l => / box, /.test(l.name ?? ""));
+    expect(box.length).toBeGreaterThan(0);
+    for (const l of box) {
+      near(l.image, truth(6, l.pitch));
+      expect(l.image.every(v => v >= -0.15 && v <= 1.15)).toBe(true);
+    }
+    // Every box handle in view is offered.
+    const inView = penaltyBoxes(SIZE).flatMap(b => b.points).filter(p => truth(6, p.pitch).every(v => v >= -0.15 && v <= 1.15));
+    expect(box.map(l => l.name).sort()).toEqual(inView.map(p => p.name).sort());
+  });
+
+  it("saves a box handle only when you placed it", () => {
+    const [left] = penaltyBoxes(SIZE);
+    const handle = { ...left.points[1], image: [0.4, 0.6] as Point };
+    const ends = [{ name: NAMES[0], pitch: HALFWAY[0], image: [0.5, 0.9] as Point }, { name: NAMES[1], pitch: HALFWAY[1], image: [0.5, 0.3] as Point }];
+    expect(landmarksToSave([...ends, handle], [...ends, handle], 4).map(l => l.name)).toEqual(NAMES);
+    const placed = { ...handle, image: [0.42, 0.61] as Point };
+    expect(landmarksToSave([...ends, placed], [...ends, handle], 4).map(l => l.name)).toEqual([...NAMES, handle.name]);
+  });
+});
+
+// 92908cc3 at 0:30 (harness): two right corners, the near halfway end and the right box's goal-line end.
+// Three of those lie on the goal line, so four points did not fix the pitch and it swung wildly.
+describe("a mark needs four points with no three on one pitch line", () => {
+  const goalLineEnd = penaltyBoxes({ length_m: 73, width_m: 46 })[1].points[0];
+  it("tells a spread set from one with three points on a line", () => {
+    expect(fixesPitch(PITCH_CORNERS)).toBe(true);
+    expect(fixesPitch([[1, 0], [1, 1], goalLineEnd.pitch, [0.5, 0]])).toBe(false);
+    expect(fixesPitch([[1, 0], [1, 1], goalLineEnd.pitch, [0.5, 0], [0.5, 1]])).toBe(true);
+    expect(fixesPitch([[0, 0], [1, 0], [1, 1]])).toBe(false);
+  });
+
+  it("keeps adding spare points when the first four do not fix the pitch", () => {
+    const ends = HALFWAY.map((pitch, i) => ({ name: NAMES[i], pitch, image: [-0.3, 1.3 - i] as Point }));
+    const placed = { name: goalLineEnd.name, pitch: goalLineEnd.pitch, image: [0.8, 0.4] as Point };
+    const start = [...ends, { ...placed, image: [0.79, 0.38] as Point }];
+    const saved = landmarksToSave([...ends, placed], start, 2, [[1, 0], [1, 1]]);
+    expect(saved.map(l => l.name)).toEqual([...NAMES, goalLineEnd.name]);
+  });
+
+  it("does not let a mark that cannot fix the pitch replace it on its own", () => {
+    const weak: PitchKeyframe = { time_s: 0, corners: PITCH_CORNERS.map(p => truth(0, p)), fit_corner_indices: [1, 2], landmarks: [
+      { name: NAMES[0], pitch: HALFWAY[0], image: truth(0, HALFWAY[0]) },
+      { name: goalLineEnd.name, pitch: [1, 0.3], image: [truth(0, [1, 0.3])[0] + 0.02, truth(0, [1, 0.3])[1]] }] };
+    expect(buildMarkers(atlas(), [weak])).toBeNull();
+    // Beside a good mark it borrows that mark's points and stays close to the truth.
+    const model = buildMarkers(atlas(), [weak, mark(8, p => truth(8, p))])!;
+    const p = markerPointsAt(model, 0, [[0.5, 0.5]])![0]!, t = truth(0, [0.5, 0.5]);
+    expect(Math.hypot(p[0] - t[0], p[1] - t[1])).toBeLessThan(0.02);
+  });
+});
+
+describe("marks the atlas cannot use", () => {
+  it("count as no marks on an atlas run, so the old camera-motion path never draws them", () => {
+    const weak: PitchKeyframe = { time_s: 0, corners: PITCH_CORNERS.map(p => truth(0, p)), fit_corner_indices: [1, 2], landmarks: [
+      { name: NAMES[0], pitch: HALFWAY[0], image: truth(0, HALFWAY[0]) }, { name: "Right box, near goal-line end", pitch: [1, 0.3], image: [0.9, 0.4] }] };
+    const r = review({ pitch_panorama: outlineOnly, pitch_keyframes: [weak] });
+    const camera = labCamera(motion, atlas(), r, HASH)!;
+    expect(usableMarks(camera, r)).toEqual([]);
+    expect(imageToPitch(camera, usableMarks(camera, r), SIZE, 4)).toBeNull();
+    // A usable mark is passed through; a run without an atlas keeps its marks as before.
+    const good = review({ pitch_keyframes: [mark(0, p => truth(0, p))] });
+    expect(usableMarks(labCamera(motion, atlas(), good, HASH)!, good)).toEqual(good.pitch_keyframes);
+    expect(usableMarks(labCamera(motion, undefined, r, HASH)!, r)).toEqual([weak]);
   });
 });

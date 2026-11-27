@@ -1,6 +1,7 @@
 import {applyRay,multiply,rayPanorama} from "./atlasGeometry";
-import {DEFAULT_CORNERS,fitLandmarks,inverse,PITCH_CORNERS,project,type Point} from "./landmarks";
+import {DEFAULT_CORNERS,fitLandmarks,fixesPitch,inverse,PITCH_CORNERS,project,type Point} from "./landmarks";
 import {panoramaBoundaryAt,panoramaLineAt,panoramaMatrixAt,type Panorama} from "./panorama";
+import type {PitchSize} from "./metres";
 import type {Corners,PitchKeyframe} from "./pitch";
 
 /* Spec 800: your pitch markers, placed on the paused video at several moments, as reference points
@@ -49,7 +50,10 @@ export function buildMarkers(data:Panorama|undefined,marks:PitchKeyframe[]):Mark
  const keys=sets.flatMap(s=>{
   const own=s.refs.flatMap(chart);
   const others=sets.filter(o=>o!==s).flatMap(o=>o.refs.flatMap(chart)).map(p=>({...p,weight:OTHER_WEIGHT}));
-  const fit=fitLandmarks(own)??fitLandmarks([...own,...others]);
+  // A mark whose own points cannot fix the pitch (three on one line) leans on the other marks; alone it is not used.
+  const strong=fixesPitch(own.map(p=>p.pitch));
+  if(!strong&&!others.length)return [];
+  const fit=strong?fitLandmarks(own)??fitLandmarks([...own,...others]):fitLandmarks([...own,...others]);
   if(!fit)return [];
   const m=multiply(fit,basis),w=dot(m.slice(6),normal);
   // Scaled so the marked ground's centre ray has weight 1: the same scale for every mark, for blending.
@@ -101,4 +105,29 @@ export function markerOutlineAt(m:MarkerModel,at:number):Corners|null{
 /** The marked halfway line in the frame. */
 export function markerHalfwayAt(m:MarkerModel,at:number):Corners|null{
  return panoramaLineAt(m.data,atlasPoints(m,at,HALFWAY_ENDS),at);
+}
+
+/* Penalty areas, depth from the goal line x width, from The FA Guide to Pitch Dimensions (metric):
+ * 5v5 37x27 m: 8x15; 7v7 55x37: 9x16; 9v9 73x46: 12x29; U13-U14 82x50: 13x32; U15-U16 91x55: 16x40.
+ * The adult 100x64 pitch uses Law 1's 16.5 x 40.3 m (the FA diagram rounds it to 16 x 40). A pitch of
+ * another size takes the box of the format nearest its length (a 9v9 across a full pitch, 68 m, is 9v9). */
+const BOXES=[{length:37,depth:8,width:15},{length:55,depth:9,width:16},{length:73,depth:12,width:29},{length:82,depth:13,width:32},{length:91,depth:16,width:40},{length:100,depth:16.5,width:40.3}];
+export type PenaltyBox={side:"Left"|"Right";points:{name:string;pitch:Point}[]};
+export const isBoxPoint=(name:string|undefined)=>/^(Left|Right) box, /.test(name??"");
+const BOX_POINTS=["near goal-line end","near front corner","far front corner","far goal-line end"];
+
+/** Both penalty boxes in normalised pitch points, each from the near goal-line end round to the far one. */
+export function penaltyBoxes({length_m:l,width_m:w}:PitchSize):PenaltyBox[]{
+ const f=BOXES.reduce((a,b)=>Math.abs(b.length-l)<Math.abs(a.length-l)?b:a);
+ const d=Math.min(.5,f.depth/l),y0=Math.max(0,(w-f.width)/2/w),y1=Math.min(1,(w+f.width)/2/w);
+ const box=(side:"Left"|"Right",goal:number,front:number):PenaltyBox=>({side,points:([[goal,y0],[front,y0],[front,y1],[goal,y1]] as Point[]).map((pitch,i)=>({name:`${side} box, ${BOX_POINTS[i]}`,pitch}))});
+ return [box("Left",0,d),box("Right",1,1-d)];
+}
+
+/** The penalty boxes' three marked sides in the frame, each a straight ground line. */
+export function markerBoxesAt(m:MarkerModel,at:number,size:PitchSize):Corners[]{
+ return penaltyBoxes(size).flatMap(b=>{
+  const atlas=atlasPoints(m,at,b.points.map(p=>p.pitch));
+  return [0,1,2].flatMap(k=>{const line=panoramaLineAt(m.data,[atlas[k],atlas[k+1]],at);return line?[line]:[];});
+ });
 }

@@ -7,6 +7,8 @@ import { boundaryAt, halfwayAt, type Boundary } from "./boundary";
 import { BoundaryLayer } from "./BoundaryEditor";
 import { MarkLayer, PAD } from "./MarkLayer";
 import { ballAt, type BallPoint } from "./ball";
+import { markerBoxesAt } from "./pitchMarkers";
+import type { PitchSize } from "./metres";
 
 export const TEAM_COLOUR = { own: "#38bdf8", opponent: "#fb923c", referee: "#facc15", other: "#94a3b8", none: "#e2e8f0" };
 
@@ -70,12 +72,14 @@ export type OverlayInput = {
   w: number; h: number; index: ObservationIndex; teams: Map<number, Assignment>; teamAt?: (track: number, time: number) => Assignment | undefined;
   selected: number | null; showBoxes: boolean; everyone: boolean; ball?: BallPoint[]; showBall: boolean;
   camera?: Camera; marks?: PitchKeyframe[]; boundaries?: Boundary[]; automaticBoundaries?: Boundary[];
+  /** The pitch size in use; with your pitch marks it places the penalty boxes (spec 800). */
+  size?: PitchSize;
 };
 export type OverlayPerson = { row: Observation; info: Assignment | undefined; colour: string };
-export type OverlayFrame = { w: number; h: number; outline: Corners | null; halfway: Corners | null; people: OverlayPerson[]; ball: BallPoint | null };
+export type OverlayFrame = { w: number; h: number; outline: Corners | null; halfway: Corners | null; people: OverlayPerson[]; ball: BallPoint | null; boxes?: Corners[] };
 
 /** Everything the player draws at one moment. The analysed video export paints the same frame. */
-export function overlayAt({ w, h, index, teams, teamAt, selected, showBoxes, everyone, ball, showBall, camera, marks = [], boundaries = [], automaticBoundaries = [] }: OverlayInput, now: number): OverlayFrame {
+export function overlayAt({ w, h, index, teams, teamAt, selected, showBoxes, everyone, ball, showBall, camera, marks = [], boundaries = [], automaticBoundaries = [], size }: OverlayInput, now: number): OverlayFrame {
   const here = showBoxes ? boxesAt(index, now) : [];
   const frameTeams = new Map<number, Assignment>();
   for (const o of here) {
@@ -89,13 +93,15 @@ export function overlayAt({ w, h, index, teams, teamAt, selected, showBoxes, eve
   // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
   const outline = camera ? boundaryAt(camera, boundaries, automaticBoundaries, now) ?? outlineAt(camera, marks, now) : null;
   const halfway = camera ? halfwayAt(camera, now) : null;
+  // Penalty boxes only where your marks place the pitch exactly.
+  const boxes = camera?.markers && size ? markerBoxesAt(camera.markers, now, size) : [];
   const visible = everyone ? here : outline
     ? here.filter(o => o.track_id === selected || insidePitch(feet(o), outline, footMargin(o)))
     : inPlay(here, frameTeams, selected);
   // Draw the selected person last so their highlight sits on top.
   const ordered = [...visible].sort((a, b) => Number(a.track_id === selected) - Number(b.track_id === selected));
   const people = ordered.map(row => { const info = frameTeams.get(row.track_id); return { row, info, colour: colourFor(info) }; });
-  return { w, h, outline, halfway, people, ball: showBall && ball?.length ? ballAt(ball, now) : null };
+  return { w, h, outline, halfway, boxes, people, ball: showBall && ball?.length ? ballAt(ball, now) : null };
 }
 
 /** Playhead time for every painted video frame while playing (timeupdate fires only about four times a second). */
@@ -129,15 +135,15 @@ type Props = {
   ball?: BallPoint[]; showBall?: boolean;
   markLandmarks?: Landmark[]; onMarkLandmarks?: (points: Landmark[]) => void;
   boundaries?: Boundary[]; automaticBoundaries?: Boundary[]; boundaryEditing?:Corners|null; onBoundaryEditing?:(p:Corners)=>void; boundarySelected?:number; onBoundarySelect?:(n:number)=>void;
-  camera?: Camera; marks?: PitchKeyframe[]; showOutline?: boolean; marking?: Corners | null; onMarking?: (corners: Corners) => void;
+  camera?: Camera; marks?: PitchKeyframe[]; size?: PitchSize; showOutline?: boolean; marking?: Corners | null; onMarking?: (corners: Corners) => void;
 };
 
-export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, teamAt, ball, showBall = true, camera, marks = [], showOutline = true, marking = null, onMarking, markLandmarks, onMarkLandmarks, boundaries=[], automaticBoundaries=[], boundaryEditing=null, onBoundaryEditing, boundarySelected=0, onBoundarySelect }: Props) {
+export function LabVideo({ src, videoRef, at, onTime, assignments, teams, selected, onSelect, showBoxes, dense, everyone = false, teamAt, ball, showBall = true, camera, marks = [], size, showOutline = true, marking = null, onMarking, markLandmarks, onMarkLandmarks, boundaries=[], automaticBoundaries=[], boundaryEditing=null, onBoundaryEditing, boundarySelected=0, onBoundarySelect }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const index = useMemo(() => indexObservations(mergeDense(assignments?.observations ?? [], dense)), [assignments, dense]);
   const now = useFrameTime(videoRef, at);
   const w = assignments?.image_width ?? 1920, h = assignments?.image_height ?? 1080;
-  const { outline, halfway, people: ordered, ball: ballNow } = overlayAt({ w, h, index, teams, teamAt, selected, showBoxes: showBoxes && !!assignments, everyone, ball, showBall, camera, marks, boundaries, automaticBoundaries }, now);
+  const { outline, halfway, boxes = [], people: ordered, ball: ballNow } = overlayAt({ w, h, index, teams, teamAt, selected, showBoxes: showBoxes && !!assignments, everyone, ball, showBall, camera, marks, boundaries, automaticBoundaries, size }, now);
   const glows = Object.entries(TEAM_COLOUR);
   return <div className="relative overflow-hidden rounded-xl bg-black">
     <div className="relative transition-transform" style={marking || boundaryEditing ? { transform: `scale(${1 - 2 * PAD})` } : undefined}>
@@ -148,6 +154,7 @@ export function LabVideo({ src, videoRef, at, onTime, assignments, teams, select
       </linearGradient>)}</defs>
       {outline && showOutline && !marking && !boundaryEditing && <polygon points={outline.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="#22c55e" fillOpacity={0.05} stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Pitch outline" />}
       {halfway && showOutline && !marking && !boundaryEditing && <polyline points={halfway.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="none" stroke="#f59e0b" strokeOpacity={0.85} strokeWidth={h / 350} strokeDasharray={`${h / 50} ${h / 80}`} aria-label="Halfway line" />}
+      {showOutline && !marking && !boundaryEditing && boxes.map((line, n) => <polyline key={n} points={line.map(([x, y]) => `${x * w},${y * h}`).join(" ")} fill="none" stroke="white" strokeOpacity={0.7} strokeWidth={h / 400} strokeDasharray={`${h / 60} ${h / 90}`} aria-label="Penalty box line" />)}
       {ordered.map(({ row, info, colour }) => {
         const [x1, y1, x2, y2] = row.image_box!;
         const key = glows.find(([, c]) => c === colour)?.[0] ?? "none";

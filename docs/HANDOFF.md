@@ -1,3 +1,17 @@
+## Penalty box handles on the video, and weak pitch marks refused (spec 800 follow-up); DEPLOY BELOW (27 November 2026)
+
+Owner: "add penalty box handles too". App only.
+- Editor: white handles for both penalty boxes where in view, box drawn through them; saved only once
+  moved. Sizes from The FA Guide to Pitch Dimensions (metric) per format (adult: Law 1 16.5x40.3),
+  from the chosen pitch size (else 9v9). With marks, both boxes are drawn on the video and in the
+  analysed export.
+- Bug found on the harness and fixed: a mark with three points on one pitch line (two corners + the
+  box's goal-line end) swung the fit (132 -> 16 tags). `fixesPitch` now requires four spread points
+  (spares added, else Save disabled); a weak mark is not used alone; and on an atlas run marks the
+  atlas cannot use place nothing (`usableMarks`), instead of the old camera-motion fallback.
+Verification: frontend 1227 pass, typecheck, build; scorer smoke run; browser on the read-only
+harness over 92908cc3 (see spec 800 follow-up).
+
 ## Player Lab follows the player's role; Match stats gradients app-wide; players first in the match rail ; DEPLOYED to the admin library (27 November 2026)
 
 Owner: outfield players in Player Lab showed saves, goals conceded, save % and shots faced; momentum

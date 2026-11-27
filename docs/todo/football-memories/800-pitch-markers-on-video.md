@@ -46,7 +46,6 @@ from where the pitch markers are set".
 
 ## Non-goals
 
-- Penalty-box handles (need the format's box size; follow-up if wanted).
 - Automatic line snapping to painted markings.
 - Fixing registration where the atlas has no pose (no overlay there, as now).
 
@@ -73,6 +72,31 @@ from where the pitch markers are set".
 | camera wiring | labCamera with marks + atlas: boundaryAt/halfwayAt/imageToPitch use marks | without marks they return the atlas values |
 | editor start | handles from the current pitch, halfway ends included, off-frame corners unticked | |
 | MarkLayer | halfway line drawn between the halfway handles | absent without them |
+
+## Follow-up: penalty box handles (owner: "add penalty box handles too", 27 November 2026)
+
+- Box sizes from The FA Guide to Pitch Dimensions (metric), depth x width: 5v5 8x15 m, 7v7 9x16,
+  9v9 12x29, U13-U14 13x32, U15-U16 16x40; adult 100x64 uses Law 1's 16.5x40.3 (the FA diagram
+  rounds it to 16x40). A pitch of another size takes the format nearest its length (FA's 9v9 across a
+  full pitch, 68 m, gets the 9v9 box). Size = your chosen pitch size, else the 9v9 assumption.
+- The editor offers the box handles in view (white, eight names "Left/Right box, near/far goal-line
+  end/front corner"), with the box drawn through them. A box handle is saved only once you move it:
+  its position comes from the format, so an unplaced one is a guess even when in the picture. With
+  your marks, both boxes are drawn on the video and in the analysed export.
+- Found on the harness: a mark of two right corners, the near halfway end and a box goal-line end
+  has three points on the goal line and does not fix the pitch; the fit swung and the analytics went
+  from 132 to 16 tags. Now (1) `fixesPitch`: a mark needs four points with no three on one pitch
+  line; spare points are added until it does, else Save is disabled; (2) a mark that cannot fix the
+  pitch only leans on other marks and is not used alone; (3) on an atlas run, marks the atlas cannot
+  use place nothing (`usableMarks`); before, they fell back to the camera-motion path (pre-existing
+  behaviour for any atlas run whose marks the atlas ignored). The panel still lists every mark.
+- Saved box points keep the normalised position of the size in use when saved; changing the pitch
+  size later does not move them (open question for the owner if sizes change often).
+- Verification: frontend 1227 pass (pitchMarkers 22, MarkLayer 3, analysedRecording +1), typecheck,
+  build; scorer (`score-analytics-tags.mjs`, now via `usableMarks`) runs on 6c216d41. Browser
+  (harness over 92908cc3, review in memory): the weak mark is ignored (132 tags, atlas outline, mark
+  still listed); a fresh mark with the right box front corner placed saves corners 1,2 + near halfway
+  + that corner, both boxes drawn at 0:30, 0:45, 8:20, 132 tags.
 
 ## Real-account check
 

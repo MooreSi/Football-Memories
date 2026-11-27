@@ -50,3 +50,15 @@ export function fittedCorners(corners: Point[], landmarks?: Landmark[], indices?
   const out=PITCH_CORNERS.map(p=>project(inverse(h),p));
   return out.every(p=>p.every(Number.isFinite)) ? out : null;
 }
+
+/** Do these pitch points fix a perspective fit: are four of them spread so that no three lie on one
+ * pitch line? Three on a line (two corners and a box's goal-line end) leave the fit free to swing. */
+export function fixesPitch(points: Point[], minArea = 0.005): boolean {
+  const area = (a: Point, b: Point, c: Point) => Math.abs((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])) / 2;
+  const n = points.length;
+  for (let a=0;a<n;a++) for (let b=a+1;b<n;b++) for (let c=b+1;c<n;c++) for (let d=c+1;d<n;d++) {
+    const q=[points[a],points[b],points[c],points[d]];
+    if ([[0,1,2],[0,1,3],[0,2,3],[1,2,3]].every(([i,j,k]) => area(q[i],q[j],q[k]) >= minArea)) return true;
+  }
+  return false;
+}

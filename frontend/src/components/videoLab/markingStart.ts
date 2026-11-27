@@ -1,9 +1,10 @@
 import {applyRay,groundCalibration,panoramaRay} from "./atlasGeometry";
-import {DEFAULT_CORNERS,fitLandmarks,inverse,PITCH_CORNERS,project,type Landmark,type Point} from "./landmarks";
+import {DEFAULT_CORNERS,fitLandmarks,fixesPitch,inverse,PITCH_CORNERS,project,type Landmark,type Point} from "./landmarks";
 import {levelPitch} from "./livePitch";
 import {panoramaMatrixAt,type Panorama} from "./panorama";
 import {outlineAt,type Camera,type Corners,type PitchKeyframe} from "./pitch";
-import {HALFWAY_ENDS,markerPointsAt} from "./pitchMarkers";
+import {HALFWAY_ENDS,isBoxPoint,markerPointsAt,penaltyBoxes} from "./pitchMarkers";
+import type {PitchSize} from "./metres";
 
 export { DEFAULT_CORNERS };
 const HALFWAY_NAMES=["Near halfway intersection","Far halfway intersection"];
@@ -23,9 +24,13 @@ export type MarkingStart={corners:Corners;landmarks:Landmark[];cornerIndices:num
  * start unticked for the fit (as long as four points remain). Without an atlas, the spec 600
  * behaviour: corners only, all used.
  */
-export function markingStart(camera:Camera|undefined,marks:PitchKeyframe[],time:number):MarkingStart{
+export function markingStart(camera:Camera|undefined,marks:PitchKeyframe[],time:number,size?:PitchSize):MarkingStart{
  const existing=marks.find(m=>Math.abs(m.time_s-time)<.05);
- if(existing)return {corners:existing.corners,landmarks:existing.landmarks??[],cornerIndices:existing.fit_corner_indices??[0,1,2,3]};
+ if(existing){
+  // Box handles you did not place at this mark are offered again where the pitch puts them.
+  const saved=existing.landmarks??[],more=size&&camera?.markers?boxHandles(size,points=>markerPointsAt(camera.markers!,time,points)).filter(l=>!saved.some(s=>s.name===l.name)):[];
+  return {corners:existing.corners,landmarks:[...saved,...more],cornerIndices:existing.fit_corner_indices??[0,1,2,3]};
+ }
  if(!camera||!(camera.markers||camera.panorama||camera.proposal))return {corners:(camera&&outlineAt(camera,marks,time))??DEFAULT_CORNERS,landmarks:[],cornerIndices:[0,1,2,3]};
  const bound=camera.panorama??camera.proposal;
  // Pitch points in the picture through a world-ray -> normalised-pitch matrix (null behind the camera).
@@ -46,11 +51,18 @@ export function markingStart(camera:Camera|undefined,marks:PitchKeyframe[],time:
  const ends=reviewedEnds?atlasInPicture(bound!.data,reviewedEnds,time):source?.(HALFWAY_ENDS)??null;
  const fit=fitLandmarks(corners.map((image,i)=>({image,pitch:PITCH_CORNERS[i]})));
  const guess=!source&&fit?HALFWAY_ENDS.map(p=>project(inverse(fit),p)):null;
- const landmarks=(ends??guess??[]).flatMap((p,i)=>p?[{name:HALFWAY_NAMES[i],pitch:HALFWAY_ENDS[i],image:clamp(p)}]:[]);
+ const halfway=(ends??guess??[]).flatMap((p,i)=>p?[{name:HALFWAY_NAMES[i],pitch:HALFWAY_ENDS[i],image:clamp(p)}]:[]);
  // On-screen corners, then the off-screen ones nearest the picture until four points fix a fit.
+ // Box handles do not count: they are saved only once you place them.
  const order=[0,1,2,3].sort((a,b)=>away(corners[a])-away(corners[b]));
- const used=order.filter((i,n)=>onScreen(corners[i])||n<4-landmarks.length).sort();
- return {corners,landmarks,cornerIndices:used};
+ const used=order.filter((i,n)=>onScreen(corners[i])||n<4-halfway.length).sort();
+ return {corners,landmarks:[...halfway,...(size&&source?boxHandles(size,source):[])],cornerIndices:used};
+}
+
+/** Penalty box handles where the pitch as drawn puts them, only those in view (or just beside it). */
+function boxHandles(size:PitchSize,source:(points:Point[])=>(Point|null)[]|null):Landmark[]{
+ const points=penaltyBoxes(size).flatMap(b=>b.points),at=source(points.map(p=>p.pitch));
+ return at?points.flatMap((p,i)=>{const q=at[i];return q&&q.every(v=>v>=-.15&&v<=1.15)?[{name:p.name,pitch:p.pitch,image:q}]:[];}):[];
 }
 
 function atlasInPicture(data:Panorama,points:Point[],time:number):(Point|null)[]|null{
@@ -61,14 +73,18 @@ function atlasInPicture(data:Panorama,points:Point[],time:number):(Point|null)[]
 }
 
 /**
- * The halfway ends to save with a mark: those in the picture or that you moved (or added). An
+ * The halfway ends and box handles to save with a mark: those in the picture or that you moved (or added). An
  * off-screen end you never touched is the old pitch's guess, so it is dropped unless it is needed for
- * four points with the corners in use.
+ * four points with the corners in use. A penalty box handle is saved only once you place it: the box
+ * size comes from the format, so an unplaced one is a guess even when it is in the picture.
  */
-export function landmarksToSave(current:Landmark[],start:Landmark[],cornersUsed:number):Landmark[]{
+export function landmarksToSave(current:Landmark[],start:Landmark[],cornersUsed:number,cornerPitch?:Point[]):Landmark[]{
  const moved=(l:Landmark)=>{const s=start.find(x=>x.name===l.name);return !s||Math.hypot(s.image[0]-l.image[0],s.image[1]-l.image[1])>1e-6;};
- const keep=current.filter(l=>onScreen(l.image)||moved(l));
- const spare=current.filter(l=>!keep.includes(l)).sort((a,b)=>away(a.image)-away(b.image));
- const out=[...keep,...spare.slice(0,Math.max(0,4-cornersUsed-keep.length))];
+ const keep=current.filter(l=>moved(l)||(!isBoxPoint(l.name)&&onScreen(l.image)));
+ const spare=current.filter(l=>!keep.includes(l)).sort((a,b)=>Number(isBoxPoint(a.name))-Number(isBoxPoint(b.name))||away(a.image)-away(b.image));
+ // Four points, and (given the corners in use) four that fix the pitch: no three on one pitch line.
+ const out=[...keep];
+ const enough=()=>cornersUsed+out.length>=4&&(!cornerPitch||fixesPitch([...cornerPitch,...out.map(l=>l.pitch)]));
+ for(const l of spare){if(enough())break;out.push(l);}
  return current.filter(l=>out.includes(l));
 }

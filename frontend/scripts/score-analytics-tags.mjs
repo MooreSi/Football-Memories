@@ -64,7 +64,7 @@ try {
   const detections = existsSync(join(result, "detections.jsonl")) ? readFileSync(join(result, "detections.jsonl"), "utf8") : undefined;
   const ball = d.labBall(dense, detections, assignments, camera);
   const peopleDense = dense?.balls ? undefined : dense;
-  const base = { rows: mergeDense(assignments.observations, peopleDense), camera, marks: review?.pitch_keyframes ?? [], size: review?.pitch_size, ball, frame: { w: assignments.image_width, h: assignments.image_height }, timeline };
+  const base = { rows: mergeDense(assignments.observations, peopleDense), camera, marks: d.usableMarks(camera, review), size: review?.pitch_size, ball, frame: { w: assignments.image_width, h: assignments.image_height }, timeline };
 
   // The reference tags, in run seconds.
   let reference = [];

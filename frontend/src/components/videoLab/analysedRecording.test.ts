@@ -46,6 +46,13 @@ describe("painting", () => {
     expect(calls.find(c => c.op === "scale")?.args).toEqual([1280 / 1920, 720 / 1080]);
   });
 
+  it("draws the penalty boxes in the export as on the player", () => {
+    const { ctx, calls } = fakeContext();
+    paintOverlay(ctx, { w: 1920, h: 1080, outline: null, halfway: null, people: [], ball: null, boxes: [[[0.1, 0.8], [0.3, 0.75], [0.35, 0.5]]] }, 1920, 1080);
+    expect(calls.filter(c => c.op === "lineTo").map(c => c.args)).toEqual([[0.3 * 1920, 0.75 * 1080], [0.35 * 1920, 0.5 * 1080]]);
+    expect(calls.filter(c => c.op === "stroke").map(c => c.strokeStyle)).toEqual(["white"]);
+  });
+
   it("draws nothing but the experimental caption on an empty frame", () => {
     const { ctx, calls } = fakeContext();
     paintOverlay(ctx, { w: 1920, h: 1080, outline: null, halfway: null, people: [], ball: null }, 1920, 1080);
