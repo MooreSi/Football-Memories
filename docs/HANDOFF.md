@@ -1,4 +1,4 @@
-## Match tabs, Player Lab and admin usage restyled/fixed; COMMITTED, NOT DEPLOYED — 27 November 2026
+## Match tabs, Player Lab and admin usage restyled/fixed; DEPLOYED (admin, gateway, local 8765) — 27 November 2026
 
 Owner requests (one message): Player stats and Goals & Keepers in the Match stats style; no
 score in the Goals tab title ("Goals & Keepers"); remove the Insights tab; Opponents into the
@@ -18,12 +18,16 @@ relay, no Hudl action possible); scratch config removed. Frontend 1118 pass, typ
 Gateway: branch codex/admin-usage 44949e5 (base 9cd8849 = live gateway image), migration 0009
 (users.last_used_at, user_active_days). Time counts gaps of <= 5 min between the existing 30 s
 session notes; an open tab counts as use. Gateway suite, ruff, mypy clean; web 75 pass.
-NOT DEPLOYED, waiting for the owner: (1) admin app: live is 01e4cb5 (17bda1d line), not an
-ancestor here, and this branch still carries the undeployed overnight commits 1af18e9, a9f2983,
-a52662a; a deploy must merge 01e4cb5 and either include or leave out those three. (2) gateway:
-codex/admin-usage needs alembic 0009 on the live gateway DB (additive only), then up -d with the
-current compose files (memory: gateway-live-compose-files). (3) the local 8765 app needs a frontend
-container rebuild to show the changes there.
+DEPLOYED on the owner's "Yes, deploy": admin app from branch codex/restyle-usage-deploy 9429c6e
+= live 01e4cb5 + the two commits cherry-picked (+ the veoInsights deletion), so 1af18e9, a9f2983,
+a52662a stay undeployed; worktree frontend 1109 pass, typecheck, build. `built` updated (latest
+untouched), _move on the admin user only, exactly 3 admin containers changed, bundle has the new
+panels, public sign-in 200. The next admin deploy from this branch must merge 9429c6e's line.
+Gateway fm-gateway-gateway:usage-44949e5 with the live compose files and
+~/fm-archive-gateway/images-usage.yaml (new image override; images-archive.yaml kept), alembic
+0008 -> 0009 on start, DB dumped first to ~/.fm-gateway-backups/ (mode 600), origin and both
+analytics mounts unchanged, first activity row recorded within a minute, no errors. Local 8765:
+frontend image built from the deploy worktree, `up -d --no-deps --no-build frontend`; api 200.
 
 ## Finished analysis runs archive to the MacBook share; DEPLOYED (no run moved yet) — 27 November 2026
 
