@@ -101,6 +101,11 @@ output-side `-ss`: input-side seeking on a mini playlist that starts mid-match c
 out short (synthetic 2 s window encoded as 1.4 s). Hudl clips are imported with no
 tags because the worker would label them Veo teacher highlights; proper Hudl tag
 provenance in the worker is a follow-up. Real-account acceptance is owner-only.
+27 November 2026: the window must also fetch each `#EXT-X-MAP` init segment its
+segments reference (its own `asset-N.bin`, outside the chosen range). The first cut
+fetched only the media segments, so a fragmented-MP4 stream failed every window
+with "The analysis clip could not be encoded" (owner hit it on 261108 U11 v Stoke).
+The test fixtures were MPEG-TS only; `test_hudl_analysis` now has an fMP4 stream.
 
 Analysis source selection reuses an archived match or the existing private range
 relay; input-side `-ss` and output `-t` bound the chosen footage. Range reads also
