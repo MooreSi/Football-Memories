@@ -90,38 +90,6 @@ describe("labPanorama", () => {
   });
   it("keeps the painted outline when the goals' outline holds less play (a false goal pair)", () => {
     const good = { ...painted, suggested_boundary: [[-6, 3], [6, 3], [6, 11], [-6, 11]].map(atlas), selected_goals: [goal("a", -3, 9), goal("b", 3, 9)] } as Panorama;
-    const kept = labPanorama(good, players, "U11", null)!;
-    expect(kept.suggested_boundary).toBe(good.suggested_boundary);
-    expect(kept.pitch_outline?.method).toBe("painted_lines");
-  });
-});
-
-describe("centreHalfway (an outline without a halfway line)", () => {
-  it("puts the halfway line through the pitch centre, square to its long side, so both halves are equal", async () => {
-    const { centreHalfway } = await import("./goalPitch");
-    const outline = [[-6, 4], [6, 4], [6, 10], [-6, 10]].map(atlas) as [number, number][];
-    const half = centreHalfway(base, outline)!;
-    const [a, b] = half.map(ground);
-    expect(a[0]).toBeCloseTo(0, 2); expect(b[0]).toBeCloseTo(0, 2);
-    expect([a[1], b[1]].sort((x, y) => x - y)).toEqual([expect.closeTo(4, 2), expect.closeTo(10, 2)]);
-  });
-  it("the lab proposes it for a painted outline that has none, and keeps one the worker found", () => {
-    const painted = { ...base, pitch_outline: { method: "painted_lines", halfway: null }, suggested_boundary: [[-6, 4], [6, 4], [6, 10], [-6, 10]].map(atlas) } as Panorama;
-    const players = Array.from({ length: 400 }, (_, k) => foot(k % 5, [-5 + (k % 11), 5 + (k % 5)]));
-    const out = labPanorama(painted, players, "", null)!;
-    expect(out.pitch_outline?.halfway?.map(ground).map(p => p[0])).toEqual([expect.closeTo(0, 2), expect.closeTo(0, 2)]);
-    const found = [[0.5, 0.5], [0.5, 0.6]] as [number, number][];
-    expect(labPanorama({ ...painted, pitch_outline: { method: "painted_lines", halfway: found } } as Panorama, players, "", null)!.pitch_outline?.halfway).toBe(found);
-  });
-});
-
-describe("withHalfway (your accepted outline without a halfway line)", () => {
-  it("takes the halfway line through its own centre, and never replaces one you placed", async () => {
-    const { withHalfway } = await import("./decisions");
-    const points = [[-6, 4], [6, 4], [6, 10], [-6, 10]].map(atlas) as [number, number][];
-    const bound = withHalfway({ data: base, review: { panorama_id: base.panorama_id, points, accepted: true } })!;
-    expect(bound.review.halfway?.map(ground).map(p => p[0])).toEqual([expect.closeTo(0, 2), expect.closeTo(0, 2)]);
-    const mine = [[0.4, 0.5], [0.45, 0.7]] as [number, number][];
-    expect(withHalfway({ data: base, review: { panorama_id: base.panorama_id, points, halfway: mine, accepted: true } })!.review.halfway).toBe(mine);
+    expect(labPanorama(good, players, "U11", null)).toBe(good);
   });
 });

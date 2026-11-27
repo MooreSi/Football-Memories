@@ -154,34 +154,3 @@ export function goalPitch(data: Panorama, opts: { title?: string; size?: PitchSi
   if (points.length < 3 || halfway.length !== 2) return null;
   return { points, halfway, kickoff: toAtlas(data, g, kickoff), length, width, size, format: opts.size ? null : fromTitle?.format ?? null, widened };
 }
-
-/**
- * A halfway line for an outline that has none (owner request 27 Nov 2026: equal distance either side
- * of the halfway line on every game). On the level ground: the outline's minimum-area rectangle gives
- * the pitch's long axis and centre; the line runs through the centre, square to the long side, from
- * touchline to touchline, so both halves are equal. Null without a level ground.
- */
-export function centreHalfway(data: Panorama, outline: Corners): Corners | null {
-  const g = levelGround(data);
-  if (!g || outline.length < 3) return null;
-  const ground = outline.map(p => plan(g, panoramaRay(data, p as P)));
-  if (ground.some(p => !p)) return null;
-  const pts = ground as P[];
-  let best: { area: number; u: P; n: P; c: P; width: number } | null = null;
-  for (let i = 0; i < pts.length; i++) {
-    const d = sub(pts[(i + 1) % pts.length], pts[i]), l = len(d);
-    if (!(l > 0)) continue;
-    const e: P = mul(d, 1 / l), f: P = [-e[1], e[0]];
-    const a = pts.map(p => p[0] * e[0] + p[1] * e[1]), b = pts.map(p => p[0] * f[0] + p[1] * f[1]);
-    const [a0, a1, b0, b1] = [Math.min(...a), Math.max(...a), Math.min(...b), Math.max(...b)];
-    const area = (a1 - a0) * (b1 - b0);
-    if (best && area >= best.area) continue;
-    const long = a1 - a0 >= b1 - b0;
-    const c = add(mul(e, (a0 + a1) / 2), mul(f, (b0 + b1) / 2));
-    best = long ? { area, u: e, n: f, c, width: b1 - b0 } : { area, u: f, n: e, c, width: a1 - a0 };
-  }
-  if (!best) return null;
-  const half = mul(best.n, best.width / 2);
-  const line = clipToAtlas(data, g, [sub(best.c, half), add(best.c, half)], false);
-  return line.length === 2 ? line : null;
-}
