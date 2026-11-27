@@ -1,3 +1,36 @@
+## Video Lab encode progress, source-sized clip, all CPU on both Macs and hosted (27 November 2026)
+
+Owner report: "Preparing analysis clip / Encoding the analysis window" sat ten minutes with
+no moving bar (261108 U11 v Stoke, 5:00-15:00). It was working; the encode took ~10 min
+because the hosted capture container was capped at 1.5 CPUs, and CRF 18 inflated the clip
+to 454 MB from ~350 MB of HEVC segments. Owner then asked to remove CPU/GPU/Neural Engine/
+memory restrictions on both Macs.
+- App 561f7ef. DEPLOYED to the admin library only as 29f6b26 (codex/encode-progress-deploy =
+  live 9429c6e + this fix + cbb6a9f crest test-clock fix, which 9429c6e lacked: its suite hangs
+  in test_shared_crests without it). Built FM_BUILD_LATEST=0, added to status.json built,
+  _move admin: exactly its web/backend/capture changed, recreated with no CPU cap. Not
+  checked against the real Hudl account (owner-only); the native helper picks it up on its
+  next restart. encode is step 2 of 2 with ffmpeg-measured seconds; analysis clip CRF 20
+  (measured source-sized); moment exports keep CRF 18. Two tests written red first.
+- Gateway 28dbc64 (codex/uncap-cpu from live 44949e5): no NanoCpus on any hosted container;
+  lockdown test now asserts no CPU cap (owner decision via question, 2026-11-27), threat model
+  T7 updated. Provisioner fm-gateway-provisioner:uncap-28dbc64 recreated alone (override
+  ~/fm-archive-gateway/images-uncap.yaml). Running 32 user containers set to --cpus 10
+  (docker update ignores 0); recreated ones get no cap. Memory/pids caps kept.
+- Docker Desktop VM 7.75 GB -> 16 GB (owner chose restart now; backup
+  settings-store.json.before-16g). All 47 containers back up, 8765 and edge answer.
+- Worker 2d3661c (codex/full-resources from live 8a61b54): resources.CPU_THREADS =
+  os.cpu_count() replaces torch 4 threads (detector x2, T-DEED, PnLCalib), frame pool 6 and
+  render ffmpeg -threads 2. Deployed mini (coordinator detach) + MacBook (src.8a61b54 backup),
+  digests equal d88df9db..., threads 10/11. Mini LaunchAgent gains ProcessType Interactive
+  (unset = launchd throttles CPU and I/O; backup runtime/launchagent-before-interactive.plist).
+  MacBook node runs over SSH, no LaunchAgent, Low Power Mode off on both.
+- Not changed: Core ML compute units (detector already ALL; Neural Engine ReID stays
+  CPU_AND_NE so it does not contend with the detector on the GPU and keeps its grouping).
+- Benchmark (same capture image, M4): 30 s HEVC->H.264 veryfast 21 s at 1.5 CPU, 3 s uncapped.
+Verification: backend 870 pass (SQLite and Postgres 17), ruff, mypy; provisioner 90, ruff,
+mypy; worker 325, ruff, format. Frontend unchanged.
+
 ## Match tabs, Player Lab and admin usage restyled/fixed; DEPLOYED (admin, gateway, local 8765) — 27 November 2026
 
 Owner requests (one message): Player stats and Goals & Keepers in the Match stats style; no
