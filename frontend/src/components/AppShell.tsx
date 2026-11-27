@@ -2,7 +2,7 @@ import { PlayerLabLink } from "./PlayerLabAccess";
 import { VideoLabLink } from "./VideoLabAccess";
 import { useHudlAutoCheck } from "./hudl/useHudlAutoCheck";
 import { useVeoAutoCheck } from "./veo/useVeoAutoCheck";
-import { FolderInput, HardDriveDownload, Library, Search, Settings, UserRound } from "lucide-react";
+import { FolderInput, HardDriveDownload, Library, Search, Settings, Swords, UserRound } from "lucide-react";
 import { Fragment, type FormEvent, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Brand } from "./BrandMark";
@@ -19,6 +19,8 @@ import { useHostedPermissions } from "../api/hostedPermissions";
 // brand left, pill navigation (active pill labelled and glowing, others round icons), search right.
 const ALL_NAV = [
   { to: "/", label: "Library", icon: Library, end: true },
+  // Owner request 2026-11-27: Opponents moved from the Library heading to the top bar.
+  { to: "/opponents", label: "Opponents", icon: Swords, end: false },
   { to: "/downloaded", label: "Downloaded", icon: HardDriveDownload, end: false, helper: true },
   { to: "/player", label: "My Player", icon: UserRound, end: false },
   { to: "/import", label: "Import", icon: FolderInput, end: false },

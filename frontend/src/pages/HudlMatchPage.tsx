@@ -14,7 +14,8 @@ import { useHomeClub } from '../lib/useHomeClub';
 import { formatClock } from '../lib/format';
 import { advanceTagged, arrived, needsSeek, nextMoment, taggedPlaylist, timeLeft } from '../lib/taggedPlayback';
 import { markHudlMomentWatched } from '../lib/hudlWatched';
-import { MatchInsights } from '../components/match/MatchInsights';
+import { HeadToHeadRecord, hudlHeadToHead } from '../components/match/MatchInsights';
+import { useScoreCorrections } from '../lib/matchScore';
 import { TeamStatsTable } from '../components/match/TeamStatsTable';
 import { GoalsPanel } from '../components/match/GoalsPanel';
 import { QuickReels } from '../components/match/QuickReels';
@@ -91,6 +92,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   const match = library.data?.find(m => m.id === id);
   const record = useRecordWatching(id, match?.duration_s);
   const club = useHomeClub();
+  const corrections = useScoreCorrections();
   const own = status.data?.match_id === id;
   const blocked = hudlBlocked(status.data);
   useEffect(() => {
@@ -200,6 +202,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
   if (!match) return <div className="panel p-6"><Link to="/">← Library</Link><p className="mt-4">{library.isPending ? 'Loading cached match…' : 'This match is not cached. Refresh Hudl from Library.'}</p></div>;
   const seekTo = (time: number) => { setQueue(undefined); setFocus(undefined); setSeek({ time, nonce: Date.now() }); };
   const theirs = fixtureParts(match.title, club)?.opponent ?? 'Opposition';
+  const h2h = hudlHeadToHead(library.data, corrections.data, match, club);
   const teamRows = hudlTeamStats(moments, club);
   const momentsPanel = <section className="panel space-y-4 p-5" aria-label="Hudl tagged moments">
         <div className="flex flex-wrap items-end gap-3">
@@ -262,7 +265,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
         matchStats={teamRows.length ? <MatchStatsPanel rows={teamRows} events={hudlStatEvents(moments, club)} duration={match.duration_s ?? 0}
           ours={club || 'Us'} theirs={theirs} previous={earlierRows(library.data, match, club)} onSeek={seekTo} source="Hudl" /> : null}
         goals={<GoalsPanel match={match} club={club} onSeek={seekTo} />}
-        insights={<MatchInsights match={match} club={club} onSeek={seekTo} />} />}
+        record={h2h && <div className="panel p-5"><HeadToHeadRecord record={h2h.record} current={match.id} allLink={h2h.allLink} /></div>} />}
     </div>
     {asking && <DownloadChoice count={chosen.length} onChoose={download} onCancel={() => setAsking(false)} />}
   </div>;

@@ -1,18 +1,16 @@
-import { type ReactNode, useId } from "react";
-import { ArrowDownRight, ArrowUpRight, BarChart3, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, BarChart3 } from "lucide-react";
 import { formatClock } from "../../lib/format";
 import {
   type Form, type StatEvent, type Step, SPELL_S, attemptsOverTime, formDelta, periodSplit, shotSummary, spells, standouts,
 } from "../../lib/matchStats";
 import { OURS, THEIRS } from "../../lib/teamColours";
 import type { TeamRow } from "../../lib/veoTeamSplit";
+import { Card, OURS_COLUMN, OURS_FILL, Ring, StatsHeader, Standouts, THEIRS_FILL, useSvgId } from "./statsUi";
 
 /** Owner request 2026-11-26: the match's own numbers as charts, beside Team stats.
  *  References: docs/design/reference/04-07 (key bars, headline tiles, charts, what stood
  *  out). Layout and mood from those; the figures are only this match's sided rows and
  *  events, so there is no passing data and no invented trend. */
-const OURS_FILL = "linear-gradient(90deg, #0e7490, #22d3ee 70%, #a5f3fc)";
-const THEIRS_FILL = "linear-gradient(90deg, #fdba74, #fb923c 30%, #c2410c)";
 const HEADLINES: string[][] = [["Goals"], ["Attempts", "Chances"], ["On target"], ["Corners"], ["Possession %"], ["Fouls"]];
 const LOWER_IS_BETTER = new Set(["Fouls"]);
 
@@ -29,13 +27,11 @@ export function MatchStatsPanel({ rows, events, halves, duration, ours, theirs, 
   const heads = HEADLINES.map(labels => rows.find(r => labels.includes(r.label))).filter((r): r is TeamRow => Boolean(r)).slice(0, 4);
   const hasAttempts = events.some(e => e.kind === "attempt" || e.kind === "goal");
   return <section aria-label="Match stats" className="panel space-y-6 p-5">
-    <header className="flex flex-wrap items-end gap-3">
-      <div className="mr-auto"><h2 className="flex items-center gap-2 text-xl font-semibold"><BarChart3 size={18} className="text-accent" aria-hidden /> Match stats</h2>
-        <p className="mt-1 text-[11px] tracking-[0.18em] text-fg-subtle uppercase">This match in numbers, both teams</p></div>
+    <StatsHeader icon={<BarChart3 size={18} className="text-accent" aria-hidden />} title="Match stats" sub="This match in numbers, both teams">
       <Legend ours={ours} theirs={theirs} />
-    </header>
+    </StatsHeader>
 
-    {notes.length > 0 && <Standouts notes={notes} />}
+    {notes.length > 0 && <Standouts notes={notes} footnote="Worked out from this match's numbers below; nothing here is a guess." />}
 
     {heads.length > 0 && <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {heads.map(r => <Headline key={r.label} row={r} theirs={theirs} form={formDelta(rows, previous, r.label)} />)}
@@ -101,14 +97,6 @@ function Legend({ ours, theirs }: { ours: string; theirs: string }) {
   </p>;
 }
 
-function Card({ title, sub, children }: { title: string; sub: string; children: ReactNode }) {
-  return <div className="rounded-[1.25rem] border border-line bg-gradient-to-b from-ink-800/80 to-ink-900/60 p-5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
-    <h3 className="text-base font-semibold">{title}</h3>
-    <p className="mt-0.5 mb-5 text-[11px] tracking-[0.18em] text-fg-subtle uppercase">{sub}</p>
-    {children}
-  </div>;
-}
-
 function Headline({ row, theirs, form }: { row: TeamRow; theirs: string; form: Form | null }) {
   const pctSign = row.label.endsWith("%") ? "%" : "";
   const name = row.label.replace(/ %$/, "");
@@ -153,32 +141,6 @@ function VersusBar({ row, ours, theirs, compact = false }: { row: TeamRow; ours:
       <span className={`w-12 shrink-0 text-right font-bold ${compact ? "text-base" : "text-xl"} ${lead === "ours" ? "text-fg-muted" : ""}`}>{row.opponent}{unit}</span>
     </div>
   </div>;
-}
-
-function useSvgId(prefix: string) {
-  return `${prefix}-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
-}
-
-function Ring({ label, value, colour, note }: { label: string; value: number | null; colour: "ours" | "theirs"; note: string }) {
-  const id = useSvgId("ring");
-  const r = 52, c = 2 * Math.PI * r;
-  const shown = value ?? 0;
-  const [from, to] = colour === "ours" ? ["#67e8f9", "#0891b2"] : ["#fdba74", "#ea580c"];
-  return <figure className="flex flex-col items-center gap-3">
-    <figcaption className="text-center text-sm font-semibold">{label}</figcaption>
-    <div role="img" aria-label={value === null ? `${label} not available` : `${label} ${value}%`} className="relative h-40 w-40">
-      <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
-        <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={from} /><stop offset="1" stopColor={to} /></linearGradient></defs>
-        <circle cx="64" cy="64" r={r} fill="none" stroke="rgb(255 255 255 / 0.07)" strokeWidth="12" />
-        {shown > 0 && <circle cx="64" cy="64" r={r} fill="none" stroke={`url(#${id})`} strokeWidth="12" strokeLinecap="round"
-          strokeDasharray={`${(shown / 100) * c} ${c}`} style={{ filter: `drop-shadow(0 0 6px ${colour === "ours" ? OURS : THEIRS}55)` }} />}
-      </svg>
-      <span aria-hidden className="absolute inset-0 grid place-items-center">
-        <span className="tabular-nums"><span className="text-4xl font-bold">{value ?? "–"}</span>{value !== null && <span className="text-lg font-semibold text-fg-muted">%</span>}</span>
-      </span>
-    </div>
-    <p className="text-xs text-fg-subtle">{note}</p>
-  </figure>;
 }
 
 const W = 600, H = 220, PAD = 28;
@@ -239,7 +201,7 @@ function SpellBars({ events, duration, ours, theirs, onSeek }: { events: StatEve
             {s[side].attempts > 0 && <span className="mb-1 text-[11px] font-semibold tabular-nums text-fg-muted">{s[side].attempts}</span>}
             <span className="block w-full rounded-t-md transition-[height] duration-700 group-hover:brightness-110"
               style={{ height: `${(s[side].attempts / top) * 80}%`, minHeight: s[side].attempts ? 4 : 0,
-                background: side === "ours" ? "linear-gradient(180deg, #a5f3fc, #22d3ee 35%, #0e7490)" : "linear-gradient(180deg, #fed7aa, #fb923c 35%, #9a3412)" }} />
+                background: side === "ours" ? OURS_COLUMN : "linear-gradient(180deg, #fed7aa, #fb923c 35%, #9a3412)" }} />
             {s[side].goals > 0 && <span aria-hidden className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-white" />}
           </span>)}
         </button>;
@@ -247,19 +209,5 @@ function SpellBars({ events, duration, ours, theirs, onSeek }: { events: StatEve
     </div>
     <div className="mt-2 flex gap-2 text-center text-[11px] text-fg-subtle">{list.map(s => <span key={s.start} className="min-w-0 flex-1 truncate">{Math.round(s.start / 60)}'</span>)}</div>
     <p className="mt-3 text-[11px] text-fg-subtle">White dot: the spell had a goal. Click a spell to watch from its start.</p>
-  </div>;
-}
-
-function Standouts({ notes }: { notes: ReturnType<typeof standouts> }) {
-  return <div className="relative overflow-hidden rounded-[1.25rem] border border-violet/40 bg-gradient-to-br from-violet/[0.12] via-ink-900/60 to-ink-900/60 p-5 shadow-[0_0_40px_-12px_rgb(124_92_255/0.45)]">
-    <h3 className="flex items-center gap-2 font-semibold"><Zap size={16} className="text-violet" aria-hidden /> What stood out?</h3>
-    <ul aria-label="What stood out" className="mt-4 list-disc space-y-2.5 pl-5 text-sm leading-relaxed marker:text-violet">
-      {notes.map(n => <li key={n.lead}><span className="font-semibold">{n.lead}: </span>
-        {n.parts.map((p, i) => (i % 2 === 1
-          ? <span key={i} className="rounded-md bg-violet/25 px-1.5 py-0.5 font-medium text-[#d9d0ff]">{p}</span>
-          : <span key={i} className="text-fg-muted">{p}</span>))}
-      </li>)}
-    </ul>
-    <p className="mt-4 text-[11px] text-fg-subtle">Worked out from this match's numbers below; nothing here is a guess.</p>
   </div>;
 }

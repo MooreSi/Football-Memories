@@ -185,9 +185,8 @@ function LibraryContent() {
       <header className="dashboard-heading">
         <div><p className="screen-eyebrow">YOUR FOOTBALL ARCHIVE</p><h1>Match Library</h1>
         <p>Every game. Every moment. Your football story.</p></div>
-        {/* Owner request 2026-11-26: Opponents moves from the match profile to the title bar. */}
+        {/* Owner request 2026-11-27: Opponents moved to the top navigation bar. */}
         <div className="flex flex-wrap items-center gap-3">
-          {remote.data?.length ? <Link to={shown?.source === "veo" && club ? `/opponents?club=${encodeURIComponent(club)}` : "/opponents"} className="dashboard-import">Opponents</Link> : null}
           <Link to="/import" className="dashboard-import">+ Import a match</Link>
         </div>
       </header>

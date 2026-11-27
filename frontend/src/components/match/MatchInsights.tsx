@@ -1,12 +1,12 @@
-import { Activity, Swords } from "lucide-react";
+import { Swords } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
-import { hudlAgeGroups, useHudlLibrary } from "../../api/hudl";
+import { hudlAgeGroups } from "../../api/hudl";
 import { cohortOf, inCohort } from "../../lib/teams";
 import { type Record, recordAgainst } from "../../lib/headToHead";
 import { fixtureParts } from "../../lib/hudlFixture";
-import { MOMENTUM_WEIGHTS, type Minute, type Possession, momentum, possession } from "../../lib/insights";
-import { useScoreCorrections } from "../../lib/matchScore";
+import { MOMENTUM_WEIGHTS, type Minute, type Possession, momentum } from "../../lib/insights";
+import type { Corrections } from "../../lib/matchScore";
 import { OURS, THEIRS } from "../../lib/teamColours";
 
 function minutes(seconds: number): string {
@@ -80,19 +80,17 @@ export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek, labe
   );
 }
 
-export function HeadToHead({ match, club }: { match: HudlMatch; club: string | null }) {
-  const library = useHudlLibrary();
-  const corrections = useScoreCorrections();
+/** The record against this Hudl match's opponent, or null when there is none. */
+export function hudlHeadToHead(library: HudlMatch[] | undefined, corrections: Corrections | undefined, match: HudlMatch, club: string | null): { record: Record; allLink: string } | null {
   const opponent = fixtureParts(match.title, club)?.opponent;
   // Owner request 2026-11-13: only this team's meetings (it moves up an age group each
   // season); other age groups are different players. Undated matches use everything.
   const age = hudlAgeGroups(match)[0] ?? "";
   const team = cohortOf(age, match.season_label);
-  const scope = team === null ? library.data : library.data?.filter((m) => inCohort(m, team));
-  const r = opponent ? recordAgainst(scope, club, corrections.data, opponent) : null;
-  if (!r) return null;
-  return <HeadToHeadRecord record={r} current={match.id}
-    allLink={team === null ? "/opponents" : `/opponents?age=${encodeURIComponent(age)}&season=${encodeURIComponent(match.season_label ?? "")}`} />;
+  const scope = team === null ? library : library?.filter((m) => inCohort(m, team));
+  const record = opponent ? recordAgainst(scope, club, corrections, opponent) : null;
+  if (!record) return null;
+  return { record, allLink: team === null ? "/opponents" : `/opponents?age=${encodeURIComponent(age)}&season=${encodeURIComponent(match.season_label ?? "")}` };
 }
 
 /** The record against one opponent; also used for Veo matches (owner request 2026-11-15). */
@@ -107,27 +105,6 @@ export function HeadToHeadRecord({ record: r, current, allLink, linkTo = (id) =>
       {others.length > 0 && <ul className="space-y-1 text-xs text-fg-muted">{others.slice(0, 4).map((m) => (
         <li key={m.id}><Link className="hover:text-fg" to={linkTo(m.id)}>{m.date ?? "Undated"} · {m.season} · {m.score ? `${m.score.ours}-${m.score.theirs}` : "no score"}</Link></li>
       ))}</ul>}
-    </section>
-  );
-}
-
-/** Match page panel: possession, momentum and the record against this opponent. */
-export function MatchInsights({ match, club, onSeek }: { match: HudlMatch; club: string | null; onSeek?: (time: number) => void }) {
-  const theirs = fixtureParts(match.title, club)?.opponent ?? "Opposition";
-  const poss = possession(match.moments ?? [], club);
-  const hasMomentum = momentum(match.moments ?? [], club).minutes.length > 0;
-  return (
-    <section aria-label="Match insights" className="panel space-y-5 p-5">
-      <div className="flex items-center gap-2"><Activity size={16} className="text-accent" aria-hidden /><h2 className="text-lg font-semibold">Match insights</h2></div>
-      {/* Spec 320: the record against this opponent sits beside this match's charts. */}
-      <div className="flex flex-wrap gap-8">
-        <div className="min-w-0 flex-[999_1_480px] space-y-5">
-          {!poss && !hasMomentum && <p className="text-sm text-fg-muted">The tags for this match do not say who had the ball or attacked when.</p>}
-          {poss && <PossessionBar value={poss} ours={club || "Us"} theirs={theirs} />}
-          <MomentumChart match={match} club={club} theirs={theirs} onSeek={onSeek} />
-        </div>
-        <div className="min-w-0 flex-[1_1_260px] empty:hidden"><HeadToHead match={match} club={club} /></div>
-      </div>
     </section>
   );
 }

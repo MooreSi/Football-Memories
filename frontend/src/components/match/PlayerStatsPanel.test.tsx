@@ -113,3 +113,18 @@ it("opens clips when selecting a bar's numeric count", async () => {
   await user.click(within(sam).getByRole("button", { name: "Review passes clips" }));
   expect(within(sam).getByRole("region", { name: "Player stat clips" })).toBeInTheDocument();
 });
+
+// Owner request 2026-11-27: Player stats look like Match stats, with player figures.
+it("leads with headline figures and what stood out, in the Match stats style", () => {
+  const m = { id: "style", moments: [
+    { ...t("s1", "Sam Example", 20), actions: ["passes"] }, { ...t("s2", "Sam Example", 40), actions: ["passes"] },
+    { ...t("a1", "Ali Demo", 60), actions: ["tackles"] },
+  ] };
+  renderWithProviders(<PlayerStatsPanel match={m} club="Aston Villa" goals={matchGoals(m, "Aston Villa")} onSeek={vi.fn()} />);
+  expect(screen.getByRole("heading", { level: 2, name: "Player stats" })).toBeInTheDocument();
+  expect(screen.getByRole("figure", { name: "Players tagged headline" })).toHaveTextContent("2");
+  expect(screen.getByRole("figure", { name: "Tagged moments headline" })).toHaveTextContent("3");
+  expect(screen.getByRole("figure", { name: "Most involved headline" })).toHaveTextContent("Sam Example");
+  const stood = screen.getByRole("list", { name: "What stood out" });
+  expect(stood).toHaveTextContent("Sam Example recorded 2, the most in the match.");
+});

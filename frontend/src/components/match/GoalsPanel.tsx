@@ -3,6 +3,8 @@ import { useState } from "react";
 import { formatClock } from "../../lib/format";
 import { type Goal, type GoalsEntry, type GoalsSource, type Keeper, type Spell, matchGoals, useGoalEntries, useSaveGoals } from "../../lib/goals";
 import { Button } from "../ui/Button";
+import { Card, Figure, Ring, StatsHeader } from "./statsUi";
+import { THEIRS } from "../../lib/teamColours";
 
 type DraftGoal = { id: string; side: "ours" | "theirs"; time_s: number | null; added: boolean; scorer: string; keeper: string };
 type Draft = { goals: DraftGoal[]; removed: string[]; keepers: { name: string; saves: string }[] };
@@ -66,11 +68,13 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
     : <span className="w-14 text-xs text-pin">{formatClock(g.time_s)}</span>;
   const status = (g: Goal) => g.confirmed ? null : g.scorer ? <Tag>Likely</Tag> : null;
 
-  return <section aria-label="Goals and keepers" className="panel space-y-4 p-5">
-    <div className="flex flex-wrap items-center gap-3">
-      <h2 className="mr-auto flex items-center gap-2 text-xl font-semibold"><GoalIcon size={18} className="text-accent" aria-hidden /> Goals and keepers</h2>
+  const counted = data.keepers.filter((k) => k.saves !== null);
+  const saves = counted.length ? counted.reduce((n, k) => n + k.saves!, 0) : null;
+  // Owner request 2026-11-27: titled Goals & Keepers, in the Match stats look.
+  return <section aria-label="Goals and keepers" className="panel space-y-6 p-5">
+    <StatsHeader icon={<GoalIcon size={18} className="text-accent" aria-hidden />} title="Goals & Keepers" sub="Who scored, who kept goal">
       <span className="text-sm text-fg-muted">{ours.length} scored · {theirs.length} conceded</span>
-    </div>
+    </StatsHeader>
     {draft ? <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (valid) submit(); }}>
       <datalist id={listId}>{names.map((n) => <option key={n} value={n} />)}</datalist>
       <fieldset className="space-y-2"><legend className="text-sm font-semibold">Our goals</legend>
@@ -106,20 +110,37 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
         {!valid && <span role="alert" className="text-sm text-danger">Saves must be a number up to 99.</span>}
       </div>
     </form> : <>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div><h3 className="mb-2 text-sm font-semibold">Our goals</h3>
-          {ours.length ? <ul aria-label="Our goals" className="space-y-1.5">{ours.map((g) => <li key={g.id} className="flex items-center gap-2 text-sm">
-            {when(g)}<span className={g.scorer ? "" : "text-fg-subtle"}>{g.scorer ?? "Scorer not set"}</span>{status(g)}
-          </li>)}</ul> : <p className="text-sm text-fg-subtle">No goals listed.</p>}</div>
-        <div><h3 className="mb-2 text-sm font-semibold">Keepers</h3>
-          {data.keepers.length ? <ul aria-label="Keepers" className="space-y-1.5">{data.keepers.map((k, i) => <li key={i} className="flex flex-wrap items-center gap-2 text-sm">
-            <span className={k.name ? "font-medium" : "text-fg-subtle"}>{k.name ?? "Keeper not named"}</span>
-            <span className="text-fg-muted">{savesText(k)}</span>
-            {spellText(k.name, data.spells) && <span className="text-fg-muted">{spellText(k.name, data.spells)}</span>}{!k.confirmed && (k.name || k.saves !== null) && <Tag>Likely</Tag>}
-          </li>)}</ul> : <p className="text-sm text-fg-subtle">No keeper listed.</p>}
-          {theirs.length > 0 && <ul aria-label="Goals conceded" className="mt-3 space-y-1.5">{theirs.map((g) => <li key={g.id} className="flex items-center gap-2 text-sm text-fg-muted">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Figure name="Scored" value={ours.length} note={`${ours.filter((g) => g.scorer).length} with a scorer named`} />
+        <Figure name="Conceded" value={theirs.length} glow={THEIRS} note={`${theirs.filter((g) => g.keeper).length} with the keeper named`} />
+        <Figure name="Saves" value={saves ?? "–"} note={saves === null ? "Not counted" : `By ${counted.length} ${counted.length === 1 ? "keeper" : "keepers"}`} />
+        <Figure name="Keepers" value={data.keepers.filter((k) => k.name).length} note={data.spells.length > 1 ? "Changed during the match" : "In goal this match"} />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card title="Our goals" sub="Scorers · select a time to watch">
+          {ours.length ? <ul aria-label="Our goals" className="space-y-2">{ours.map((g) => <li key={g.id} className="flex items-center gap-3 rounded-xl border border-line bg-white/[0.02] px-3 py-2 text-sm">
+            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent shadow-[0_0_10px_rgb(34_211_238/0.8)]" />
+            {when(g)}<span className={g.scorer ? "font-medium" : "text-fg-subtle"}>{g.scorer ?? "Scorer not set"}</span>{status(g)}
+          </li>)}</ul> : <p className="text-sm text-fg-subtle">No goals listed.</p>}
+        </Card>
+        <Card title="Keepers" sub="Saves and goals conceded">
+          {data.keepers.length ? <>
+            <ul aria-label="Keepers" className="space-y-2">{data.keepers.map((k, i) => <li key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white/[0.02] px-3 py-2 text-sm">
+              <span className={k.name ? "font-medium" : "text-fg-subtle"}>{k.name ?? "Keeper not named"}</span>
+              <span className="text-fg-muted">{savesText(k)}</span>
+              {spellText(k.name, data.spells) && <span className="text-fg-muted">{spellText(k.name, data.spells)}</span>}{!k.confirmed && (k.name || k.saves !== null) && <Tag>Likely</Tag>}
+            </li>)}</ul>
+            {data.keepers.some((k) => k.saves !== null && k.saves + k.conceded > 0) && <div className="mt-5 flex flex-wrap justify-center gap-8">
+              {data.keepers.filter((k) => k.saves !== null && k.saves + k.conceded > 0).map((k, i) =>
+                <Ring key={i} size="h-28 w-28" label={`${k.name ?? "Keeper"} save rate`} colour="ours"
+                  value={Math.round((k.saves! / (k.saves! + k.conceded)) * 100)} note={`${k.saves} of ${k.saves! + k.conceded} shots faced`} />)}
+            </div>}
+          </> : <p className="text-sm text-fg-subtle">No keeper listed.</p>}
+          {theirs.length > 0 && <ul aria-label="Goals conceded" className="mt-4 space-y-1.5">{theirs.map((g) => <li key={g.id} className="flex items-center gap-2 text-sm text-fg-muted">
+            <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: THEIRS }} />
             {when(g)}<span>Conceded{g.keeper ? (data.keepers.length > 1 ? `, ${g.keeper} in goal` : "") : ", keeper not assigned"}</span>
-          </li>)}</ul>}</div>
+          </li>)}</ul>}
+        </Card>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={start}>Edit goals and keepers</Button>

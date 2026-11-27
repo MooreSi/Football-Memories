@@ -29,11 +29,12 @@ function open(notes: unknown[] = []) {
   return calls;
 }
 
+// Owner request 2026-11-27: the Insights tab (and its possession bar) left the match page;
+// possession is read from the summary strip, still from time on the ball only.
 it('shows possession as time on the ball, leaving contested time out', async () => {
   open();
-  const bar = await screen.findByRole('group', { name: /Possession/ });
-  expect(bar).toHaveAccessibleName('Possession: Us 75%, Derby County 25%');
-  expect(bar).toHaveTextContent('contested 0m not counted');
+  const strip = await screen.findByRole('region', { name: 'Match summary' });
+  expect(within(strip).getByText('Possession').closest('div')).toHaveTextContent('75–25%');
 });
 
 it('shows the record against this opponent across meetings', async () => {
