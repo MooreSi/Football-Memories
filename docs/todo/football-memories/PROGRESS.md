@@ -1,3 +1,29 @@
+## Pitch box and halfway line adjustable on the video, following pan and zoom (spec 800); NOT DEPLOYED (27 November 2026)
+
+Owner: "allow me to change the box and half way line on the actual video being played, i can pause
+it on various parts of the game ... it should then dynamically adjust as the camera pans and zooms by
+using reference points from where the pitch markers are set". Spec
+`docs/todo/football-memories/800-pitch-markers-on-video.md`. App only (frontend), no gateway/worker.
+- "Mark pitch here" (Pitch calibration panel) pauses and opens handles on the pitch as drawn: four
+  corners (green) and the two halfway-line ends (amber, line drawn between). Off-frame corners start
+  unticked. Save stores the existing `pitch_keyframes` shape.
+- New `pitchMarkers.ts`: on a run with atlas poses, each mark's points become ground rays through
+  that moment's registered pose; one ray -> pitch fit per mark through its own points, blended by
+  time between marks. The marks now drive the drawn box, halfway line, "on the pitch", metres and the
+  live 2D pitch ahead of the atlas outline. Runs without an atlas keep the old camera-motion marks.
+- `markingStart.ts`: editor start (marks, else reviewed corners, else the outline's level-ground
+  rectangle via new `levelPitch`); `landmarksToSave` drops an untouched off-screen halfway end
+  unless needed for the gateway's four points.
+- Existing data: 6c216d41's only mark is untouched editor defaults; such marks are ignored, so it
+  keeps its atlas outline (review not modified; the owner may delete it).
+- Read "box" as the pitch outline, not the penalty area (penalty-box handles = follow-up if wanted).
+Verification: frontend 1209 pass, typecheck, build in a scratch worktree of HEAD + this change only
+(another session's red `playerLabTrends`/`codeOrder` tests are in the shared checkout); backend
+unchanged, 870 SQLite + 870 Postgres 17, ruff, format, mypy, alembic check. Browser: hosted build on
+the read-only harness over 92908cc3 (review in memory): marked at 0:30, box/halfway drawn at 1:30,
+3:20 (zoomed), 6:40, 2D pitch reads "from your pitch marks". Accuracy against painted lines is the
+owner's marking. Not deployed to the admin library.
+
 ## Video Lab Training tab: label ball crops, train a ball model (spec 790); NOT DEPLOYED (27 November 2026)
 
 Owner: "set up the labelling and training - add a tab in video lab called "Training" and add images

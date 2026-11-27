@@ -2,6 +2,7 @@ import type { Appearance, Assignment, Assignments, Observation, Review } from ".
 import { bindPanorama, bridgePoses, pitchProposal, type Panorama } from "./panorama";
 import { buildCamera, offPitchTracks, outlineAt, stabilise, standingOnPitch, type Camera, type CameraMotion } from "./pitch";
 import { boundaryAt } from "./boundary";
+import { buildMarkers } from "./pitchMarkers";
 import { mergeDense, type DenseTracks } from "./playArea";
 import { propagateTeams } from "./teams";
 import { cleanAnchors, kitTimeline, learnKits, type KitObservation, type KitPrototype, type TeamTimeline } from "./kits";
@@ -24,7 +25,9 @@ export function labCamera(motion: CameraMotion | undefined, panorama: Panorama |
   if (!motion) return undefined;
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
   const base = buildCamera(motion), poses = panorama && bridgePoses(panorama, base);
-  return { ...base, panorama: bindPanorama(poses, review?.pitch_panorama, sourceSha), proposal: pitchProposal(poses, sourceSha) };
+  // Spec 800: with registered poses for this source, your pitch marks are reference points on the ground.
+  const markers = poses && sourceSha && poses.source_sha256 === sourceSha ? buildMarkers(poses, review?.pitch_keyframes ?? []) : null;
+  return { ...base, panorama: bindPanorama(poses, review?.pitch_panorama, sourceSha), proposal: pitchProposal(poses, sourceSha), ...(markers ? { markers } : {}) };
 }
 
 /** The goal outline must hold at least this share of central play... */

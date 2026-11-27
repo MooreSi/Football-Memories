@@ -437,3 +437,14 @@ Hudl-style tags read from the live 2D pitch (`videoLab/analyticsTags.ts`, scored
   detector stamped (`CAP_PROP_POS_MSEC`); the 261108 Stoke clip's timestamps are not a fixed rate,
   so seeking by time x fps put the box beside the object. Only human-reviewed ball labels train;
   evaluation holds out a whole match, never neighbouring frames.
+
+Spec 800 (pitch markers on the video, 27 November 2026): `pitch_keyframes` on a run with registered
+atlas poses are reference points on the ground (image point -> world ray through that moment's
+pose), not shapes carried by `camera_motion.json`. Each mark is fitted through its own points (ray ->
+normalised pitch, one shared chart so fits blend) and the pitch blends by time between marks; they
+override the atlas outline, reviewed corners and halfway line for drawing, "on the pitch", metres
+and the live 2D pitch. Gotchas: a reviewed atlas can have no `corners` (92908cc3: a 6-point outline +
+halfway), so the editor takes corners from the outline's level-ground rectangle (`levelPitch`, the
+same reading the live 2D pitch uses). Reviewed corners and halfway ends can lie behind the camera
+for a given frame; project them per point, never as a set. The gateway needs four correspondences
+per mark, so an all-off-screen mark keeps the nearest guessed points.

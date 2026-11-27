@@ -62,6 +62,19 @@ export function panoramaMatrixAt(data:Panorama,at:number):number[]|null {
  }
  return matrix;
 }
+/** A straight ground line between two atlas points, in the frame at `at`: sampled along the span of
+ * its end rays so it stays straight, and only where it lies in front of the camera. */
+export function panoramaLineAt(data:Panorama,ends:Corners,at:number):Corners|null{
+ const pose=panoramaMatrixAt(data,at);if(!pose||ends.length!==2)return null;
+ const move=inverse(pose),a=panoramaRay(data,ends[0]),b=panoramaRay(data,ends[1]);
+ const na=Math.hypot(a[0],a[1],a[2]),nb=Math.hypot(b[0],b[1],b[2]);
+ const out:Corners=[];
+ for(let k=0;k<=24;k++){
+  const t=k/24,ray=a.map((v,i)=>v/na*(1-t)+b[i]/nb*t),q=applyRay(move,ray);
+  if(q[2]>1e-6)out.push([q[0]/q[2],q[1]/q[2]]);
+ }
+ return out.length>=2&&out.every(p=>p.every(v=>Number.isFinite(v)&&Math.abs(v)<50))?out:null;
+}
 export function panoramaPointsAt({data,review}:BoundPanorama,at:number,calibration=false):Corners|null {
  const points=calibration?review.corners:review.points,matrix=panoramaMatrixAt(data,at);
  if(!points?.length||!matrix)return null;

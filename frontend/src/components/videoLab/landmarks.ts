@@ -1,6 +1,8 @@
 export type Point = [number, number];
 export type Landmark = { image: Point; pitch: Point; name?: string };
 export const PITCH_CORNERS: Point[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
+/** Where the marking editor puts the corners when nothing places the pitch yet. */
+export const DEFAULT_CORNERS: Point[] = [[0.05, 0.95], [0.95, 0.95], [0.8, 0.35], [0.2, 0.35]];
 export const CORNER_NAMES = ["Near-left corner", "Near-right corner", "Far-right corner", "Far-left corner"];
 export const EXTRA_POINTS: { name: string; pitch: Point }[] = [
   {name: "Near halfway intersection", pitch: [0.5, 0]},
@@ -10,15 +12,15 @@ export const EXTRA_POINTS: { name: string; pitch: Point }[] = [
   {name: "Right goal-line midpoint", pitch: [1, 0.5]},
 ];
 
-/** Least-squares image → normalised pitch homography, using every correspondence.
+/** Least-squares image → normalised pitch homography, using every correspondence (optionally weighted).
  * Singular/collinear sets fail closed. Coordinates are normalised to limit conditioning. */
-export function fitLandmarks(points: Landmark[]): number[] | null {
+export function fitLandmarks(points: (Landmark & {weight?: number})[]): number[] | null {
   if (points.length < 4 || points.some(p => [...p.image, ...p.pitch].some(v => !Number.isFinite(v)))) return null;
-  const rows: number[][] = [], values: number[] = [];
-  for (const {image:[x,y],pitch:[u,v]} of points) {
-    rows.push([x,y,1,0,0,0,-u*x,-u*y], [0,0,0,x,y,1,-v*x,-v*y]); values.push(u,v);
+  const rows: number[][] = [], values: number[] = [], weights: number[] = [];
+  for (const {image:[x,y],pitch:[u,v],weight=1} of points) {
+    rows.push([x,y,1,0,0,0,-u*x,-u*y], [0,0,0,x,y,1,-v*x,-v*y]); values.push(u,v); weights.push(weight,weight);
   }
-  const m = Array.from({length:8}, (_,i) => [...Array.from({length:8}, (_,j) => rows.reduce((s,r) => s+r[i]*r[j],0)), rows.reduce((s,r,k) => s+r[i]*values[k],0)]);
+  const m = Array.from({length:8}, (_,i) => [...Array.from({length:8}, (_,j) => rows.reduce((s,r,k) => s+weights[k]*r[i]*r[j],0)), rows.reduce((s,r,k) => s+weights[k]*r[i]*values[k],0)]);
   for (let i=0;i<8;i++) {
     let pivot=i;
     for(let j=i+1;j<8;j++) if(Math.abs(m[j][i])>Math.abs(m[pivot][i])) pivot=j;
