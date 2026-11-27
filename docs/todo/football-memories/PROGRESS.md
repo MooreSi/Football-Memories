@@ -40,9 +40,15 @@ FM_ANALYTICS_RUNTIME/ARCHIVE; origin and mounts unchanged, health 200). Admin ap
 (codex/goal-pitch-deploy = live 29f6b26 + the three app commits, without relatedRuns/lab-run-summary
 from the undeployed overnight commits; 1139 pass there), FM_BUILD_LATEST=0, `built` updated,
 _move admin twice (d9c89c9 then 10d6fbf), exactly 3 containers each time. Owner was using the app.
-NOT DONE (needs the owner signed in; the browser pane was signed out): Stoke itself. On run
-33e876a2 or 5b0125cf: "Update shirt colours", then in the pitch review "Use the outline from the
-goals" and Accept. New analyses get the zoom and colours automatically.
+Stoke DONE: the browser pane was signed out, so, as the overnight run did, the gateway's own
+handlers ran inside fm-gateway-gateway-1 as the admin user: queue_child team-enrichment of
+33e876a2 (kits #403d4a / #8f75af from the label kits) -> run 92908cc3 (complete, review copied),
+then put_review revision 34 with the goal outline (labPanorama on that run's files) accepted.
+Measured on its level ground: kick-off to each goal 1.901 / 1.901, halfway ends 1.198 each side,
+width 0.630 of length (9v9 73x46 from the review's pitch size), 93.8% of central play inside.
+Lab replay of 92908cc3: central people 7392 ours / 7966 Stoke / 2516 unassigned; all 17 labels
+shown as labelled except tracker swaps onto Stoke players (25, part of 28). Visual check at 2:00:
+every player right, 2 unassigned (one likely the referee). Owner's earlier runs are unchanged.
 Next: worker enrichment of archived runs needs annotated.mp4 (archive copy of f81b4684 lacks it);
 dark-team rule is untested on the benchmark (no match there has a dark team kit with colours).
 Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);
