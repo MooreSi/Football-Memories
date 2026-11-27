@@ -70,7 +70,7 @@ None needed (no Hudl or Veo access).
 - Video Lab shows the gateway's 409 message (other 409s too, e.g. "metadata not ready").
 
 ## Verification
-- [x] suites green: gateway 534 (+7 new), worker 320 + 13 new, app frontend 1112 (deploy tree 1103)
+- [x] suites green: gateway 534 (+7 new), worker 320 (incl. 12 new; 13th added after), app frontend 1112 (deploy tree 1103)
 - [x] no credential written anywhere (password only in the mini's login Keychain)
 - [x] nothing on Hudl touched; no run moved yet (dry run: 0 eligible, oldest run 3.4 days)
 - [x] deployed: worker 1a1f0b5 both Macs (digest 0af697e7...), gateway archive-a2625ad, admin
