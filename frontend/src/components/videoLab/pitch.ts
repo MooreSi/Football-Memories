@@ -28,8 +28,9 @@ function apply(m: Matrix, [x, y]: [number, number]): [number, number] {
 }
 
 /** Each sample's camera relative to the start of its segment (segments are split at cuts). */
-/** `markers` (spec 800): your pitch marks placed through the atlas poses, ahead of every other outline. */
-export type Camera = { panorama?:BoundPanorama; proposal?:BoundPanorama; markers?:MarkerModel; times: number[]; segment: number[]; total: Matrix[]; inverse: Matrix[] };
+/** `markers` (spec 800): your pitch marks placed through the atlas poses, ahead of every other outline.
+ * `atlas`: this source has registered atlas poses, so marks are only ever read through them. */
+export type Camera = { panorama?:BoundPanorama; proposal?:BoundPanorama; markers?:MarkerModel; atlas?:boolean; times: number[]; segment: number[]; total: Matrix[]; inverse: Matrix[] };
 
 export function buildCamera(motion: CameraMotion): Camera {
   const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];

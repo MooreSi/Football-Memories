@@ -448,3 +448,8 @@ halfway), so the editor takes corners from the outline's level-ground rectangle 
 same reading the live 2D pitch uses). Reviewed corners and halfway ends can lie behind the camera
 for a given frame; project them per point, never as a set. The gateway needs four correspondences
 per mark, so an all-off-screen mark keeps the nearest guessed points.
+Spec 800 follow-up (penalty boxes): box sizes per format are the FA metric guide's (adult: Law 1),
+chosen by the nearest format length. A mark must contain four points with no three on one pitch line
+(`fixesPitch`): two corners plus a box's goal-line end are collinear on the goal line, and such a mark
+made the fit swing (Stoke harness: tags 132 -> 16). On an atlas run, marks the atlas cannot use place
+nothing (`usableMarks`); never let them fall back to the camera-motion carry.

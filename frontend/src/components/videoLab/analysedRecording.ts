@@ -32,6 +32,10 @@ export function paintOverlay(ctx: CanvasRenderingContext2D, frame: OverlayFrame,
     line(frame.halfway, false);
     ctx.globalAlpha = 0.85; ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = h / 350; ctx.setLineDash([h / 50, h / 80]); ctx.stroke();
   }
+  for (const box of frame.boxes ?? []) {
+    line(box, false);
+    ctx.globalAlpha = 0.7; ctx.strokeStyle = "white"; ctx.lineWidth = h / 400; ctx.setLineDash([h / 60, h / 90]); ctx.stroke();
+  }
   ctx.setLineDash([]);
   for (const { row, info, colour } of frame.people) {
     const ring = footRing(row.image_box!, w, h);

@@ -26,8 +26,17 @@ export function labCamera(motion: CameraMotion | undefined, panorama: Panorama |
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
   const base = buildCamera(motion), poses = panorama && bridgePoses(panorama, base);
   // Spec 800: with registered poses for this source, your pitch marks are reference points on the ground.
-  const markers = poses && sourceSha && poses.source_sha256 === sourceSha ? buildMarkers(poses, review?.pitch_keyframes ?? []) : null;
-  return { ...base, panorama: bindPanorama(poses, review?.pitch_panorama, sourceSha), proposal: pitchProposal(poses, sourceSha), ...(markers ? { markers } : {}) };
+  const atlas = !!(poses && sourceSha && poses.source_sha256 === sourceSha);
+  const markers = atlas ? buildMarkers(poses, review?.pitch_keyframes ?? []) : null;
+  return { ...base, panorama: bindPanorama(poses, review?.pitch_panorama, sourceSha), proposal: pitchProposal(poses, sourceSha), ...(atlas ? { atlas } : {}), ...(markers ? { markers } : {}) };
+}
+
+/** The marks that place the pitch. On an atlas run they act only through the atlas; when it can use
+ * none of them (a mark whose points cannot fix the pitch), they place nothing, rather than falling
+ * back to being carried by camera_motion.json. The marks panel still lists every saved mark. */
+export function usableMarks(camera: Camera | undefined, review: Review | null | undefined): PitchKeyframe[] {
+  const marks = review?.pitch_keyframes ?? [];
+  return camera?.atlas && !camera.markers ? [] : marks;
 }
 
 /** The goal outline must hold at least this share of central play... */
@@ -73,7 +82,7 @@ export function labRows(assignments: Assignments | undefined, dense: DenseTracks
 
 export function labOffPitch(i: TeamInputs): Set<number> {
   const { camera, review, automaticBoundaries, assignments } = i;
-  const marks = review?.pitch_keyframes ?? [], boundaries = review?.pitch_boundaries ?? [];
+  const marks = usableMarks(camera, review), boundaries = review?.pitch_boundaries ?? [];
   return camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal)
     ? offPitchTracks(assignments?.observations ?? [], camera, marks, t => boundaryAt(camera, boundaries, automaticBoundaries, t) ?? outlineAt(camera, marks, t))
     : new Set<number>();
@@ -110,7 +119,7 @@ export function labTimeline(i: TeamInputs, rows: KitObservation[] | undefined, k
   const labels = review?.track_labels ?? [];
   // The appearance model's view colours are raw, so its anchors are checked against raw kits.
   const anchorKits = space === "raw" ? kits : learnKits(rows ?? [], labels, i.remembered);
-  const marks = review?.pitch_keyframes ?? [], boundaries = review?.pitch_boundaries ?? [];
+  const marks = usableMarks(camera, review), boundaries = review?.pitch_boundaries ?? [];
   const fallback = propagateTeams(appearance ? cleanAnchors(appearance.tracks, labels, anchorKits) : [], labels, review?.group_labels ?? [], appearance ? [] : rows ?? [], offPitch);
   // One referee, on the pitch: suggested referees seen mostly off the marked pitch are sideline people.
   const onPitch = camera && (marks.length || boundaries.length || automaticBoundaries.length || camera.panorama || camera.proposal) ? standingOnPitch(t => boundaryAt(camera, boundaries, automaticBoundaries, t) ?? outlineAt(camera, marks, t)) : undefined;
@@ -175,7 +184,7 @@ export function labPredictions(f: RunFiles) {
   const index = indexObservations(f.assignments.observations);
   const observations: Prediction[] = [], balls: { time_s: number; x: number; y: number }[] = [];
   for (const time of [...new Set(f.assignments.observations.map(o => o.time_s))].sort((a, b) => a - b)) {
-    const frame = overlayAt({ w, h, index, teams: timeline.tracks, teamAt: timeline.at, selected: null, showBoxes: true, everyone: false, ball, showBall: true, camera, marks: f.review?.pitch_keyframes ?? [], boundaries: f.review?.pitch_boundaries ?? [], automaticBoundaries }, time);
+    const frame = overlayAt({ w, h, index, teams: timeline.tracks, teamAt: timeline.at, selected: null, showBoxes: true, everyone: false, ball, showBall: true, camera, marks: usableMarks(camera, f.review), boundaries: f.review?.pitch_boundaries ?? [], automaticBoundaries }, time);
     const shown = new Map(frame.people.map(p => [p.row.track_id, p.info]));
     for (const o of f.assignments.observations.filter(r => r.time_s === time)) {
       const info = shown.get(o.track_id);
