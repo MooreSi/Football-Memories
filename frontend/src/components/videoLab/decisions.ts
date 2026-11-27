@@ -1,12 +1,12 @@
 import type { Appearance, Assignment, Assignments, Observation, Review } from "./labTypes";
-import { bindPanorama, bridgePoses, pitchProposal, type BoundPanorama, type Panorama } from "./panorama";
+import { bindPanorama, bridgePoses, pitchProposal, type Panorama } from "./panorama";
 import { buildCamera, offPitchTracks, outlineAt, stabilise, standingOnPitch, type Camera, type CameraMotion } from "./pitch";
 import { boundaryAt } from "./boundary";
 import { mergeDense, type DenseTracks } from "./playArea";
 import { propagateTeams } from "./teams";
 import { cleanAnchors, kitTimeline, learnKits, type KitObservation, type KitPrototype, type TeamTimeline } from "./kits";
 import { denseBalls, parseBalls, trackBall, type BallPoint } from "./ball";
-import { centreHalfway, goalPitch } from "./goalPitch";
+import { goalPitch } from "./goalPitch";
 import { playShare } from "./playShare";
 import type { PitchSize } from "./metres";
 import { indexObservations, overlayAt } from "./LabVideo";
@@ -21,15 +21,7 @@ export function labCamera(motion: CameraMotion | undefined, panorama: Panorama |
   if (!motion) return undefined;
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
   const base = buildCamera(motion), poses = panorama && bridgePoses(panorama, base);
-  return { ...base, panorama: withHalfway(bindPanorama(poses, review?.pitch_panorama, sourceSha)), proposal: pitchProposal(poses, sourceSha) };
-}
-
-/** Your accepted outline without a halfway line takes one through its own centre (equal halves);
- * one you placed is never replaced. */
-export function withHalfway(bound: BoundPanorama | undefined): BoundPanorama | undefined {
-  if (!bound || bound.review.halfway) return bound;
-  const halfway = centreHalfway(bound.data, bound.review.points);
-  return halfway ? { ...bound, review: { ...bound.review, halfway } } : bound;
+  return { ...base, panorama: bindPanorama(poses, review?.pitch_panorama, sourceSha), proposal: pitchProposal(poses, sourceSha) };
 }
 
 /** The goal outline must hold at least this share of central play... */
@@ -47,17 +39,12 @@ const GOAL_SLACK = 0.03;
  * Your accepted outline always wins over either; this only changes the unreviewed proposal.
  */
 export function labPanorama(data: Panorama | undefined, observations: Observation[] | undefined, title: string | undefined, size: PitchSize | null | undefined): Panorama | undefined {
-  if (!data?.projection) return data;
-  // Every outline gets a halfway line: a painted outline the worker gave none takes one through its
-  // centre, square to its long side (equal halves).
-  const halfway = data.pitch_outline && !data.pitch_outline.halfway && data.suggested_boundary.length >= 3 ? centreHalfway(data, data.suggested_boundary) : null;
-  const painted0 = halfway ? { ...data, pitch_outline: { ...data.pitch_outline!, halfway } } : data;
-  if (!observations?.length) return painted0;
+  if (!data?.projection || !observations?.length) return data;
   const goal = goalPitch(data, { title, size, observations });
-  if (!goal) return painted0;
+  if (!goal) return data;
   const share = playShare(data, goal.points, observations);
   const painted = data.suggested_boundary.length >= 3 ? playShare(data, data.suggested_boundary, observations) : null;
-  if (share === null || share < GOAL_PLAY || (painted !== null && share < painted - GOAL_SLACK)) return painted0;
+  if (share === null || share < GOAL_PLAY || (painted !== null && share < painted - GOAL_SLACK)) return data;
   return { ...data, suggested_boundary: goal.points, pitch_outline: { method: "goal_symmetric", halfway: goal.halfway, kickoff: goal.kickoff, format: goal.format, size: goal.size, widened: goal.widened, play: share, painted_play: painted } };
 }
 
