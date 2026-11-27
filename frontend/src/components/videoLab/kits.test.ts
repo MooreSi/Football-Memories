@@ -38,6 +38,14 @@ describe("cleanAnchors", () => {
 });
 
 describe("learnKits", () => {
+  it("never learns a colourful shade for a dark kit (261109 low sun: grass behind a thin referee read as his kit)", () => {
+    const GRASS = [98, 109, 149];
+    const ref = [...run(4, 0, 6, BLACK), ...run(4, 6.33, 9, GRASS)];
+    const kits = learnKits([...labelled.filter(r => r.track_id !== 4), ...ref], labels);
+    expect(kits.filter(k => k.role === "referee").map(k => k.lab)).toEqual([BLACK]);
+    const teams = kitTimeline([...labelled, ...run(70, 20, 23, GRASS)], kits, labels, none);
+    expect(teams.at(70, 21)?.role).not.toBe("referee");
+  });
   it("learns each labelled kit from the shirt seen most, not from shorts or a tracker switch", () => {
     const noisy = [...labelled, ...run(1, 5, 6, BLACK), ...run(2, 5, 6, YELLOW)];
     const kits = learnKits(noisy, labels);

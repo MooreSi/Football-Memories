@@ -11,7 +11,7 @@ const job = resolve(jobArg), result = join(job, "result");
 const json = (dir, name) => (existsSync(join(dir, name)) ? JSON.parse(readFileSync(join(dir, name), "utf8")) : undefined);
 const server = await createServer({ server: { middlewareMode: true }, appType: "custom", logLevel: "error" });
 try {
-  const { labPredictions } = await server.ssrLoadModule("/src/components/videoLab/decisions.ts");
+  const { labPredictions, labRows, labKits } = await server.ssrLoadModule("/src/components/videoLab/decisions.ts");
   const { playShare } = await server.ssrLoadModule("/src/components/videoLab/playShare.ts");
   const { rememberKits } = await server.ssrLoadModule("/src/components/videoLab/kits.ts");
   const review = json(job, "review.json") ?? null;
@@ -41,6 +41,7 @@ try {
     central_shown: shown.length,
     own: count(o => o.team === "own"), opponent: count(o => o.team === "opponent"), referee: count(o => o.role === "referee"), unassigned: count(o => !o.team && o.role !== "referee"),
     ball_frames: `${p.ball.length}/${times.size}`,
+    kit_list: labKits(labRows(assignments, files.dense), review, remembered).map(k => [k.team, k.role, k.lab.map(Math.round), k.examples]),
     shirt_file: shirts ? Object.keys(shirts).join(",") : null,
   }));
 } finally {

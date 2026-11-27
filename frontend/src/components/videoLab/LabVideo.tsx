@@ -78,7 +78,14 @@ export type OverlayFrame = { w: number; h: number; outline: Corners | null; half
 export function overlayAt({ w, h, index, teams, teamAt, selected, showBoxes, everyone, ball, showBall, camera, marks = [], boundaries = [], automaticBoundaries = [] }: OverlayInput, now: number): OverlayFrame {
   const here = showBoxes ? boxesAt(index, now) : [];
   const frameTeams = new Map<number, Assignment>();
-  for (const o of here) { const info = teamAt?.(o.track_id, now) ?? teams.get(o.track_id); if (info) frameTeams.set(o.track_id, info); }
+  for (const o of here) {
+    const moment = teamAt?.(o.track_id, now), whole = teams.get(o.track_id);
+    // A track's overall verdict fills a moment with no reading, but never as referee or keeper: there is
+    // one of each per team at a moment, and the moment's decision has already chosen who.
+    const unique = whole?.role === "referee" || whole?.role === "goalkeeper";
+    const info = moment ?? (teamAt && unique ? undefined : whole);
+    if (info) frameTeams.set(o.track_id, info);
+  }
   // Spec 600: the owner's pitch outline, carried with the camera; without one, the far-edge rule.
   const outline = camera ? boundaryAt(camera, boundaries, automaticBoundaries, now) ?? outlineAt(camera, marks, now) : null;
   const halfway = camera ? halfwayAt(camera, now) : null;

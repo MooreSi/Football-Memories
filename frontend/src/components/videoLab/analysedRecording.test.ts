@@ -132,3 +132,12 @@ describe("export", () => {
     expect(f.video.play).not.toHaveBeenCalled();
   });
 });
+
+describe("one referee in a frame", () => {
+  it("does not bring back a referee the moment's decision left unassigned (261109: up to 12 referees in a frame)", () => {
+    const index = indexObservations([row(5, 0, [0.1, 0.1, 0.2, 0.4]), row(6, 0, [0.5, 0.1, 0.6, 0.4])]);
+    const referee: Assignment = { team: null, role: "referee", source: "kit", confidence: 0.9 };
+    const frame = overlayAt({ w: 1920, h: 1080, index, teams: new Map([[5, referee], [6, referee]]), teamAt: track => track === 5 ? referee : undefined, selected: null, showBoxes: true, everyone: true, ball: [], showBall: false }, 0);
+    expect(frame.people.filter(p => p.info?.role === "referee").map(p => p.row.track_id)).toEqual([5]);
+  });
+});

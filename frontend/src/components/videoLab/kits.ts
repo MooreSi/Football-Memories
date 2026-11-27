@@ -95,6 +95,10 @@ export function learnKits(rows: KitObservation[], labels: TrackLabel[], remember
     if (rest.length < Math.max(MIN_EXAMPLES, points.length * SECOND_SHADE)) continue;
     const found = mode(rest);
     if (!found || found.examples < points.length * SECOND_SHADE) continue;
+    // Sun and shadow change how light a kit looks, not its hue: a referee in black has no colourful
+    // shade; one is what showed behind him (261109: grass behind a thin referee in low sun). Not for
+    // teams: a team's first kit can come out dark (shorts, shadow, a swap) with the shirt as the shade.
+    if (role === "referee" && chroma(first.lab) < CHROMA && chroma(found.lab) >= CHROMA) continue;
     if (firsts.some(k => (k.team !== team || k.role !== role) && kitDistance(found.lab, k.lab) <= RADIUS + MARGIN)) continue;
     learned.push({ team, role, ...found });
   }
