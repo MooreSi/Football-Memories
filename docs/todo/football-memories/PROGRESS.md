@@ -1,3 +1,23 @@
+## Keepers named again in quarters with one goal kick each; NOT LIVE (27 November 2026)
+
+Owner: "why on the west brom game doesn't it recognise the goalkeeper? it did before ... has this
+now affected the other games? fix this" (261101 U11s v West Brom (A): "Keeper not named", 7 conceded).
+- Cause: spec 400 (70bbc49, 21 Nov) infers each END HALF period alone and keeps a spell only with
+  two supporting kicks in that period. This match has four quarters and three of our goal kicks
+  (Q1, Q3, Q4); the keeper led Q1 and Q3 at exactly the 4 s lead, one kick each, so nobody was
+  named. Spec 270 code (4c6c034) named him for the whole match. Tags unchanged: the 18:51 re-read
+  and a 16:59 snapshot both hold 1927 tags, 3 of our goal kicks; admin's cache is the same; no
+  saved goals entries on the local app or admin (0 each), so nothing the owner saved was lost.
+- Fix (`keeperInference.ts`): a spell is also supported when its keeper strictly leads two or more
+  of our kicks anywhere in the match. Unchanged: one kick in the whole match names nobody; empty
+  periods stay gaps; near-but-not-leading never counts (new guard test).
+- Effect on the local cache (233 matches with goal kicks): 24 had lost a keeper since spec 400;
+  7 restored (incl. this one, Q1 and Q3: 2 of 7 conceded on him, 5 stay unassigned in Q2/Q4),
+  38 more get blank periods filled. No spell or conceded goal assigned before changed (checked per
+  spell midpoint and per goal). The other 17 rest on one tagged kick in the whole match: unchanged.
+Verification: frontend 1239 pass (2 new, red first), typecheck, build. Backend unchanged, not run.
+Not deployed: the app pages need a build (admin and families) before the owner sees it.
+
 ## Every action label counts, and five more action stats (spec 830); NOT LIVE (27 November 2026)
 
 Owner: "Yes, do both" (why most Passing labels never reach pass counts; add the five unused labels).

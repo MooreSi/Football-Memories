@@ -246,6 +246,13 @@ U10 v Stoke City reads 12-9.
   2.5-vote change penalty. This permits repeated rotations across four periods.
   Exact score ties and spells with fewer than two supporting kicks stay unknown
   (explicit goalkeeper-code evidence can support a single observation).
+  Exception (2026-11-27, owner report on a U11 quarters match): a spell is also
+  supported when its keeper strictly leads two or more of our kicks anywhere in the
+  match. Youth quarters often hold one of our goal kicks each, so the per-period rule
+  alone dropped 24 cached matches' keepers that spec 270 had named; this restores 7
+  (the rest rest on one kick in the whole match) and fills blank periods in 38 more,
+  without changing any spell or conceded goal the per-period rule already assigned.
+  Being near a kick without leading it never counts.
   A closing END HALF whose window ends with the recording opens no new period.
   Otherwise empty periods remain gaps; do not extend the previous keeper.
 - Conceded goals use estimated ball-in time, not the padded clip start. An owner
