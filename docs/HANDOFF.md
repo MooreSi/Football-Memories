@@ -62,13 +62,15 @@ disagreed with); now a track never nearest your label's kit keeps your label, sw
 benchmark unchanged (candidate label-overrules). And placement claimed all-MacBook on runs derived
 from a MacBook pitch rebuild; the measured split now wins. After: Person 217 Opp -> Our, "labelled
 by you"; 2:00 shows 7 ours / 8 Stoke / 1 unassigned, outline and halfway drawn, review "Accepted".
-Across games (16067a3, deployed to admin the same way): every outline now has a halfway line with
-equal halves (`centreHalfway`: through the centre of the outline's minimum-area ground rectangle,
-square to its long side) unless one was placed; latest runs: Eagles 1.0/1.0, Bournville db07377c
-1.0, NL 0.984, Stoke 0.999; Bournville c8988347 and RMC 0671e86b keep saved halfway lines (0.92,
-placed overnight; re-place them if wanted). Play held by the outline in use: 0.87-1.0 except RMC
-0.54 (spectators at the rail counted; outline judged right before). Teams across games: frozen
-benchmark (5 matches) withheld 0.793 precision / 0.675 coverage, development 0.813 / 0.991.
+Across games, TRIED AND ROLLED BACK (16067a3, reverted 565b466; admin moved back to 8d018dc within
+minutes): a halfway line through the centre of each outline's minimum-area ground rectangle. The
+area measure said "equal halves" but drawn on the atlases the line ran along the far edge on Eagles
+4bd4003f/e1e0cf6c and Bournville db07377c/c8988347: on a low camera the far side is stretched hugely
+on the ground plane, so the "long side" is the depth direction. Lesson: check a pitch line on the
+image, never by an area ratio alone. Findings that stand: RMC 0671e86b's saved halfway lies exactly on
+the painted halfway line (correct); NL 91f49e12's too. Other matches keep their outlines and
+whatever halfway they had (none on several). A correct cross-game halfway needs the painted halfway
+line or the two goals (as Stoke), not outline shape.
 Next: worker enrichment of archived runs needs annotated.mp4 (archive copy of f81b4684 lacks it);
 dark-team rule is untested on the benchmark (no match there has a dark team kit with colours).
 Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);

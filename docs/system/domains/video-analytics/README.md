@@ -408,3 +408,6 @@ there or it is silently dropped on save.
 - Placement: finished runs already record where each stage ran (summary `execution`,
   `detection_sharing`, model device/compute_units, render encoder); live jobs only have the mode
   they started with (gateway job view `execution`, `reid_backend`).
+- Do not derive a halfway line from an outline's shape on the level ground: a low camera stretches
+  the far side so much that the minimum-area rectangle's long side is the depth direction (tried
+  27 Nov 2026, rolled back). Check any pitch line drawn on the atlas image, not by an area ratio.
