@@ -1,4 +1,27 @@
-## Pitch box and halfway line adjustable on the video, following pan and zoom (spec 800); NOT DEPLOYED (27 November 2026)
+## Player Lab follows the player's role; Match stats gradients app-wide; players first in the match rail (27 November 2026)
+
+Owner: outfield players in Player Lab showed saves, goals conceded, save % and shots faced; momentum
+and Team stats bars should be gradients; "use the match stats bars, box gradients, line gradients and
+overall style ... across the app"; match rail "place the players at the top ... then the other game
+moments ... in alphabetical order".
+- Cause: the lab called a player a keeper when any one appearance had a keeper record. Lorenzo Peters
+  has one estimated keeper spell in 70 tagged matches. Now `labRole` (playerLabTrends.ts): a set
+  position decides; otherwise keeper only when in goal for at least half the selection. New Role
+  select (auto / Outfield / Goalkeeper). Outfield: no keeper metrics in headlines, Metric list,
+  recent five, chart, compare or season review; the notebook hides Saves/Goals conceded unless a
+  value is already saved.
+- statsUi.tsx: `VersusBars`, `FILL_CLASS`, `ACTIVE_ROW`, `THEIRS_COLUMN`. Team stats table, momentum
+  (vertical SVG gradients), possession bar, Player Lab compare, rail/tab selected rows (Hudl, Veo,
+  Clips, Moments, Video Lab rail, Memories tabs) and single-value/progress bars use them.
+  DESIGN.md records it.
+- Hudl match rail: `playersFirst` (lib/codeOrder.ts) -> Players heading A-Z, then Moments A-Z
+  (case-insensitive); the phone select uses the same order.
+Verification: frontend 1216 pass (8 new), typecheck, build; backend unchanged, not run.
+Browser (dev server on the live API, read-only page views): Wolves (Game 4) rail, momentum and Team
+stats seen with gradients. Player Lab is hosted-admin only, so not opened in the browser; role checked
+on the real cached library instead. Not deployed: admin library rebuild needed.
+
+## Pitch box and halfway line adjustable on the video, following pan and zoom (spec 800); DEPLOYED to admin (27 November 2026)
 
 Owner: "allow me to change the box and half way line on the actual video being played, i can pause
 it on various parts of the game ... it should then dynamically adjust as the camera pans and zooms by
@@ -22,7 +45,12 @@ Verification: frontend 1209 pass, typecheck, build in a scratch worktree of HEAD
 unchanged, 870 SQLite + 870 Postgres 17, ruff, format, mypy, alembic check. Browser: hosted build on
 the read-only harness over 92908cc3 (review in memory): marked at 0:30, box/halfway drawn at 1:30,
 3:20 (zoomed), 6:40, 2D pitch reads "from your pitch marks". Accuracy against painted lines is the
-owner's marking. Not deployed to the admin library.
+owner's marking.
+DEPLOYED 17:05 to the admin library only: 6395f82 (main 4152fff + this commit) built from a clean
+worktree with FM_BUILD_LATEST=0, added to status.json `built` (`latest` stays 4152fff), admin
+moved 6db8543 -> 6395f82 with `_move` (admin capture idle). Exactly its 3 containers changed,
+backend health ok, bundle has the new editor. Admin auto-update is on, but a branch build is not in
+`ancestors`, so the round leaves admin here until main contains 6395f82. Families unchanged.
 
 ## Video Lab Training tab: label ball crops, train a ball model (spec 790); NOT DEPLOYED (27 November 2026)
 

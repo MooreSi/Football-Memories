@@ -16,6 +16,7 @@ import { canvasToPng } from "../lib/titleCard";
 import type { ThemeId } from "../lib/reelCards";
 import { useClipBuffers } from "../lib/useClipBuffers";
 import { STATUS } from "./ReelsPage";
+import { FILL_CLASS } from "../components/match/statsUi";
 
 interface DraftItem {
   event_id: number;
@@ -151,7 +152,7 @@ function Builder({ reel }: { reel: ReelDetail }) {
       {busy && (
         <section aria-label="Render progress" className="panel space-y-2 p-5">
           <p className="text-sm">{reel.status === "queued" ? "Waiting to start" : "Rendering your reel"} · {Math.round(reel.progress * 100)}%</p>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-gradient-to-r from-accent to-violet transition-all" style={{ width: `${Math.round(reel.progress * 100)}%` }} /></div>
+          <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${FILL_CLASS} transition-all`} style={{ width: `${Math.round(reel.progress * 100)}%` }} /></div>
           <p className="text-xs text-fg-subtle">You can leave this page; rendering continues in the background.</p>
         </section>
       )}

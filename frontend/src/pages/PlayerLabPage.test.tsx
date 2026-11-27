@@ -73,3 +73,21 @@ it("opens on the player's main squad and fills the trend, recent five and teamma
   await userEvent.selectOptions(within(compare).getByLabelText("Teammate"),"Ali Demo");
   expect(within(compare).getByRole("img",{name:"Passes: Sam Example 1, Ali Demo 2 per shared match"})).toBeInTheDocument();
 });
+
+// Owner request 2026-11-27: "if i select an outfield player the stats need to reflect this".
+it("shows an outfield player outfield numbers even with one keeper record, and lets the role be changed", async () => {
+  const tg=(id:string,category:string,time_s:number)=>({id,category,time_s,duration_s:10,actions:["passes"]});
+  const lib=[1,2,3].map(d=>({id:`m${d}`,title:`2611${String(d).padStart(2,"0")} U11 v Town`,age_group:"U11",capture_key:`m${d}`,moments:[tg(`s${d}`,"Sam Example",10),tg(`a${d}`,"Ali Demo",60)]}));
+  localStorage.setItem("fm.playerLab.v1:admin%40example.test",JSON.stringify({version:1,records:[{match:"m1",player:"Ali Demo",position:"",minutes:null,counts:{saves:3},note:""}],goals:[],picks:[]}));
+  stubFetch({[`${H}/library`]:lib,"/api/goals":{},"/api/scores":{},"/api/preferences":{primary_player_id:9},"/api/players/9":{id:9,display_name:"Sam Example",position:"CB",club_name:"Aston Villa"}});
+  renderWithProviders(<PlayerLabPage account="admin@example.test"/>);
+  await screen.findByRole("region",{name:"Recent five matches"});
+  await userEvent.selectOptions(screen.getByLabelText("Player"),"Ali Demo");
+  const headlines=screen.getByRole("region",{name:"Player headlines"});
+  expect(within(headlines).getByText("Goals")).toBeInTheDocument();
+  expect(within(headlines).queryByText("Saves")).toBeNull();
+  expect(within(screen.getByLabelText("Metric")).queryByRole("option",{name:"Saves"})).toBeNull();
+  expect(within(screen.getByLabelText("Role")).getByRole("option",{name:"Outfield (from records)"})).toBeInTheDocument();
+  await userEvent.selectOptions(screen.getByLabelText("Role"),"keeper");
+  expect(within(screen.getByRole("region",{name:"Player headlines"})).getByText("Saves")).toBeInTheDocument();
+});

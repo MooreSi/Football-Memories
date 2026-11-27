@@ -8,6 +8,7 @@ import { fixtureParts } from "../../lib/hudlFixture";
 import { MOMENTUM_WEIGHTS, type Minute, type Possession, momentum } from "../../lib/insights";
 import type { Corrections } from "../../lib/matchScore";
 import { OURS, THEIRS } from "../../lib/teamColours";
+import { OURS_FILL, THEIRS_FILL, useSvgId } from "./statsUi";
 
 function minutes(seconds: number): string {
   const m = Math.round(seconds / 60);
@@ -24,8 +25,8 @@ export function PossessionBar({ value, ours, theirs, caption }: { value: Possess
         <span className="font-semibold" style={{ color: THEIRS }}>{value.theirsPct}%</span>
       </div>
       <div className="flex h-2.5 overflow-hidden rounded-full bg-ink-700" aria-hidden>
-        <span style={{ width: `${value.oursPct}%`, background: OURS }} />
-        <span style={{ width: `${value.theirsPct}%`, background: THEIRS }} />
+        <span style={{ width: `${value.oursPct}%`, background: OURS_FILL }} />
+        <span style={{ width: `${value.theirsPct}%`, background: THEIRS_FILL }} />
       </div>
       <p className="text-[11px] text-fg-subtle">
         {caption ?? `${ours} ${minutes(value.ours)} · ${theirs} ${minutes(value.theirs)}`}{value.contested > 0 ? ` · contested ${minutes(value.contested)} not counted` : ""}
@@ -46,6 +47,7 @@ export function MomentumChart({ match, club, theirs, onSeek }: { match: HudlMatc
  *  timeline, compact, with a playhead at the current time. */
 export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek, label = "Momentum chart", title = "Momentum, minute by minute", now, compact = false }:
   { rows: Minute[]; halves: number[]; ours: string; theirs: string; caption?: string; onSeek?: (time: number) => void; label?: string; title?: string; now?: number; compact?: boolean }) {
+  const id = useSvgId("momentum");
   if (!rows.length) return null;
   const max = Math.max(1, ...rows.flatMap((r) => [r.ours, r.theirs]));
   const w = 6, gap = 1, h = 44, width = rows.length * (w + gap);
@@ -58,15 +60,20 @@ export function MomentumBars({ rows, halves, ours, theirs, caption, onSeek, labe
       </figcaption>
       <div className="overflow-x-auto">
         <svg role="img" aria-label={label} viewBox={`0 0 ${width} ${h * 2 + 8}`} className={`${compact ? "h-16" : "h-32"} w-full min-w-[320px]`} preserveAspectRatio="none">
+          {/* Owner request 2026-11-27: gradient bars as Match stats, brightest at the tip. */}
+          <defs>
+            <linearGradient id={`${id}-ours`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a5f3fc" /><stop offset="0.35" stopColor="#22d3ee" /><stop offset="1" stopColor="#0e7490" /></linearGradient>
+            <linearGradient id={`${id}-theirs`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9a3412" /><stop offset="0.65" stopColor="#fb923c" /><stop offset="1" stopColor="#fed7aa" /></linearGradient>
+          </defs>
           <line x1={0} x2={width} y1={h + 4} y2={h + 4} stroke="rgb(255 255 255 / 0.15)" />
           {halves.map((t) => <line key={t} data-half x1={(t / 60) * (w + gap)} x2={(t / 60) * (w + gap)} y1={0} y2={h * 2 + 8} stroke="rgb(255 255 255 / 0.35)" strokeDasharray="2 2" />)}
           {rows.map((r) => {
             const x = r.minute * (w + gap);
             const up = (r.ours / max) * h, down = (r.theirs / max) * h;
             return <g key={r.minute}>
-              {r.ours > 0 && <rect data-minute={r.minute} data-side="ours" x={x} y={h + 4 - up} width={w} height={up} rx={1} fill={OURS} className={onSeek ? "cursor-pointer hover:opacity-80" : undefined}
+              {r.ours > 0 && <rect data-minute={r.minute} data-side="ours" x={x} y={h + 4 - up} width={w} height={up} rx={1} fill={`url(#${id}-ours)`} className={onSeek ? "cursor-pointer hover:opacity-80" : undefined}
                 onClick={() => r.oursAt !== null && onSeek?.(r.oursAt)}><title>{`${r.minute + 1}' ${ours}: ${r.ours}${r.goals.ours ? `, goal` : ""}`}</title></rect>}
-              {r.theirs > 0 && <rect data-minute={r.minute} data-side="theirs" x={x} y={h + 4} width={w} height={down} rx={1} fill={THEIRS} className={onSeek ? "cursor-pointer hover:opacity-80" : undefined}
+              {r.theirs > 0 && <rect data-minute={r.minute} data-side="theirs" x={x} y={h + 4} width={w} height={down} rx={1} fill={`url(#${id}-theirs)`} className={onSeek ? "cursor-pointer hover:opacity-80" : undefined}
                 onClick={() => r.theirsAt !== null && onSeek?.(r.theirsAt)}><title>{`${r.minute + 1}' ${theirs}: ${r.theirs}${r.goals.theirs ? `, goal` : ""}`}</title></rect>}
               {r.goals.ours > 0 && <circle cx={x + w / 2} cy={Math.max(3, h + 4 - up - 4)} r={2.5} fill="#fff" />}
               {r.goals.theirs > 0 && <circle cx={x + w / 2} cy={Math.min(h * 2 + 5, h + 4 + down + 4)} r={2.5} fill="#fff" />}

@@ -4,6 +4,7 @@ import type { HudlMatch } from "../../api/hudl";
 import { formatClock } from "../../lib/format";
 import { fixtureLabel } from "../../lib/hudlFixture";
 import { unfinished, useWatching } from "../../lib/viewerState";
+import { FILL_CLASS } from "../match/statsUi";
 
 /** Spec 230: matches started and not finished, newest first, resuming where you stopped.
  *  Owner request 2026-11-13: the last three only. */
@@ -25,7 +26,7 @@ export function ContinueWatching({ library, club }: { library: HudlMatch[] | und
                 <div className="relative aspect-video bg-ink-700">
                   {m.thumbnail_url && <img crossOrigin="anonymous" src={m.thumbnail_url} alt="" className="h-full w-full object-cover" />}
                   <PlayCircle size={34} className="absolute inset-0 m-auto text-white drop-shadow" aria-hidden />
-                  {total > 0 && <span className="absolute right-0 bottom-0 left-0 h-1 bg-black/50"><span className="block h-full bg-accent" style={{ width: `${Math.min(100, (w.position_s / total) * 100)}%` }} /></span>}
+                  {total > 0 && <span className="absolute right-0 bottom-0 left-0 h-1 bg-black/50"><span className={`block h-full ${FILL_CLASS}`} style={{ width: `${Math.min(100, (w.position_s / total) * 100)}%` }} /></span>}
                 </div>
                 <div className="p-3">
                   <p className="truncate text-sm font-semibold">{fixtureLabel(m.title, club, m.age_group)}</p>

@@ -26,6 +26,8 @@ import { momentum, phases } from '../lib/insights';
 import { fixtureParts } from '../lib/hudlFixture';
 import { MatchSections } from '../components/match/MatchSections';
 import { sameCode } from '../lib/codes';
+import { playersFirst } from '../lib/codeOrder';
+import { ACTIVE_ROW, FILL_CLASS } from '../components/match/statsUi';
 import { useNotes, useRecordWatching, useSaveNote } from '../lib/viewerState';
 
 export function DownloadChoice({ count, onChoose, onCancel }: { count: number; onChoose: (combined: boolean) => void; onCancel: () => void }) {
@@ -112,7 +114,8 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       setSeek({ time: target.time_s, nonce: Date.now() });
     }
   }, [moments, initialMoment]);
-  const codes = [...new Set(moments.map(m => m.category))].sort();
+  // Owner request 2026-11-27: players at the top of the rail, then the other moments, A to Z.
+  const grouped = playersFirst(moments.map(m => m.category)), codes = [...grouped.players, ...grouped.moments];
   // Spec 230: our possessions that ended in a chance or goal; with a player chosen, only his.
   const phaseList = phases(moments, club, code && looksLikePlayer(code) ? code : undefined);
   const phaseOf = new Map(phaseList.map(p => [p.moment.id, p]));
@@ -224,8 +227,11 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
     <aside className="analysis-rail moments-rail panel flex flex-col overflow-hidden">
       <div className="space-y-2 border-b border-line p-4">{!embedded && <Link to="/" className="text-sm text-fg-muted">← LIBRARY</Link>}<h2 className="text-sm font-semibold">{match.title}</h2><p className="text-xs text-fg-subtle">{match.age_group} · {moments.length} moments</p></div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <button className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? 'bg-blue-600 text-white' : 'text-fg-muted'}`} aria-pressed={!picked.length} onClick={() => { setCode(''); setSelected([]); }}>ALL MOMENTS <span>{moments.length}</span></button>
-        {codes.map(c => <button key={c} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs ${picked.some(x => sameCode(x, c)) ? 'bg-blue-600 text-white' : 'text-fg-muted hover:bg-white/5'}`} aria-pressed={picked.some(x => sameCode(x, c))} onClick={() => { toggle(c); setSelected([]); }}><span className="truncate">{c}</span><span>{moments.filter(m => m.category === c).length}</span></button>)}
+        <button className={`flex w-full items-center justify-between px-4 py-3 text-xs ${!picked.length ? ACTIVE_ROW : 'text-fg-muted hover:bg-white/5'}`} aria-pressed={!picked.length} onClick={() => { setCode(''); setSelected([]); }}>ALL MOMENTS <span>{moments.length}</span></button>
+        {([['Players', grouped.players], ['Moments', grouped.moments]] as const).filter(([, list]) => list.length).map(([heading, list]) => <div key={heading} role="group" aria-label={heading}>
+          <p className="border-t border-line px-4 pt-3 pb-1 text-[10px] font-semibold tracking-[0.18em] text-fg-subtle uppercase">{heading}</p>
+          {list.map(c => <button key={c} className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs ${picked.some(x => sameCode(x, c)) ? ACTIVE_ROW : 'text-fg-muted hover:bg-white/5'}`} aria-pressed={picked.some(x => sameCode(x, c))} onClick={() => { toggle(c); setSelected([]); }}><span className="truncate">{c}</span><span>{moments.filter(m => m.category === c).length}</span></button>)}
+        </div>)}
       </div>
     </aside>
     <div className="analysis-stage min-w-0 space-y-5">
@@ -252,7 +258,7 @@ export function HudlMatchView({ id, initialCode = '', initialMoment, initialTime
       {own && status.data?.progress && <div className="panel space-y-2 p-4">
         <div className="flex flex-wrap justify-between gap-2 text-sm"><span>Step {status.data.progress.step} of {status.data.progress.steps}: {status.data.progress.label}</span><span className="text-fg-muted">{Math.round(status.data.progress.fraction * 100)}% · {timeLeft(status.data.progress.eta_s)}</span></div>
         <div role="progressbar" aria-label="Download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(status.data.progress.fraction * 100)} className="h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-gradient-to-r from-ok to-accent transition-[width] duration-500" style={{ width: `${Math.max(2, status.data.progress.fraction * 100)}%` }} />
+          <div className={`h-full rounded-full ${FILL_CLASS} transition-[width] duration-500`} style={{ width: `${Math.max(2, status.data.progress.fraction * 100)}%` }} />
         </div>
       </div>}
       {own && <p role="status" className={`text-sm ${status.data?.state === 'error' ? 'text-danger' : 'text-fg-muted'}`}>{status.data?.message}</p>}

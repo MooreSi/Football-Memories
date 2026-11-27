@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { HudlMatch } from "../../api/hudl";
 import { journey, partnerships } from "../../lib/insights";
 import { sameCode } from "../../lib/codes";
+import { FILL_CLASS } from "../match/statsUi";
 
 /** Spec 230: season-by-season moments per match, and the attacking / defending share. */
 function Journey({ rows }: { rows: ReturnType<typeof journey> }) {
@@ -16,7 +17,7 @@ function Journey({ rows }: { rows: ReturnType<typeof journey> }) {
           <li key={r.season} className="grid grid-cols-[5.5rem_1fr] items-center gap-3 text-sm" aria-label={`${r.season}: ${r.perMatch} moments per match over ${r.matches} matches, ${r.attackingPct}% attacking, ${r.defendingPct}% defending`}>
             <span><span className="block font-semibold">{r.season}</span><span className="text-xs text-fg-subtle">{r.age} · {r.matches} {r.matches === 1 ? "match" : "matches"}</span></span>
             <span className="space-y-1">
-              <span className="flex items-center gap-2"><span className="h-2 rounded-full bg-gradient-to-r from-ok to-accent" style={{ width: `${(r.perMatch / max) * 80}%` }} /><span className="text-xs tabular-nums">{r.perMatch}/match</span></span>
+              <span className="flex items-center gap-2"><span className={`h-2 rounded-full ${FILL_CLASS}`} style={{ width: `${(r.perMatch / max) * 80}%` }} /><span className="text-xs tabular-nums">{r.perMatch}/match</span></span>
               <span className="block text-xs text-fg-muted">During attacks {r.attackingPct}% · during defending {r.defendingPct}%</span>
             </span>
           </li>

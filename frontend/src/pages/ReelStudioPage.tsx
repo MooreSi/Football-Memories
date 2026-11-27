@@ -19,6 +19,7 @@ import { timeLeft } from "../lib/taggedPlayback";
 import { useHomeClub } from "../lib/useHomeClub";
 import { useVeoTeam } from "../lib/useHomeTeams";
 import { useVeoClubOf } from "../lib/useVeoClub";
+import { FILL_CLASS } from "../components/match/statsUi";
 
 export type ReelItem = { match_id: string; moment_ids?: string[]; codes?: string[] };
 /** `source: "veo"`: one Veo match, cut by the helper from the saved full match (owner request 2026-11-13). */
@@ -235,7 +236,7 @@ function Studio({ selection }: { selection: ReelSelection }) {
           {phase && !progress && !finished && !savedMany && <p role="status" className="text-sm">{phase}</p>}
           {progress && <>
             <div className="flex flex-wrap justify-between gap-2 text-sm"><span>Step {progress.step} of {progress.steps}: {progress.label}</span><span className="text-fg-muted">{Math.round(progress.fraction * 100)}% · {timeLeft(progress.eta_s)}</span></div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-ok to-accent transition-[width]" style={{ width: `${Math.max(2, progress.fraction * 100)}%` }} /></div>
+            <div className="h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full rounded-full ${FILL_CLASS} transition-[width]`} style={{ width: `${Math.max(2, progress.fraction * 100)}%` }} /></div>
           </>}
           {status.data?.state === "error" && phase && <p role="alert" className="text-sm text-danger">{status.data.message}</p>}
           {finished && <div className="flex flex-wrap items-center gap-3"><p className="text-sm text-ok">{status.data!.message}</p>

@@ -9,6 +9,7 @@ import { watchedHudlMoments } from '../../lib/hudlWatched';
 import { groupTimeline } from '../../lib/player';
 import { TeamBadge } from '../TeamBadge';
 import { Spinner } from '../ui/Spinner';
+import { ACTIVE_ROW } from "../match/statsUi";
 
 type Memory = {id:string; href:string; time:number; label:string; viewed:boolean; favourite?:boolean};
 type Match = {id:string; season:string; date:string; opponent:string; subtitle:string; href:string; thumbnail?:string|null; remote?:boolean; moments:Memory[]};
@@ -45,7 +46,7 @@ export function MemoriesTimeline({playerId,categories,hudl=[]}:{playerId:number;
  const seasons=[...new Set(shown.map(m=>m.season))].sort().reverse();
  return <section aria-label="Memories timeline" className="panel min-w-0 p-5 sm:p-6">
   <header className="mb-6 flex flex-wrap items-center gap-3"><div className="mr-auto"><p className="screen-eyebrow mb-1">THE JOURNEY</p><h2 className="text-xl font-semibold">Memories timeline</h2><p className="mt-1 text-sm text-fg-muted">{matches.length} matches · A season of moments, one game at a time.</p></div>
-   <div role="tablist" aria-label="Timeline view" className="flex flex-wrap rounded-full border border-line p-1 text-xs">{(['all','favourites','unwatched'] as const).map(v=><button key={v} role="tab" aria-selected={v===view} onClick={()=>{setView(v);setLimit(12);}} className={`rounded-full px-3 py-2 capitalize ${v===view?'bg-blue-600 text-white':'text-fg-muted'}`}>{v==='all'?'All moments':v}</button>)}</div>
+   <div role="tablist" aria-label="Timeline view" className="flex flex-wrap rounded-full border border-line p-1 text-xs">{(['all','favourites','unwatched'] as const).map(v=><button key={v} role="tab" aria-selected={v===view} onClick={()=>{setView(v);setLimit(12);}} className={`rounded-full px-3 py-2 capitalize ${v===view?ACTIVE_ROW:'text-fg-muted'}`}>{v==='all'?'All moments':v}</button>)}</div>
    <label><span className="sr-only">Event type</span><select className="field w-auto max-w-full rounded-full" value={category} onChange={e=>{setCategory(e.target.value);setLimit(12);}}><option value="">All event types</option>{categories.map(c=><option key={c}>{c}</option>)}</select></label>
   </header>
   {q.isPending?<Spinner label="Loading memories"/>:q.isError?<p role="alert" className="text-sm text-danger">Offline memories could not load. {q.error.message}</p>:null}

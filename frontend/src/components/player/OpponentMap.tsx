@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { opponentMap } from "../../lib/hubExtras";
 import type { MatchCount } from "../../lib/records";
 import { TeamBadge } from "../TeamBadge";
+import { FILL_CLASS } from "../match/statsUi";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const day = (date: string) => `${Number(date.slice(8, 10))} ${MONTHS[Number(date.slice(5, 7)) - 1]} ${date.slice(0, 4)}`;
@@ -25,7 +26,7 @@ export function OpponentMap({ series }: { series: MatchCount[] }) {
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">{c.name}</span>
             <span className="block text-xs text-fg-muted">{c.matches} {c.matches === 1 ? "match" : "matches"} · {c.moments.toLocaleString("en-GB")} moments</span>
-            <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-linear-to-r from-[#2563eb] to-[#38bdf8]" style={{ width: `${Math.max(8, (c.matches / most) * 100)}%` }} /></span>
+            <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-white/10"><span className={`block h-full rounded-full ${FILL_CLASS}`} style={{ width: `${Math.max(8, (c.matches / most) * 100)}%` }} /></span>
           </span>
         </Link>
       </li>)}
