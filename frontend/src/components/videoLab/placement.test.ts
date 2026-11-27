@@ -27,6 +27,14 @@ describe("ranPlacement (a finished run, from what it recorded)", () => {
     const rows = ranPlacement({ ...stoke, detection_sharing: undefined, execution: { mode: "remote", node: "MacBook Pro" } })!;
     expect(rows.every(r => r.where === "MacBook Pro")).toBe(true);
   });
+  it("a run derived from a MacBook pitch rebuild keeps the measured detection split, and lists a colour re-read (Stoke 92908cc3)", () => {
+    const rows = ranPlacement({ ...stoke, execution: { mode: "remote", node: "MacBook Pro" }, team_enrichment: { elapsed_s: 55.2 } })!;
+    const by = Object.fromEntries(rows.map(r => [r.stage, r]));
+    expect(by["Player detection"].where).toBe("Mac mini + MacBook Pro");
+    expect(by["Tracking and kit colours"].where).toBe("Mac mini");
+    expect(by["Camera and pitch"].where).toBe("MacBook Pro");
+    expect(by["Shirt colours re-read"]).toMatchObject({ where: "Mac mini", compute: "CPU", detail: "55 s" });
+  });
   it("a local run without the newer fields: detection on the GPU through PyTorch, software render, all on the Mac mini", () => {
     const rows = ranPlacement({ model: { device: "mps" }, render: { encoder: "libx264" } })!;
     expect(rows.every(r => r.where === "Mac mini")).toBe(true);
