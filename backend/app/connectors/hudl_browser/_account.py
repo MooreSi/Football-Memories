@@ -25,6 +25,7 @@ from app.connectors.hudl_batch import CardStore
 from app.connectors.hudl_capture import (
     CaptureError,
     capture_hls,
+    label_census,
     media_url,
     parse_manifest,
     save_capture,
@@ -769,6 +770,8 @@ class BrowserConnection:
                 **self.details.read(identity),
                 "duration_s": duration,
                 "tag_status": tag_status,
+                # Spec 820: label counts only (no raw tags), to learn whether outcomes exist.
+                "label_counts": label_census(observation.payloads, identity),
                 "moments": [
                     {
                         "id": m.source_event_id,

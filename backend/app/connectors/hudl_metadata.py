@@ -13,7 +13,7 @@ from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from app.connectors.hudl_actions import SUPPORTED_ACTIONS
+from app.connectors.hudl_actions import SUPPORTED_ACTIONS, clean_label_counts
 
 if TYPE_CHECKING:
     from app.connectors.hudl_capture import Moment
@@ -124,6 +124,10 @@ class MatchCache:
                         ),
                     }
                 )
+        if "label_counts" in details:
+            clean["label_counts"] = clean_label_counts(details["label_counts"])
+        if "label_counts" in details:
+            clean["label_counts"] = clean_label_counts(details["label_counts"])
         if details.get("tag_status") in {"unsynced", "synced", "none", "unavailable"}:
             clean["tag_status"] = details["tag_status"]
         if isinstance(details.get("tag_error"), str):

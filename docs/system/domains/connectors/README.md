@@ -865,6 +865,17 @@ neither. Parser/cache regression covers both positive actions and those negative
 controls. No source requests or storage format changes; existing cached matches
 receive previously discarded labels on their next normal read.
 
+## Tag label census (spec 820, 2026-11-27)
+
+- Tag indexing stores `label_counts` per match (counts only, no raw tags) so we can learn whether
+  the coach's tags carry outcomes. As of 27 Nov 2026 the cached actions show none (passes 1,328,
+  def 1v1 917, att 1v1 216, crosses 114, regains 82), but the allowlist would have dropped them.
+- Free-text tag values do occur (tests plant a URL token in a "Private note"). `safe_label` keeps
+  only short plain labels; anything else leaves its group name. Values equal to a match code
+  (player names) are dropped.
+- Only matches without `tag_status` are re-indexed; to re-read one, drop that key from its cache
+  file and Refresh Hudl. The helper runs from the shared checkout's working tree.
+
 ## Incremental Veo checks (spec 460, 2026-11-22)
 
 The prior resume fix did not make ordinary checks incremental: it deleted progress.json

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
-from app.connectors.hudl_actions import player_actions
+from app.connectors.hudl_actions import clean_label_counts, label_key, player_actions, tag_labels
 from app.services.media import MediaError, probe
 from app.services.paths import sanitize_component
 from app.services.publish import publish_new
@@ -145,6 +145,31 @@ def parse_moments(
                         raise CaptureError("Tag data changed during capture; start again.")
                     result[event_id] = moment
     return sorted(result.values(), key=lambda moment: (moment.time_s, moment.source_event_id))
+
+
+def label_census(payloads: list[dict[str, Any]], video_id: str) -> dict[str, int]:
+    """Spec 820: how often each tag label occurs in this video's tags, counts only."""
+    moments = [
+        moment
+        for payload in payloads
+        for session in ((payload.get("data") or {}).get("taggingSessions") or {}).get("items", [])
+        if isinstance(session, dict) and session.get("videoId") == video_id
+        for moment in (session.get("moments") or {}).get("items", [])
+        if isinstance(moment, dict) and isinstance(moment.get("tags"), list)
+    ]
+    codes = {
+        label_key(value)
+        for moment in moments
+        for tag in moment["tags"]
+        if isinstance(tag, dict) and tag.get("key") == "HUDL_CODE"
+        for value in tag.get("values") or []
+        if isinstance(value, str)
+    }
+    counts: dict[str, int] = {}
+    for moment in moments:
+        for label in tag_labels(moment["tags"], codes):
+            counts[label] = counts.get(label, 0) + 1
+    return clean_label_counts(counts)
 
 
 def media_url(url: str) -> str:

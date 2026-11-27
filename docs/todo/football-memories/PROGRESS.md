@@ -1,3 +1,16 @@
+## Tag label census, to learn whether Hudl's tags carry pass outcomes (spec 820); NOT LIVE (27 November 2026)
+
+Owner: "Yes, build it" (the read-only label count after the pass investigation). Backend only.
+- Tag indexing now stores `label_counts` per match: group and `GROUP ▶ VALUE` counts, only short
+  plain labels (`safe_label`), never HUDL_CODE values or values equal to a code; cache keeps <= 300.
+  No new Hudl request: it reads the payloads indexing already receives.
+- Not done (owner): restart the helper (com.footballmemories.helper, runs from this checkout's
+  working tree), make one match due again (drop `tag_status` from its cache file), Refresh Hudl,
+  then read that match's `label_counts`. Spec 820 has the steps.
+Verification: backend 875 pass (5 new), ruff, format, mypy, in a scratch worktree of HEAD + these
+files only (another session's uncommitted test-fixture move was breaking the shared checkout's suite
+at the time). Postgres run skipped: no database change. Frontend unchanged, not run.
+
 ## Highlight reels failed on every run: moment cut seeked before the playlist; FIXED (27 November 2026)
 
 Owner: "keep getting issues when trying to create a highlight reel, this is the 3rd or 4th time"
