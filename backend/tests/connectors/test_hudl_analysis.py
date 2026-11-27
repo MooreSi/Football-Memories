@@ -4,6 +4,7 @@ import hashlib
 import re
 import subprocess
 import time
+from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -214,3 +215,73 @@ def test_analysis_window_fetches_the_init_segment_of_a_fragmented_mp4_stream(tmp
     assert media.video_codec == "h264"
     assert abs(media.duration_s - 2.0) < 0.35
     connection._executor.shutdown()
+
+
+def _run_window(tmp_path, stream, extra_patches=()):
+    playlist, segments = stream
+    connection = _connection(tmp_path)
+    _open_stream(connection, playlist, segments)
+
+    def fetch(context, url):
+        return segments[int(re.search(r"/(\d+)\.ts", url)[1])]
+
+    progress = []
+    real = connection._set_progress
+
+    def record(label, step, done, total):
+        progress.append((label, step, connection._steps, done, total))
+        real(label, step, done, total)
+
+    with ExitStack() as stack:
+        for active in (
+            patch.object(connection, "_download", side_effect=AssertionError("no full download")),
+            patch.object(connection, "_observe", side_effect=AssertionError("stream open")),
+            patch.object(connection, "_set_progress", side_effect=record),
+            patch("app.connectors.hudl_browser._account.fetch_media", side_effect=fetch),
+            *extra_patches,
+        ):
+            stack.enter_context(active)
+        connection.start("analysis", "match", window={"start_s": 1.0, "duration_s": 2.0})
+        status = _wait(connection)
+    connection._executor.shutdown()
+    return status, progress
+
+
+def test_the_encode_reports_measured_progress_as_its_own_step(tmp_path, fmp4):
+    """Owner report 2026-11-27: the page sat on "Encoding the analysis window" for ten
+    minutes with no moving bar, because the encode cleared the progress. The encode is
+    step 2 of 2 and reports encoded seconds of the window."""
+    status, progress = _run_window(tmp_path, fmp4)
+    assert status["state"] == "done", status["message"]
+    fetches = [p for p in progress if p[0] == "Fetching the selected footage"]
+    encodes = [p for p in progress if p[0] == "Encoding the analysis window"]
+    assert fetches and all(step == 1 and steps == 2 for _, step, steps, _, _ in fetches)
+    assert encodes and all(step == 2 and steps == 2 for _, step, steps, _, _ in encodes)
+    assert all(total == 2.0 for *_, total in encodes)
+    done = [d for *_, d, _ in encodes]
+    assert done == sorted(done) and done[0] == 0 and done[-1] >= 1.5
+
+
+def test_the_analysis_clip_is_encoded_near_source_size_and_exports_keep_theirs(tmp_path, fmp4):
+    """Owner report 2026-11-27: CRF 18 made a ten-minute clip 454 MB from about 350 MB of
+    HEVC segments. CRF 20 measured at source size on real footage (60 s: 35.8 MB source,
+    37.0 MB at CRF 20, 50.6 MB at CRF 18). Moment exports are a user-visible quality
+    default and keep CRF 18 (golden rule 5)."""
+    from app.connectors import hudl_exports
+    from app.connectors.veo import _encoding
+
+    calls = []
+    real = _encoding.encode
+
+    def spy(arguments, duration, report):
+        calls.append(arguments)
+        return real(arguments, duration, report)
+
+    status, _ = _run_window(
+        tmp_path, fmp4, [patch("app.connectors.hudl_browser._analysis.encode", side_effect=spy)]
+    )
+    assert status["state"] == "done", status["message"]
+    (arguments,) = calls
+    assert arguments[arguments.index("-c:v") + 1] == "libx264"
+    assert arguments[arguments.index("-crf") + 1] == "20"
+    assert hudl_exports._VIDEO[hudl_exports._VIDEO.index("-crf") + 1] == "18"
