@@ -16,6 +16,7 @@ import { PrepareGrouping, TeamSetup, TeamSummary } from "../components/videoLab/
 import { VeoAnalysisPicker } from "../components/videoLab/VeoAnalysisPicker";
 import { AnalysisProgress } from "../components/videoLab/AnalysisProgress";
 import { PreAnalysisCheck } from "../components/videoLab/PreAnalysisCheck";
+import { LivePlacement, RanPlacement } from "../components/videoLab/RunPlacement";
 import { matchTitle, relatedRuns } from "../components/videoLab/relatedRuns";
 import { playShare } from "../components/videoLab/playShare";
 import { MacStatusLight } from "../components/videoLab/MacStatusLight";
@@ -30,13 +31,13 @@ import { isShirtCandidates, shirtNumbers } from "../components/videoLab/shirtNum
 import { mergeDense } from "../components/videoLab/playArea";
 import { buildMoments, filterMoments, type Filter } from "../components/videoLab/moments";
 import { rememberKits } from "../components/videoLab/kits";
-import { automaticBoundariesFor, labBall, labCamera, labKits, labOffPitch, labRows, labTimeline } from "../components/videoLab/decisions";
+import { automaticBoundariesFor, labBall, labCamera, labKits, labOffPitch, labPanorama, labRows, labTimeline } from "../components/videoLab/decisions";
 import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } from "../components/videoLab/useLabData";
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
 type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
 type Summary = { source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
-type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string };
+type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string; execution?: string; reid_backend?: string };
 const LEAD = 3, AFTER = 4;
 async function get<T,>(path: string): Promise<T> {
   const response = await fetch(BASE + path, { credentials: "same-origin", cache: "no-store" });
@@ -84,7 +85,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const panorama=useJobFile(job.id,atlas?"pitch_atlas.json":"pitch_panorama.json",atlas||(has("pitch_panorama.json")&&has("pitch_panorama.jpg")),isPanorama);
   const { review, update, state, error } = useReview(job.id);
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
-  const camera = useMemo(() => labCamera(motion.data, panorama.data, review, job.summary?.source_sha256), [motion.data,panorama.data,review?.pitch_panorama,job.summary?.source_sha256]);
+  const title = matchTitle(job, others);
+  // The automatic outline: painted lines, or the two goals when those hold the play better (decisions.ts).
+  const pitchData = useMemo(() => labPanorama(panorama.data, assignments.data?.observations, title, review?.pitch_size), [panorama.data, assignments.data, title, review?.pitch_size]);
+  const camera = useMemo(() => labCamera(motion.data, pitchData, review, job.summary?.source_sha256), [motion.data,pitchData,review?.pitch_panorama,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
   // Shirt numbers: your corrections, else the worker's reading of each tracked stretch.
   const numbers = useMemo(() => shirtNumbers(shirtReads.data, review?.shirt_numbers), [shirtReads.data, review?.shirt_numbers]);
@@ -100,7 +104,6 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   // Spec 660: shirt colours learned from your labels decide teams moment by moment; the appearance
   // model settles only what colour cannot (dark kits). Kits you taught in related runs are reused.
   // Runs of the same match first (a full match is many windows), and derived runs take their source run's title.
-  const title = matchTitle(job, others);
   const saved = useSavedModels(relatedRuns(title, others.filter(o => o.id !== job.id && o.state === "complete")));
   const remembered = useMemo(() => rememberKits(saved.data ?? [], title ?? ""), [saved.data, title]);
   // With whole-clip refinement the denser rows (about ten a second, with shirt colours) replace the sampled ones.
@@ -141,7 +144,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   }, [visible, cursor, current, playAt, update]);
   const summary = job.summary;
   // Pre-analysis: does the outline in use hold the players? Judged on the level ground, never by atlas rows.
-  const atlasData = atlas && panorama.data?.source_sha256 === summary?.source_sha256 ? panorama.data : undefined;
+  const atlasData = atlas && pitchData?.source_sha256 === summary?.source_sha256 ? pitchData : undefined;
   const outlineAccepted = !!camera?.panorama && review?.pitch_panorama?.accepted === true && review.pitch_panorama.panorama_id === atlasData?.panorama_id;
   const acceptedPoints = outlineAccepted ? review?.pitch_panorama?.points : undefined;
   const play = useMemo(() => atlasData && assignments.data ? playShare(atlasData, acceptedPoints ?? atlasData.suggested_boundary, assignments.data.observations) : null, [atlasData, assignments.data, acceptedPoints]);
@@ -171,8 +174,9 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
         </div>
         {/* Live 2D pitch beside the video: from the automatic outline as soon as a run is analysed, exact once the pitch is marked. */}
         {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
+        {summary && <RanPlacement summary={summary} />}
         {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} rememberedKits={remembered} />}
-        {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={panorama.data} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
+        {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={pitchData} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}
         {camera && review && !camera.panorama && <BoundaryPanel editing={boundaryEditing} selected={boundarySelected} setSelected={setBoundarySelected} onChange={setBoundaryEditing} marks={boundaries} manual={!!boundaryAt(camera,boundaries,[],at)} automatic={!!currentBoundary}
@@ -238,7 +242,7 @@ export default function VideoLabPage() {
     {!!jobs.data?.length && <nav className="panel space-y-2 p-3" aria-label="Previous runs"><label className="block text-sm">Analysis run<select className="mt-1 block w-full rounded-lg border border-line bg-ink-900 p-2" value={selected ?? ""} onChange={e=>setSelected(e.target.value)}>{jobs.data.map(j=>{const sample=samples.data?.find(s=>s.id===j.sample_id);const name=j.match_title || sample?.label || j.sample_id || "Uncatalogued run";return <option key={j.id} value={j.id}>{name}{sample?.duration_s?` · ${Math.round(sample.duration_s/60)} min`:""} · {runLabel(j)}</option>;})}</select></label>
       {jobs.data.filter(j=>!j.sample_id).map(j=><button key={j.id} className="mr-2 text-xs text-fg-muted" onClick={()=>setSelected(j.id)}>{runLabel(j)}</button>)}
     </nav>}
-    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.error && <p className="text-sm text-warn">{active.error}</p>}
+    {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.state === "running" && <LivePlacement job={active} />}{active.error && <p className="text-sm text-warn">{active.error}</p>}
       <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
     {active?.state === "complete" && <Workspace key={active.id} job={active} others={jobs.data ?? []} onQueued={queued} />}
       <div className="panel flex flex-wrap items-end gap-3 p-3">

@@ -23,7 +23,7 @@ try {
   const remembered = rememberKits(models, title);
   const files = {
     sourceSha: summary?.source_sha256, assignments, review, appearance: json(result, "track_appearance.json"), dense: json(result, "dense_tracks.json"),
-    motion: json(result, "camera_motion.json"), panorama: atlas ?? json(result, "pitch_panorama.json"), remembered,
+    motion: json(result, "camera_motion.json"), panorama: atlas ?? json(result, "pitch_panorama.json"), remembered, title,
     detections: existsSync(join(result, "detections.jsonl")) ? readFileSync(join(result, "detections.jsonl"), "utf8") : undefined,
   };
   const p = labPredictions(files);

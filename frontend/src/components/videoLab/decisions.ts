@@ -1,4 +1,4 @@
-import type { Appearance, Assignment, Assignments, Review } from "./labTypes";
+import type { Appearance, Assignment, Assignments, Observation, Review } from "./labTypes";
 import { bindPanorama, bridgePoses, pitchProposal, type Panorama } from "./panorama";
 import { buildCamera, offPitchTracks, outlineAt, stabilise, standingOnPitch, type Camera, type CameraMotion } from "./pitch";
 import { boundaryAt } from "./boundary";
@@ -6,6 +6,9 @@ import { mergeDense, type DenseTracks } from "./playArea";
 import { propagateTeams } from "./teams";
 import { cleanAnchors, kitTimeline, learnKits, type KitObservation, type KitPrototype, type TeamTimeline } from "./kits";
 import { denseBalls, parseBalls, trackBall, type BallPoint } from "./ball";
+import { goalPitch } from "./goalPitch";
+import { playShare } from "./playShare";
+import type { PitchSize } from "./metres";
 import { indexObservations, overlayAt } from "./LabVideo";
 
 /**
@@ -19,6 +22,30 @@ export function labCamera(motion: CameraMotion | undefined, panorama: Panorama |
   // Views the registration left unsolved (often the opening seconds) borrow the nearest solved pose, carried with the camera motion.
   const base = buildCamera(motion), poses = panorama && bridgePoses(panorama, base);
   return { ...base, panorama: bindPanorama(poses, review?.pitch_panorama, sourceSha), proposal: pitchProposal(poses, sourceSha) };
+}
+
+/** The goal outline must hold at least this share of central play... */
+const GOAL_PLAY = 0.85;
+/** ...and no less than the painted-lines outline, less this much. */
+const GOAL_SLACK = 0.03;
+
+/**
+ * The automatic pitch outline the lab uses. The worker's comes from painted lines, which can belong
+ * to a bigger pitch the game is laid inside (261108 U11 v Stoke: a 9v9 between a full pitch's
+ * penalty boxes, cones for touchlines; the painted outline ran to the far fence). The goals always
+ * belong to the game, so an outline built from them (`goalPitch`: equal halves, equal width either
+ * side of the goals, the format's shape) replaces it when it holds the play at least as well. A wrong
+ * goal pair (spare goals, mid-pitch detections on some Veo games) holds little play and is ignored.
+ * Your accepted outline always wins over either; this only changes the unreviewed proposal.
+ */
+export function labPanorama(data: Panorama | undefined, observations: Observation[] | undefined, title: string | undefined, size: PitchSize | null | undefined): Panorama | undefined {
+  if (!data?.projection || !observations?.length) return data;
+  const goal = goalPitch(data, { title, size, observations });
+  if (!goal) return data;
+  const share = playShare(data, goal.points, observations);
+  const painted = data.suggested_boundary.length >= 3 ? playShare(data, data.suggested_boundary, observations) : null;
+  if (share === null || share < GOAL_PLAY || (painted !== null && share < painted - GOAL_SLACK)) return data;
+  return { ...data, suggested_boundary: goal.points, pitch_outline: { method: "goal_symmetric", halfway: goal.halfway, kickoff: goal.kickoff, format: goal.format, size: goal.size, widened: goal.widened, play: share, painted_play: painted } };
 }
 
 export function automaticBoundariesFor(motion: CameraMotion | undefined, sourceSha: string | undefined) {
@@ -96,6 +123,8 @@ export type RunFiles = {
   motion?: CameraMotion; panorama?: Panorama; detections?: string; remembered?: KitPrototype[];
   /** Ask for balanced colour (benchmark candidates); raw otherwise. */
   colour?: ColourSpace;
+  /** Match title: its age group gives the pitch shape for the goal outline, as on the page. */
+  title?: string;
 };
 export type Prediction = { time_s: number; track_id: number; team: Assignment["team"]; role: Assignment["role"]; source: Assignment["source"] | null; shown: boolean };
 
@@ -104,7 +133,8 @@ export type Prediction = { time_s: number; track_id: number; team: Assignment["t
  * the overlay hides gets no team or role) and the match ball in image pixels.
  */
 export function labPredictions(f: RunFiles) {
-  const camera = labCamera(f.motion, f.panorama, f.review, f.sourceSha);
+  const panorama = labPanorama(f.panorama, f.assignments.observations, f.title, f.review?.pitch_size);
+  const camera = labCamera(f.motion, panorama, f.review, f.sourceSha);
   const automaticBoundaries = automaticBoundariesFor(f.motion, f.sourceSha);
   const inputs: TeamInputs = { assignments: f.assignments, dense: f.dense, appearance: f.appearance, review: f.review, camera, automaticBoundaries, remembered: f.remembered ?? [] };
   const rows = labRows(f.assignments, f.dense);

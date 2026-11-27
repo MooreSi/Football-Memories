@@ -47,6 +47,7 @@ try {
     motion: json("camera_motion.json"),
     panorama: json(atlas ? "pitch_atlas.json" : "pitch_panorama.json"),
     colour,
+    title: existsSync(join(job, "request.json")) ? JSON.parse(readFileSync(join(job, "request.json"), "utf8")).match_title : undefined,
     detections: existsSync(join(result, "detections.jsonl")) ? readFileSync(join(result, "detections.jsonl"), "utf8") : undefined,
   };
   const predictions = labPredictions(files);
