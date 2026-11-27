@@ -1,3 +1,30 @@
+## Video Lab Training tab: label ball crops, train a ball model (spec 790); NOT DEPLOYED (27 November 2026)
+
+Owner: "set up the labelling and training - add a tab in video lab called "Training" and add images
+of balls and other items for manual training which will feed into the model". Spec
+`docs/todo/football-memories/790-ball-training.md`.
+- App (this repo, main): Video Lab has tabs Analysis | Training (`?tab=training`). Training: Ball
+  model panel (labelled counts, "Train ball model" enabled at >= 10 match balls and >= 10 others,
+  training status, trained models with held-out match, precision, recall); Ball crops panel ("Make
+  crops" from a finished run, request status, ball sets with progress); labeller (one large crop
+  with the box outlined, Match ball / Spare ball / Cone or marker / Person / Something else / Not
+  sure, keys 1-5 and 0, each choice saved as a revision, moves to the next unlabelled).
+- Gateway branch `codex/ball-training` 6a2cbd6 (from live 791c6b4): `video_analytics_ball_training`
+  owner-bound ball sets, crops only when set.json lists them, labels as human_reviewed revisions,
+  training requests as files (one of each at a time; failures show only the worker's plain text).
+- Worker branch `codex/ball-recovery` e48ec78 + bdbd76d: `ball_training` (crops spread over the
+  clip, 32 px patch + hash; CNN from scratch on human-reviewed labels, Not sure left out, one whole
+  match held out when two are labelled; `classify_run` scratch copy with `ball_p`) and
+  `training_requests` run by `next_work` only when no analysis job waits. Crops match frames on
+  their decoded timestamp: seeking by time x fps put Stoke boxes beside the object.
+- Real crops cut into scratch from Stoke 92908cc3 and RMC 0671e86b (300 each): boxes on discs,
+  balls, boots, logos, heads. Browser on a read-only harness over those crops (labels in memory):
+  tab, sets, labeller by click and key, counts reach the Ball model panel.
+- Not yet: deployed (gateway, worker on both Macs, admin library), a trained model, and the step that
+  uses one (`ball_p` in the app's ball path, scored against Hudl/Veo before switching it on).
+Verification: app frontend 1208 pass, typecheck, build (backend unchanged); gateway 546 pass, ruff,
+format, mypy; worker 351 pass, ruff, format, project checks.
+
 ## Ball detection tried to lift pitch analytics tags: no gain, nothing enabled (27 November 2026)
 
 Owner: "Yes" to improving the worker's ball detection and re-scoring. Worker branch

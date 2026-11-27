@@ -433,3 +433,7 @@ Hudl-style tags read from the live 2D pitch (`videoLab/analyticsTags.ts`, scored
   no better (Veo) or worse (Stoke: cones and heads join the ball path). Dropping boxes that stay on
   one ground spot removes the real ball at set pieces. Worker branch `codex/ball-recovery` keeps the
   opt-in zoom and its numbers; the next step is a ball model trained on labelled crops.
+- Ball training (spec 790): crops for labelling must take the frame whose decoded timestamp the
+  detector stamped (`CAP_PROP_POS_MSEC`); the 261108 Stoke clip's timestamps are not a fixed rate,
+  so seeking by time x fps put the box beside the object. Only human-reviewed ball labels train;
+  evaluation holds out a whole match, never neighbouring frames.

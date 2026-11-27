@@ -4,7 +4,8 @@ import {isPanorama,panoramaBoundaryAt} from "../components/videoLab/panorama";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Download, Film, FlaskConical, Pause, Play } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { TrainingTab } from "../components/videoLab/training/TrainingTab";
 import { Button } from "../components/ui/Button";
 import { BoundaryPanel } from "../components/videoLab/BoundaryEditor";
 import { boundaryAt } from "../components/videoLab/boundary";
@@ -213,7 +214,35 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   </>;
 }
 
+const TABS = [["analysis", "Analysis"], ["training", "Training"]] as const;
+
+/** Spec 790: Analysis (runs and their review) and Training (ball crops and the ball model). */
+function LabTabs({ tab, onTab }: { tab: string; onTab: (tab: string) => void }) {
+  return <div role="tablist" aria-label="Video Lab" className="flex flex-wrap border-b border-line"
+    onKeyDown={e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); onTab(tab === "analysis" ? "training" : "analysis"); } }}>
+    {TABS.map(([id, label]) => <button key={id} type="button" role="tab" id={`video-lab-tab-${id}`} aria-selected={tab === id} aria-controls="video-lab-panel" tabIndex={tab === id ? 0 : -1}
+      onClick={() => onTab(id)} className={`-mb-px min-h-11 border-b-2 px-4 text-sm font-semibold ${tab === id ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg"}`}>{label}</button>)}
+  </div>;
+}
+
 export default function VideoLabPage() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "training" ? "training" : "analysis";
+  const pickTab = (next: string) => setParams(p => { const out = new URLSearchParams(p); if (next === "training") out.set("tab", "training"); else out.delete("tab"); return out; }, { replace: true });
+  return <div className="mx-auto w-full max-w-[1800px] space-y-4 pb-10">
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
+        <p className="mt-1 text-sm text-fg-muted">{tab === "training" ? "Teach the lab what the match ball looks like: label crops, then train the ball model." : "Watch tagged moments, approve or correct them, and tell the lab which team each player is on."}</p></div>
+      <div className="flex flex-wrap items-center gap-2 self-start"><MacStatusLight /><Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link></div>
+    </header>
+    <LabTabs tab={tab} onTab={pickTab} />
+    <div role="tabpanel" id="video-lab-panel" aria-labelledby={`video-lab-tab-${tab}`} className="space-y-4">
+      {tab === "training" ? <TrainingTab /> : <AnalysisTab />}
+    </div>
+  </div>;
+}
+
+function AnalysisTab() {
   const cache = useQueryClient();
   const [sample, setSample] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
@@ -235,13 +264,7 @@ export default function VideoLabPage() {
   const chosen = samples.data?.find(s => s.id === sample) || samples.data?.[0];
   const duration = chosen?.duration_s ?? 120;
   const durationLabel = duration === 120 ? "two minutes" : `${duration / 60} minutes`;
-  return <div className="mx-auto w-full max-w-[1800px] space-y-4 pb-10">
-    <header className="flex flex-wrap items-end justify-between gap-4">
-      <div><p className="mb-1 flex items-center gap-2 text-xs uppercase tracking-widest text-accent"><FlaskConical size={16} aria-hidden />Private preview · local processing</p><h1 className="text-2xl font-semibold">Video analysis lab</h1>
-        <p className="mt-1 text-sm text-fg-muted">Watch tagged moments, approve or correct them, and tell the lab which team each player is on.</p></div>
-      <div className="flex flex-wrap items-center gap-2 self-start"><MacStatusLight /><Link to="/video-lab/labels" className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 hover:bg-white/5">Label frames for the detector</Link></div>
-
-    </header>
+  return <>
     <VeoAnalysisPicker busy={!!running || !!jobs.data?.some(j=>["queued","running"].includes(j.state))} onQueued={queued} />
     {error && <p role="alert" className="panel p-4 text-warn">{error.message}</p>}
     {!!jobs.data?.length && <nav className="panel space-y-2 p-3" aria-label="Previous runs"><label className="block text-sm">Analysis run<select className="mt-1 block w-full rounded-lg border border-line bg-ink-900 p-2" value={selected ?? ""} onChange={e=>setSelected(e.target.value)}>{jobs.data.map(j=>{const sample=samples.data?.find(s=>s.id===j.sample_id);const name=j.match_title || sample?.label || j.sample_id || "Uncatalogued run";return <option key={j.id} value={j.id}>{name}{sample?.duration_s?` · ${Math.round(sample.duration_s/60)} min`:""} · {runLabel(j)}</option>;})}</select></label>
@@ -255,5 +278,5 @@ export default function VideoLabPage() {
         <div><p className="mb-1 max-w-52 text-xs text-fg-muted">{duration}-second local sample. Originals stay unchanged. Processing runs on this Mac.</p>
           <Button onClick={() => submit.mutate()} disabled={!samples.data?.length || submit.isPending || !!running}>{submit.isPending ? "Queueing…" : `Analyse ${durationLabel}`}</Button></div>
       </div>
-  </div>;
+  </>;
 }
