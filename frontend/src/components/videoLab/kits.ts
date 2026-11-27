@@ -192,7 +192,7 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     if (!darkTeam || !onPitch || !valid(c) || chroma(c) >= CHROMA || onPitch(row) !== true) return undefined;
     let nearest: KitPrototype | null = null, d = Infinity;
     for (const k of kits) { const e = kitDistance(c, k.lab); if (e < d) { d = e; nearest = k; } }
-    return nearest && chroma(nearest.lab) < CHROMA && nearest.role !== "goalkeeper" && kitDistance(c, darkTeam.lab) <= 2 * RADIUS ? assignment(darkTeam, "kit", 0.5) : undefined;
+    return nearest && chroma(nearest.lab) < CHROMA && nearest.role !== "goalkeeper" && teamKits.some(k => k.team === darkTeam.team && kitDistance(c, k.lab) <= 2 * RADIUS) ? assignment(darkTeam, "kit", 0.5) : undefined;
   };
   const canon = new Map<string, KitPrototype>();
   for (const k of kits) if (!canon.has(keyOf(k.team, k.role))) canon.set(keyOf(k.team, k.role), k);
