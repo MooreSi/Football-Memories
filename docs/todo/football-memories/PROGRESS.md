@@ -1,4 +1,4 @@
-## Penalty box handles on the video, and weak pitch marks refused (spec 800 follow-up); DEPLOY BELOW (27 November 2026)
+## Penalty box handles on the video, and weak pitch marks refused (spec 800 follow-up); DEPLOYED to admin (27 November 2026)
 
 Owner: "add penalty box handles too". App only.
 - Editor: white handles for both penalty boxes where in view, box drawn through them; saved only once
@@ -11,6 +11,10 @@ Owner: "add penalty box handles too". App only.
   atlas cannot use place nothing (`usableMarks`), instead of the old camera-motion fallback.
 Verification: frontend 1227 pass, typecheck, build; scorer smoke run; browser on the read-only
 harness over 92908cc3 (see spec 800 follow-up).
+DEPLOYED to the admin library only: cd7c4d0 built from a clean worktree (FM_BUILD_LATEST=0, added
+to status.json `built`, `latest` stays 4152fff); admin moved d667dd2 -> cd7c4d0 with `_move`. Capture
+traffic was an open tab polling /helper/library and /helper/account (no ffmpeg, no download). Exactly
+its 3 containers changed, health ok, no backend errors, bundle has the box editor. Families unchanged.
 
 ## Player Lab follows the player's role; Match stats gradients app-wide; players first in the match rail ; DEPLOYED to the admin library (27 November 2026)
 
