@@ -1,4 +1,4 @@
-## Keepers named again in quarters with one goal kick each; NOT LIVE (27 November 2026)
+## Keepers named again in quarters with one goal kick each; RELEASED to all libraries, admin at parity (27 November 2026)
 
 Owner: "why on the west brom game doesn't it recognise the goalkeeper? it did before ... has this
 now affected the other games? fix this" (261101 U11s v West Brom (A): "Keeper not named", 7 conceded).
@@ -22,6 +22,10 @@ three code commits families lacked (pitch box/halfway marks, Player Lab role and
 stats gradients, penalty box handles) + this fix; code identical to admin's live 584c895 plus the
 fix. Frontend 1230, backend all pass, ruff, mypy, build in a worktree of it. All 8 captures idle
 before the push. Rule from now: admin runs the same build as families (only lab access differs).
+DONE: updater built e468d18 as `latest`, the auto round moved all 7 families; admin moved with
+`_move` (it ran 584c895, off main, so the round skipped it). All 24 app containers on e468d18,
+8 backends health 200, no tracebacks; admin's served bundle has the lead-count check. Admin is now
+on main, so auto-update moves it with everyone. Never deploy an admin-only app build again.
 
 ## Every action label counts, and five more action stats (spec 830); NOT LIVE (27 November 2026)
 
