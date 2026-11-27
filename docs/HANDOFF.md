@@ -16,7 +16,12 @@ now affected the other games? fix this" (261101 U11s v West Brom (A): "Keeper no
   38 more get blank periods filled. No spell or conceded goal assigned before changed (checked per
   spell midpoint and per goal). The other 17 rest on one tagged kick in the whole match: unchanged.
 Verification: frontend 1239 pass (2 new, red first), typecheck, build. Backend unchanged, not run.
-Not deployed: the app pages need a build (admin and families) before the owner sees it.
+RELEASING to every library (owner: "the admin library should be the same as all of the family
+containers except for the option ... keep everything parity"): main e468d18 = e3c892f + admin's
+three code commits families lacked (pitch box/halfway marks, Player Lab role and app-wide Match
+stats gradients, penalty box handles) + this fix; code identical to admin's live 584c895 plus the
+fix. Frontend 1230, backend all pass, ruff, mypy, build in a worktree of it. All 8 captures idle
+before the push. Rule from now: admin runs the same build as families (only lab access differs).
 
 ## Every action label counts, and five more action stats (spec 830); NOT LIVE (27 November 2026)
 
