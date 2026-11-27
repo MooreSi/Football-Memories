@@ -331,3 +331,33 @@ labelled benchmark, not owner-reviewed: 16/32 right on NL, 5/12 held out on RCW,
 the old reader read none. Numbers are per tracked stretch (median 6 s), so at any moment only some
 players carry one. Gotcha: `useLabData.body` whitelists review fields; a new field must be added
 there or it is silently dropped on save.
+
+## Overnight three-match run: lessons (27 November 2026)
+
+- A full Veo match is analysed as consecutive windows of at most 10 min covering each of Veo's
+  `halves` (worker and gateway cap one analysis at 600 s). Veo can list a fragment before the real
+  first half (261116 RMC: 0:00-3:47); the pre-analysis plan now skips listed halves under 5 min.
+- The helper cuts a window at ~0.3x real time from a saved match: the capture container is held
+  to 1.5 CPUs. The same `_cut` code in a one-off container of the capture image with 6 CPUs takes
+  ~2 min per 10-min window. Downloading the full match first (~20 MB/s) avoids Veo range reads.
+- Remembered kits: the page asked the 6 most recent runs; with many windows those were other
+  matches, and derived runs (shirt numbers) had no title. Same-match runs now come first and a
+  derived run takes its source run's title (`relatedRuns.ts`).
+- Low sun, thin figures: the torso colour of a distant referee can read as the grass behind him
+  (261109: [98,109,149]), and the referee label then learned a second, grass-coloured "shade", so
+  grassy readings became referees (up to 12 per frame). A referee's dark kit has no colourful
+  shade now, and a track's overall verdict never makes someone referee or keeper at a moment the
+  one-referee rule left unassigned (`LabVideo.tsx overlayAt`). Choose label tracks whose median
+  colour is the kit, not grass: check `colour_lab` medians before labelling.
+- Sunlit yellow reads near white (261116 RCW: [244,129,131]) and is achromatic, so it never
+  decides by colour; the yellow seen further away sits within matching range of RMC's orange.
+  Colour alone cannot separate them there; needs a worker-side change (torso pixels without grass
+  and highlights) and a re-run.
+- Navy adults (coaches in coats) match a pale blue kit with navy shorts: colourful kits weigh
+  lightness at 0.25 so sun and shade stay one kit. Most remaining "sideline leaks" are these and
+  substitutes at the far end in team kit.
+- `playShare` counts spectators behind a rail that the follow-cam keeps in the middle of the view
+  (261116: automatic outline right on the atlas and frames, but 54% share).
+- Validation: `frontend/scripts/lab-run-summary.mjs` (what the lab shows per run) and the
+  worker's lighting benchmark with assistant audits (`runtime/overnight-pre-v1`, splits: eagles
+  development, rmc withheld).
