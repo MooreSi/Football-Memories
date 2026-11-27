@@ -52,3 +52,24 @@ it("does not expose another admin's existing notebook",async()=>{
  await waitFor(()=>expect(screen.getByRole("region",{name:"Development goals"})).toBeInTheDocument());
  expect(screen.queryByText("Other account focus")).toBeNull();
 });
+
+// Owner request 2026-11-27: "fix Performance Over Time, Recent Five Matches, Compare on fair terms".
+it("opens on the player's main squad and fills the trend, recent five and teammate panels", async () => {
+  const tg=(id:string,category:string,time_s:number,actions?:string[])=>({id,category,time_s,duration_s:10,...(actions?{actions}:{})});
+  const m=(id:string,day:number,age:string)=>({id,title:`2611${String(day).padStart(2,"0")} ${age} v Town`,age_group:age,capture_key:id,
+    moments:[tg(`${id}s`,"Sam Example",10,["passes"]),tg(`${id}a`,"Ali Demo",60,["passes"]),tg(`${id}b`,"Ali Demo",80,["passes"])]});
+  const library=[m("u10",1,"U10"),m("a",2,"U11"),m("b",3,"U11"),m("c",4,"U11")];
+  stubFetch({[`${H}/library`]:library,"/api/goals":{},"/api/scores":{},"/api/preferences":{primary_player_id:9},"/api/players/9":{id:9,display_name:"Sam Example",position:"CB",club_name:"Aston Villa"}});
+  renderWithProviders(<PlayerLabPage account="admin@example.test"/>);
+  await screen.findByRole("region",{name:"Recent five matches"});
+  expect(screen.getByLabelText("Age group / squad")).toHaveValue("U11");
+  await userEvent.selectOptions(screen.getByLabelText("Metric"),"passes");
+  const trend=screen.getByRole("region",{name:"Performance over time"});
+  expect(within(trend).getAllByRole("link",{name:/^Review .*Town/})).toHaveLength(3);
+  expect(within(trend).getByRole("figure",{name:"Selection average headline"})).toHaveTextContent("1");
+  expect(within(screen.getByRole("region",{name:"Recent five matches"})).getAllByRole("link")).toHaveLength(3);
+  const compare=screen.getByRole("region",{name:"Teammate comparison"});
+  expect(within(compare).getByRole("option",{name:"Ali Demo · 3 shared"})).toBeInTheDocument();
+  await userEvent.selectOptions(within(compare).getByLabelText("Teammate"),"Ali Demo");
+  expect(within(compare).getByRole("img",{name:"Passes: Sam Example 1, Ali Demo 2 per shared match"})).toBeInTheDocument();
+});
