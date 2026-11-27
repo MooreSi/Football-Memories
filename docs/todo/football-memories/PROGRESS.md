@@ -20,7 +20,7 @@ Verification: backend 875 pass (5 new), ruff, format, mypy, in a scratch worktre
 files only (another session's uncommitted test-fixture move was breaking the shared checkout's suite
 at the time). Postgres run skipped: no database change. Frontend unchanged, not run.
 
-## Highlight reels failed on every run: moment cut seeked before the playlist; FIXED, DEPLOYED to admin (27 November 2026)
+## Highlight reels failed on every run: moment cut seeked before the playlist; FIXED, RELEASED to all libraries (27 November 2026)
 
 Owner: "keep getting issues when trying to create a highlight reel, this is the 3rd or 4th time"
 (Arian Hossaini, 53 moments, 1 match: "The batch stopped (MediaError in media.py:60)").
@@ -40,7 +40,11 @@ DEPLOYED to the admin library only (owner: "Yes, deploy admin"): `codex/reel-see
 live 5755a12 + the fix (584c895, 872 pass), built FM_BUILD_LATEST=0, added to status.json `built`
 (`latest` stays 4152fff), `_move` admin after re-reading its live image; capture idle (no ffmpeg,
 inbound flat). Exactly its 3 containers changed, health ok, served capture has the output-side seek.
-Other families still have the bug until it reaches main.
+RELEASED (owner: "Yes, release it"): cherry-picked onto origin/main as e3c892f (872 pass, ruff and
+mypy clean there), pushed after checking all 7 family captures idle (no ffmpeg, kB of traffic);
+the updater built it as `latest`, the auto round moved all 7 families (21 containers on e3c892f),
+each health ok, each capture has the output-side seek, no backend tracebacks. Admin stays on
+584c895 (same fix) until moved; main contains its training fix as 315a9ab.
 
 ## Training tab DEPLOYED: worker both Macs, gateway, admin library; 1200 crops ready to label (27 November 2026)
 
