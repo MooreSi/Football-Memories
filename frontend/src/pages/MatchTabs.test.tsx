@@ -32,13 +32,12 @@ it("opens a Hudl match on the Moments tab, with the other sections one tab away"
   openHudl();
   const tabs = await screen.findByRole("tablist", { name: "Match sections" });
   expect(within(tabs).getAllByRole("tab").map((x) => x.textContent)).toEqual([
-    expect.stringMatching(/^Moments/), "Team stats", "Match stats", expect.stringMatching(/^Goals and keepers/), "Player stats", "Insights"]);
+    expect.stringMatching(/^Moments/), "Team stats", "Match stats", "Goals & Keepers", "Player stats"]);
   expect(within(tabs).getByRole("tab", { name: /^Moments/ })).toHaveAttribute("aria-selected", "true");
   expect(panel("Moments")).toContainElement(screen.getByRole("region", { name: "Hudl tagged moments" }));
   expect(panel("Moments")).not.toHaveClass("hidden");
   expect(panel("Team stats")).toHaveClass("hidden");
   expect(panel("Team stats")).toContainElement(screen.getByRole("region", { name: "Team stats" }));
-  expect(panel("Insights")).toContainElement(screen.getByRole("region", { name: "Match insights" }));
 });
 
 it("switches tabs by click and by arrow key", async () => {
@@ -52,11 +51,11 @@ it("switches tabs by click and by arrow key", async () => {
   // Owner request 2026-11-26: Match stats sits right after Team stats.
   expect(screen.getByRole("tab", { name: "Match stats" })).toHaveAttribute("aria-selected", "true");
   await user.keyboard("{ArrowRight}");
-  const goals = screen.getByRole("tab", { name: /^Goals and keepers/ });
+  const goals = screen.getByRole("tab", { name: "Goals & Keepers" });
   expect(goals).toHaveAttribute("aria-selected", "true");
   expect(goals).toHaveFocus();
   await user.keyboard("{End}");
-  expect(screen.getByRole("tab", { name: "Insights" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("tab", { name: "Player stats" })).toHaveAttribute("aria-selected", "true");
   await user.keyboard("{Home}");
   expect(screen.getByRole("tab", { name: /^Moments/ })).toHaveAttribute("aria-selected", "true");
 });
@@ -99,7 +98,7 @@ it("lays out a Veo match the same way", async () => {
   openVeo();
   const tabs = await screen.findByRole("tablist", { name: "Match sections" });
   expect(within(tabs).getAllByRole("tab").map((x) => x.textContent)).toEqual([
-    expect.stringMatching(/^Moments/), "Team stats", "Match stats", expect.stringMatching(/^Goals and keepers/), "Player stats", "Insights"]);
+    expect.stringMatching(/^Moments/), "Team stats", "Match stats", "Goals & Keepers", "Player stats"]);
   expect(panel("Moments")).toContainElement(screen.getByRole("region", { name: "Veo highlight moments" }));
   expect(panel("Team stats")).toHaveClass("hidden");
   const strip = screen.getByRole("region", { name: "Match summary" });

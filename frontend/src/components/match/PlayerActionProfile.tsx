@@ -1,4 +1,5 @@
 import { PLAYER_METRICS, type PlayerMetric, type PlayerStat } from "../../lib/playerStats";
+import { OURS_FILL } from "./statsUi";
 
 const ORDER: PlayerMetric[] = ["passes", "chances", "regains", "shots"];
 const sourceLabel = { actions: "Player action", overlap: "Team-tag overlap", scorer: "Scorer assignment", none: "Not recorded" };
@@ -31,8 +32,8 @@ export function PlayerActionProfile({ player, keys, maximum, selected, onSelect 
       {positive.map(m => <div key={m.key} className="grid grid-cols-[minmax(6.5rem,8.5rem)_minmax(2rem,1fr)_2rem] items-center gap-3">
         {button(m.key, m.label, player.events[m.key]!.length)}
         <div role="meter" aria-label={m.label} aria-valuenow={player.events[m.key]!.length} aria-valuemin={0} aria-valuemax={maximum}
-          className="h-2 overflow-hidden rounded-full bg-ink-700/60">
-          <div className="h-full rounded-full bg-accent" style={{ width: `${player.events[m.key]!.length / maximum * 100}%` }} />
+          className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${player.events[m.key]!.length / maximum * 100}%`, background: OURS_FILL }} />
         </div>
         <button type="button" aria-label={`Review ${m.label.toLowerCase()} clips`} onClick={() => onSelect(m.key)}
           className="rounded-md py-2 text-right text-sm font-semibold tabular-nums text-fg hover:text-accent">{player.events[m.key]!.length}</button>

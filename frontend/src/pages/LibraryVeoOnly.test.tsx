@@ -92,15 +92,16 @@ it("lists the Veo team events first in recent moments, then the highlights", asy
   expect(recent).toHaveTextContent("4 tagged in this match");
 });
 
-it("links Opponents for the shown Veo match's own club from the title bar", async () => {
+it("keeps Opponents out of the Library heading and the match profile", async () => {
   // Owner request 2026-11-15: "add opponents to the match profile for veo"; moved to the
-  // title bar on 2026-11-26: "on the main library page move Opponents to the title bar".
+  // title bar on 2026-11-26, then on 2026-11-27 to the top navigation bar ("move Opponents
+  // to the top title bar next to Library"), which is covered in AppShell.nav.test.tsx.
   localStorage.setItem("fm.connections.hidden", JSON.stringify(["hudl"]));
   render(veo, "Riverside Juniors");
   const profile = await screen.findByRole("region", { name: "Match profile" });
   const heading = screen.getByRole("heading", { level: 1, name: "Match Library" }).closest("header")!;
-  expect(await within(heading).findByRole("link", { name: "Opponents" }))
-    .toHaveAttribute("href", "/opponents?club=Riverside%20Juniors");
+  expect(within(heading).getByRole("link", { name: /Import a match/ })).toBeInTheDocument(); // negative control
+  expect(within(heading).queryByRole("link", { name: "Opponents" })).toBeNull();
   expect(within(profile).queryByRole("link", { name: "Opponents" })).toBeNull();
 });
 
