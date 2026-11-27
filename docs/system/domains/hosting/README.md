@@ -107,3 +107,13 @@ an upgrade. App Update explains a protected build instead of offering a rollback
 Admin batch updates touch only approved/running libraries and preserve update
 preferences. It uses the existing container-restart mechanism: select an idle time
 (no downloads/renders); there is no new live busy-job admission guard.
+
+## Gateway-driven Hudl refresh and new-match emails (owner request 2026-11-27)
+
+The gateway (`app/match_watch.py`, Gateway repo docs/EMAIL.md) now calls each hosted library's
+helper directly through its web container: `POST /helper/account/action {"action":"refresh"}`
+every three hours (one library per ten-minute round, skipped when busy, unconfigured or
+refreshed in the last hour), then `GET /helper/library` 20 minutes later. The helper contract it
+relies on: `/account` keys `configured`, `busy`, `catalogue_checked_at`; `/library` items `id`,
+`title`, `age_group`/`age_groups`, `season_label`. Changing those breaks new-match emails silently.
+A refresh at the storage limit is refused by `_hosted_refusal` (it is in DOWNLOADS).
