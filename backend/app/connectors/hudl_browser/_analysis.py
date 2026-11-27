@@ -54,13 +54,20 @@ def export_window(
         output.mkdir(parents=True, exist_ok=False)
         with tempfile.TemporaryDirectory(prefix=".hudl-analysis-", dir=output) as folder:
             scratch = Path(folder)
-            lines, last_map = list(header), None
-            for done, (_, length, index, init) in enumerate(chosen, start=1):
-                connection._set_progress("Fetching the selected footage", 1, done - 1, len(chosen))
+            # fMP4 streams carry an #EXT-X-MAP init segment as its own asset; without
+            # it no media segment decodes and ffmpeg fails the whole window.
+            maps = {
+                int(init.split("asset-", 1)[1].split(".bin", 1)[0]) for *_, init in chosen if init
+            }
+            needed = sorted(maps | {s[2] for s in chosen})
+            for done, index in enumerate(needed, start=1):
+                connection._set_progress("Fetching the selected footage", 1, done - 1, len(needed))
                 data = connection.resource(stream, str(index))[0]
                 if not data:
                     raise CaptureError("An empty video segment was received; nothing was saved.")
                 (scratch / f"asset-{index}.bin").write_bytes(data)
+            lines, last_map = list(header), None
+            for _, length, index, init in chosen:
                 if init and init != last_map:
                     lines.append(init)
                     last_map = init
