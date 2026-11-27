@@ -1,3 +1,30 @@
+## Match tabs, Player Lab and admin usage restyled/fixed; COMMITTED, NOT DEPLOYED — 27 November 2026
+
+Owner requests (one message): Player stats and Goals & Keepers in the Match stats style; no
+score in the Goals tab title ("Goals & Keepers"); remove the Insights tab; Opponents into the
+top bar after Library; Player Lab in the Match stats style with gradients, and fix Performance
+over time, Recent five and Compare on fair terms; admin console shows last used and time used.
+App (this branch): e244fbb match page + nav, 7c55cfe Player Lab. Shared look in
+`components/match/statsUi.tsx`. Insights removal keeps head-to-head (moved into the Match stats
+tab); the Hudl possession bar and Veo highlight tiles are gone (possession stays in the summary
+strip). 7b0d2e5 (another session) swept up this work's staged deletion of lib/veoInsights.ts, so
+that commit alone does not build; e244fbb fixes it. Player Lab root cause: the squad picker opened
+on the alphabetically first age group (owner's keeper: U10 with 2 matches instead of U11 with 25);
+teammate compare needed lab-confirmed minutes nobody entered. Now: main squad by default, a fixed-
+height trend chart with Latest/Average/Best tiles, recent-five grid that fills, and teammate
+compare per shared match from the same record kind (never team-tag overlap, >= 3 shared).
+Checked in a scratch hosted-mode dev server against the owner's local library (GET-only helper
+relay, no Hudl action possible); scratch config removed. Frontend 1118 pass, typecheck, build.
+Gateway: branch codex/admin-usage 44949e5 (base 9cd8849 = live gateway image), migration 0009
+(users.last_used_at, user_active_days). Time counts gaps of <= 5 min between the existing 30 s
+session notes; an open tab counts as use. Gateway suite, ruff, mypy clean; web 75 pass.
+NOT DEPLOYED, waiting for the owner: (1) admin app: live is 01e4cb5 (17bda1d line), not an
+ancestor here, and this branch still carries the undeployed overnight commits 1af18e9, a9f2983,
+a52662a; a deploy must merge 01e4cb5 and either include or leave out those three. (2) gateway:
+codex/admin-usage needs alembic 0009 on the live gateway DB (additive only), then up -d with the
+current compose files (memory: gateway-live-compose-files). (3) the local 8765 app needs a frontend
+container rebuild to show the changes there.
+
 ## Finished analysis runs archive to the MacBook share; DEPLOYED (no run moved yet) — 27 November 2026
 
 Owner: "map a shared drive from the MacBook" for video analytics storage, then chose "finished
