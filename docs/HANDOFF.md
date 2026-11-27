@@ -1,4 +1,4 @@
-## Keepers also found from where every player's tags fall in each period; RELEASING (27 November 2026)
+## Keepers also found from where every player's tags fall in each period; RELEASED to all libraries (27 November 2026)
 
 Owner: "the correlation of which goalkeeper is playing will not just be a goal kick ... you can correlate
 which goalkeeper is on the pitch by cross referencing other metadata / tagged moments".
@@ -10,6 +10,9 @@ which goalkeeper is on the pitch by cross referencing other metadata / tagged mo
   keepers, and a mid-period Zachary -> Lawson change in U10 West Brom (A) Pitch 2), 0 lose; games
   naming a keeper 203 -> 222; conceded goals with a keeper 802 -> 921 of 1000.
 Verification: frontend 1243 pass (2 new, context test red first; blank guard), typecheck, build.
+RELEASED: main f97aa7e (= 60c4826 + this; 1234 pass, typecheck, build there; all captures idle).
+Updater built it; every library moved with `_move` straight away (admin first). All 24 app
+containers on f97aa7e, 8 backends 200, no tracebacks; admin bundle has CONTEXT_WEIGHTS.
 
 ## Second keeper found from the opposition's shots on target; RELEASED to all libraries (27 November 2026)
 
