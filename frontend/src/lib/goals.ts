@@ -119,6 +119,7 @@ function fromHudl(moments: HudlMoment[], club: string | null): Base {
   // opening an empty period. Its padded tail can overlap a final shot.
   const breaks = moments.filter(m => /^END HALF$/i.test(m.category.trim())
     && m.time_s + m.duration_s < recordingEnd - 0.001).map(m => m.time_s);
+  votes.push(...contextVotes(sided, players, breaks, recordingEnd));
   // Likely saves: their shots on target that did not overlap one of their goals.
   const onTarget = sided.filter(({ p }) => p.stem === "ON TARGET");
   const theirGoals = goalTags.filter(({ p }) => p.side === "theirs").map(({ m }) => m);
@@ -126,6 +127,53 @@ function fromHudl(moments: HudlMoment[], club: string | null): Base {
     ? onTarget.filter(({ m, p }) => p.side === "theirs" && !theirGoals.some((g) => touches(g, m))).map(({ m }) => ballInAt(m))
     : null;
   return { goals, spells: keeperSpells(votes, breaks), saveTimes, players: distinct(players.map((p) => p.category)).sort((a, b) => a.localeCompare(b)) };
+}
+
+// Owner 2026-11-27: who is in goal shows in every tag, not only kicks and saves. How much
+// more often each team code overlaps a keeper's tag than an outfield player's (log ratio),
+// measured on the cached tags: 510 periods whose keeper the kicks and shots name, 8511
+// keeper and 49752 outfield tags; codes seen 500+ times, rounded. Kicks, shots and goals
+// are left out (they are votes of their own). Held out by match halves, a period whose
+// keeper clears CONTEXT_MIN (score and lead) was right 261 times and wrong 12.
+const CONTEXT_WEIGHTS: Record<string, number> = {
+  "theirs:CHANCE": 1.1, "theirs:ATTACKING FREE KICK": 1.1, "theirs:PENALTY AREA ENTRY": 0.9,
+  "theirs:CORNER": 0.7, "ours:DEFENSIVE THIRD ENTRY": 0.6, "theirs:ATTACKING THIRD ENTRY": 0.6,
+  "theirs:CROSS": 0.6, "theirs:OFFSIDE": 0.4,
+  "theirs:SET PIECE": -0.3, "ours:THROW": -0.4, "ours:FOUL": -0.4, "theirs:FOUL": -0.4,
+  "ours:MIDFIELD THIRD ENTRY": -0.5, "ours:KICK OFF": -0.5, "ours:CHANCE": -0.7,
+  "theirs:DEFENSIVE THIRD ENTRY": -0.8, "ours:PENALTY AREA ENTRY": -0.8, "ours:OFFSIDE": -0.8,
+  "ours:CROSS": -1.0, "ours:ATTACKING THIRD ENTRY": -1.2, "ours:ATTACKING FREE KICK": -1.2, "ours:CORNER": -1.3,
+};
+const CONTEXT_MIN = 0.5;
+
+/** One vote per period for the player whose tags read most like a keeper's, when clear. */
+function contextVotes(sided: { m: HudlMoment; p: { side: string; stem: string } }[], players: HudlMoment[], breaks: number[], end: number) {
+  const context = sided.flatMap(({ m, p }) => {
+    const w = CONTEXT_WEIGHTS[`${p.side}:${p.stem}`];
+    return w === undefined || isPlayer(m.category) ? [] : [{ from: m.time_s, to: m.time_s + m.duration_s, w }];
+  }).sort((a, b) => a.from - b.from);
+  if (!context.length) return [];
+  const longest = Math.max(...context.map(c => c.to - c.from));
+  const first = (t: number) => { let lo = 0, hi = context.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (context[mid].from < t) lo = mid + 1; else hi = mid; } return lo; };
+  const tagScore = (pl: HudlMoment) => {
+    const to = pl.time_s + pl.duration_s; let s = 0;
+    for (let i = first(pl.time_s - longest); i < context.length && context[i].from < to; i++) if (context[i].to > pl.time_s) s += context[i].w;
+    return s;
+  };
+  const edges = [0, ...new Set(breaks.filter(b => b > 0).sort((a, b) => a - b))];
+  return edges.flatMap((from, i) => {
+    const to = edges[i + 1] ?? end;
+    const totals = new Map<string, { name: string; sum: number; n: number }>();
+    for (const pl of players) {
+      if (pl.time_s < from || pl.time_s >= to) continue;
+      const t = totals.get(codeKey(pl.category)) ?? { name: pl.category, sum: 0, n: 0 };
+      t.sum += tagScore(pl); t.n += 1; totals.set(codeKey(pl.category), t);
+    }
+    const ranked = [...totals.values()].map(t => ({ name: t.name, s: t.sum / t.n })).sort((a, b) => b.s - a.s);
+    const [best, next] = ranked;
+    if (!best || best.s < CONTEXT_MIN || best.s - (next?.s ?? 0) < CONTEXT_MIN) return [];
+    return [{ at: (from + to) / 2, explicit: false, context: true, names: [best.name], weights: { [codeKey(best.name)]: 1 } }];
+  });
 }
 
 function fromVeo(data: VeoTeamData | null | undefined): Base {

@@ -261,6 +261,16 @@ U10 v Stoke City reads 12-9.
   cache: 270 unchanged, 21 gain or fill periods, 4 change keeper (each from a player named
   in 1-2 games to a regular keeper named in 12-44), 1 loses a period to a tie (a wrong shot
   vote against one kick), conceded goals with a keeper 772 -> 802 of 1000.
+- Context votes (2026-11-27, owner: "you can correlate which goalkeeper is on the pitch by cross
+  referencing other ... tagged moments"): per period, each player's tags are scored by the team
+  codes they overlap (`CONTEXT_WEIGHTS`, log ratio keeper vs outfield over 510 kick/shot-named
+  periods, 8511 keeper and 49752 outfield tags; kicks, shots and goals excluded). Keepers sit in
+  the opposition's chances, penalty-area entries, corners and crosses, and almost never in ours.
+  The top player votes when score and lead both reach 0.5: held out by match halves, right 261,
+  wrong 12. A context vote supports a spell alone. Effect: 240 same, 50 gain or fill, 6 change
+  keeper (5 from a player named in 1-3 games to a regular keeper; 1 a mid-period change in a
+  long period with a missing END HALF), 0 lose; conceded goals with a keeper 802 -> 921 of 1000.
+  About 1 ms a match. If team codes change names (codeSides stems), the weights stop matching.
   A closing END HALF whose window ends with the recording opens no new period.
   Otherwise empty periods remain gaps; do not extend the previous keeper.
 - Conceded goals use estimated ball-in time, not the padded clip start. An owner

@@ -281,6 +281,34 @@ describe("keeper attribution across periods", () => {
     ]);
     expect(result.goals.map(g => g.keeper)).toEqual(["Jo Palms", "Jo Palms", "Jo Palms"]);
   });
+  // Owner 2026-11-27: who is in goal also shows in every other tag. A keeper's tags sit in
+  // the opposition's attacks and never in ours; an outfield player's in both.
+  const defending = (id: string, at: number, keeper: string) => [
+    t(`opp-entry-${id}`, "OPPOSITION PENALTY AREA ENTRY", at, 20), t(`opp-chance-${id}`, "OPPOSITION CHANCE", at, 20),
+    t(`k-${id}`, keeper, at + 5, 10),
+  ];
+  const attacking = (id: string, at: number, player: string) => [
+    t(`our-entry-${id}`, "ASTON VILLA ATTACKING THIRD ENTRY", at, 20), t(`our-cross-${id}`, "ASTON VILLA CROSS", at, 20),
+    t(`o-${id}`, player, at + 5, 10),
+  ];
+  it("finds the keeper in a period with no kicks or shots from where their tags fall", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Sam Gloves"), ...kick("b", 300, "Sam Gloves"),
+      t("h1", "END HALF", 1200),
+      ...defending("1", 1300, "Jo Palms"), ...defending("2", 1600, "Jo Palms"),
+      ...attacking("1", 1400, "Sam Gloves"), ...attacking("2", 1700, "Ali Demo"), ...defending("3", 1900, "Ali Demo"),
+      t("goal", "OPPOSITION GOAL", 2000, 25),
+    ] }, CLUB);
+    expect(result.spells).toEqual([{ name: "Sam Gloves", from_s: 0, to_s: 1200 }, { name: "Jo Palms", from_s: 1200, to_s: null }]);
+    expect(result.goals[0].keeper).toBe("Jo Palms");
+  });
+  it("leaves a period blank when no player's tags clearly read as the keeper's", () => {
+    const result = matchGoals({ moments: [
+      ...defending("1", 100, "Jo Palms"), ...attacking("1", 200, "Jo Palms"),
+      ...defending("2", 300, "Ali Demo"), ...attacking("2", 400, "Ali Demo"),
+    ] }, CLUB);
+    expect(result.spells).toEqual([]);
+  });
   it("takes no shot evidence when two players' tags start in the keeper's window", () => {
     const result = matchGoals({ moments: [
       ...shot("a", 100, "Sam Gloves", [["Ali Demo", 13]]), ...shot("b", 400, "Sam Gloves", [["Ali Demo", 12]]),
