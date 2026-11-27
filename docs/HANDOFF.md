@@ -13,6 +13,11 @@ Rollout: 7 of 8 accounts (all families) have "Update automatically" on, so the u
 main moves them within ~10 minutes. Before the release every family library ran a0befe8 (the
 rollback point); admin runs 8d018dc and is not auto-updated. No family capture was active.
 
+Done 13:12: the updater built 3123a8d (this record's commit, contains 62bb55f); crest service moved
+to it; the automatic round moved all 7 family libraries one at a time, 13:01-13:12. Each runs
+3123a8d for backend, web and capture, /api/health 200, no errors in its log; recreated capture
+containers have no CPU cap. Admin stays on 8d018dc. Rollback for a family: move it to a0befe8.
+
 Updater bug found: `github_json` reads at most 200,000 bytes of /commits/main, which includes
 every file's patch. The 149-file merge overflowed it ("GitHub could not be read" twice). This
 docs-only commit puts a small commit on top of main so the hourly build can read it; the updater
