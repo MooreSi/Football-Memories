@@ -78,7 +78,8 @@ MooreSi/football-memories-frontend#3; live as 85b0897 on codex/admin-usage). A l
 main (7c94b52) with no error; all 7 families moved to 7c94b52, health 200.
 Admin moved on the owner's request 16:40 from 8d018dc to latest 6db8543 (main had every 8d018dc
 change, checked file by file; waited out a Hudl transfer first). Exactly its 3 containers changed,
-health 200. Admin auto-update stays off, so later main releases still leave it alone.
+health 200. Then, on the owner's request, admin auto-update turned ON (audit auto_update_on): all 8 accounts
+now follow main. A branch preview on admin is not in `ancestors`, so the round leaves it alone.
 
 ## Stoke follow-up: team labels shown, pitch from the goals, detector zoom, where a run ran; DEPLOYED (27 November 2026)
 
