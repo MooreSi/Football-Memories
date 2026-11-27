@@ -70,13 +70,19 @@ def _encode(
     metadata: list[str] | None = None,
 ) -> None:
     hls = source.suffix == ".m3u8"
+    seek = ["-ss", str(max(0.0, moment["time_s"] - offset))]
+    # A mini playlist starts mid-match. ffmpeg 7.1 (the capture image) reads an input-side
+    # -ss on it as an absolute time, so the cut landed before the first segment and
+    # came out with no frames (owner report 2026-11-27, every highlight reel failed).
+    # Output-side -ss counts from the playlist's start on every version; it decodes at
+    # most the covering segments, which is all that was fetched.
     ok = _ffmpeg(
         [
             *(_HLS_INPUT if hls else []),
-            "-ss",
-            str(max(0.0, moment["time_s"] - offset)),
+            *([] if hls else seek),
             "-i",
             str(source),
+            *(seek if hls else []),
             "-t",
             str(max(0.1, moment["duration_s"])),
             "-map",
