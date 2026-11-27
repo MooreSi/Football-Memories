@@ -385,3 +385,26 @@ there or it is silently dropped on save.
   folder. `mount_smbfs -N` cannot use Finder's Keychain entry; NetFS can. Docker's VM keeps
   handles on files containers touched, so the mount reports busy and deleted files linger as
   `.smbdelete*` until released: use `diskutil unmount force` only with the gateway stopped.
+
+## Stoke follow-up (27 November 2026): kits, pitch from goals, zoom, placement
+
+- Kit matching must compare a reading with ALL kits and decide by colour only when the nearest is
+  colourful: comparing with colourful kits only gave dark-kit players the nearest colourful kit.
+  A colourless reading darker than a colourful kit keeps full lightness weight; a lighter one
+  (sunlit, washed out) keeps 0.25. "Not a player" is never a colour that claims others.
+- One dark team kit against a colourful one (Villa navy v Stoke stripes): dark shirts standing on
+  the pitch go to the dark team unless a label or the look-alike model says referee/keeper.
+- Worker torso colour: test turf per pixel at full resolution. The frame mask is 1/3 size and
+  closed 5x5, which swallowed thin navy torsos on dark 3G (7217 of 47959 samples had no colour).
+- Youth games inside bigger pitches: the painted lines can be the big pitch's (Stoke: 9v9 goals on
+  the full pitch's penalty-box lines, cones for touchlines). The goals belong to the game:
+  `goalPitch` (equal halves, equal width either side of the goals, format shape from the title's
+  age group). Side-on goals: the worker's "posts" are front and back of the frame, not two posts,
+  so post orientation is not a usable check. Searching goal candidate pairs by play held just
+  picks the widest spare goals; only the worker's chosen pair is used, gated by play held.
+- Spectators crowd one touchline, so widen a pitch from play only when it spills past both.
+- Detector: close far players merge into one box (two kits). A 2x zoom on crowded spots splits
+  them for about 2.5x detection time; crops find flat disc cones as balls, so balls stay full-frame.
+- Placement: finished runs already record where each stage ran (summary `execution`,
+  `detection_sharing`, model device/compute_units, render encoder); live jobs only have the mode
+  they started with (gateway job view `execution`, `reid_backend`).

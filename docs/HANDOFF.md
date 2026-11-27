@@ -1,3 +1,53 @@
+## Stoke follow-up: team labels shown, pitch from the goals, detector zoom, where a run ran; DEPLOYED (27 November 2026)
+
+Owner (goal, 261108 U11 v Stoke, run 5b0125cf + pitch rebuild 33e876a2): the pitch outline was
+poor; changing a person to "Our player" did not change their tag or colour; improve the detector;
+say where an analysis runs and on what; pitch must be symmetric about the goals and halfway line,
+allowing 7v7/9v9 laid inside bigger pitches. The "second analysis" after the pre-analysis was the
+owner's "Rebuild complete pitch" (POST track-camera at 10:32), not an automatic job; the one 409
+in the log was a label save on that rebuild while it was still queued.
+- Tags (app 1362f1e): labels saved, the overlay showed kit decisions instead. Kits compared only
+  colourful kits (navy took the nearest colourful one), a colourful kit weighed lightness 0.25 even
+  for a colourless reading far darker than it, and a "Not a player" label became a colour that
+  claimed 2221 people. Fixed, plus a dark-team rule (one dark team kit vs a colourful one: a dark
+  shirt on the pitch is the dark team unless your label/look-alike says referee or keeper).
+- Pitch (app 05c2851): `goalPitch` on the level ground from the worker's two selected goals: goal
+  lines, kick-off spot half way, halfway line square through it, equal width either side; width
+  from the format (U11 in the title -> 9v9 73x46; else the chosen size), widened only if play spills
+  past BOTH touchlines (Stoke far side: players stop at 0.27 of length, the fence crowd at 0.41).
+  Used only when it holds >= 85% of central play and no less than painted lines - 3 points: Stoke
+  94% (owner's outline 94%, painted 83%); all 21 other cached runs keep their outline (their goal
+  pairs are often false). The review offers "Use the outline from the goals".
+- Placement (app 05c2851 + gateway 791c6b4): running jobs show stage, Mac and compute (from the
+  mode they started with); finished runs list each stage from summary.json (measured split, model
+  devices, encoder). Core ML ALL is reported as "macOS chooses", never one unit.
+- Detector (worker ac40f39): far boxes two people wide or touching another are re-detected in a
+  2x zoomed half-frame crop (<= 2 a frame), people only (crops see disc cones as balls). 100 Stoke
+  frames: 1.45 zooms/frame, 187 vs ~75 ms/frame, +2.6% people, both merged pairs split.
+- Shirt colour (worker 4c01cfe): torso crops test turf at full resolution; the 1/3-size closed mask
+  swallowed thin navy torsos. Stoke offline re-enrichment: no-colour samples 7217 -> 207; lab shows
+  7417 ours / 7920 Stoke among central people (was 1155 / 7928 before any of this).
+- "Update shirt colours" (app 7030d9f): team-calibration child, labels carry over.
+- Benchmark (frozen spec 760 v1, assistant labels; candidates kit-dark-reading, kit-dark-reading-2,
+  other-dark-team, fullres-turf): withheld precision 0.779 -> 0.793, coverage 0.669 -> 0.675, leaks
+  25 -> 21; development 0.739 -> 0.813, coverage 0.955 -> 0.991. Withheld was scored after each of
+  four candidates, and the lightness rule was revised once on development (NL) evidence.
+DEPLOYED (owner set the goal; no separate yes): worker 4c01cfe on both Macs (mini coordinator
+detach; MacBook coreml_detector.py + teams.py, backup src.2d3661c; digests 96e3f6ee..., heartbeat
+ready both). Gateway fm-gateway-gateway:placement-791c6b4 (branch codex/run-placement from
+28dbc64; override ~/fm-archive-gateway/images-placement.yaml with the live compose files and
+FM_ANALYTICS_RUNTIME/ARCHIVE; origin and mounts unchanged, health 200). Admin app 10d6fbf
+(codex/goal-pitch-deploy = live 29f6b26 + the three app commits, without relatedRuns/lab-run-summary
+from the undeployed overnight commits; 1139 pass there), FM_BUILD_LATEST=0, `built` updated,
+_move admin twice (d9c89c9 then 10d6fbf), exactly 3 containers each time. Owner was using the app.
+NOT DONE (needs the owner signed in; the browser pane was signed out): Stoke itself. On run
+33e876a2 or 5b0125cf: "Update shirt colours", then in the pitch review "Use the outline from the
+goals" and Accept. New analyses get the zoom and colours automatically.
+Next: worker enrichment of archived runs needs annotated.mp4 (archive copy of f81b4684 lacks it);
+dark-team rule is untested on the benchmark (no match there has a dark team kit with colours).
+Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);
+gateway 538 pass, ruff, format, mypy; worker 331 pass, ruff, format, project checks.
+
 ## Video Lab encode progress, source-sized clip, all CPU on both Macs and hosted (27 November 2026)
 
 Owner report: "Preparing analysis clip / Encoding the analysis window" sat ten minutes with
