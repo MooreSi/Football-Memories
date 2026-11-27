@@ -1,3 +1,26 @@
+## Training tab DEPLOYED: worker both Macs, gateway, admin library; 1200 crops ready to label (27 November 2026)
+
+Owner: "Yes, deploy it" (spec 790). Done while idle (no job queued/running, no MacBook task, every
+family capture flat):
+- Worker bb1afa9 (`codex/ball-recovery`): MacBook backup `src.4c01cfe`, five src files copied; mini
+  coordinator detached at bb1afa9, LaunchAgent kickstarted. Digest b3e60f0d... on both (was
+  96e3f6ee...), heartbeat local_ready and remote_ready. Ball zoom stays off (not in detector.json).
+- Gateway `fm-gateway-gateway:ball-training-4ff4b78` (`codex/ball-training`, from live 791c6b4), live
+  compose files with `~/fm-archive-gateway/images-ball-training.yaml` replacing images-placement.yaml.
+  Only the gateway container changed; origin and analytics mounts unchanged; health 200.
+- App: main 4152fff built by the updater as latest; the auto round moved all 7 family libraries
+  (health 200 each). Admin had meanwhile been moved by another session to cd7c4d0 (pitch-mark handles,
+  contains 4152fff). Live check showed the run picker unusable (49 runs, repeated names, one "Run
+  92908cc3"): fix 64c62a7, on main as 315a9ab, and on admin as 5755a12 (`codex/training-names-deploy`
+  = cd7c4d0 + the fix, 1228 pass), built FM_BUILD_LATEST=0, added to `built`, `_move` admin only
+  (exactly its 3 containers). Its capture NetIO had grown (library polling from an open tab): no
+  .part files, downloads index untouched since 23:17.
+- Crops: four ball sets through the live request channel (owner's runs): 261108 Stoke, 261116 RCW v
+  Kidderminster RMC, 261109 RCW v SBITC Eagles, 261122 NL v Bournville; 300 each, checked by eye.
+  Live page (signed in): sets listed 0 of 300, labeller shows real crops; nothing labelled for the owner.
+Next: the owner labels (10+ match balls and 10+ others to train; two matches for a held-out score),
+then score a trained model's `ball_p` against Hudl/Veo tags before it is used in analysis.
+
 ## Phase involvement per player (spec 810); NOT DEPLOYED (27 November 2026)
 
 Owner: "implement Phase involvement per player: the share of their clips that overlap Pressing,
