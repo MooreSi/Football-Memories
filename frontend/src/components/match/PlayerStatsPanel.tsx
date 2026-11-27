@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { codeKey } from "../../lib/codes";
 import { usePlayerMinutes } from "../../lib/playerMinutes";
 import { PlayerActionProfile } from "./PlayerActionProfile";
+import { PlayerPhaseShares } from "./PlayerPhaseShares";
+import { phaseInvolvement, type PhaseKey } from "../../lib/phaseInvolvement";
 import { PlayerMinutes } from "./PlayerMinutes";
 import { formatClock } from "../../lib/format";
 import type { GoalsSource, MatchGoals } from "../../lib/goals";
@@ -17,12 +19,13 @@ const STAT_GROUPS: { id: string; label: string; keys: PlayerMetric[] }[] = [
   { id: "discipline", label: "Possession & discipline", keys: ["fouls", "foulsWon", "foulsConceded", "offsides", "possessionLost"] },
 ];
 
-type Selection = { name: string; metric: "moments" | PlayerMetric };
+type Selection = { name: string; metric: "moments" | PlayerMetric | `phase:${PhaseKey}` };
 export function PlayerStatsPanel({ match, club, goals, onSeek }: {
   match: GoalsSource & { id: string }; club: string | null; goals: MatchGoals; onSeek: (t: number) => void;
 }) {
   const players = useMemo(() => playerStats(match, club, goals), [match, club, goals]);
   const estimates = useMemo(() => Object.fromEntries(players.map(p => [codeKey(p.name), estimatePlayerMinutes(match.moments ?? [], p.name, goals.spells)])), [players, match.moments, goals.spells]);
+  const phases = useMemo(() => Object.fromEntries(players.map(p => [p.name, phaseInvolvement(match.moments ?? [], p.moments)])), [players, match.moments]);
   const minutes = usePlayerMinutes(match.id, players.length > 0);
   const [group, setGroup] = useState("all");
   const [query, setQuery] = useState("");
@@ -35,8 +38,9 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
   const metricKeys = STAT_GROUPS.filter(g => group === "all" || g.id === group).flatMap(g => g.keys);
   const maximum = Math.max(1, ...players.flatMap(p => metricKeys.map(key => p.events[key]?.length ?? 0)));
   const selected = players.find(p => p.name === selection?.name);
-  const clips = selection?.metric === "moments" ? selected?.moments : selected?.events[selection?.metric as PlayerMetric];
-  const label = selection?.metric === "moments" ? "Tagged moments" : PLAYER_METRICS.find(m => m.key === selection?.metric)?.label;
+  const phase = selected && selection?.metric.startsWith("phase:") ? phases[selected.name]?.find(p => `phase:${p.key}` === selection.metric) : undefined;
+  const clips = phase ? phase.clips : selection?.metric === "moments" ? selected?.moments : selected?.events[selection?.metric as PlayerMetric];
+  const label = phase ? `${phase.label} · team phase` : selection?.metric === "moments" ? "Tagged moments" : PLAYER_METRICS.find(m => m.key === selection?.metric)?.label;
   const heads = playerHeadlines(players);
   const notes = playerStandouts(players);
   const busiest = [...players].sort((a, b) => b.moments.length - a.moments.length || a.name.localeCompare(b.name)).slice(0, 8);
@@ -103,16 +107,22 @@ export function PlayerStatsPanel({ match, club, goals, onSeek }: {
                   {p.moments.length} tagged {p.moments.length === 1 ? "moment" : "moments"}</button></div></div>
                 <div className="relative mt-4"><PlayerMinutes matchId={match.id} name={p.name} estimate={estimates[codeKey(p.name)]} compact /></div>
               </div>
-              <PlayerActionProfile player={p} keys={metricKeys} maximum={maximum}
-                selected={selection?.name === p.name ? selection.metric : undefined}
-                onSelect={metric => setSelection({ name: p.name, metric })} />
+              <div className="min-w-0">
+                <PlayerActionProfile player={p} keys={metricKeys} maximum={maximum}
+                  selected={selection?.name === p.name ? selection.metric : undefined}
+                  onSelect={metric => setSelection({ name: p.name, metric })} />
+                <PlayerPhaseShares phases={phases[p.name] ?? []}
+                  selected={selection?.name === p.name && selection.metric.startsWith("phase:") ? selection.metric.slice(6) as PhaseKey : undefined}
+                  onSelect={key => setSelection({ name: p.name, metric: `phase:${key}` })} />
+              </div>
             </div>
             {selected?.name === p.name && clips && <section aria-label="Player stat clips" className="mt-3 rounded-xl border border-accent/40 p-4">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">{selected.name} · {label} · {clips.length}</h3>
                 <button type="button" className="text-xs text-fg-muted hover:text-fg" onClick={() => setSelection(null)}>Close clips</button>
               </div>
-              {selection?.metric !== "moments" && <p className="mt-2 text-xs text-fg-muted">{selected.sources[selection!.metric as PlayerMetric] === "actions"
+              {phase ? <p className="mt-2 text-xs text-fg-muted">Source: the team was tagged in this phase for at least half of each listed clip; involvement, not an action by this player.</p>
+                : selection?.metric !== "moments" && <p className="mt-2 text-xs text-fg-muted">{selected.sources[selection!.metric as PlayerMetric] === "actions"
                 ? "Source: Individual action labels on this player’s clips." : selected.sources[selection!.metric as PlayerMetric] === "scorer"
                 ? "Source: Goals and keepers scorer assignments; guesses are marked likely." : "Source: Team events overlapping this player’s tags; involvement, not attribution."}</p>}
               {!clips.length ? <p className="mt-3 text-sm text-fg-muted">{selection?.metric === "goals" ? "No goals assigned to this player." : "No overlapping tags for this stat."}</p>

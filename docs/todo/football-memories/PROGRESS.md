@@ -1,3 +1,20 @@
+## Phase involvement per player (spec 810); NOT DEPLOYED (27 November 2026)
+
+Owner: "implement Phase involvement per player: the share of their clips that overlap Pressing,
+Transition def/att, POFTB or QCC". App only (frontend).
+- `lib/phaseInvolvement.ts` + `PlayerPhaseShares.tsx`: each Player stats card has a "Team phases"
+  block: share bar, "n of m clips", button opening the counted clips (seekable). A clip counts when
+  at least half of it is inside the phase tags (provisional default, spec 810).
+- Investigation behind it (cache, read-only): action labels carry no pass outcome; player clips do
+  not mark the touch; Hudl never tags one player twice in a possession often enough for streaks.
+  Domain note: interface README "Team phase involvement".
+- Not done: the raw Hudl action-label count (would show whether outcome labels exist). It needs a
+  Hudl fetch through the app's login with new counting code; left for the owner to start.
+Verification: frontend 1234 pass (7 new), typecheck, build; backend unchanged, not run. Browser
+(dev server on the live API): 261011 U10s v Man United Pitch One, 13 players, shares 0-41%, Pressing
+list for one player opens 11 clips. Lawson Moore shows 1 clip there: the existing keeper-spell rule
+excludes his other 46 (unchanged behaviour). Not deployed: admin library rebuild needed.
+
 ## Penalty box handles on the video, and weak pitch marks refused (spec 800 follow-up); DEPLOYED to admin (27 November 2026)
 
 Owner: "add penalty box handles too". App only.

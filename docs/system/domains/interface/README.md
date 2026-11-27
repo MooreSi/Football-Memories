@@ -437,6 +437,20 @@ U10 v Stoke City reads 12-9.
   height, so saved/printed reports retain uncertainty without clipping. Team report
   content is unchanged. Games played means recorded appearances, not verified minutes.
 
+### Team phase involvement (spec 810, 2026-11-27)
+
+- `lib/phaseInvolvement.ts`: share of a player's (outfield) clips that sit at least half inside
+  the union of a team-phase code: PRESSING, TRANSITION DEF, TRANSITION ATT, POFTB, QCC. Phases the
+  match never tagged are left out, not shown as 0%. Copy says the team was in that phase; it is
+  not an action by the player. POFTB/QCC are not expanded (the coach's meaning).
+- Learned from the cache (308 matches): phase codes are padded clips (median 20 s, 1.6-89 s);
+  player clips median 15 s. Any-overlap would count nearly every neighbouring clip, hence half.
+- Player clips do not mark the touch: at a clip's start the team has the ball 22% of the time,
+  12 s in 56%. Inferring "pass kept / lost" from possession timing would be off by seconds.
+- Individual action labels in the cache carry no outcome (passes 1,328, def 1v1 917, att 1v1 216,
+  crosses 114, regains 82). The capture keeps an allowlist only, so whether Hudl offers outcome
+  labels is unknown until a raw label count is taken (needs a Hudl fetch).
+
 ## Admin player lab (spec 470, 2026-11-23)
 
 `/player-lab` is a hosted-admin presentation experiment (spec 480 separates it from

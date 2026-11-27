@@ -23,6 +23,24 @@ it("compares players, distinguishes absent stats, and opens the event behind a c
   expect(seek).toHaveBeenCalledWith(22);
 });
 
+it("shows the share of a player's clips during each tagged team phase and lists them", async () => {
+  const user = userEvent.setup(), seek = vi.fn();
+  const phased = { id: "match-b", moments: [
+    t("s1", "SAM EXAMPLE", 20), t("s2", "SAM EXAMPLE", 200), t("ali", "Ali Demo", 300),
+    t("press", "PRESSING", 15, 20),
+  ] };
+  renderWithProviders(<PlayerStatsPanel match={phased} club="Aston Villa" goals={matchGoals(phased, "Aston Villa", EMPTY_ENTRY)} onSeek={seek} />);
+  const sam = screen.getByRole("article", { name: "Sam Example" });
+  expect(within(sam).getByText("1 of 2 clips")).toBeInTheDocument();
+  expect(within(sam).queryByText(/QCC/)).toBeNull();
+  await user.click(within(sam).getByRole("button", { name: "Pressing: 50% of clips" }));
+  expect(within(sam).getByText(/Source: the team was tagged in this phase/)).toBeInTheDocument();
+  await user.click(within(sam).getByRole("button", { name: /0:20/ }));
+  expect(seek).toHaveBeenCalledWith(20);
+  const ali = screen.getByRole("article", { name: "Ali Demo" });
+  expect(within(ali).getByText("0 of 1 clips")).toBeInTheDocument();
+});
+
 it("sorts by a metric and filters names, including no matches", async () => {
   const user = userEvent.setup();
   renderWithProviders(<PlayerStatsPanel match={match} club="Aston Villa" goals={goals} onSeek={vi.fn()} />);
