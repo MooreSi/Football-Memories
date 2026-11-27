@@ -1,5 +1,6 @@
 import {groundCalibration,multiply} from "./atlasGeometry";
 import {panoramaMatrixAt} from "./panorama";
+import {markerImageToPitch} from "./pitchMarkers";
 import type { Observation } from "./labTypes";
 import { feet, outlineAt, type Camera, type Corners, type PitchKeyframe } from "./pitch";
 
@@ -51,6 +52,10 @@ export function toPitch(h: Matrix, [x, y]: [number, number]): [number, number] {
 
 /** Compose the shared pitch calibration with each camera pose directly. */
 export function imageToPitch(camera:Camera,marks:PitchKeyframe[],size:PitchSize,at:number):Matrix|null {
+ if(camera.markers){
+  const h=markerImageToPitch(camera.markers,at);
+  return h?multiply([size.length_m,0,0,0,size.width_m,0,0,0,1],h):null;
+ }
  if(camera.panorama?.review.corners){
   const pose=panoramaMatrixAt(camera.panorama.data,at);
   if(!pose)return null;

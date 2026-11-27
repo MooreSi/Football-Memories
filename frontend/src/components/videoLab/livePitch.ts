@@ -18,7 +18,26 @@ export type PitchSource={exact:boolean;project:(time:number,point:[number,number
 
 const GLIDE_S=1.5,HOLD_S=.5,MAX_SPEED_MS=12,SMOOTH_S=.6;
 
-function level(bound:BoundPanorama,{length_m:l,width_m:w}:PitchSize):PitchSource|null{
+/** The outline's rectangle on the level ground as the pitch: world ray -> normalised pitch (0..1). */
+export function levelPitch(bound:BoundPanorama):number[]|null{
+ const level=levelSource(bound,{length_m:1,width_m:1});
+ return level?level.toPlan:null;
+}
+
+function level(bound:BoundPanorama,size:PitchSize):PitchSource|null{
+ const source=levelSource(bound,size);
+ if(!source)return null;
+ const {data}=bound,{toPlan}=source;
+ return {exact:false,project:(time,[x,y])=>{
+  const pose=panoramaMatrixAt(data,time);
+  if(!pose)return null;
+  const q=applyRay(multiply(toPlan,pose),[x,y,1]);
+  // A point at or above the horizon has no ground position.
+  return q[2]>1e-9?[q[0]/q[2],q[1]/q[2]]:null;
+ }};
+}
+
+function levelSource(bound:BoundPanorama,{length_m:l,width_m:w}:PitchSize):{toPlan:number[]}|null{
  const {data,review}=bound;
  if(!data.projection||review.points.length<3)return null;
  const c=levelCalibration(data,review.points);
@@ -29,19 +48,13 @@ function level(bound:BoundPanorama,{length_m:l,width_m:w}:PitchSize):PitchSource
  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
  if(!(x1-x0>1e-9&&y1-y0>1e-9))return null;
  // Plan view has the far touchline at the top (small y); pitch y grows away from the camera.
- const fit=[l/(x1-x0),0,-x0*l/(x1-x0),0,-w/(y1-y0),y1*w/(y1-y0),0,0,1],toPlan=multiply(fit,c.matrix);
- return {exact:false,project:(time,[x,y])=>{
-  const pose=panoramaMatrixAt(data,time);
-  if(!pose)return null;
-  const q=applyRay(multiply(toPlan,pose),[x,y,1]);
-  // A point at or above the horizon has no ground position.
-  return q[2]>1e-9?[q[0]/q[2],q[1]/q[2]]:null;
- }};
+ const fit=[l/(x1-x0),0,-x0*l/(x1-x0),0,-w/(y1-y0),y1*w/(y1-y0),0,0,1];
+ return {toPlan:multiply(fit,c.matrix)};
 }
 
 /** How image points reach the pitch, or null when nothing places the pitch yet. */
 export function pitchSource(camera:Camera,marks:PitchKeyframe[],size:PitchSize):PitchSource|null{
- if(marks.length||camera.panorama?.review.corners){
+ if(camera.markers||marks.length||camera.panorama?.review.corners){
   const cache=new Map<number,number[]|null>();
   return {exact:true,project:(time,[x,y])=>{
    if(!cache.has(time))cache.set(time,imageToPitch(camera,marks,size,time));

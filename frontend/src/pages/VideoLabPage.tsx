@@ -25,7 +25,8 @@ import { RefineMoments } from "../components/videoLab/RefineMoments";
 import { isDense } from "../components/videoLab/playArea";
 import { isCameraMotion, outlineAt, type Corners } from "../components/videoLab/pitch";
 import { EXTRA_POINTS, fitLandmarks, inverse, project, PITCH_CORNERS, type Landmark } from "../components/videoLab/landmarks";
-import { DEFAULT_CORNERS, PitchPanel } from "../components/videoLab/PitchPanel";
+import { PitchPanel } from "../components/videoLab/PitchPanel";
+import { DEFAULT_CORNERS, landmarksToSave, markingStart } from "../components/videoLab/markingStart";
 import { PitchMap } from "../components/videoLab/PitchMap";
 import { ReadShirtNumbers } from "../components/videoLab/ReadShirtNumbers";
 import { RefreshColours } from "../components/videoLab/RefreshColours";
@@ -72,6 +73,8 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const [marking, setMarking] = useState<Corners | null>(null);
   const [cornerIndices, setCornerIndices] = useState([0,1,2,3]);
   const [markLandmarks, setMarkLandmarks] = useState<Landmark[]>([]);
+  // Where the handles started, so an off-screen halfway end you never moved is not saved as a reference.
+  const [markStart, setMarkStart] = useState<Landmark[]>([]);
   const [showOutline, setShowOutline] = useState(true);
   const artifacts = job.artifacts ?? [];
   const has = (name: string) => artifacts.includes(name);
@@ -90,7 +93,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
   const title = matchTitle(job, others);
   // The automatic outline: painted lines, or the two goals when those hold the play better (decisions.ts).
   const pitchData = useMemo(() => labPanorama(panorama.data, assignments.data?.observations, title, review?.pitch_size), [panorama.data, assignments.data, title, review?.pitch_size]);
-  const camera = useMemo(() => labCamera(motion.data, pitchData, review, job.summary?.source_sha256), [motion.data,pitchData,review?.pitch_panorama,job.summary?.source_sha256]);
+  const camera = useMemo(() => labCamera(motion.data, pitchData, review, job.summary?.source_sha256), [motion.data,pitchData,review?.pitch_panorama,review?.pitch_keyframes,job.summary?.source_sha256]);
   const marks = useMemo(() => review?.pitch_keyframes ?? [], [review?.pitch_keyframes]);
   // Shirt numbers: your corrections, else the worker's reading of each tracked stretch.
   const numbers = useMemo(() => shirtNumbers(shirtReads.data, review?.shirt_numbers), [shirtReads.data, review?.shirt_numbers]);
@@ -191,10 +194,10 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
           onSeek={time=>{if(video.current){video.current.pause();video.current.currentTime=time;setAt(time);}}} />}
         {has("team_assignments.json") && summary?.source_sha256 && <PitchPanel jobId={job.id} sourceHash={summary.source_sha256} hasCamera={has("camera_motion.json")} marks={marks} at={at} marking={!!marking} onQueued={onQueued}
           cornerIndices={cornerIndices} onCornerIndices={setCornerIndices} canSave={!!(marking && fitLandmarks([...marking.flatMap((image,i)=>cornerIndices.includes(i)?[{image,pitch:PITCH_CORNERS[i]}]:[]),...markLandmarks]))} landmarks={markLandmarks} onAddPoint={name => { const point=EXTRA_POINTS.find(p=>p.name===name); const h=marking && fitLandmarks(marking.map((image,i)=>({image,pitch:PITCH_CORNERS[i]}))); if(point && h) setMarkLandmarks(points=>[...points,{...point,image:project(inverse(h),point.pitch)}]); }}
-          onStart={() => { setBoundaryEditing(null); video.current?.pause(); const time=video.current?.currentTime ?? at; const existing=marks.find(m=>Math.abs(m.time_s-time)<0.05); setCornerIndices(existing?.fit_corner_indices ?? [0,1,2,3]); setMarkLandmarks(existing?.landmarks ?? []); setMarking(existing?.corners ?? (camera && outlineAt(camera, marks, time)) ?? DEFAULT_CORNERS); }}
-          onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!; update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(markLandmarks.length || cornerIndices.length!==4?{landmarks:markLandmarks}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
+          onStart={() => { setBoundaryEditing(null); video.current?.pause(); const start=markingStart(camera, marks, video.current?.currentTime ?? at); setCornerIndices(start.cornerIndices); setMarkLandmarks(start.landmarks); setMarkStart(start.landmarks); setMarking(start.corners); }}
+          onSave={() => { const time = Math.round((video.current?.currentTime ?? at) * 1000) / 1000, corners = marking!, saved = landmarksToSave(markLandmarks, markStart, cornerIndices.length); update(r => ({ ...r, pitch_keyframes: [...(r.pitch_keyframes ?? []).filter(k => Math.abs(k.time_s - time) >= 0.001), { time_s: time, corners, ...(saved.length || cornerIndices.length!==4?{landmarks:saved}:{}), ...(cornerIndices.length!==4?{fit_corner_indices:cornerIndices}:{}) }].sort((a, b) => a.time_s - b.time_s) })); setMarking(null); }}
           onCancel={() => setMarking(null)} onDelete={time => update(r => ({ ...r, pitch_keyframes: (r.pitch_keyframes ?? []).filter(k => k.time_s !== time) }))}
-          onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} />}
+          onSeek={time => { if (video.current) { video.current.pause(); video.current.currentTime = time; setAt(time); } }} showOutline={showOutline} setShowOutline={setShowOutline} onVideo={!!(camera?.panorama || camera?.proposal || camera?.markers)} />}
         {has("team_assignments.json") && has("detections.jsonl") && has("sample.mp4") && summary?.source_sha256 && <RefreshColours jobId={job.id} sourceHash={summary.source_sha256} kits={kits} onQueued={onQueued} />}
         {has("team_assignments.json") && has("detections.jsonl") && summary?.source_sha256 && camera && <ReadShirtNumbers jobId={job.id} sourceHash={summary.source_sha256} again={has("jersey_candidates.json")} onQueued={onQueued} />}
         {has("team_assignments.json") && !has("dense_tracks.json") && moments.length > 0 && summary?.source_sha256 && <RefineMoments jobId={job.id} sourceHash={summary.source_sha256} onQueued={onQueued} />}
