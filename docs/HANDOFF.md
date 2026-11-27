@@ -1,4 +1,4 @@
-## Second keeper found from the opposition's shots on target; RELEASING (27 November 2026)
+## Second keeper found from the opposition's shots on target; RELEASED to all libraries (27 November 2026)
 
 Owner: "still not right ... before you had accurately calculated the other goalkeeper was lawson moore,
 don't hard code this" (261101 U11s v West Brom (A)). Findings: no version of the code ever named Lawson
@@ -11,6 +11,11 @@ rotation: Henry tagged at every opposition shot on target in Q1/Q3, Lawson at ev
 - Cache effect: 270 same, 21 gain/fill, 4 change keeper (rare name -> regular keeper), 1 loses a
   period to a tie (U10s v Nottingham Forest (A) Pitch Two, Q4 now unknown, was Seb Smith).
 Verification: frontend 1241 pass (2 new: shot test red first; two-in-window guard), typecheck, build.
+RELEASED: main 60c4826 (= e468d18 + this; frontend 1232 pass, typecheck, build there; all captures
+idle). Updater built it as `latest`; owner saw no change before the 10-minute auto round, so every
+running library was moved with `_move` (admin first); three hit ProvisionerUnavailable while the
+auto round moved them at the same time. All 24 app containers on 60c4826, 8 backends 200, no
+tracebacks; admin's served bundle has the 11/14 s shot window.
 
 ## Keepers named again in quarters with one goal kick each; RELEASED to all libraries, admin at parity (27 November 2026)
 
