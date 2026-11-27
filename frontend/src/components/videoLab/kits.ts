@@ -36,7 +36,11 @@ const chroma = (lab: number[]) => Math.hypot(lab[1] - 128, lab[2] - 128);
 const valid = (c: number[] | null | undefined): c is number[] => !!c && c.length === 3 && c.every(Number.isFinite);
 
 export function kitDistance(colour: number[], kit: number[]) {
-  const light = chroma(kit) >= CHROMA ? 0.25 : 0.8;
+  // Lightness counts for little against a colourful kit: sun washes a shirt out (lighter, less colour;
+  // NL sunny: white-looking readings of the opponents' kit) and shade darkens it. But a colourless
+  // reading DARKER than a colourful kit is not that kit: on 261108 Stoke, navy shirts in shadow
+  // (L ~20, almost no colour) sat inside a colourful kit's range and showed as that kit.
+  const light = chroma(kit) >= CHROMA && (chroma(colour) >= CHROMA || colour[0] >= kit[0]) ? 0.25 : 0.8;
   return Math.hypot(colour[1] - kit[1], colour[2] - kit[2], light * (colour[0] - kit[0]));
 }
 
@@ -104,12 +108,18 @@ export function learnKits(rows: KitObservation[], labels: TrackLabel[], remember
 
 const sameKit = (a: KitPrototype, b: KitPrototype) => a.team === b.team && a.role === b.role;
 
-/** The decisive kit a sample matches, if one is clearly nearer than any other label's kit. */
+/**
+ * The decisive kit a sample matches: the nearest of ALL kits, when that one is colourful and clearly
+ * nearer than any other. A reading nearest a dark kit is not decided by colour (Stoke: navy shirts went
+ * to the nearest colourful kit while only colourful kits were compared).
+ */
 function match(colour: number[] | null | undefined, kits: KitPrototype[], margin = MARGIN): KitPrototype | null {
   if (!valid(colour)) return null;
   let first: KitPrototype | null = null, d1 = Infinity;
   for (const kit of kits) { const d = kitDistance(colour, kit.lab); if (d < d1) { d1 = d; first = kit; } }
-  if (!first || d1 > RADIUS || chroma(first.lab) < CHROMA) return null;
+  // "Not a player" is said of one person (a coach, a parent, a substitute in team kit): never a colour
+  // that claims others (261108 Stoke: one such label claimed 2221 people, 844 in the opponents' kit).
+  if (!first || d1 > RADIUS || chroma(first.lab) < CHROMA || first.role === "other") return null;
   let d2 = Infinity;
   for (const kit of kits) if (!sameKit(kit, first)) d2 = Math.min(d2, kitDistance(colour, kit.lab));
   return d2 - d1 >= margin ? first : null;
@@ -143,7 +153,6 @@ function contradicts(colour: number[] | null | undefined, own: KitPrototype | Ki
  */
 export function cleanAnchors(tracks: AppearanceTrack[], labels: TrackLabel[], kits: KitPrototype[]): AppearanceTrack[] {
   const label = new Map(labels.map(l => [l.track_id, l]));
-  const decisive = kits.filter(k => chroma(k.lab) >= CHROMA);
   const swaps: AppearanceTrack[] = [];
   const prepared = tracks.map(track => {
     if (!track.views?.length) return track;
@@ -152,9 +161,9 @@ export function cleanAnchors(tracks: AppearanceTrack[], labels: TrackLabel[], ki
     if (l) {
       // The stretch after a tracker swap is judged separately, as track -id, never with your label.
       const swapped = track.views.filter(v => contradicts(v.kit, own, kits));
-      if (swapped.length) swaps.push({ ...track, track_id: -track.track_id, views: swapped.filter(v => !match(v.kit, decisive)).length ? swapped.filter(v => !match(v.kit, decisive)) : swapped });
+      if (swapped.length) swaps.push({ ...track, track_id: -track.track_id, views: swapped.filter(v => !match(v.kit, kits)).length ? swapped.filter(v => !match(v.kit, kits)) : swapped });
     }
-    const views = l ? track.views.filter(v => !contradicts(v.kit, own, kits)) : track.views.filter(v => !match(v.kit, decisive));
+    const views = l ? track.views.filter(v => !contradicts(v.kit, own, kits)) : track.views.filter(v => !match(v.kit, kits));
     return views.length === track.views.length || !views.length ? track : { ...track, views };
   });
   return [...prepared, ...swaps];
@@ -169,7 +178,22 @@ const assignment = (kit: KitPrototype, source: Assignment["source"], confidence:
  * where your label is a dark kit (referee, keeper in black) and the tracklet mostly shows a team kit.
  */
 export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels: TrackLabel[], fallback: Map<number, Assignment>, onPitch?: (row: KitObservation) => boolean | null): TeamTimeline {
-  const decisive = kits.filter(k => chroma(k.lab) >= CHROMA);
+  // One team in a dark kit, the other colourful (261108 Stoke: navy against red and white stripes). A
+  // dark kit cannot be told from the referee's black by colour, so dark shirts were left unassigned.
+  // There, a dark, colourless shirt standing on the pitch is the dark team, unless your label or the
+  // look-alike model says otherwise; the one-referee rule below still keeps one referee per moment.
+  const teamKits = kits.filter(k => k.team && k.role === "player");
+  const darkTeams = [...new Set(teamKits.filter(k => chroma(k.lab) < CHROMA).map(k => k.team))];
+  const darkTeam = darkTeams.length === 1 && !teamKits.some(k => k.team === darkTeams[0] && chroma(k.lab) >= CHROMA)
+    && teamKits.some(k => k.team !== darkTeams[0] && chroma(k.lab) >= CHROMA)
+    ? teamKits.find(k => k.team === darkTeams[0])! : null;
+  const darkHere = (row: KitObservation): Assignment | undefined => {
+    const c = row.colour_lab;
+    if (!darkTeam || !onPitch || !valid(c) || chroma(c) >= CHROMA || onPitch(row) !== true) return undefined;
+    let nearest: KitPrototype | null = null, d = Infinity;
+    for (const k of kits) { const e = kitDistance(c, k.lab); if (e < d) { d = e; nearest = k; } }
+    return nearest && chroma(nearest.lab) < CHROMA && nearest.role !== "goalkeeper" && kitDistance(c, darkTeam.lab) <= 2 * RADIUS ? assignment(darkTeam, "kit", 0.5) : undefined;
+  };
   const canon = new Map<string, KitPrototype>();
   for (const k of kits) if (!canon.has(keyOf(k.team, k.role))) canon.set(keyOf(k.team, k.role), k);
   const label = new Map(labels.map(l => [l.track_id, l]));
@@ -186,12 +210,12 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
   for (const [track, list] of byTrack) {
     list.sort((a, b) => a.time_s - b.time_s);
     // Shades of one kit vote as that kit.
-    const matched = list.map(r => { const m = match(r.colour_lab, decisive); return m && canon.get(keyOf(m.team, m.role))!; });
+    const matched = list.map(r => { const m = match(r.colour_lab, kits); return m && canon.get(keyOf(m.team, m.role))!; });
     // A short window of samples votes, so one odd frame cannot flip a player.
     const decided: ({ kit: KitPrototype; share: number } | null)[] = list.map((r, i) => {
       // A plain reading decides a tracklet's first or last sample, where the tracker has just moved on
       // to someone else; in the middle of another kit it is one odd frame and the window votes.
-      const plain = i === 0 || i === list.length - 1 ? plainly(r.colour_lab, decisive) : null;
+      const plain = i === 0 || i === list.length - 1 ? plainly(r.colour_lab, kits) : null;
       if (plain) return { kit: canon.get(keyOf(plain.team, plain.role))!, share: 1 };
       const votes = new Map<KitPrototype, number>();
       let total = 0, inWindow = 0;
@@ -226,12 +250,12 @@ export function kitTimeline(rows: KitObservation[], kits: KitPrototype[], labels
     const ownKit = mine ? kits.filter(k => k.team === mine.team && k.role === mine.role) : [];
     const ownKitDecides = ownKit.some(k => chroma(k.lab) >= CHROMA);
     // In an overlap the vote along the tracklet is unreliable, so a nearer kit decides with a smaller lead.
-    const matchedNear = (r: KitObservation) => { const m = match(r.colour_lab, decisive, NEAR); return m && canon.get(keyOf(m.team, m.role))!; };
+    const matchedNear = (r: KitObservation) => { const m = match(r.colour_lab, kits, NEAR); return m && canon.get(keyOf(m.team, m.role))!; };
     const values = filled.map((f, i) => {
       const seen = overlapped.has(list[i]) ? matchedNear(list[i]) : null;
       if (seen && f?.kit !== seen) return mine && seen.team === mine.team && seen.role === mine.role ? { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 } : assignment(seen, "kit", 0.5);
       if (!f) {
-        if (!mine) return fallback.get(track);
+        if (!mine) { const other = fallback.get(track); return other && other.source !== "none" ? other : darkHere(list[i]) ?? other; }
         if (!contradicts(list[i].colour_lab, ownKit, kits)) return { team: mine.team, role: mine.role, source: "you" as const, confidence: 1 };
         const other = fallback.get(-track) ?? fallback.get(track);
         return other?.source === "you" ? undefined : other;
