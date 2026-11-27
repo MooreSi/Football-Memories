@@ -237,6 +237,11 @@ describe("kitTimeline", () => {
     // Off the pitch: a coach or parent in a dark coat stays unassigned.
     expect(teams.at(43, 2)?.team ?? null).toBeNull();
   });
+  it("the dark-team rule uses every shade of the dark kit (Stoke track 377 at 2:00: navy in shadow, L 15)", () => {
+    const kits = [{ team: "own" as const, role: "player" as const, lab: [66, 130, 123], examples: 300 }, { team: "own" as const, role: "player" as const, lab: [19, 130, 122], examples: 120 },
+      ...stokeKits.slice(1), { team: null, role: "referee" as const, lab: [70, 133, 123], examples: 50 }];
+    expect(kitTimeline(run(47, 0, 4, [15, 126, 132.5]), kits, [], none, () => true).at(47, 2)).toMatchObject({ team: "own", source: "kit" });
+  });
   it("the dark-team rule never overrides the look-alike model's referee, and needs a known pitch", () => {
     const kits = [...stokeKits, { team: null, role: "referee" as const, lab: [71, 133, 122], examples: 40 }];
     const ref = new Map<number, Assignment>([[44, { team: null, role: "referee", source: "similar", confidence: 0.7 }]]);
