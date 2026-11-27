@@ -1,3 +1,16 @@
+## Keepers also found from where every player's tags fall in each period; RELEASING (27 November 2026)
+
+Owner: "the correlation of which goalkeeper is playing will not just be a goal kick ... you can correlate
+which goalkeeper is on the pitch by cross referencing other metadata / tagged moments".
+- New: per period, each player's tags are scored by the team codes they overlap (measured weights,
+  see interface README); a clear top player votes as keeper and can name a period alone.
+- Held out by match halves: right 261, wrong 12 when it answers. West Brom 1 Nov (A): with that match
+  left out of the measurement, context alone gives Henry Q1/Q3, Lawson Q2/Q4.
+- Cache vs live 60c4826: 240 same, 50 gain/fill, 6 change keeper (all checked: rare names to regular
+  keepers, and a mid-period Zachary -> Lawson change in U10 West Brom (A) Pitch 2), 0 lose; games
+  naming a keeper 203 -> 222; conceded goals with a keeper 802 -> 921 of 1000.
+Verification: frontend 1243 pass (2 new, context test red first; blank guard), typecheck, build.
+
 ## Second keeper found from the opposition's shots on target; RELEASED to all libraries (27 November 2026)
 
 Owner: "still not right ... before you had accurately calculated the other goalkeeper was lawson moore,

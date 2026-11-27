@@ -1,7 +1,9 @@
 import { codeKey } from "./codes";
 import type { Spell } from "./goals";
 
-export type KeeperVote = { at: number; names: string[]; explicit?: boolean; weights?: Record<string, number> };
+/** context: a period-wide vote from where the player's tags fall (goals.ts); like a
+ *  goalkeeper code, it can support a spell alone. */
+export type KeeperVote = { at: number; names: string[]; explicit?: boolean; context?: boolean; weights?: Record<string, number> };
 const SWITCH_COST = 2.5;
 const distinct = (names: string[]) => [...new Map(names.map(n => [codeKey(n), n])).values()];
 
@@ -66,6 +68,6 @@ function inferPeriod(votes: KeeperVote[], from: number, to: number | null, leads
   return spells.filter(s => {
     const support = seq.filter(v => v.at >= s.from_s && (s.to_s === null || v.at < s.to_s)
       && v.names.some(n => codeKey(n) === codeKey(s.name)));
-    return support.some(v => v.explicit) || support.length >= 2 || (leads.get(codeKey(s.name)) ?? 0) >= 2;
+    return support.some(v => v.explicit || v.context) || support.length >= 2 || (leads.get(codeKey(s.name)) ?? 0) >= 2;
   });
 }
