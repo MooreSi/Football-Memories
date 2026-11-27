@@ -49,6 +49,11 @@ width 0.630 of length (9v9 73x46 from the review's pitch size), 93.8% of central
 Lab replay of 92908cc3: central people 7392 ours / 7966 Stoke / 2516 unassigned; all 17 labels
 shown as labelled except tracker swaps onto Stoke players (25, part of 28). Visual check at 2:00:
 every player right, 2 unassigned (one likely the referee). Owner's earlier runs are unchanged.
+Follow-up a6e701d (deployed to admin the same way): the dark-team rule now matches any shade of
+the dark kit (track 377 at 2:00, L 15); live 92908cc3 replay: 7594 ours / 7966 Stoke / 2314
+unassigned. Tracks 25 and 28 checked by crops: genuine tracker swaps (25 is a Stoke player except
+~4 s, 28 is Villa except ~3-5 s), so their colour changes are right. The remaining unassigned
+person by the goal at 2:00 reads as Stoke's grey keeper kit; keepers are never assigned by colour.
 Next: worker enrichment of archived runs needs annotated.mp4 (archive copy of f81b4684 lacks it);
 dark-team rule is untested on the benchmark (no match there has a dark team kit with colours).
 Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);
