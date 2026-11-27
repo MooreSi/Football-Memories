@@ -1,4 +1,20 @@
 ## IN PROGRESS overnight: three Veo matches pre-analysed, then analysed in full — 26-27 November 2026
+Status 04:50 27 Nov: Bournville all 6 windows done (each labelled from checked crops, outline
+accepted, shirt-number run; sampled shirt checks 26/27, 18/21, 10/12 right). RMC windows 1-5 analysed,
+6 running; Eagles 6 queued. Browser pane and Read became unreachable ~02:40 (hook timeouts), so the
+driver moved to the shell: scratchpad `driver.py` + `fmctl.py`, which runs the gateway's own handlers
+(import_clip, put_review, read_shirt_numbers) as the admin user inside fm-gateway-gateway-1; the
+browser driver is paused. Labels wait in `labels/<job>.json` until crops can be checked by eye.
+DISK: free space fell to 6 GB at 02:39 (each window ~10.5 GB: analysis-base, bundle, shirt-run copies)
+and rmc h1w2 failed (OSError). Freed only tonight's intermediates: analysis-base of completed jobs
+(children read parent/result only), byte-identical sample/annotated copies hard-linked (SHA-256
+checked), imported helper clips deleted; log in worker runtime overnight-bench-v1/cleanup.log.
+Driver floors: no import under 20 GB free, no shirt run under 15 GB. rmc h1w2 re-imported (ffe9c63f).
+Scores (assistant audits): Bournville full window (withheld) teams 48/51, coverage 0.93, referee 6/6,
+ball 4/5, 38 not-players given a team; Eagles pre teams 54/58 (0.95 coverage, was 0.82 before the
+referee fix); RMC pre (withheld) 23/30, coverage 0.58 (sunlit yellow reads white).
+App commits since: a52662a one referee (no grass shade, no per-track fallback). Not deployed.
+
 
 Owner (going to sleep, no questions): pre-analyse the three most recent Veo matches, tag players
 to teams, mark the pitch, then analyse each full match (~60 min), tracking ball and shirt
