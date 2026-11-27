@@ -8,7 +8,10 @@ Owner: "Yes, do both" (why most Passing labels never reach pass counts; add the 
 - New actions: Dribbling & RWTB, Defensive actions, Receiving, Ball protection & turning,
   Finishing (Attacking / Defending groups; Player Lab picks them up through PLAYER_METRICS).
 - Old matches keep collapsed counts until re-read: owner decision 017 (provisional: no automatic
-  re-read of 296 matches). The helper still runs 8e14bd3 until restarted.
+  re-read of 296 matches).
+- 18:50: helper restarted on eb9c98e; Ipswich, Cambridge (12 Jul) and Notts County (13 Jun) marked
+  due (`tag_status` dropped, moments kept, files backed up in the session scratchpad). Waiting on
+  the owner's Refresh on the local app; expect Ipswich passes 274, Def 1v1 542.
 Verification: backend 880 pass, ruff, format, mypy; frontend 1237 pass, typecheck, build. No
 browser check: no cached match has the new counts until the helper (new code) re-reads one.
 
