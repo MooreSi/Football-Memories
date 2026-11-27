@@ -40,6 +40,11 @@ type Job = { id: string; match_title?: string; sample_id?: string; state: string
 const LEAD = 3, AFTER = 4;
 async function get<T,>(path: string): Promise<T> {
   const response = await fetch(BASE + path, { credentials: "same-origin", cache: "no-store" });
+  if (response.status === 409) {
+    // Spec 780: an archived run on an away MacBook share says so instead of "unavailable".
+    const detail = await response.json().then((b: { detail?: unknown }) => b?.detail, () => undefined);
+    if (typeof detail === "string" && detail) throw new Error(detail);
+  }
   if (!response.ok) throw new Error("Local video analysis is unavailable. Please retry when the worker is connected.");
   return response.json() as Promise<T>;
 }
