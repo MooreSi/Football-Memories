@@ -4,9 +4,11 @@ Owner: "Yes, build it" (the read-only label count after the pass investigation).
 - Tag indexing now stores `label_counts` per match: group and `GROUP ▶ VALUE` counts, only short
   plain labels (`safe_label`), never HUDL_CODE values or values equal to a code; cache keeps <= 300.
   No new Hudl request: it reads the payloads indexing already receives.
-- Not done (owner): restart the helper (com.footballmemories.helper, runs from this checkout's
-  working tree), make one match due again (drop `tag_status` from its cache file), Refresh Hudl,
-  then read that match's `label_counts`. Spec 820 has the steps.
+- 17:58: helper restarted on 8e14bd3 (kickstart, was idle; account still configured). Match
+  "261011 U10s v Man United (H) - Pitch One" (VmlkZW82YWNiYzMxYjMyNGQyNTUzZjU3NTk0MjQ=) made due:
+  `tag_status` dropped, 1735 moments kept, original file backed up in the session scratchpad.
+  11 unavailable matches are also due (weekly retry), so a Refresh re-reads 12.
+- Waiting on the owner: Refresh Hudl in the app. Then read that match's `label_counts`.
 Verification: backend 875 pass (5 new), ruff, format, mypy, in a scratch worktree of HEAD + these
 files only (another session's uncommitted test-fixture move was breaking the shared checkout's suite
 at the time). Postgres run skipped: no database change. Frontend unchanged, not run.
