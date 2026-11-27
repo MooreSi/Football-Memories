@@ -1,4 +1,4 @@
-## Player Lab follows the player's role; Match stats gradients app-wide; players first in the match rail (27 November 2026)
+## Player Lab follows the player's role; Match stats gradients app-wide; players first in the match rail ; DEPLOYED to the admin library (27 November 2026)
 
 Owner: outfield players in Player Lab showed saves, goals conceded, save % and shots faced; momentum
 and Team stats bars should be gradients; "use the match stats bars, box gradients, line gradients and
@@ -19,7 +19,11 @@ moments ... in alphabetical order".
 Verification: frontend 1216 pass (8 new), typecheck, build; backend unchanged, not run.
 Browser (dev server on the live API, read-only page views): Wolves (Game 4) rail, momentum and Team
 stats seen with gradients. Player Lab is hosted-admin only, so not opened in the browser; role checked
-on the real cached library instead. Not deployed: admin library rebuild needed.
+on the real cached library instead.
+Deployed 27 Nov to the admin library only (admin preview route): images hosted-d667dd2 built with
+FM_BUILD_LATEST=0, sha added to status.json `built` (`latest` untouched), `_move` for admin; it
+was on 6395f82 (an ancestor). Inventory diff: only admin web/backend/capture changed. Served build
+contains the Role select and the shared gradient. Other families get it when it reaches main.
 
 ## Pitch box and halfway line adjustable on the video, following pan and zoom (spec 800); DEPLOYED to admin (27 November 2026)
 
