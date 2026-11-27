@@ -111,13 +111,12 @@ class MatchCache:
                         "category": item["category"][:200],
                         **(
                             {
-                                "actions": list(
-                                    dict.fromkeys(
-                                        a
-                                        for a in item["actions"]
-                                        if isinstance(a, str) and a in SUPPORTED_ACTIONS
-                                    )
-                                )
+                                # Spec 830: repeats are label occurrences, not duplicates.
+                                "actions": [
+                                    a
+                                    for a in item["actions"]
+                                    if isinstance(a, str) and a in SUPPORTED_ACTIONS
+                                ][:500]
                             }
                             if isinstance(item.get("actions"), list)
                             else {}

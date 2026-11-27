@@ -1,3 +1,17 @@
+## Every action label counts, and five more action stats (spec 830); NOT LIVE (27 November 2026)
+
+Owner: "Yes, do both" (why most Passing labels never reach pass counts; add the five unused labels).
+- Cause: a label repeated on one clip counted once (`player_actions` kept a set). Ipswich 12 Jul:
+  274 Passing labels on 59 clips; Notts County 14/14; crosses one for one, so payloads are not
+  duplicated; no shared-code moments in these matches. Now each occurrence counts (parse and
+  cache), a key and value naming one action count once; Player stats list "(1 of 4)" per entry.
+- New actions: Dribbling & RWTB, Defensive actions, Receiving, Ball protection & turning,
+  Finishing (Attacking / Defending groups; Player Lab picks them up through PLAYER_METRICS).
+- Old matches keep collapsed counts until re-read: owner decision 017 (provisional: no automatic
+  re-read of 296 matches). The helper still runs 8e14bd3 until restarted.
+Verification: backend 880 pass, ruff, format, mypy; frontend 1237 pass, typecheck, build. No
+browser check: no cached match has the new counts until the helper (new code) re-reads one.
+
 ## Tag label census, to learn whether Hudl's tags carry pass outcomes (spec 820); NOT LIVE (27 November 2026)
 
 Owner: "Yes, build it" (the read-only label count after the pass investigation). Backend only.

@@ -14,8 +14,8 @@ import { Users } from "lucide-react";
 import { Card, Figure, GradientBar, OURS_FILL, StatsHeader, Standouts } from "./statsUi";
 
 const STAT_GROUPS: { id: string; label: string; keys: PlayerMetric[] }[] = [
-  { id: "attacking", label: "Attacking", keys: ["goals", "penaltiesScored", "assists", "keyPasses", "passes", "shots", "chances", "crosses", "successfulDribbles", "attacking1v1"] },
-  { id: "defending", label: "Defending", keys: ["tackles", "interceptions", "blocks", "clearances", "regains", "defensive1v1"] },
+  { id: "attacking", label: "Attacking", keys: ["goals", "penaltiesScored", "assists", "keyPasses", "passes", "shots", "chances", "crosses", "successfulDribbles", "attacking1v1", "dribbling", "ballProtection", "receiving", "finishing"] },
+  { id: "defending", label: "Defending", keys: ["tackles", "interceptions", "blocks", "clearances", "regains", "defensive1v1", "defensiveActions"] },
   { id: "discipline", label: "Possession & discipline", keys: ["fouls", "foulsWon", "foulsConceded", "offsides", "possessionLost"] },
 ];
 

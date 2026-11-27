@@ -169,3 +169,70 @@ def test_penalty_outcomes_require_explicit_labels_and_survive_cache(tmp_path):
         "penaltiesSaved",
         "penaltiesScored",
     ]
+
+
+def test_repeated_labels_on_one_clip_each_count_through_parse_and_cache(tmp_path):
+    # Spec 830: Sportscode lets a label repeat on one instance; Ipswich 12 Jul had 274 Passing
+    # labels on 59 clips. A set per moment counted each clip once.
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [
+        {"key": "Individual action", "values": ["Passing"]},
+        {"key": "Individual action", "values": ["Def 1v1"]},
+        {"key": "Individual action", "values": ["Passing", "Passing"]},
+        {"key": "HUDL_LABEL", "values": ["INDIVIDUAL ACTION ▶ PASSING"]},
+    ]
+    moment = parse_moments([data], VIDEO, set())[0]
+    assert moment.actions == ("passes", "passes", "passes", "passes", "defensive1v1")
+    cache = MatchCache(tmp_path)
+    cache.write(
+        "synthetic-repeats",
+        {
+            "moments": [
+                {
+                    "id": "p",
+                    "category": "Sam Example",
+                    "time_s": 1,
+                    "duration_s": 10,
+                    "actions": [*moment.actions, "FAKE_SECRET"],
+                }
+            ]
+        },
+    )
+    saved = cache.read("synthetic-repeats")["moments"][0]["actions"]
+    assert saved == ["passes", "passes", "passes", "passes", "defensive1v1"]
+
+
+def test_a_tag_key_and_its_value_naming_one_action_count_once():
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [
+        {"key": "Passes", "values": ["Pass completed"]},
+        {"key": "Cross", "values": []},
+    ]
+    assert parse_moments([data], VIDEO, set())[0].actions == ("passes", "crosses")
+
+
+def test_the_coachs_other_individual_action_labels_are_kept():
+    data = payload()
+    item = data["data"]["taggingSessions"]["items"][0]["moments"]["items"][0]
+    item["tags"] += [
+        {
+            "key": "Individual action",
+            "values": [
+                "Dribbling &amp; RWTB",
+                "Defensive action",
+                "Receiving",
+                "Ball protection and turning",
+                "Finishing",
+                "Dribbling",
+            ],
+        }
+    ]
+    assert parse_moments([data], VIDEO, set())[0].actions == (
+        "dribbling",
+        "defensiveActions",
+        "receiving",
+        "ballProtection",
+        "finishing",
+    )

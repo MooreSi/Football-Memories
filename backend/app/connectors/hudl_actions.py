@@ -28,6 +28,12 @@ _ALIASES = {
     "foulsConceded": ("Foul conceded", "Fouls conceded", "Foul committed", "Fouls committed"),
     "successfulDribbles": ("Successful dribble", "Successful dribbles", "Dribble won"),
     "possessionLost": ("Possession lost", "Ball lost", "Dispossessed", "Turnover"),
+    # Spec 830: the coach's other Individual action labels (census, 27 Nov 2026).
+    "dribbling": ("Dribbling & RWTB", "Dribbling and RWTB"),
+    "defensiveActions": ("Defensive action", "Defensive actions"),
+    "receiving": ("Receiving",),
+    "ballProtection": ("Ball protection and turning", "Ball protection & turning"),
+    "finishing": ("Finishing",),
 }
 SUPPORTED_ACTIONS = frozenset(_ALIASES)
 
@@ -39,23 +45,32 @@ def _key(value: str) -> str:
 _LOOKUP = {_key(label): action for action, labels in _ALIASES.items() for label in labels}
 
 
+def _action(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = _key(value)
+    group = re.fullmatch(r"INDIVIDUAL ACTION\s*[▶>:]\s*(.+)", normalized)
+    return _LOOKUP.get(group[1] if group else normalized)
+
+
 def player_actions(tags: list[Any]) -> tuple[str, ...]:
-    found: dict[str, None] = {}
+    """One entry per label occurrence (spec 830): a label repeated on one clip counts each time.
+
+    A tag's matching values each count; its key counts only when no value matched, so a key and
+    a value naming the same action are one action. Grouped by action in first-seen order."""
+    found: list[str] = []
     for tag in tags:
         if not isinstance(tag, dict) or tag.get("key") == "HUDL_CODE":
             continue
         values = tag.get("values", [])
         if not isinstance(values, list):
             continue
-        for value in [tag.get("key"), *values]:
-            if not isinstance(value, str):
-                continue
-            normalized = _key(value)
-            group = re.fullmatch(r"INDIVIDUAL ACTION\s*[▶>:]\s*(.+)", normalized)
-            label = group[1] if group else normalized
-            if action := _LOOKUP.get(label):
-                found[action] = None
-    return tuple(found)
+        matched = [action for value in values if (action := _action(value))]
+        if not matched and (action := _action(tag.get("key"))):
+            matched = [action]
+        found.extend(matched)
+    order = list(dict.fromkeys(found))
+    return tuple(sorted(found, key=order.index))
 
 
 # Spec 820: a census of tag labels per match, to learn whether Hudl's tags carry outcomes

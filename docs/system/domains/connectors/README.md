@@ -877,6 +877,9 @@ receive previously discarded labels on their next normal read.
   DRIBBLING & RWTB, DEFENSIVE ACTION, PASSING, ATT 1V1, RECEIVING, BALL PROTECTION AND TURNING,
   FINISHING, CROSSING, REGAIN. No outcome labels exist: pass success/lost cannot come from Hudl
   tags. HUDL ID values are bare sequence numbers (noise).
+- Labels repeat on one clip (Sportscode allows it): Ipswich 12 Jul has 274 Passing labels on 59
+  clips. Since spec 830 each occurrence is one action; matches indexed before keep one per clip
+  until re-read (owner decision 017).
 - Only matches without `tag_status` are re-indexed; to re-read one, drop that key from its cache
   file and Refresh Hudl. The helper runs from the shared checkout's working tree.
 

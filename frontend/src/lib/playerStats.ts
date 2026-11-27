@@ -26,6 +26,13 @@ export const PLAYER_METRICS = [
   { key: "possessionLost", label: "Possession lost", stems: ["POSSESSION LOST", "BALL LOST", "DISPOSSESSED"] },
   { key: "offsides", label: "Offsides", stems: ["OFFSIDE", "OFFSIDES"] },
   { key: "regains", label: "Regains", stems: ["REGAIN", "RECOVERY", "BALL RECOVERY"] },
+  // Spec 830: the coach's other Individual action labels, named as tagged. No team code exists
+  // for these, so they come only from labels on the player's own clips.
+  { key: "dribbling", label: "Dribbling & RWTB", stems: [] },
+  { key: "defensiveActions", label: "Defensive actions", stems: [] },
+  { key: "receiving", label: "Receiving", stems: [] },
+  { key: "ballProtection", label: "Ball protection & turning", stems: [] },
+  { key: "finishing", label: "Finishing", stems: [] },
 ] as const;
 export type PlayerMetric = typeof PLAYER_METRICS[number]["key"];
 export type PlayerStatClip = Omit<HudlMoment, "time_s"> & { time_s: number | null; confirmed?: boolean };
@@ -37,6 +44,14 @@ const overlaps = (a: HudlMoment, b: HudlMoment) => a.time_s === end(a)
   ? b.time_s <= a.time_s && (a.time_s < end(b) || b.time_s === end(b) && a.time_s === b.time_s)
   : b.time_s === end(b) ? a.time_s <= b.time_s && b.time_s < end(a)
   : a.time_s < end(b) && b.time_s < end(a);
+
+/** Spec 830: a label repeated on one clip is one action each time; each occurrence is listed and
+ * seeks the same clip. */
+function labelled(m: HudlMoment, key: string, label: string): HudlMoment[] {
+  const n = m.actions?.filter(a => a === key).length ?? 0;
+  return Array.from({ length: n }, (_, i) => n === 1 ? { ...m, category: `${label} · individual action` }
+    : { ...m, id: `${m.id}#${i + 1}`, category: `${label} · individual action (${i + 1} of ${n})` });
+}
 
 /** Goals reuse scorer corrections/guesses; other metrics count team events during named tags. */
 export function playerStats(match: GoalsSource, club: string | null, goals: MatchGoals): PlayerStat[] {
@@ -75,7 +90,7 @@ export function playerStats(match: GoalsSource, club: string | null, goals: Matc
           duration_s: 0, confirmed: g.confirmed,
         })).sort((a, b) => (a.time_s ?? Infinity) - (b.time_s ?? Infinity))
         : sources[metric.key] === "actions" ? [...new Map(mine.filter(m => m.actions?.includes(metric.key))
-          .map(m => [m.id, { ...m, category: `${metric.label} · individual action` }])).values()]
+          .map(m => [m.id, m])).values()].flatMap(m => labelled(m, metric.key, metric.label))
         : events[metric.key].length ? events[metric.key].filter(e => outfield.some(p => overlaps(e, p))) : null,
     ])) as PlayerStat["events"] };
   }).filter(p => p.moments.length).sort((a, b) => a.name.localeCompare(b.name));

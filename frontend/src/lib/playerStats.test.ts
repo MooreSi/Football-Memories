@@ -108,3 +108,17 @@ it("counts explicit 1v1 and generic foul actions without inferring wins or foul 
   expect(rows[1].events.foulsConceded).toBeNull();
   expect(rows[1].events.successfulDribbles).toBeNull();
 });
+it("counts every repeat of a label on one clip and lists each occurrence (spec 830)", () => {
+  const m = { moments: [{ ...t("p", "Sam Example", 10), actions: ["passes", "passes", "passes", "passes", "receiving"] },
+    { ...t("q", "Sam Example", 40), actions: ["passes"] }] };
+  const [sam] = playerStats(m, "Aston Villa", matchGoals(m, "Aston Villa"));
+  expect(sam.sources.passes).toBe("actions");
+  expect(sam.events.passes).toHaveLength(5);
+  expect(sam.events.passes?.map(e => e.category)).toEqual([
+    "Passes · individual action (1 of 4)", "Passes · individual action (2 of 4)",
+    "Passes · individual action (3 of 4)", "Passes · individual action (4 of 4)", "Passes · individual action"]);
+  expect(new Set(sam.events.passes?.map(e => e.id)).size).toBe(5);
+  expect(sam.events.passes?.map(e => e.time_s)).toEqual([10, 10, 10, 10, 40]);
+  expect(sam.events.receiving).toHaveLength(1);
+  expect(sam.events.finishing).toBeNull();
+});

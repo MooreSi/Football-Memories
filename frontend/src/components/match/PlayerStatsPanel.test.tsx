@@ -41,6 +41,17 @@ it("shows the share of a player's clips during each tagged team phase and lists 
   expect(within(ali).getByText("0 of 1 clips")).toBeInTheDocument();
 });
 
+it("shows the coach's other action labels in their groups (spec 830)", async () => {
+  const user = userEvent.setup();
+  const tagged = { id: "match-c", moments: [{ ...t("s", "SAM EXAMPLE", 20), actions: ["dribbling", "dribbling", "defensiveActions"] }] };
+  renderWithProviders(<PlayerStatsPanel match={tagged} club="Aston Villa" goals={matchGoals(tagged, "Aston Villa", EMPTY_ENTRY)} onSeek={vi.fn()} />);
+  const sam = screen.getByRole("article", { name: "Sam Example" });
+  expect(within(sam).getByRole("button", { name: "Dribbling & RWTB: 2" })).toBeInTheDocument();
+  await user.selectOptions(screen.getByLabelText("Stats shown"), "defending");
+  expect(within(sam).getByRole("button", { name: "Defensive actions: 1" })).toBeInTheDocument();
+  expect(within(sam).queryByRole("button", { name: /Dribbling & RWTB/ })).toBeNull();
+});
+
 it("sorts by a metric and filters names, including no matches", async () => {
   const user = userEvent.setup();
   renderWithProviders(<PlayerStatsPanel match={match} club="Aston Villa" goals={goals} onSeek={vi.fn()} />);
