@@ -54,6 +54,14 @@ the dark kit (track 377 at 2:00, L 15); live 92908cc3 replay: 7594 ours / 7966 S
 unassigned. Tracks 25 and 28 checked by crops: genuine tracker swaps (25 is a Stoke player except
 ~4 s, 28 is Villa except ~3-5 s), so their colour changes are right. The remaining unassigned
 person by the goal at 2:00 reads as Stoke's grey keeper kit; keepers are never assigned by colour.
+Page check (8d018dc, deployed to admin the same way): the live build and then this branch's hosted
+build (VITE_FM_HOSTED=1) served by a read-only harness over run 92908cc3's real files (review saves in
+memory only; the old harness script from session c29a4a82). Found and fixed two things there: a
+Stoke-shirted person tagged Opponent then "Our player" stayed orange (kit overrode a label it
+disagreed with); now a track never nearest your label's kit keeps your label, swaps unchanged,
+benchmark unchanged (candidate label-overrules). And placement claimed all-MacBook on runs derived
+from a MacBook pitch rebuild; the measured split now wins. After: Person 217 Opp -> Our, "labelled
+by you"; 2:00 shows 7 ours / 8 Stoke / 1 unassigned, outline and halfway drawn, review "Accepted".
 Next: worker enrichment of archived runs needs annotated.mp4 (archive copy of f81b4684 lacks it);
 dark-team rule is untested on the benchmark (no match there has a dark team kit with colours).
 Verification: frontend 1148 pass, typecheck, build; backend pytest/ruff/mypy green (unchanged);
