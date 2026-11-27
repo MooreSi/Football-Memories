@@ -428,3 +428,8 @@ Hudl-style tags read from the live 2D pitch (`videoLab/analyticsTags.ts`, scored
   better evidence than where it is next seen.
 - Veo windows (no keeper labels) transfer only out-of-play; restarts and goals fail there mostly
   because the detector sees no ball while it is in someone's hands or off screen.
+- Ball detection is not the cheap lever it looks like (27 November 2026). A 2x ball zoom where the
+  players are finds a ball in more Veo frames (138 -> 171 of 300), but the pitch analytics tags got
+  no better (Veo) or worse (Stoke: cones and heads join the ball path). Dropping boxes that stay on
+  one ground spot removes the real ball at set pieces. Worker branch `codex/ball-recovery` keeps the
+  opt-in zoom and its numbers; the next step is a ball model trained on labelled crops.

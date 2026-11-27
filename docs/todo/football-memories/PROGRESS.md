@@ -1,3 +1,16 @@
+## Ball detection tried to lift pitch analytics tags: no gain, nothing enabled (27 November 2026)
+
+Owner: "Yes" to improving the worker's ball detection and re-scoring. Worker branch
+`codex/ball-recovery` 62ebff8 (not deployed, off by default): an opt-in 2x ball zoom where the players
+are. Replayed on every sampled frame of Stoke and 8 Veo windows (scratch copies) and scored with
+`score-analytics-tags.mjs`: Stoke vs Hudl F1 0.47 -> 0.37 and possession 0.84 -> 0.75; held-out
+Veo F1 0.25 -> 0.24. Removing balls that stay on one ground spot (79% of Stoke's raw ball boxes,
+98% on Eagles: cones and spares) was worse (Stoke 0.22, Veo 0.11), because the match ball rests on
+the same spots at set pieces. The app's ball path already picks the moving ball about as well as the
+detections allow on Stoke; on Veo the detector simply misses it in most frames. Next step needs
+labelled ball crops (match ball vs cone, spare ball, head) for a trained ball model: owner's call.
+App code unchanged; shipped tags stay as b37cddf.
+
 ## Pitch analytics tags from the 2D pitch, scored against Hudl (27 November 2026)
 
 Owner: "using the 2d pitch map add analytics tags to include passing, and all of the other hudl
