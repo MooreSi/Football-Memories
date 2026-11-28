@@ -25,3 +25,13 @@ it("prepares a new panorama through the existing source-bound camera queue",asyn
  await waitFor(()=>expect(queued).toHaveBeenCalledWith("d".repeat(32)));
  expect(payload).toEqual({source_sha256:data.source_sha256});
 });
+it("says why the last build found no stitched pitch instead of looking as if nothing happened",async()=>{
+ // 28 November 2026 (261122 U11 v Wolves, indoor court): both builds finished with no panorama and the panel looked unchanged.
+ renderWithProviders(<PanoramaPanel jobId={"c".repeat(32)} sourceHash={data.source_sha256} unavailable="Not enough overlapping panned views" onAccept={vi.fn()} onQueued={vi.fn()}/>);
+ expect(screen.getByRole("status")).toHaveTextContent("The last build made no stitched pitch: Not enough overlapping panned views.");
+ expect(screen.getByRole("button",{name:"Build stitched pitch"})).toBeEnabled();
+});
+it("says nothing about a failed build when there was none",()=>{
+ renderWithProviders(<PanoramaPanel jobId={"c".repeat(32)} sourceHash={data.source_sha256} onAccept={vi.fn()} onQueued={vi.fn()}/>);
+ expect(screen.queryByText(/The last build made no stitched pitch/)).not.toBeInTheDocument();
+});

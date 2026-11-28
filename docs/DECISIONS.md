@@ -4,6 +4,15 @@ Decisions made while building, newest first. Owner-only questions live in
 [owner-decisions/](owner-decisions/README.md). Format: ID, date, decision,
 why, consequence.
 
+## D-061 (2026-11-28) Deleting a Video Lab run takes its derived runs and keeps its labels
+
+Owner asked for run deletion to save space without losing trained data. A derived run (stitched
+pitch, shirt numbers, grouping, colours) is a full copy of its source analysis, so deleting a run
+deletes them too; deleting a derived run leaves its source. Training stores (ball-sets, label-sets,
+training-requests, models) live outside run folders and are never touched; a run whose ball crops
+are not built yet cannot be deleted. Saved labels are copied to `kept-learning/<id>/`. Source clips
+stay (other runs and re-analysis use them). Open: owner decision 018.
+
 ## D-060 (2026-11-26) Admin chooses local, remote or split Video Lab execution
 
 Owner requests a Settings > Advanced selector and preparation of the MacBook.
