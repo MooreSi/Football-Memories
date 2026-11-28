@@ -1,4 +1,4 @@
-## Keeper changes inside a period, and keepers from goals with no shot tag (28 November 2026)
+## Keeper changes inside a period, and keepers from goals with no shot tag; RELEASED to all libraries (28 November 2026)
 
 Owner: "looking at the stoke game 261108 this isn't correct, lawson conceded 3 and henry 2 ... ensure
 this works across other games as well, correlating the metadata better".
@@ -13,6 +13,9 @@ this works across other games as well, correlating the metadata better".
 - Effect vs live f97aa7e: 19 matches change, 0 lose a keeper, conceded goals with a keeper 921 -> 962.
 Verification: frontend 1246 pass (3 new: two red first, the once-only guard red against a naive
 version), typecheck, build. Backend unchanged, not run.
+RELEASED: main 9655dbc (= f97aa7e + this; 1237 pass, typecheck, build there; all captures idle).
+Updater built it; every library moved with `_move` at once (admin first). All 24 app containers on
+9655dbc, 8 backends 200, no tracebacks; admin bundle has the 11-15.5 s goal window.
 
 ## Keepers also found from where every player's tags fall in each period; RELEASED to all libraries (27 November 2026)
 
