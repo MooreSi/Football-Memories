@@ -67,6 +67,13 @@ Never remove user data volumes, read credentials, or contact Hudl/Veo to smoke-t
   note per five minutes. The page waits until the status file's `checked_at` is at or after
   the request time. Checked live 2026-11-20: note to updater run to new `checked_at` in seconds.
 
+## Releasing an app change (owner rule, 28 November 2026)
+
+Do not ask the owner whether to release. Land the change on main, wait for the updater to build
+it as `latest`, then move only the admin library (gateway `app.updates._move`). Family libraries
+show "update available", or update in the next automatic round if they have auto-update on; do
+not move them by hand. Check the admin library is idle (no download or render) before moving it.
+
 ## Historical admin-only Library preview (spec 520, superseded by spec 530)
 Spec520 used `FM_GROUPED_TOURNAMENTS=1` as an opt-in frontend Docker build argument.
 Spec530 releases this presentation by default (1); explicit 0 retains rollback behavior.

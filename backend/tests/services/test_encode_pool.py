@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from app.services.reels import memory_limit, parallel_encodes
+from app.services.encode_pool import memory_limit, parallel_encodes
 
 GIB = 1024**3
 

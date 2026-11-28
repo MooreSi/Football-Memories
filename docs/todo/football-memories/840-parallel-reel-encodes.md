@@ -1,7 +1,7 @@
 # 840: Encode highlight-reel clips in parallel
 
-**Status:** Built on codex/local-video-analytics; not released to any library
-**Sensitive:** library writes (Compilations/ only, unchanged rules). No Hudl or Veo request.
+**Status:** Shipped (main; admin library moved, families update themselves)
+**Sensitive:** library writes (Compilations/ only, unchanged rules); Veo reads at once (owner-approved).
 
 Owner (28 November 2026): "parallelise the clip encodes and use hardware encoding". Answers:
 parallel now for every library; hardware encoding only where ffmpeg offers it, with a spec
@@ -41,8 +41,16 @@ speed gain. Put back to the owner with these numbers: owner decision 019.
 - Output format and quality (libx264 fast CRF 18, AAC 192k), the order of clips, the
   replace-only-on-success rule, no partial files, sources never touched. Every existing test
   in `tests/api/test_reels.py` passes unchanged.
-- Hudl batch reels and Veo reels (`hudl_batch.assemble_reel`, `veo/_reels.py`) are untouched:
-  Veo cuts can read from Veo's video host, and more concurrent reads there is an owner decision.
+- Hudl requests: none added. Hudl batch reel assembly only re-encodes files already saved.
+
+## Part 2 (owner, 28 November 2026: "enable Veo reels to make more simultaneous requests")
+
+- `hudl_batch.assemble_reel` (Hudl batch reels and Veo reels) encodes its parts on the same
+  pool; the join keeps the given order.
+- `veo/_reels._cut_all` cuts every highlight at the same time (sized as above, Veo footage
+  assumed 1080p). From a match not saved here, the relay reads Veo's host at most 3 reads at
+  once (`VEO_PARALLEL_READS`), replacing one at a time; a refusal still stops every cut and
+  saves nothing. Sizing moved to `services/encode_pool.py`.
 
 ## How we know it worked
 

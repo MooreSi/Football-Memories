@@ -431,3 +431,46 @@ def test_batch_reel_puts_each_matchs_stats_card_after_its_moments(tmp_path, tiny
     first = seen[0]
     assert first[:3] == expected
     assert not cards.path(m1_stats).exists()
+
+
+# Spec 840 (owner request 2026-11-28): reel parts are normalised at the same time and
+# still joined in the order given.
+def test_reel_parts_are_encoded_at_the_same_time_and_joined_in_order(
+    tiny_video, other_tiny_video, tmp_path, monkeypatch
+):
+    import os
+    import threading
+    from pathlib import Path
+
+    from app.connectors import hudl_batch
+
+    monkeypatch.setattr(os, "cpu_count", lambda: 9)
+    monkeypatch.setattr(hudl_batch, "memory_limit", lambda: None)
+    lock, state = threading.Lock(), {"active": 0, "peak": 0}
+    made: dict[str, str] = {}
+    joined: list[str] = []
+    real = hudl_batch._ffmpeg
+
+    def spy(arguments):
+        if "concat" in arguments:
+            listing = Path(arguments[arguments.index("-i") + 1])
+            joined.extend(line[6:-1] for line in listing.read_text().splitlines())
+            return real(arguments)
+        made[Path(arguments[-1]).name] = arguments[arguments.index("-i") + 1]
+        with lock:
+            state["active"] += 1
+            state["peak"] = max(state["peak"], state["active"])
+        try:
+            time.sleep(0.3)
+            return real(arguments)
+        finally:
+            with lock:
+                state["active"] -= 1
+
+    monkeypatch.setattr(hudl_batch, "_ffmpeg", spy)
+    card = _card(tmp_path / "card.mp4", "640x360", 1)
+    parts = [card, tiny_video, other_tiny_video]
+    assemble_reel(parts, tmp_path / "reel.mp4", cards={card})
+    assert state["peak"] >= 2
+    assert [made[name] for name in joined] == [str(p) for p in parts]
+    assert 7.5 < probe(tmp_path / "reel.mp4").duration_s < 9.5
