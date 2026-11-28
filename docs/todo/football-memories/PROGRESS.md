@@ -1,3 +1,19 @@
+## Keeper changes inside a period, and keepers from goals with no shot tag (28 November 2026)
+
+Owner: "looking at the stoke game 261108 this isn't correct, lawson conceded 3 and henry 2 ... ensure
+this works across other games as well, correlating the metadata better".
+- Stoke 261108 U11 (A): no logic fault found. Tags say Lawson 4, Henry 1 (Lawson leads all four Q3
+  kicks; Henry untagged 48:24-77:16); admin's cache (refreshed this morning) holds the same 2191
+  tags. Told the owner; a wrong goal can be set with Keeper beaten on the panel.
+- Audit across the cache found two real faults, both fixed: a change inside a period backed by two
+  kicks was ignored (switch cost 2.5 -> 1.5), and opposition goals without an on-target tag gave no
+  keeper vote (now 11-15.5 s window). Numbers in the interface README.
+- Owner approved changing "does not choose alphabetically when kick evidence ties": the kicks now
+  alternate (Sam, Jo, Sam, Jo), since Sam-Sam-Jo-Jo is now a change, not a tie.
+- Effect vs live f97aa7e: 19 matches change, 0 lose a keeper, conceded goals with a keeper 921 -> 962.
+Verification: frontend 1246 pass (3 new: two red first, the once-only guard red against a naive
+version), typecheck, build. Backend unchanged, not run.
+
 ## Keepers also found from where every player's tags fall in each period; RELEASED to all libraries (27 November 2026)
 
 Owner: "the correlation of which goalkeeper is playing will not just be a goal kick ... you can correlate

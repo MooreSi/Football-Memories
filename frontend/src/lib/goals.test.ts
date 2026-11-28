@@ -218,8 +218,10 @@ describe("keeper attribution across periods", () => {
   });
   it("does not choose alphabetically when kick evidence ties", () => {
     const result = matchGoals({ moments: [
-      ...kick("a", 100, "Sam Gloves"), ...kick("b", 200, "Sam Gloves"),
-      ...kick("c", 300, "Jo Palms"), ...kick("d", 400, "Jo Palms"),
+      // Alternating, so neither has two in a row (owner-approved change 2026-11-28: two
+      // kicks in a row by another player are now a keeper change, not a tie).
+      ...kick("a", 100, "Sam Gloves"), ...kick("b", 200, "Jo Palms"),
+      ...kick("c", 300, "Sam Gloves"), ...kick("d", 400, "Jo Palms"),
       t("goal", "OPPOSITION GOAL", 150, 25),
     ] }, CLUB);
     expect(result.spells).toEqual([]);
@@ -307,6 +309,33 @@ describe("keeper attribution across periods", () => {
       ...defending("1", 100, "Jo Palms"), ...attacking("1", 200, "Jo Palms"),
       ...defending("2", 300, "Ali Demo"), ...attacking("2", 400, "Ali Demo"),
     ] }, CLUB);
+    expect(result.spells).toEqual([]);
+  });
+  // Owner 2026-11-28 (a U10 match, last quarter): one keeper took the kicks to 85:00, the
+  // other from 86:55 and was tagged at the three goals after it; the change went unseen
+  // because two kicks in a row could not outweigh the cost of a change.
+  it("follows a keeper change partway through a period from two kicks in a row", () => {
+    const result = matchGoals({ moments: [
+      ...kick("a", 100, "Zac Hands"), ...kick("b", 200, "Zac Hands"), ...kick("c", 300, "Zac Hands"),
+      ...kick("d", 600, "Jo Palms"), ...kick("e", 700, "Jo Palms"),
+      t("goal", "OPPOSITION GOAL", 650, 25),
+    ] }, CLUB);
+    expect(result.spells).toEqual([{ name: "Zac Hands", from_s: 0, to_s: 450 }, { name: "Jo Palms", from_s: 450, to_s: null }]);
+    expect(result.goals[0].keeper).toBe("Jo Palms");
+  });
+  // Measured 2026-11-28 on the cached tags: 686 of 1000 opposition goals carry no on-target
+  // tag. On those, the one player whose tag starts 11-14 s in was the keeper 390 times and
+  // another player 15.
+  const conceded = (id: string, at: number, keeper: string) => [
+    t(`goal-${id}`, "OPPOSITION GOAL", at, 25), t(`beaten-${id}`, keeper, at + 12, 15), t(`def-${id}`, "Ali Demo", at + 5, 10),
+  ];
+  it("finds the keeper from the player tagged 11-14 s into an opposition goal with no shot tag", () => {
+    const result = matchGoals({ moments: [...conceded("a", 500, "Jo Palms"), ...conceded("b", 900, "Jo Palms")] }, CLUB);
+    expect(result.spells).toEqual([{ name: "Jo Palms", from_s: 0, to_s: null }]);
+    expect(result.goals.map(g => g.keeper)).toEqual(["Jo Palms", "Jo Palms"]);
+  });
+  it("counts a goal that has its own shot tag once", () => {
+    const result = matchGoals({ moments: [...conceded("a", 500, "Jo Palms"), t("shot-a", "OPPOSITION ON TARGET", 500, 25)] }, CLUB);
     expect(result.spells).toEqual([]);
   });
   it("takes no shot evidence when two players' tags start in the keeper's window", () => {

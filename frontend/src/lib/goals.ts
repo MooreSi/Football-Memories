@@ -64,6 +64,11 @@ const KICK_LEAD = 4;
 // Alone in that window it was the keeper 284 times and another player 26.
 const SAVE_FROM = 11;
 const SAVE_TO = 14;
+// Measured 2026-11-28 on the 686 of 1000 cached opposition goals with no on-target tag: the
+// keeper's tag starts 11-12 s into the goal tag (2026 tagging) or 15 s (2025). Alone in
+// 11-15.5 s it was the keeper 449 times, another player 15; 11-14 s missed the 2025 games.
+const BEATEN_FROM = 11;
+const BEATEN_TO = 15.5;
 
 const inSpell = (s: Spell, t: number) => t >= s.from_s && (s.to_s === null || t < s.to_s);
 
@@ -107,12 +112,16 @@ function fromHudl(moments: HudlMoment[], club: string | null): Base {
         : Math.max(...candidates.filter(pl => codeKey(pl.category) === codeKey(name)).map(weight)) / strongest]));
       return { at: m.time_s, explicit, names, weights };
     });
-  // Keeper votes from the opposition's shots on target: the one player whose tag starts
-  // in the keeper's window. Two or more there give no vote.
-  const shotVotes = sided.filter(({ p }) => p.side === "theirs" && p.stem === "ON TARGET").flatMap(({ m }) => {
-    const names = distinct(players.filter(pl => pl.time_s - m.time_s >= SAVE_FROM && pl.time_s - m.time_s <= SAVE_TO).map(pl => pl.category));
+  // Keeper votes from the opposition's shots on target, and from their goals that carry no
+  // on-target tag: the one player whose tag starts in the keeper's window. Two or more
+  // there give no vote.
+  const theirShots = sided.filter(({ p }) => p.side === "theirs" && p.stem === "ON TARGET").map(({ m }) => m);
+  const bareGoals = goalTags.filter(({ m, p }) => p.side === "theirs" && !theirShots.some(s => touches(s, m))).map(({ m }) => m);
+  const windowVote = (m: HudlMoment, from: number, to: number) => {
+    const names = distinct(players.filter(pl => pl.time_s - m.time_s >= from && pl.time_s - m.time_s <= to).map(pl => pl.category));
     return names.length === 1 ? [{ at: ballInAt(m), explicit: false, names, weights: { [codeKey(names[0])]: 1 } }] : [];
-  });
+  };
+  const shotVotes = [...theirShots.flatMap(m => windowVote(m, SAVE_FROM, SAVE_TO)), ...bareGoals.flatMap(m => windowVote(m, BEATEN_FROM, BEATEN_TO))];
   votes.push(...shotVotes);
   const recordingEnd = Math.max(0, ...moments.map(m => m.time_s + m.duration_s));
   // A final END HALF ending with the recording closes the game, rather than
