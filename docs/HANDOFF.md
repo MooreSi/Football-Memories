@@ -17,6 +17,9 @@ library, hardware where ffmpeg offers it, hardware quality to match CRF 18).
 Verification: backend 895 pass (SQLite and Postgres), ruff, format, mypy; alembic check (part 1).
 New tests red on behaviour first (overlap peak 1); the memory-cap and 3-read tests fail when
 the caps are raised. Frontend untouched, not run. No real Veo match cut with parallel reads yet.
+RELEASED: main 84b784a (= 95829f2 + both commits; 887 pass, ruff, mypy there). Updater built it;
+admin moved with `_move` only (idle first): health 200, no tracebacks, capture has 3 reads. The
+7 families stay on 95829f2 until they take Update available or auto-update.
 
 ## Video Lab on the MacBook: progress bar, stitched pitch indoors, shirt numbers, delete a run (28 November 2026)
 
