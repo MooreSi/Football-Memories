@@ -4,7 +4,10 @@ import type { Spell } from "./goals";
 /** context: a period-wide vote from where the player's tags fall (goals.ts); like a
  *  goalkeeper code, it can support a spell alone. */
 export type KeeperVote = { at: number; names: string[]; explicit?: boolean; context?: boolean; weights?: Record<string, number> };
-const SWITCH_COST = 2.5;
+// Owner 2026-11-28: two kicks in a row by another keeper are a change, one is not.
+// Measured on the cache at 1.5: four matches gain a change inside a period (each checked
+// against the kicks and goal tags), none lose one, odd kicks inside a spell 17 -> 11.
+const SWITCH_COST = 1.5;
 const distinct = (names: string[]) => [...new Map(names.map(n => [codeKey(n), n])).values()];
 
 const weightOf = (v: KeeperVote, n: string) => v.weights?.[codeKey(n)]
@@ -21,8 +24,8 @@ function leadCounts(votes: KeeperVote[]): Map<string, number> {
   return leads;
 }
 
-// Changes between tagged periods cost nothing; within a period, isolated odd
-// kicks must not create a change. Unsupported periods remain gaps in the spells.
+// Changes between tagged periods cost nothing; within a period, an isolated odd
+// kick must not create a change. Unsupported periods remain gaps in the spells.
 // Short periods (youth quarters) often hold one of our goal kicks each, so a spell
 // is also supported when its keeper led two or more kicks anywhere in the match.
 export function keeperSpells(votes: KeeperVote[], breaks: number[]): Spell[] {

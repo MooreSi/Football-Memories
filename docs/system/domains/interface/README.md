@@ -242,8 +242,8 @@ U10 v Stoke City reads 12-9.
   distance from a four-second lead, normalized per kick. Keep all candidates:
   selecting just the closest player loses the keeper when a teammate overlaps.
   Each code name has at most one weight per kick; duplicate kick ids count once.
-  Infer independently between END HALF markers, retaining the within-period
-  2.5-vote change penalty. This permits repeated rotations across four periods.
+  Infer independently between END HALF markers, with a within-period change
+  penalty (2.5 votes until 2026-11-28, now 1.5: see below). This permits repeated rotations across four periods.
   Exact score ties and spells with fewer than two supporting kicks stay unknown
   (explicit goalkeeper-code evidence can support a single observation).
   Exception (2026-11-27, owner report on a U11 quarters match): a spell is also
@@ -271,6 +271,22 @@ U10 v Stoke City reads 12-9.
   keeper (5 from a player named in 1-3 games to a regular keeper; 1 a mid-period change in a
   long period with a missing END HALF), 0 lose; conceded goals with a keeper 802 -> 921 of 1000.
   About 1 ms a match. If team codes change names (codeSides stems), the weights stop matching.
+- Mid-period changes and goal votes (2026-11-28, owner: "correlating the metadata better").
+  Change penalty 2.5 -> 1.5: two kicks in a row by another player are a change, one is not
+  (at 2.5 three were needed, so U10 Wolves (A) Pitch 2's 86:55 change to Henry was missed and
+  his three goals went to Zachary; also U12 Ipswich, Birmingham, U10 Liverpool). Any value
+  from 2 up keeps those missed or blanks them as ties. Opposition GOAL tags with no touching
+  ON TARGET tag (686 of 1000 cached) now vote for the one player starting 11-15.5 s in: keeper
+  449, other 15. The keeper's tag starts 11-12 s in (2026 tagging) or exactly 15 s (2025); 11-14
+  s caught an outfield player in the 2025 games and cost 2 matches their keeper. Effect vs live
+  f97aa7e: 19 matches change, 0 lose a keeper, conceded goals with a keeper 921 -> 962 of 1000,
+  9 goals change keeper (Wolves and U11 Walsall checked right; 2015s Man United (Pitch 1) Q4
+  Freddie -> Lewis is unclear in the tags). Odd kicks inside a spell 17 -> 11 of 1228.
+  Not used yet: in 2025 tagging the kicker's tag starts 0-2 s after our goal kick, outside the
+  kick candidates (which must start before it).
+- 261108 U11 v Stoke (A) (owner 2026-11-28: "Lawson conceded 3 and Henry 2"): the tags give 4
+  and 1. Lawson leads all four Q3 kicks and is tagged at its goals; Henry has no tag from 48:24
+  to 77:16. Left as the tags say; a wrong goal is fixed with the panel's Keeper beaten.
   A closing END HALF whose window ends with the recording opens no new period.
   Otherwise empty periods remain gaps; do not extend the previous keeper.
 - Conceded goals use estimated ball-in time, not the padded clip start. An owner

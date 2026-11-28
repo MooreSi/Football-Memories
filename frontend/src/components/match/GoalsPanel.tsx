@@ -148,7 +148,7 @@ export function GoalsPanel({ match, club, onSeek }: { match: GoalsSource & { id:
       </div>
       <p className="text-xs text-fg-subtle">{match.source === "veo" || match.team_data
         ? "Veo records goals and their times but no names. Add the scorers and keeper; reports show only what you save."
-        : "Likely names are a guess: scorers from the player tagged as the ball goes in, keepers from the player tagged at our goal kicks, at the opposition's shots on target and, across each period, in their attacks rather than ours (including returning keepers; uncertain periods stay unassigned), and saves from the opposition's shots on target. Keeper times and save counts are estimates. Check and save to confirm; reports show only what you save."}</p>
+        : "Likely names are a guess: scorers from the player tagged as the ball goes in, keepers from the player tagged at our goal kicks, at the opposition's shots on target and goals and, across each period, in their attacks rather than ours (including returning keepers; uncertain periods stay unassigned), and saves from the opposition's shots on target. Keeper times and save counts are estimates. Check and save to confirm; reports show only what you save."}</p>
     </>}
     {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
   </section>;
