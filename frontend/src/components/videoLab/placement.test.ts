@@ -67,3 +67,18 @@ describe("livePlacement (a running job, from the mode it was started with)", () 
     expect(livePlacement({ progress: 0.2 })).toBeNull();
   });
 });
+
+describe("camera and pitch on the GPU (app spec 850)", () => {
+  it("a finished GPU run says the line filter ran on the GPU, the rest on the CPU", () => {
+    const rows = ranPlacement({ camera_tracking: { compute: { device: "gpu" } }, execution: { mode: "remote" } }) ?? [];
+    expect(rows.find(r => r.stage === "Camera and pitch")).toMatchObject({ where: "MacBook Pro", compute: "GPU (Metal) for line finding; CPU for camera motion and the solve" });
+    const cpu = ranPlacement({ camera_tracking: { compute: { device: "cpu" } } }) ?? [];
+    expect(cpu.find(r => r.stage === "Camera and pitch")?.compute).toBe("CPU");
+  });
+  it("a running GPU job says so while it is in the camera stage", () => {
+    expect(livePlacement({ execution: "remote", mode: "camera-tracking", camera_compute: "gpu", progress: 0.3 })).toMatchObject({ stage: "Rebuilding camera and pitch", compute: "GPU (Metal) + CPU" });
+    expect(livePlacement({ execution: "local", camera_compute: "gpu", progress: 0.8 })).toMatchObject({ stage: "Camera and pitch", compute: "GPU (Metal) + CPU" });
+    expect(livePlacement({ execution: "local", progress: 0.8 })).toMatchObject({ compute: "CPU" });
+  });
+});
+

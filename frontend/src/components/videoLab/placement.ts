@@ -44,7 +44,8 @@ export function ranPlacement(summary: unknown): Placement[] | null {
     { stage: "Tracking and kit colours", where: shared ? MINI : host(ex.tracking ?? ex.detection_tracking), compute: "CPU" },
     { stage: "Video render", where: shared ? MINI : host(ex.tracking ?? ex.detection_tracking), compute: encoder === "h264_videotoolbox" ? "Media engine (hardware H.264)" : encoder === "libx264" ? "CPU (software H.264)" : "Not recorded" },
   ];
-  if (s.camera_tracking) rows.push({ stage: "Camera and pitch", where: host(ex.camera_pitch), compute: rec(rec(s.camera_tracking).compute).device === "cpu" ? "CPU" : "Not recorded" });
+  const cameraDevice = rec(rec(s.camera_tracking).compute).device;
+  if (s.camera_tracking) rows.push({ stage: "Camera and pitch", where: host(ex.camera_pitch), compute: cameraDevice === "cpu" ? "CPU" : cameraDevice === "gpu" ? "GPU (Metal) for line finding; CPU for camera motion and the solve" : "Not recorded" });
   if (s.review_preparation) {
     const compute = Object.keys(reidModel).some(k => k === "device" || k === "preferred_compute_unit") ? modelCompute(reidModel) : REID.pytorch;
     rows.push({ stage: "Player matching", where: host(ex.player_appearance), compute, ...(typeof reid.elapsed_s === "number" ? { detail: `${Math.round(reid.elapsed_s)} s` } : {}) });
@@ -55,7 +56,7 @@ export function ranPlacement(summary: unknown): Placement[] | null {
   return rows;
 }
 
-export type LiveJob = { execution?: string; reid_backend?: string; mode?: string; progress?: number };
+export type LiveJob = { execution?: string; reid_backend?: string; camera_compute?: string; mode?: string; progress?: number };
 
 /** What a running job is doing now and where, from the mode it was started with; null when unknown. */
 export function livePlacement(job: LiveJob): Placement | null {
@@ -66,14 +67,15 @@ export function livePlacement(job: LiveJob): Placement | null {
   // Split sends pitch rebuilds and player matching of a finished run to the MacBook whole (worker.py).
   const whole = execution === "remote" || (execution === "split" && (job.mode === "camera-tracking" || job.mode === "review-preparation"));
   const where = whole ? MACBOOK : MINI;
-  if (job.mode === "camera-tracking") return { stage: "Rebuilding camera and pitch", where, compute: "CPU" };
+  const camera = job.camera_compute === "gpu" ? "GPU (Metal) + CPU" : "CPU";
+  if (job.mode === "camera-tracking") return { stage: "Rebuilding camera and pitch", where, compute: camera };
   if (job.mode === "review-preparation") return { stage: "Player matching", where, compute: reid };
   if (job.mode === "shirt-numbers") return { stage: "Reading shirt numbers", where: MINI, compute: "GPU (Metal) where available (EasyOCR)" };
   if (job.mode === "team-enrichment") return { stage: "Kit colours", where: MINI, compute: "CPU" };
   if (job.mode === "moment-refinement") return { stage: "Refining moments", where: MINI, compute: CORE_ML_ALL };
   // A new analysis: detection and tracking to 70%, camera and pitch to 85%, then player matching (worker.py).
   if (p < 0.7) return { stage: "Detecting and tracking players", where: execution === "split" ? `${MINI} + ${MACBOOK}` : where, compute: `${CORE_ML_ALL}; tracking on the ${where} CPU` };
-  if (execution === "split") return { stage: "Camera and pitch, and player matching", where: `${MINI} (camera, CPU) + ${MACBOOK} (player matching)`, compute: `CPU; ${reid}` };
-  if (p < 0.85) return { stage: "Camera and pitch", where, compute: "CPU" };
+  if (execution === "split") return { stage: "Camera and pitch, and player matching", where: `${MINI} (camera, ${camera}) + ${MACBOOK} (player matching)`, compute: `${camera}; ${reid}` };
+  if (p < 0.85) return { stage: "Camera and pitch", where, compute: camera };
   return { stage: "Player matching", where, compute: reid };
 }

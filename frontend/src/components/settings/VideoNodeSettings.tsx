@@ -4,9 +4,10 @@ import { useLabAdmin } from "../../api/labAdmin";
 import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
 import { VideoReidSettings, type ReidNodes } from "./VideoReidSettings";
+import { VideoCameraSettings, type CameraNodes } from "./VideoCameraSettings";
 
 type Mode = "local" | "remote" | "split";
-type Nodes = ReidNodes & { mode: Mode; local_ready: boolean; remote_ready: boolean };
+type Nodes = ReidNodes & CameraNodes & { mode: Mode; local_ready: boolean; remote_ready: boolean };
 const URL = "/_admin/api/video-nodes";
 const KEY = ["video-nodes"];
 const choices: [Mode, string, string][] = [
@@ -58,6 +59,7 @@ export function VideoNodeSettings({ admin }: { admin: ReturnType<typeof useLabAd
         onClick={() => selected && save.mutate(selected)}>{save.isPending ? "Saving…" : "Save analysis location"}</Button>
       {save.isSuccess && <p role="status" className="text-sm">Analysis location saved for new jobs.</p>}
       <VideoReidSettings admin={admin} nodes={nodes.data} queryKey={KEY} />
+      <VideoCameraSettings admin={admin} nodes={nodes.data} queryKey={KEY} />
     </>}
     {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
   </div>;
