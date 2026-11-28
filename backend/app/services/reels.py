@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -279,6 +280,36 @@ def remove_card(db: Session, settings: Settings, reel_id: int, kind: str) -> Non
 # ---------- rendering ----------
 
 
+# Spec 840, measured on the M4 mini: libx264 (fast, default threads) peaks near 740 MB per
+# 1080p encode and 240 MB at 540p; three encodes at once is where the gain flattens (about
+# 1.3x); capping ffmpeg's own threads made it slower. Hosted backends have a 1 GiB cap.
+MAX_PARALLEL_ENCODES = 3
+CPUS_PER_ENCODE = 3
+ENCODE_BYTES_1080P = 760 * 1024**2
+MIN_ENCODE_BYTES = 240 * 1024**2
+RESERVED_BYTES = 300 * 1024**2  # the backend itself, ffprobe and the concat step
+CGROUP_MEMORY_MAX = Path("/sys/fs/cgroup/memory.max")
+
+
+def memory_limit(path: Path = CGROUP_MEMORY_MAX) -> int | None:
+    """The container's memory limit in bytes, or None when there is none or it is unknown."""
+    try:
+        return int(path.read_text().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def parallel_encodes(
+    parts: int, width: int, height: int, cpus: int | None, memory_bytes: int | None
+) -> int:
+    """How many reel parts to encode at once without running the backend out of memory."""
+    n = min(MAX_PARALLEL_ENCODES, parts, (cpus or 1) // CPUS_PER_ENCODE)
+    if memory_bytes is not None:
+        per = max(MIN_ENCODE_BYTES, ENCODE_BYTES_1080P * width * height / (1920 * 1080))
+        n = min(n, int((memory_bytes - RESERVED_BYTES) // per))
+    return max(1, n)
+
+
 def _even(n: float) -> int:
     v = int(round(n))
     return v if v % 2 == 0 else v + 1
@@ -374,53 +405,49 @@ def _render(
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True)
     try:
-        segments: list[str] = []
+        # Spec 840: every part's segment name is fixed here, then the parts are encoded on a
+        # pool, so the joined reel keeps the planned order whatever finishes first.
+        parts: list[tuple[str, list[str]]] = []
         cards = [card_path(settings, reel_id, k) for k in CARD_KINDS]
         opening, closing = (p if p.is_file() else None for p in cards)
-        steps = len(clips) + (opening is not None) + (closing is not None) + 1
-        done = 0
 
         def card_segment(img: Path, label: str) -> None:
-            seg = f"{len(segments):03d}-{label}.mp4"
-            _ffmpeg(
-                [
-                    "-loop",
-                    "1",
-                    "-framerate",
-                    str(fps),
-                    "-t",
-                    str(CARD_SECONDS),
-                    "-i",
-                    str(img),
-                    "-f",
-                    "lavfi",
-                    "-t",
-                    str(CARD_SECONDS),
-                    "-i",
-                    "anullsrc=r=48000:cl=stereo",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "1:a",
-                    "-vf",
-                    f"{vf_base},fade=t=in:st=0:d=0.4,fade=t=out:st={CARD_SECONDS - 0.4}:d=0.4",
-                    *enc,
-                    "-t",
-                    str(CARD_SECONDS),
-                    seg,
-                ],
-                cwd=work,
+            parts.append(
+                (
+                    f"{len(parts):03d}-{label}.mp4",
+                    [
+                        "-loop",
+                        "1",
+                        "-framerate",
+                        str(fps),
+                        "-t",
+                        str(CARD_SECONDS),
+                        "-i",
+                        str(img),
+                        "-f",
+                        "lavfi",
+                        "-t",
+                        str(CARD_SECONDS),
+                        "-i",
+                        "anullsrc=r=48000:cl=stereo",
+                        "-map",
+                        "0:v",
+                        "-map",
+                        "1:a",
+                        "-vf",
+                        f"{vf_base},fade=t=in:st=0:d=0.4,fade=t=out:st={CARD_SECONDS - 0.4}:d=0.4",
+                        *enc,
+                        "-t",
+                        str(CARD_SECONDS),
+                    ],
+                )
             )
-            segments.append(seg)
 
         if opening:
             card_segment(opening, "opening")
-            done += 1
-            _set_progress(factory, reel_id, done / steps)
         for c in clips:
             dur = max(0.1, c.end_s - c.start_s)
             fade_out = max(0.0, dur - FADE)
-            seg = f"{len(segments):03d}-clip.mp4"
             args = ["-ss", f"{c.start_s:.3f}", "-t", f"{dur:.3f}", "-i", str(c.source)]
             if c.has_audio:
                 amap = "0:a:0"
@@ -440,16 +467,25 @@ def _render(
                 *enc,
                 "-t",
                 f"{dur:.3f}",
-                seg,
             ]
-            _ffmpeg(args, cwd=work)
-            segments.append(seg)
-            done += 1
-            _set_progress(factory, reel_id, done / steps)
+            parts.append((f"{len(parts):03d}-clip.mp4", args))
         if closing:
             card_segment(closing, "closing")
-            done += 1
-            _set_progress(factory, reel_id, done / steps)
+
+        steps = len(parts) + 1
+        workers = parallel_encodes(len(parts), width, height, os.cpu_count(), memory_limit())
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="reel-encode") as pool:
+            futures = [pool.submit(_ffmpeg, [*args, seg], work) for seg, args in parts]
+            try:
+                # Progress is written here, on the render thread, never from the pool.
+                for done, future in enumerate(as_completed(futures), start=1):
+                    future.result()
+                    _set_progress(factory, reel_id, done / steps)
+            except BaseException:
+                for f in futures:
+                    f.cancel()
+                raise  # leaving the pool waits for encodes already running
+        segments = [seg for seg, _ in parts]
 
         (work / "list.txt").write_text("".join(f"file '{s}'\n" for s in segments))
         _ffmpeg(

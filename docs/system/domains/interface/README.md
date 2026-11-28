@@ -201,6 +201,17 @@ U10 v Stoke City reads 12-9.
 - The studio preview loops each card with a fade to black; a screenshot can land on
   the black frame. Sample the canvas or take several before calling it broken.
 
+### Reel encoding (spec 840, 2026-11-28)
+
+- `services/reels.py` encodes cards and clips on a thread pool; segment names are fixed first,
+  so the concat order never depends on which encode finishes first. Progress is written only
+  from the render thread (the SQLite test engine shares one connection across threads).
+- Pool size is capped at 3, one per 3 CPUs, and by `/sys/fs/cgroup/memory.max`: hosted
+  backends have 1 GiB and a 1080p libx264 encode peaks near 740 MB, so 1080p reels there stay
+  one at a time. Capping each ffmpeg's `-threads` measured slower; leave threads to ffmpeg.
+- VideoToolbox is not used: in Docker it is unreachable, and natively on the M4 it matched CRF 18
+  only at 3x the size with no speed gain (owner decision 019).
+
 ### Reel card themes (2026-11-26)
 
 - Themes live in two places: classic ones in `reelCards.ts`, broadcast and game-style
