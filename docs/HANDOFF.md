@@ -48,7 +48,28 @@ without losing trained data; review how the MacBook run went and why CPU, not GP
   matching 359 vs 836 ms per 64 crops; two-mac-performance.md).
 Verification: worker 357 pass (5 new, red first), ruff, format; gateway 575 pass, 2 skipped (7 new,
 red first), ruff, format, mypy; frontend 1253 pass (5 new, red first), typecheck, build. Backend
-unchanged, not run. Not yet deployed at this commit.
+unchanged, not run.
+DEPLOYED 28 Nov 2026, all idle first (no queued/running job, no node task, no unfinished training
+request, all 8 captures idle):
+- Worker c94f332 on both Macs: MacBook src backed up as `src.bb1afa9`, 4 files copied; mini
+  coordinator detached to c94f332, kickstarted. Digests equal f060d845...; heartbeat remote_ready.
+- Gateway delete-runs-ad9a820 (codex/delete-runs, merged with match-emails 55c6bdc, the image live
+  at deploy time) via the live compose files + `~/fm-archive-gateway/images-delete-runs.yaml`;
+  origin and both analytics mounts unchanged, health 200. Change found while deploying: archived
+  runs are REFUSED (409). From inside the container a deleted file on the SMB share stays a busy
+  `.smbdelete*` stub and its folder cannot be removed (probe `.deleting-perm-check` with one 2-byte
+  stub is still on the share, held by the Docker VM; clears on the next share remount). The first
+  image a7b10f3 (~25 min live) would have tried; its logs show no DELETE call.
+- App: main 95829f2 (= 9655dbc + this; 1244 pass, typecheck, build there). Updater built it; every
+  library moved with `_move` (admin first). All 24 app containers on 95829f2, 8 backends 200, admin
+  bundle has both features.
+Live checks (owner's lab, Wolves run, MacBook selected): queued a stitched-pitch build 0a3cc294:
+progress streamed 0 -> 14 -> 43 -> 78 -> 88 -> 98% -> complete in 2:16; panorama 1200/1200, atlas
+ready, outline proposal to review. Then "Read shirt numbers" on it, b496f3d5: ran on the mini (2:16,
+progress 0 then complete: the reader reports no progress), 24 readings. Delete: the live gateway
+code deleted a throwaway run owned by a dummy owner on the real runtime, no leftovers, labels kept
+(probe removed). No run of the owner's was deleted.
+Open: the placement panel has no row for the shirt-number read (a child shows its parent's stages).
 
 ## Keeper changes inside a period, and keepers from goals with no shot tag; RELEASED to all libraries (28 November 2026)
 
