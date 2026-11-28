@@ -2,8 +2,12 @@
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
+import threading
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -235,6 +239,99 @@ def test_failure_leaves_no_partial_file_and_keeps_the_previous_output(
     edited = client.put(f"/api/reels/{reel['id']}", json={"name": "Renamed"}).json()
     assert (edited["status"], edited["error"]) == ("draft", None)
     assert list((settings.library_root / "Compilations").rglob("*.part*")) == []
+
+
+class _FfmpegSpy:
+    """Wraps the real ffmpeg call: records overlap, clip order and the joined list."""
+
+    def __init__(self, real: Callable[..., None], fail_on: str | None = None) -> None:
+        self.real, self.fail_on = real, fail_on
+        self.lock = threading.Lock()
+        self.active = self.peak = 0
+        self.running_at_exit: list[int] = []
+        self.clips: dict[str, tuple[str, str]] = {}  # segment -> (source, start)
+        self.joined: list[str] = []
+
+    def __call__(self, args: list[str], cwd: Path | None = None, timeout: float = 3600) -> None:
+        if "concat" in args:
+            self.joined = [
+                line.removeprefix("file '").removesuffix("'")
+                for line in (Path(cwd or ".") / "list.txt").read_text().splitlines()
+            ]
+            return self.real(args, cwd=cwd, timeout=timeout)
+        source = args[args.index("-i") + 1]
+        start = args[args.index("-ss") + 1] if "-ss" in args else ""
+        self.clips[args[-1]] = (source, start)
+        with self.lock:
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+        try:
+            time.sleep(0.4)
+            if self.fail_on and self.fail_on in source and start == "1.000":
+                raise reels.ReelInvalid("encoder broke")
+            return self.real(args, cwd=cwd, timeout=timeout)
+        finally:
+            with self.lock:
+                self.active -= 1
+
+
+def test_clips_are_encoded_at_the_same_time_and_joined_in_reel_order(
+    client: TestClient,
+    archive: dict,
+    settings: Settings,
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,  # type: ignore[type-arg]
+) -> None:
+    monkeypatch.setattr(os, "cpu_count", lambda: 9)  # three at once by CPU (spec 840)
+    spy = _FfmpegSpy(reels._ffmpeg)
+    monkeypatch.setattr(reels, "_ffmpeg", spy)
+    reel = _create(
+        client,
+        [
+            {"event_id": archive["Claim"]},
+            {"event_id": archive["Goal"]},
+            {"event_id": archive["Save"]},
+        ],
+    )
+    done = _render(client, reel["id"], session_factory, settings)
+    assert done["status"] == "done", done["error"]
+    assert spy.peak >= 2
+    # Claim: City 3 s tag -> 2 s; Goal: Rovers 2 s -> 1 s; Save: Rovers 1 s -> 0 s.
+    order = [
+        (("City" if "City" in spy.clips[s][0] else "Rovers"), spy.clips[s][1]) for s in spy.joined
+    ]
+    assert order == [("City", "2.000"), ("Rovers", "1.000"), ("Rovers", "0.000")]
+    assert float(
+        _probe(settings.archive_root / done["output_relpath"])["format"]["duration"]
+    ) == pytest.approx(6.0, abs=0.4)
+
+
+def test_a_clip_failing_mid_render_waits_for_the_others_and_keeps_the_previous_output(
+    client: TestClient,
+    archive: dict,
+    settings: Settings,
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,  # type: ignore[type-arg]
+) -> None:
+    """Guard for the pool: the work folder is removed only after every running encode ends."""
+    monkeypatch.setattr(os, "cpu_count", lambda: 9)
+    items = [
+        {"event_id": archive["Claim"]},
+        {"event_id": archive["Goal"]},
+        {"event_id": archive["Save"]},
+    ]
+    reel = _create(client, items)
+    first = _render(client, reel["id"], session_factory, settings)
+    good = settings.archive_root / first["output_relpath"]
+    spy = _FfmpegSpy(reels._ffmpeg, fail_on="Rovers")
+    monkeypatch.setattr(reels, "_ffmpeg", spy)
+    failed = _render(client, reel["id"], session_factory, settings)
+    assert (failed["status"], failed["error"]) == ("failed", "encoder broke")
+    assert spy.active == 0
+    assert good.is_file() and failed["output_relpath"] == first["output_relpath"]
+    compilations = settings.library_root / "Compilations"
+    assert list(compilations.glob(".work-*")) == []
+    assert list(compilations.rglob("*.part*")) == []
 
 
 def test_rerender_replaces_the_previous_output(

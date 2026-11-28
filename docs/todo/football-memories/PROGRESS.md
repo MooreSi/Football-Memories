@@ -1,3 +1,19 @@
+## Highlight reels encode their clips in parallel (spec 840); NOT RELEASED (28 November 2026)
+
+Owner: "parallelise the clip encodes and use hardware encoding" (then: parallel now for every
+library, hardware where ffmpeg offers it, hardware quality to match CRF 18).
+- `services/reels.py` encodes cards and clips on a pool: at most 3, one per 3 CPUs, and capped by
+  the container's memory (hosted backends 1 GiB: 1080p reels stay one at a time, 540p three).
+  Output unchanged (libx264 fast CRF 18); order fixed before encoding.
+- Measured on the mini: about 1.3x faster (six 30 s clips: 540p 6.4 -> 4.8 s, 1080p 26.9 -> 20.4 s).
+  Not timed end to end through a real reel render.
+- Hardware encoding NOT done: VideoToolbox needs q 84 to match CRF 18, writes ~3x the bytes, is
+  slower at 540p and no faster at 1080p once parallel; and Docker cannot reach it. Owner decision 019.
+- Hudl batch and Veo reels (`hudl_batch.assemble_reel`, `veo/_reels.py`) unchanged.
+Verification: backend 892 pass (SQLite and Postgres), ruff, format, mypy, alembic check. New tests
+red first (sizing import; overlap peak 1); memory-cap tests fail when the cap is removed. Frontend
+untouched, not run. Not released: needs main + updater + `_move` like every app change.
+
 ## Video Lab on the MacBook: progress bar, stitched pitch indoors, shirt numbers, delete a run (28 November 2026)
 
 Owner (261122 U11 v Wolves (Game 4), execution set to MacBook): progress bar does not move; "Build
