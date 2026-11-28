@@ -41,7 +41,7 @@ import type { Appearance, Assignments, Suggestion, VeoTags } from "../components
 
 type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
 type Summary = { camera_tracking?: { panorama?: { status?: string; reason?: string } }; source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
-type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string; execution?: string; reid_backend?: string };
+type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string; execution?: string; reid_backend?: string; camera_compute?: string };
 const LEAD = 3, AFTER = 4;
 async function get<T,>(path: string): Promise<T> {
   const response = await fetch(BASE + path, { credentials: "same-origin", cache: "no-store" });

@@ -1,3 +1,20 @@
+## Camera and pitch on the GPU, a CPU/GPU setting, and a comparison (spec 850) (28 November 2026)
+
+Owner: build the GPU version of camera and pitch, "do a run on both and have a toggle".
+Spec `docs/todo/football-memories/850-camera-pitch-gpu.md` has the numbers. Summary:
+- Worker d3e0543 (codex/remote-progress-indoor): GPU mode runs the painted-line filter and the
+  bundle's descriptor matching on the GPU (PyTorch MPS, no new dependency); goal-post pairing made
+  8x faster indoors for both modes with identical output. Gateway 79bdd21 (codex/delete-runs):
+  `camera_compute` setting, snapshotted into jobs. App: Settings > Advanced > "Camera and pitch"
+  (CPU / GPU (Metal)), run placement shows the GPU.
+- Mini, stage wall: Wolves 121 -> 69 (new CPU) / 67 s (GPU); Stoke 157 -> 153 / 144 s. The big win
+  is the CPU fix; the GPU adds 3-6%. SIFT, optical flow and the bundle solve have no GPU path here.
+- GPU outlines differ (IoU 0.82 / 0.24) because the outline fit itself is unstable: 1e-4 noise moves
+  the CPU outline as far. CPU stays the default until that is fixed.
+Verification: worker 370, gateway 586 (+2 skipped), frontend 1257 pass; typecheck, build, ruff, mypy.
+Settings panel not looked at in a browser (hosted-only; same layout as Player matching). Not yet
+deployed at this commit.
+
 ## Highlight reels encode their clips in parallel, Veo reels read 3 at once (spec 840); RELEASED to admin (28 November 2026)
 
 Owner: "parallelise the clip encodes and use hardware encoding" (then: parallel now for every

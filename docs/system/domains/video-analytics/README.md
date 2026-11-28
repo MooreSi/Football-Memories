@@ -470,3 +470,17 @@ nothing (`usableMarks`); never let them fall back to the camera-motion carry.
 - Deleting a run (gateway `video_analytics_delete.py`) takes its derived runs, keeps labels in
   `kept-learning/<id>/`, never touches training stores or samples, and refuses while a Training
   ball-crop request on the run is unfinished. Decision D-061, owner decision 018.
+
+## Camera and pitch: CPU or GPU (spec 850, 28 November 2026)
+
+- Where the stage spends time (mini): outdoor 10-min window ~155 s, of which the bundle solve ~92 s
+  (SIFT 52, brute-force matching 38, LM 19), motion ~33, panorama ~19. Indoor busy courts were held
+  up by goal-post pairing (pure Python, GIL-bound); vectorised, identical output.
+- Decoding is never the cost: OpenCV decodes a 4-min 720p60 clip in 3 s; VideoToolbox through ffmpeg
+  is 13x slower because frames are copied back.
+- GPU mode (PyTorch MPS): line filter and descriptor matching only. Metal compiles a graph per array
+  shape: pad to fixed shapes or memory grows without bound (30 GB seen). `topk` is slow on Metal.
+- Gotcha: the automatic outline fit is unstable. Invisible input noise (1e-4 grey levels) can move
+  it to a different outline (IoU 0.21 on Stoke). Do not judge a compute or code change by whether
+  the outline moved; compare the camera solve and the line masks, and fix the fit's instability.
+
