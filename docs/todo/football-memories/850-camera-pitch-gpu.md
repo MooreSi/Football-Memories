@@ -73,4 +73,5 @@ None needed (no Hudl access).
 - [x] GPU per-operation (mini): line filter ~30 ms vs 45-68 ms per view (CPU single thread); matching
   2.1 ms per pair batched = CPU 2.1 ms; topk on Metal 3x slower than two min passes; unpadded
   per-pair shapes grew Metal memory to 30 GB (fixed).
-- [ ] live lab runs on the owner's Wolves run (see HANDOFF).
+- [x] live lab runs on the owner's Wolves run, MacBook: old code 124.7 s, new CPU 66.4 s, new GPU
+  67.9 s; camera solve identical; GPU outline IoU 0.82 vs CPU (runs 0a3cc294, c25e3d50, 4cb46faf).

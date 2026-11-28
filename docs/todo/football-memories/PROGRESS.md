@@ -12,8 +12,17 @@ Spec `docs/todo/football-memories/850-camera-pitch-gpu.md` has the numbers. Summ
 - GPU outlines differ (IoU 0.82 / 0.24) because the outline fit itself is unstable: 1e-4 noise moves
   the CPU outline as far. CPU stays the default until that is fixed.
 Verification: worker 370, gateway 586 (+2 skipped), frontend 1257 pass; typecheck, build, ruff, mypy.
-Settings panel not looked at in a browser (hosted-only; same layout as Player matching). Not yet
-deployed at this commit.
+Settings panel not looked at in a browser (hosted-only; same layout as Player matching).
+DEPLOYED 28 Nov 2026 (all idle first): worker d3e0543 on both Macs (MacBook backup `src.c94f332`,
+10 files; mini coordinator detached + kickstart; digests 49597843...; heartbeat camera_computes
+cpu+gpu on both). Gateway delete-runs-79bdd21 (contains match-emails tip; override
+`~/fm-archive-gateway/images-delete-runs.yaml`), health 200, mounts and origin unchanged. App main
+8db4f75 (= 84b784a, another session's live release, + this); every library moved with `_move`
+(admin first), 24 containers on 8db4f75, 8 backends 200, admin bundle has the setting. Owner's saved
+choice left at CPU.
+Live runs on the owner's Wolves run, MacBook (pitch rebuilds of c53dc2b1): this morning's old code
+0a3cc294 stage 124.7 s; new CPU c25e3d50 66.4 s; new GPU 4cb46faf 67.9 s (78 s wall each). Camera
+solve identical in all three; GPU outline IoU 0.82 vs CPU (CPU = old code exactly).
 
 ## Highlight reels encode their clips in parallel, Veo reels read 3 at once (spec 840); RELEASED to admin (28 November 2026)
 
