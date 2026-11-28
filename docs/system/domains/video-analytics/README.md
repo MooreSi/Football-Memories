@@ -453,3 +453,20 @@ chosen by the nearest format length. A mark must contain four points with no thr
 (`fixesPitch`): two corners plus a box's goal-line end are collinear on the goal line, and such a mark
 made the fit swing (Stoke harness: tags 132 -> 16). On an atlas run, marks the atlas cannot use place
 nothing (`usableMarks`); never let them fall back to the camera-motion carry.
+
+## MacBook runs, indoor courts, deleting runs (28 November 2026)
+
+- A Remote job is one SSH call. Progress reaches the mini only as exact `fva-progress <0..1>`
+  lines on the node's stderr; everything else on stderr is dropped (it holds library warnings and
+  paths). Upload and download are not counted.
+- Shirt numbers always run on the mini: only it has `models/jersey.json`. A Remote shirt-number
+  child used to fail on the MacBook as ConnectionError.
+- The surface finder (`pitch_boundary.propose_boundary`) knew only green turf, so an indoor court
+  (261122 Wolves, blue floor) never started a panorama. With no green it now uses the dominant
+  coloured floor low in the frame. Gotcha: the worker's automatic team step still finds no
+  evidence there (all detections "unknown"); lab kit labels work.
+- A finished build with no panorama keeps `camera_tracking.panorama.reason` in the summary; the
+  panel shows it. Without it the panel looked as if the button did nothing.
+- Deleting a run (gateway `video_analytics_delete.py`) takes its derived runs, keeps labels in
+  `kept-learning/<id>/`, never touches training stores or samples, and refuses while a Training
+  ball-crop request on the run is unfinished. Decision D-061, owner decision 018.

@@ -1,3 +1,39 @@
+## Video Lab on the MacBook: progress bar, stitched pitch indoors, shirt numbers, delete a run (28 November 2026)
+
+Owner (261122 U11 v Wolves (Game 4), execution set to MacBook): progress bar does not move; "Build
+stitched pitch" does nothing; "Read shirt numbers" did not work; add a delete for analysis runs
+without losing trained data; review how the MacBook run went and why CPU, not GPU.
+- Progress: remote jobs ran inside one SSH call that returned only the finished result, so status
+  stayed at 0% until the end. Worker c94f332 (branch codex/remote-progress-indoor from live bb1afa9):
+  the node echoes its job's progress as `fva-progress` lines on stderr, the mini writes them into
+  the job's status (capped 99% until the result is checked). Upload/download (~50 s here) not shown.
+- Stitched pitch: both builds (e5d8391d, 180d3675) finished with "Not enough overlapping panned
+  views": the surface finder only knew green turf, and this match is on an indoor blue court. The
+  worker now falls back to the dominant coloured floor when no green is found (turf unchanged). Run
+  on the Wolves clip in scratch: 1200/1200 views registered, atlas ready, outline round the main court.
+  App: the panorama panel now says why the last build made no stitched pitch (it looked unchanged).
+- Shirt numbers: the child run was sent to the MacBook, which has no shirt-number reader, so it
+  failed (90f8f3a7, ConnectionError). Shirt numbers now always run on the mini. Same reader on this
+  match, on the mini, in scratch: 24 tracked stretches read; spot check 8 of 10 right (7 read as 37,
+  9 read as 0 at 0.42 confidence). Readings stay correctable in Selected person.
+- Delete: "Delete this run" under the run picker (confirmation lists what goes and what stays).
+  Gateway c8af763 (branch codex/delete-runs from live match-emails 62353d9's branch): deletes the run
+  and the runs made from it; refuses while any is queued/running or a Training ball-crop request on
+  one is unfinished; copies saved labels to `<runtime>/kept-learning/<id>/`; never touches
+  ball-sets, label-sets, training-requests, models or samples. Owner decision 018 (open): a deleted
+  run's labels no longer teach kits to new runs.
+- Review of the MacBook run (c53dc2b1): 4:00 of 720p60 Hudl footage, analysis 175 s on the MacBook
+  plus 21 s player matching (Neural Engine), 247 s wall including ~50 s transfer. Results identical
+  in kind to a mini run (same code digest). Teams: the worker's automatic team step found no
+  evidence on this indoor court (all 16,399 person detections unknown); kits labelled in the lab
+  still work. Why CPU: the CPU stages are OpenCV/numpy code (optical flow, ORB, RANSAC, assignment,
+  colour histograms) with no Apple GPU path in those libraries; detection and matching already use
+  Core ML, and measured on the M3 Pro the Neural Engine beats its GPU (detector 72 vs 114 ms/frame,
+  matching 359 vs 836 ms per 64 crops; two-mac-performance.md).
+Verification: worker 357 pass (5 new, red first), ruff, format; gateway 575 pass, 2 skipped (7 new,
+red first), ruff, format, mypy; frontend 1253 pass (5 new, red first), typecheck, build. Backend
+unchanged, not run. Not yet deployed at this commit.
+
 ## Player Lab follows the player's role; Match stats gradients app-wide; players first in the match rail (27 November 2026)
 
 Owner: outfield players in Player Lab showed saves, goals conceded, save % and shots faced; momentum

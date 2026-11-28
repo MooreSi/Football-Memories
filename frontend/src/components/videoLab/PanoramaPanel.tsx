@@ -9,11 +9,11 @@ import {BASE,csrfToken} from "./useLabData";
 import type {Corners} from "./pitch";
 import type {Panorama,PanoramaReview} from "./panorama";
 
-type Props={jobId:string;sourceHash:string;data?:Panorama;review?:PanoramaReview|null;onAccept:(r:PanoramaReview|null)=>void;onQueued:(id:string)=>void};
+type Props={jobId:string;sourceHash:string;data?:Panorama;review?:PanoramaReview|null;onAccept:(r:PanoramaReview|null)=>void;onQueued:(id:string)=>void;/** The worker's reason when this run's last build made no panorama. */unavailable?:string};
 const inside=(p:Corners)=>validBoundary(p)&&p.every(v=>v.every(n=>n>=0&&n<=1));
 
 /** One explicit human review of the observed pitch, reused by registered camera views. */
-export function PanoramaPanel({jobId,sourceHash,data,review,onAccept,onQueued}:Props) {
+export function PanoramaPanel({jobId,sourceHash,data,review,onAccept,onQueued,unavailable}:Props) {
  const usable=data?.source_sha256===sourceHash?data:undefined;
  const accepted=usable&&review?.panorama_id===usable.panorama_id&&review.accepted?review:null;
  const [draft,setDraft]=useState<Corners|null>(null),[selected,setSelected]=useState(0);
@@ -50,7 +50,10 @@ export function PanoramaPanel({jobId,sourceHash,data,review,onAccept,onQueued}:P
     {!valid&&<p role="alert" className="text-sm text-warn">Keep distinct points inside the panorama, without crossing edges.</p>}
    </>:<Button onClick={begin}>Edit panoramic boundary</Button>}
    <div className="flex flex-wrap gap-2"><Button variant="primary" disabled={!valid||busy} onClick={()=>{onAccept({panorama_id:usable.panorama_id,points,corners:checked?corners:editing?null:accepted?.corners??null,accepted:true});setDraft(null);setCornerMode(false);}}>Accept boundary for this video</Button>{editing&&<Button onClick={()=>{setDraft(null);setCornerMode(false);setCorners(null);setChecked(false);}}>Cancel panorama edit</Button>}{accepted&&<Button onClick={()=>onAccept(null)}>Stop using panorama</Button>}</div>
-  </>:<p className="text-sm text-fg-muted">Build this once from overlapping views in the saved video. If the camera never pans or views cannot be aligned, preparation reports that a stitched pitch is unavailable.</p>}
+  </>:<>
+   <p className="text-sm text-fg-muted">Build this once from overlapping views in the saved video. If the camera never pans or views cannot be aligned, preparation reports that a stitched pitch is unavailable.</p>
+   {unavailable&&<p role="status" className="text-sm text-warn">The last build made no stitched pitch: {unavailable.replace(/\.$/,"")}.</p>}
+  </>}
   {error&&<p role="alert" className="text-sm text-warn">{error}</p>}
   <Button disabled={busy} onClick={()=>void prepare()}>{busy?"Starting…":usable?"Rebuild stitched pitch":"Build stitched pitch"}</Button>
  </section>;

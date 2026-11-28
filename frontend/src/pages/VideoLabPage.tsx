@@ -1,5 +1,6 @@
 import {CalibrationBenchmarkPanel,isCalibrationBenchmark} from "../components/videoLab/CalibrationBenchmark";
 import {PanoramaPanel} from "../components/videoLab/PanoramaPanel";
+import { DeleteRun } from "../components/videoLab/DeleteRun";
 import {isPanorama,panoramaBoundaryAt} from "../components/videoLab/panorama";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -39,7 +40,7 @@ import { BASE, csrfToken, useJobFile, useJobText, useReview, useSavedModels } fr
 import type { Appearance, Assignments, Suggestion, VeoTags } from "../components/videoLab/labTypes";
 
 type Sample = { id: string; label: string; duration_s: number; source_offset_s: number };
-type Summary = { source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
+type Summary = { camera_tracking?: { panorama?: { status?: string; reason?: string } }; source_sha256?: string; sampled_frames: number; person_detections: number; ball_detections: number; unique_tracklets: number; ball_observation_coverage: number; football_events_confirmed: number; elapsed_s?: number; quality?: string };
 type Job = { id: string; match_title?: string; sample_id?: string; state: string; progress: number; summary?: Summary; artifacts?: string[]; error?: string; mode?: string; parent_job_id?: string; execution?: string; reid_backend?: string };
 const LEAD = 3, AFTER = 4;
 async function get<T,>(path: string): Promise<T> {
@@ -188,7 +189,7 @@ function Workspace({ job, others, onQueued }: { job: Job; others: Job[]; onQueue
         {camera && (marks.length > 0 || !!camera.panorama || !!camera.proposal) && !marking && <PitchMap rows={allRows} camera={camera} marks={marks} size={review?.pitch_size ?? null} at={at} teams={teams} teamAt={timeline.at} selected={track} onSelect={id => setTrack(id)} videoRef={video} ball={showBall ? ball : undefined} frame={{ w: assignments.data?.image_width ?? 1920, h: assignments.data?.image_height ?? 1080 }} everyone={everyone} numbers={numbers} analytics={analytics} onSize={size => update(r => ({ ...r, pitch_size: size }))} />}
         {summary && <RanPlacement summary={summary} />}
         {summary && <PreAnalysisCheck summary={summary} atlas={atlasData} accepted={outlineAccepted} play={play} groups={appearance.data?.groups.length ?? 0} trackLabels={review?.track_labels ?? []} groupLabels={review?.group_labels ?? []} rememberedKits={remembered} />}
-        {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={pitchData} review={review.pitch_panorama} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
+        {summary?.source_sha256 && review && <PanoramaPanel key={job.id} jobId={job.id} sourceHash={summary.source_sha256} data={pitchData} review={review.pitch_panorama} unavailable={summary.camera_tracking?.panorama?.status==="unavailable"?summary.camera_tracking.panorama.reason??"no reason recorded":undefined} onAccept={value=>update(r=>({...r,pitch_panorama:value}))} onQueued={onQueued}/>}
         {summary?.source_sha256 && <CalibrationBenchmarkPanel jobId={job.id} sourceHash={summary.source_sha256} data={calibrationBenchmark.data}/>}
         {camera?.panorama && !panoramaBoundaryAt(camera.panorama,at) && <p role="status" className="text-sm text-warn">No usable pitch projection in this view. The panorama remains accepted for other registered moments.</p>}
         {camera && review && !camera.panorama && <BoundaryPanel editing={boundaryEditing} selected={boundarySelected} setSelected={setBoundarySelected} onChange={setBoundaryEditing} marks={boundaries} manual={!!boundaryAt(camera,boundaries,[],at)} automatic={!!currentBoundary}
@@ -265,6 +266,14 @@ function AnalysisTab() {
     return response.json() as Promise<Job>;
   }, onSuccess: data => { setSelected(data.id); cache.setQueryData(["video-lab-job", data.id], data); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); } });
   const queued = useCallback((id: string) => { setSelected(id); void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] }); void cache.invalidateQueries({queryKey:["video-lab-samples"]}); },[cache]);
+  const selectedRun = jobs.data?.find(j => j.id === selected);
+  const deleted = useCallback((ids: string[]) => {
+    const left = (jobs.data ?? []).filter(j => !ids.includes(j.id));
+    cache.setQueryData(["video-lab-jobs"], left);
+    ids.forEach(id => cache.removeQueries({ queryKey: ["video-lab-job", id] }));
+    setSelected(left[0]?.id ?? null);
+    void cache.invalidateQueries({ queryKey: ["video-lab-jobs"] });
+  }, [cache, jobs.data]);
   const active = job.data;
   const running = active && ["queued", "running"].includes(active.state);
   const error = samples.error || jobs.error || job.error || submit.error;
@@ -276,6 +285,7 @@ function AnalysisTab() {
     {error && <p role="alert" className="panel p-4 text-warn">{error.message}</p>}
     {!!jobs.data?.length && <nav className="panel space-y-2 p-3" aria-label="Previous runs"><label className="block text-sm">Analysis run<select className="mt-1 block w-full rounded-lg border border-line bg-ink-900 p-2" value={selected ?? ""} onChange={e=>setSelected(e.target.value)}>{jobs.data.map(j=>{const sample=samples.data?.find(s=>s.id===j.sample_id);const name=j.match_title || sample?.label || j.sample_id || "Uncatalogued run";return <option key={j.id} value={j.id}>{name}{sample?.duration_s?` · ${Math.round(sample.duration_s/60)} min`:""} · {runLabel(j)}</option>;})}</select></label>
       {jobs.data.filter(j=>!j.sample_id).map(j=><button key={j.id} className="mr-2 text-xs text-fg-muted" onClick={()=>setSelected(j.id)}>{runLabel(j)}</button>)}
+      {selectedRun && <DeleteRun run={selectedRun} runs={jobs.data} name={selectedRun.match_title || samples.data?.find(s=>s.id===selectedRun.sample_id)?.label || `run ${selectedRun.id.slice(0, 8)}`} onDeleted={deleted} />}
     </nav>}
     {active && active.state !== "complete" && <div role="status" className="panel space-y-2 p-4"><p className="text-sm capitalize">{active.state} · {Math.round((active.progress || 0) * 100)}%</p><AnalysisProgress label="Analysis progress" fraction={active.progress || 0} />{active.state === "running" && <LivePlacement job={active} />}{active.error && <p className="text-sm text-warn">{active.error}</p>}
       <div className="flex aspect-[32/9] flex-col items-center justify-center gap-3 rounded-xl bg-black/40 text-fg-muted"><Film size={32} aria-hidden /><p>{running ? "Analysing… you can keep this page open." : "This run did not finish."}</p></div></div>}
