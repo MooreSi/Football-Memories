@@ -8,17 +8,21 @@ windows, without first downloading the full match. The reel joins title cards vi
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import tempfile
+import threading
 import zipfile
 from collections.abc import Callable, Iterator
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.connectors.hudl_batch import _ffmpeg, assemble_reel
 from app.connectors.hudl_capture import CaptureError
+from app.services.encode_pool import memory_limit, parallel_encodes
 from app.services.publish import publish_new
 
 from ._encoding import encode
@@ -31,6 +35,10 @@ if TYPE_CHECKING:
 DEFAULT_LENGTH = 20.0  # seconds, when Veo gives a highlight no duration
 MAX_HIGHLIGHTS = 150
 CARDS = ("opening_card", "match_card", "stats_card", "closing_card")
+# Owner request 2026-11-28 ("enable Veo reels to make more simultaneous requests"): a reel
+# reads Veo's video host at most this many reads at once (it was one at a time). Each read
+# is still one `media_range` (at most 8 MB, nothing retried); a refusal stops every cut.
+VEO_PARALLEL_READS = 3
 
 
 def _cut(
@@ -88,8 +96,10 @@ def _match_source(
         return
     url = connection._video_url(identity)
 
+    reads = threading.BoundedSemaphore(VEO_PARALLEL_READS)
+
     def fetch(start: int, end: int | None) -> tuple[int, int, bytes]:
-        with connection._media_lock:
+        with reads:
             return connection._media.media_range(url, start, end)  # type: ignore[no-any-return]
 
     with range_relay(fetch) as relay:
@@ -102,24 +112,42 @@ def _cut_all(
     source: tuple[str, RelayState | None],
     scratch: Path,
 ) -> list[Path]:
+    """Every highlight cut at the same time (owner request 2026-11-28), in match order."""
     address, relay = source
-    clips = []
-    for number, moment in enumerate(chosen, start=1):
+    targets = [scratch / f"clip-{n:04}.mp4" for n in range(1, len(chosen) + 1)]
+
+    def report(done: int) -> None:
         read = f" ({relay.bytes // 1_000_000} MB read from Veo)" if relay else ""
         connection._report(
             state="working",
-            message=f"Cutting highlight {number} of {len(chosen)}…{read}",
-            progress={
-                "done": number - 1,
-                "total": len(chosen),
-                "fraction": (number - 1) / len(chosen),
-            },
+            message=f"Cutting highlights… {done} of {len(chosen)} done{read}",
+            progress={"done": done, "total": len(chosen), "fraction": done / len(chosen)},
         )
-        target = scratch / f"clip-{number:04}.mp4"
-        length = float(moment.get("duration_s") or 0) or DEFAULT_LENGTH
+
+    # Veo footage is assumed 1080p for the memory estimate; it is not probed first.
+    workers = min(
+        VEO_PARALLEL_READS,
+        parallel_encodes(len(chosen), 1920, 1080, os.cpu_count(), memory_limit()),
+    )
+    report(0)
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="veo-cut") as pool:
+        futures = [
+            pool.submit(
+                _cut,
+                address,
+                float(moment.get("time_s") or 0),
+                float(moment.get("duration_s") or 0) or DEFAULT_LENGTH,
+                target,
+            )
+            for moment, target in zip(chosen, targets, strict=True)
+        ]
         try:
-            _cut(address, float(moment.get("time_s") or 0), length, target)
+            for done, future in enumerate(as_completed(futures), start=1):
+                future.result()
+                report(done)
         except CaptureError:
+            for other in futures:
+                other.cancel()
             if relay is not None and relay.failure is not None:
                 failure = relay.failure
                 raise (
@@ -128,8 +156,7 @@ def _cut_all(
                     else CaptureError("Veo's video could not be read. Nothing was retried.")
                 ) from None
             raise
-        clips.append(target)
-    return clips
+    return targets
 
 
 def make_reel(

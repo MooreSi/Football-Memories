@@ -1,4 +1,4 @@
-## Highlight reels encode their clips in parallel (spec 840); NOT RELEASED (28 November 2026)
+## Highlight reels encode their clips in parallel, Veo reels read 3 at once (spec 840); RELEASED to admin (28 November 2026)
 
 Owner: "parallelise the clip encodes and use hardware encoding" (then: parallel now for every
 library, hardware where ffmpeg offers it, hardware quality to match CRF 18).
@@ -9,10 +9,14 @@ library, hardware where ffmpeg offers it, hardware quality to match CRF 18).
   Not timed end to end through a real reel render.
 - Hardware encoding NOT done: VideoToolbox needs q 84 to match CRF 18, writes ~3x the bytes, is
   slower at 540p and no faster at 1080p once parallel; and Docker cannot reach it. Owner decision 019.
-- Hudl batch and Veo reels (`hudl_batch.assemble_reel`, `veo/_reels.py`) unchanged.
-Verification: backend 892 pass (SQLite and Postgres), ruff, format, mypy, alembic check. New tests
-red first (sizing import; overlap peak 1); memory-cap tests fail when the cap is removed. Frontend
-untouched, not run. Not released: needs main + updater + `_move` like every app change.
+- Owner then: "enable Veo reels to make more simultaneous requests". Veo highlights are cut at
+  the same time; the relay reads Veo's host up to 3 reads at once (was 1). Reel assembly
+  (`hudl_batch.assemble_reel`, used by Hudl batch and Veo reels) encodes parts in parallel too.
+- Owner rule (28 Nov): never ask to release. Main, updater `latest`, `_move` admin only;
+  families show Update available or auto-update. (hosting README)
+Verification: backend 895 pass (SQLite and Postgres), ruff, format, mypy; alembic check (part 1).
+New tests red on behaviour first (overlap peak 1); the memory-cap and 3-read tests fail when
+the caps are raised. Frontend untouched, not run. No real Veo match cut with parallel reads yet.
 
 ## Video Lab on the MacBook: progress bar, stitched pitch indoors, shirt numbers, delete a run (28 November 2026)
 

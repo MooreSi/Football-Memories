@@ -341,3 +341,108 @@ def test_reel_puts_the_team_stats_card_after_the_highlights(
     assert names[1:3] == ["clip-0001.mp4", "clip-0002.mp4"]
     assert names[3:] == card_names[1:]
     assert not veo.cards.path(stats).exists()
+
+
+class _Overlap:
+    """Counts how many calls are in progress at once."""
+
+    def __init__(self) -> None:
+        import threading
+
+        self.lock = threading.Lock()
+        self.active = self.peak = 0
+
+    def __enter__(self) -> None:
+        with self.lock:
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+
+    def __exit__(self, *exc: object) -> None:
+        with self.lock:
+            self.active -= 1
+
+
+class OverlapMedia(ChunkedMedia):
+    """Each read of Veo's video host takes a moment, so overlapping reads can be seen."""
+
+    def __init__(self, body: bytes) -> None:
+        super().__init__(body)
+        self.overlap = _Overlap()
+
+    def media_range(self, url: str, start: int, end: int | None) -> tuple[int, int, bytes]:
+        import time
+
+        with self.overlap:
+            time.sleep(0.02)
+            return super().media_range(url, start, end)
+
+
+def _five_highlights(veo: VeoConnection) -> None:
+    library = veo.library()
+    for item in library:
+        if item["id"] == IDENTITY:
+            item["moments"] = [
+                {"id": f"h-{n}", "category": "GOAL", "time_s": 10.0 + 15 * n, "duration_s": d}
+                for n, d in enumerate((2.0, 3.0, 4.0, 5.0, 6.0))
+            ]
+    veo._write(library)
+
+
+# Owner request 2026-11-28 ("enable Veo reels to make more simultaneous requests"):
+# highlights of a match not saved here are cut at the same time, reading Veo's video
+# host up to three reads at once, and the reel keeps match order.
+def test_a_reel_reads_several_highlights_from_veo_at_once_but_never_more_than_three(
+    tmp_path: Path, long_video: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    from app.connectors.veo import _reels
+
+    monkeypatch.setattr(os, "cpu_count", lambda: 30)  # room for more than three by CPU
+    monkeypatch.setattr(_reels, "memory_limit", lambda: None)
+    media = OverlapMedia(long_video.read_bytes())
+    veo, _, _, folder, _ = _ready(tmp_path, media)
+    _five_highlights(veo)
+    lengths: list[float] = []
+    real_assemble = _reels.assemble_reel
+
+    def spy(parts, output, **kwargs):  # noqa: ANN001, ANN003, ANN202
+        lengths.extend(round(probe(p).duration_s) for p in parts)
+        return real_assemble(parts, output, **kwargs)
+
+    monkeypatch.setattr(_reels, "assemble_reel", spy)
+    veo.start("reel", IDENTITY, name="R", reel={"moment_ids": [f"h-{n}" for n in range(5)]})
+
+    status = veo.status()
+    assert status["state"] == "done", status["message"]
+    assert 2 <= media.overlap.peak <= 3
+    assert lengths == [2, 3, 4, 5, 6]
+    assert media.downloads == []
+
+
+def test_highlights_from_a_saved_match_are_cut_at_the_same_time(
+    tmp_path: Path, match_video: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    from app.connectors.veo import _reels
+
+    monkeypatch.setattr(os, "cpu_count", lambda: 9)
+    monkeypatch.setattr(_reels, "memory_limit", lambda: None)
+    overlap, real = _Overlap(), _reels._ffmpeg
+
+    def slow_ffmpeg(arguments: list[str]) -> bool:
+        import time
+
+        with overlap:
+            time.sleep(0.3)
+            return real(arguments)
+
+    monkeypatch.setattr(_reels, "_ffmpeg", slow_ffmpeg)
+    media = FakeMedia()
+    veo, api, _, folder, index = _ready(tmp_path, media)
+    _seed_download(veo, folder, index, match_video)
+    veo.start("reel", IDENTITY, name="R", reel={"moment_ids": ["h-1", "h-2", "h-3"]})
+    assert veo.status()["state"] == "done", veo.status()["message"]
+    assert overlap.peak >= 2
+    assert media.ranges == []

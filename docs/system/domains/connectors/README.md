@@ -675,6 +675,11 @@ outside the repo, one match, 1 s apart, no retries; status, field names, counts 
   from the 2.4 GB match read 25 MB in 2.4 s. `-rw_timeout 60 s` so a stalled
   read ends the job. A refusal is kept and reported; nothing is retried. A match
   already saved is still cut from the local file.
+- **Parallel cuts (owner request 2026-11-28, spec 840):** a reel's highlights are cut at the
+  same time; the relay allows `VEO_PARALLEL_READS = 3` reads of Veo's host at once (was one,
+  under the connection's `_media_lock`). Reel reads no longer share that lock, so they can
+  overlap one playback read; downloads cannot overlap (one Veo job at a time, `_busy`). Each
+  parallel ffmpeg reads the MP4 index itself, so a reel reads a little more than before.
 - **Gotcha (owner report 2026-11-15):** after a full download the index writes the
   match details into the file with `ffmpeg -c copy`, which reads and rewrites the
   whole file; on the SMB share a 2.4 GB match took minutes at "100%". The helper now

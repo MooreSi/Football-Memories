@@ -9,14 +9,17 @@ reel is linked into place only after it probes as valid H.264/AAC.
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import subprocess
 import tempfile
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from app.connectors.hudl_capture import CaptureError
+from app.services.encode_pool import memory_limit, parallel_encodes
 from app.services.media import MediaError, MediaInfo, probe
 from app.services.publish import publish_new
 
@@ -136,32 +139,39 @@ def assemble_reel(
     total = len(parts) + 1
     with tempfile.TemporaryDirectory(prefix=".reel-", dir=output.parent) as folder:
         scratch = Path(folder)
-        normalised = []
+        jobs = []
         for number, (part, info) in enumerate(zip(parts, infos, strict=True), start=1):
             target = scratch / f"part-{number:04}.mp4"
             silent = info.audio_codec is None
-            ok = _ffmpeg(
-                [
-                    "-i",
-                    str(part),
-                    *(["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"] if silent else []),
-                    "-map",
-                    "0:v:0",
-                    "-map",
-                    "1:a:0" if silent else "0:a:0",
-                    "-vf",
-                    f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
-                    f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps={fps}",
-                    *_VIDEO,
-                    *_AUDIO,
-                    *(["-shortest"] if silent else []),
-                    str(target),
-                ]
-            )
-            if not ok or not target.is_file():
-                raise CaptureError("A reel part could not be encoded; nothing was saved.")
-            normalised.append(target)
-            report(number, total)
+            arguments = [
+                "-i",
+                str(part),
+                *(["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"] if silent else []),
+                "-map",
+                "0:v:0",
+                "-map",
+                "1:a:0" if silent else "0:a:0",
+                "-vf",
+                f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
+                f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps={fps}",
+                *_VIDEO,
+                *_AUDIO,
+                *(["-shortest"] if silent else []),
+                str(target),
+            ]
+            jobs.append((target, arguments))
+        # Spec 840: parts are encoded at the same time, sized to CPU and memory; the
+        # join below uses the planned order, whichever part finishes first.
+        workers = parallel_encodes(len(jobs), width, height, os.cpu_count(), memory_limit())
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="reel-part") as pool:
+            futures = {pool.submit(_ffmpeg, arguments): target for target, arguments in jobs}
+            for done, future in enumerate(as_completed(futures), start=1):
+                if not future.result() or not futures[future].is_file():
+                    for other in futures:
+                        other.cancel()
+                    raise CaptureError("A reel part could not be encoded; nothing was saved.")
+                report(done, total)
+        normalised = [target for target, _ in jobs]
         listing = scratch / "list.txt"
         listing.write_text("".join(f"file '{p.name}'\n" for p in normalised))
         joined = scratch / "reel.mp4"
